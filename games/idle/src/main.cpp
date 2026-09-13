@@ -3,9 +3,9 @@
 #include <TFT_eSPI.h>
 #include "pitches.h"
 #include "button.h"
-#include "ui/ScreenManager.h"
-#include "ui/HomeScreen.h"
-#include "ui/InventoryScreen.h"
+#include "./managers/ScreenManager.h"
+#include "screens/HomeScreen.h"
+#include "screens/InventoryScreen.h"
 
 // Screen Dimensions
 #define SCREEN_WIDTH 240

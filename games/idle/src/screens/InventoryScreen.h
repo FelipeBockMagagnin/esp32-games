@@ -2,9 +2,9 @@
 #define INVENTORY_SCREEN_H
 
 #include "Screen.h"
-#include "Text.h"
-#include "Box.h"
-#include "Image.h"
+#include "../ui/Text.h"
+#include "../ui/Box.h"
+#include "../ui/Image.h"
 #include "../assets/Assets.h"
 
 class InventoryScreen : public Screen

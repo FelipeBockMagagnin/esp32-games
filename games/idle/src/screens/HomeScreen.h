@@ -2,10 +2,10 @@
 #define HOME_SCREEN_H
 
 #include "Screen.h"
-#include "Text.h"
-#include "Box.h"
-#include "Image.h"
-#include "ProgressBar.h"
+#include "../ui/Text.h"
+#include "../ui/Box.h"
+#include "../ui/Image.h"
+#include "../ui/ProgressBar.h"
 #include "../assets/Assets.h"
 
 class HomeScreen : public Screen
