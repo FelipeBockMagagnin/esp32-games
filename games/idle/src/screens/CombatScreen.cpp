@@ -37,8 +37,8 @@ CombatScreen::CombatScreen()
       playerHeartIcon(193, 298, 15, 16, image_cards_hearts_bits, 0xC0E5),
       playerHp(211, 299, "20", 0xFFFF, 2, TL_DATUM, true, 0x0000),
 
-      lastTimerUpdate(0),
-      timerCountdown(3.00f)
+      timerDeadline(0),
+      lastTimerRefresh(0)
 {
     // Register all elements
     addElement(&enemyRato);
@@ -74,19 +74,20 @@ CombatScreen::CombatScreen()
 
 void CombatScreen::update(unsigned long now)
 {
-    if (now - lastTimerUpdate >= 100) // Update timer ~10 times per second
+    // Deadline-based so a slow loop never makes the countdown drift
+    if (timerDeadline == 0 || (long)(now - timerDeadline) >= 0)
     {
-        lastTimerUpdate = now;
-
-        timerCountdown -= 0.10f;
-        if (timerCountdown <= 0.00f)
-        {
-            timerCountdown = 3.00f;
-        }
-
-        char buf[12];
-        dtostrf(timerCountdown, 4, 2, buf);
-        String s = String(buf) + "s";
-        timerText.setText(s);
+        timerDeadline = now + TIMER_PERIOD_MS;
     }
+
+    if (now - lastTimerRefresh < TIMER_REFRESH_MS)
+    {
+        return;
+    }
+    lastTimerRefresh = now;
+
+    unsigned long remaining = timerDeadline - now;
+    char buf[12];
+    snprintf(buf, sizeof(buf), "%lu.%02lus", remaining / 1000, (remaining % 1000) / 10);
+    timerText.setText(buf);
 }

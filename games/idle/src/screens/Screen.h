@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 #include <vector>
-#include "./ui/UI.h"
+#include "../ui/UI.h"
 
 class Screen
 {
@@ -25,7 +25,7 @@ public:
     virtual void render(TFT_eSPI &tft);
 
     uint16_t getBgColor() const { return bgColor; }
-    void setBgColor(uint16_t color) { bgColor = color; }
+    void setBgColor(uint16_t color);
 };
 
 #endif // SCREEN_H

@@ -1,21 +1,20 @@
 #include "UpgradeRow.h"
 #include "../assets/Assets.h"
-#include "Text.h"
+#include "../enum/OreEnum.h"
 
 void UpgradeRow::draw(TFT_eSPI &tft)
 {
+    tft.fillRect(x, y, w, h, eraseColor);
 
-    Text upgradeNameText = Text(x + 39, y + 3, upgradeName, 0xFFFF, 2);
-
-    upgradeNameText.draw(tft);
+    tft.setTextDatum(TL_DATUM);
+    tft.setTextColor(0xFFFF);
+    tft.setTextSize(2);
+    tft.drawString(upgradeName, x + 39, y + 3);
 
     tft.drawRect(x, y, 32, 33, 0xFFFF);
     tft.drawBitmap(x + 11, y + 9, image_cursor_black_white_bits, 11, 16, 0xFFFF);
 
     // Description Square
-    // tft.setTextSize(2);
-    // tft.drawString(upgradeName, x + 39, y - 2, 2);
-
     tft.setTextSize(1);
     tft.drawString(upgradeDescription, x + 41, y + 19);
     tft.drawRect(x + 31, y, 119, 33, 0xFFFF);
@@ -23,13 +22,13 @@ void UpgradeRow::draw(TFT_eSPI &tft)
     // Price Square
     tft.drawRect(x + 149, y, 51, 33, 0xFFFF);
 
-    tft.drawString(cooperPrice, x + 161, y + 3);
-    tft.drawString(silverPrice, x + 161, y + 13);
-    tft.drawString(goldPrice, x + 161, y + 23);
+    tft.drawString(String(copperPrice), x + 163, y + 3);
+    tft.drawString(String(silverPrice), x + 163, y + 13);
+    tft.drawString(String(goldPrice), x + 163, y + 23);
 
-    tft.drawEllipse(x + 156, y + 6, 3, 3, 0xE300);
-    tft.drawEllipse(x + 156, y + 16, 3, 3, 0x73AF);
-    tft.drawEllipse(x + 156, y + 26, 3, 3, 0xF685);
+    tft.drawEllipse(x + 156, y + 6, 3, 3, getOreInfo(OreEnum::COPPER).color);
+    tft.drawEllipse(x + 156, y + 16, 3, 3, getOreInfo(OreEnum::SILVER).color);
+    tft.drawEllipse(x + 156, y + 26, 3, 3, getOreInfo(OreEnum::GOLD).color);
 
     // Buy Square
     tft.drawRect(x + 199, y, 31, 33, 0xFFFF);

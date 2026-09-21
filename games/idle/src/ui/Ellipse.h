@@ -12,7 +12,7 @@ public:
     bool filled;
 
     Ellipse()
-        : UI(0, 0, 0, 0), rx(0), ry(0), color(0xFFFF), filled(false), centerX(0), centerY(0)
+        : UI(0, 0, 0, 0), rx(0), ry(0), color(0xFFFF), filled(false)
     {
     }
 
@@ -21,9 +21,7 @@ public:
           rx(rx),
           ry(ry),
           color(color),
-          filled(filled),
-          centerX(centerX),
-          centerY(centerY)
+          filled(filled)
     {
     }
 
@@ -45,23 +43,16 @@ public:
         }
     }
 
+    // x/y hold the top-left corner, so the center is derived from them
+    int16_t centerX() const { return x + rx; }
+    int16_t centerY() const { return y + ry; }
+
     void setCenter(int16_t cx, int16_t cy)
     {
-        if (centerX != cx || centerY != cy)
-        {
-            centerX = cx;
-            centerY = cy;
-            x = cx - rx;
-            y = cy - ry;
-            markDirty();
-        }
+        setPosition(cx - rx, cy - ry);
     }
 
     void draw(TFT_eSPI &tft) override;
-
-private:
-    int16_t centerX;
-    int16_t centerY;
 };
 
 #endif // UI_ELLIPSE_H

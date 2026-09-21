@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 #include <vector>
-#include "./screens/Screen.h"
+#include "../screens/Screen.h"
 
 class ScreenManager
 {

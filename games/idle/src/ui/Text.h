@@ -23,6 +23,7 @@ public:
           transparentBg(true),
           prevW(0),
           prevH(0),
+          prevDatum(TL_DATUM),
           prevText("")
     {
     }
@@ -37,11 +38,22 @@ public:
           transparentBg(transparentBg),
           prevW(0),
           prevH(0),
+          prevDatum(TL_DATUM),
           prevText("")
     {
     }
 
     void setText(const String &newText)
+    {
+        if (text != newText)
+        {
+            text = newText;
+            markDirty();
+        }
+    }
+
+    // Avoids building a temporary String when the text did not change
+    void setText(const char *newText)
     {
         if (text != newText)
         {
@@ -89,9 +101,13 @@ public:
 
     void draw(TFT_eSPI &tft) override;
 
+protected:
+    void erase(TFT_eSPI &tft) override;
+
 private:
     int16_t prevW;
     int16_t prevH;
+    uint8_t prevDatum;
     String prevText;
 };
 

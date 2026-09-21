@@ -9,7 +9,17 @@ void Screen::addElement(UI *element)
 {
     if (element != nullptr)
     {
+        element->eraseColor = bgColor;
         elements.push_back(element);
+    }
+}
+
+void Screen::setBgColor(uint16_t color)
+{
+    bgColor = color;
+    for (auto *elem : elements)
+    {
+        elem->eraseColor = color;
     }
 }
 
@@ -27,7 +37,13 @@ void Screen::markAllDirty()
 void Screen::onEnter(TFT_eSPI &tft)
 {
     tft.fillScreen(bgColor);
-    markAllDirty();
+
+    // The whole screen was just cleared, so nothing needs erasing before the first draw
+    for (auto *elem : elements)
+    {
+        elem->resetDrawn();
+    }
+
     render(tft);
 }
 
@@ -43,9 +59,6 @@ void Screen::render(TFT_eSPI &tft)
 {
     for (auto *elem : elements)
     {
-        if (elem != nullptr && elem->isDirty())
-        {
-            elem->redraw(tft);
-        }
+        elem->redraw(tft);
     }
 }

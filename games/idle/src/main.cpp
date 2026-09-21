@@ -3,7 +3,7 @@
 #include <TFT_eSPI.h>
 #include "pitches.h"
 #include "button.h"
-#include "./managers/ScreenManager.h"
+#include "managers/ScreenManager.h"
 #include "screens/InventoryScreen.h"
 #include "screens/MiningScreen.h"
 #include "screens/CombatScreen.h"

@@ -7,14 +7,14 @@ class Button
 {
 private:
     int pinNumber;
-    long debounceDelay;
+    unsigned long debounceDelay;
     int lastSteadyState = HIGH;
     int lastFlickerState = HIGH;
-    long lastDebounceTime = 0;
+    unsigned long lastDebounceTime = 0;
     bool pressedEvent = false;
 
 public:
-    Button(int pinNumber, long debounceDelay = 50)
+    Button(int pinNumber, unsigned long debounceDelay = 50)
         : pinNumber(pinNumber), debounceDelay(debounceDelay), pressedEvent(false)
     {
     }
@@ -38,7 +38,6 @@ public:
         {
             if (lastSteadyState == HIGH && currentState == LOW)
             {
-                Serial.println("Button Clicked!");
                 pressedEvent = true;
             }
             lastSteadyState = currentState;

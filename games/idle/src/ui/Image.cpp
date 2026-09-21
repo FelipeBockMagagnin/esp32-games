@@ -2,11 +2,6 @@
 
 void Image::draw(TFT_eSPI &tft)
 {
-    if (!visible)
-    {
-        return;
-    }
-
     if (type == IMAGE_RGB565)
     {
         if (pixels == nullptr || w <= 0 || h <= 0)

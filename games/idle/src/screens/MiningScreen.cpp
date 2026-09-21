@@ -7,16 +7,16 @@ MiningScreen::MiningScreen()
       navUpgradeArrow(234, 7, 3, 5, image_ButtonRightSmall_bits, 0xFFFF),
 
       // Ore type indicators
-      cooperIndicator(15, 39, 3, 3, 0xE300),
-      cooperLabel(24, 36, "Cooper", 0xFFFF, 1),
-      silverIndicator(98, 40, 3, 3, 0x73AF),
-      silverLabel(107, 37, "Silver", 0xFFFF, 1),
-      goldIndicator(183, 40, 3, 3, 0xF685),
-      goldLabel(192, 37, "Gold", 0xFFFF, 1),
+      copperIndicator(15, 39, 3, 3, getOreInfo(OreEnum::COPPER).color),
+      copperLabel(24, 36, getOreInfo(OreEnum::COPPER).name, 0xFFFF, 1),
+      silverIndicator(98, 40, 3, 3, getOreInfo(OreEnum::SILVER).color),
+      silverLabel(107, 37, getOreInfo(OreEnum::SILVER).name, 0xFFFF, 1),
+      goldIndicator(183, 40, 3, 3, getOreInfo(OreEnum::GOLD).color),
+      goldLabel(192, 37, getOreInfo(OreEnum::GOLD).name, 0xFFFF, 1),
 
       // Center ore display
       oreImage(72, 87, 96, 96, image_Icon31_33_pixels),
-      currentOreText(86, 179, "Cooper", 0xFFFF, 2),
+      currentOreText(86, 179, getOreInfo(OreEnum::COPPER).name, 0xFFFF, 2),
 
       // Progress
       levelText(99, 231, "Level XX", 0xFFFF, 1),
@@ -37,8 +37,8 @@ MiningScreen::MiningScreen()
     addElement(&navUpgradeArrow);
 
     // Ore indicators
-    addElement(&cooperIndicator);
-    addElement(&cooperLabel);
+    addElement(&copperIndicator);
+    addElement(&copperLabel);
     addElement(&silverIndicator);
     addElement(&silverLabel);
     addElement(&goldIndicator);

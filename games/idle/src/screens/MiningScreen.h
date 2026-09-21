@@ -7,6 +7,7 @@
 #include "../ui/Image.h"
 #include "../ui/Ellipse.h"
 #include "../assets/Assets.h"
+#include "../enum/OreEnum.h"
 
 class MiningScreen : public Screen
 {
@@ -17,8 +18,8 @@ private:
     Image navUpgradeArrow;
 
     // Ore type indicators
-    Ellipse cooperIndicator;
-    Text cooperLabel;
+    Ellipse copperIndicator;
+    Text copperLabel;
     Ellipse silverIndicator;
     Text silverLabel;
     Ellipse goldIndicator;

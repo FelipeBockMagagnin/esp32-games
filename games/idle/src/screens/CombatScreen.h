@@ -46,8 +46,10 @@ private:
     Text playerHp;
 
     // Dynamic state
-    unsigned long lastTimerUpdate;
-    float timerCountdown;
+    static const unsigned long TIMER_PERIOD_MS = 3000;
+    static const unsigned long TIMER_REFRESH_MS = 100;
+    unsigned long timerDeadline;
+    unsigned long lastTimerRefresh;
 
 public:
     CombatScreen();

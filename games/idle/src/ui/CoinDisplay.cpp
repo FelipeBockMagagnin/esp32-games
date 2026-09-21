@@ -1,25 +1,15 @@
 #include "CoinDisplay.h"
-#include "../enum/OreEnum.h"
 
 void CoinDisplay::draw(TFT_eSPI &tft)
 {
-    int color = 0;
+    tft.fillRect(x, y, w, h, eraseColor);
 
-    switch (oreType)
-    {
-    case OreEnum::COOPER:
-        color = 0xE300;
-        break;
-    case OreEnum::SILVER:
-        color = 0x73AF;
-        break;
-    case OreEnum::GOLD:
-        color = 0xF685;
-        break;
-    default:
-        break;
-    }
-    tft.drawEllipse(x, y, 3, 3, color);
+    int16_t cx = x + DOT_RADIUS;
+    int16_t cy = y + DOT_RADIUS;
+    tft.drawEllipse(cx, cy, DOT_RADIUS, DOT_RADIUS, getOreInfo(oreType).color);
+
+    tft.setTextDatum(TL_DATUM);
     tft.setTextSize(1);
-    tft.drawString("Cooper", x + 11, y - 3);
+    tft.setTextColor(0xFFFF);
+    tft.drawString(text, cx + 11, cy - 3);
 }

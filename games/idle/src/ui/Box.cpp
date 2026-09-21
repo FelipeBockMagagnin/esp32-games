@@ -2,7 +2,7 @@
 
 void Box::draw(TFT_eSPI &tft)
 {
-    if (!visible || w <= 0 || h <= 0)
+    if (w <= 0 || h <= 0)
     {
         return;
     }
