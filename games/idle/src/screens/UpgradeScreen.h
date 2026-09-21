@@ -8,6 +8,8 @@
 #include "../assets/Assets.h"
 #include "../ui/CoinDisplay.h"
 #include "../ui/UpgradeRow.h"
+#include "../game/GameState.h"
+#include "../managers/SoundManager.h"
 
 class UpgradeScreen : public Screen
 {
@@ -20,16 +22,22 @@ private:
     Image headerRightIcon;
     Text nextText;
 
-    CoinDisplay copperDisplay;
-    CoinDisplay silverDisplay;
-    CoinDisplay goldDisplay;
+    CoinDisplay oreDisplays[ORE_COUNT];
+    UpgradeRow upgradeRows[UPGRADE_COUNT];
 
-    UpgradeRow upgradeRow;
+    GameState &game;
+    SoundManager &sound;
+    unsigned long lastRefresh;
+    uint8_t selectedUpgrade;
 
 public:
-    UpgradeScreen();
+    UpgradeScreen(GameState &game, SoundManager &sound);
 
     void update(unsigned long now) override;
+
+    // Select button moves to the next upgrade, confirm button buys the selected one
+    void onSelectPress() override;
+    void onConfirmPress() override;
 };
 
 #endif // UPGRADE_SCREEN_H

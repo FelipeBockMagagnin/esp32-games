@@ -86,3 +86,21 @@ void ScreenManager::update(unsigned long now)
         screens[currentIndex]->render(tft);
     }
 }
+
+void ScreenManager::handleConfirmPress()
+{
+    Screen *screen = getCurrentScreen();
+    if (screen != nullptr)
+    {
+        screen->onConfirmPress();
+    }
+}
+
+void ScreenManager::handleSelectPress()
+{
+    Screen *screen = getCurrentScreen();
+    if (screen != nullptr)
+    {
+        screen->onSelectPress();
+    }
+}

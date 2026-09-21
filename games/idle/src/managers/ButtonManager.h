@@ -1,5 +1,5 @@
-#ifndef BUTTON_H
-#define BUTTON_H
+#ifndef BUTTON_MANAGER_H
+#define BUTTON_MANAGER_H
 
 #include <Arduino.h>
 
@@ -15,7 +15,7 @@ private:
 
 public:
     Button(int pinNumber, unsigned long debounceDelay = 50)
-        : pinNumber(pinNumber), debounceDelay(debounceDelay), pressedEvent(false)
+        : pinNumber(pinNumber), debounceDelay(debounceDelay)
     {
     }
 
@@ -26,15 +26,16 @@ public:
 
     void loop()
     {
+        unsigned long now = millis();
         int currentState = digitalRead(pinNumber);
 
         if (currentState != lastFlickerState)
         {
-            lastDebounceTime = millis();
+            lastDebounceTime = now;
             lastFlickerState = currentState;
         }
 
-        if ((millis() - lastDebounceTime) > debounceDelay)
+        if ((now - lastDebounceTime) > debounceDelay)
         {
             if (lastSteadyState == HIGH && currentState == LOW)
             {
@@ -55,4 +56,4 @@ public:
     }
 };
 
-#endif // BUTTON_H
+#endif // BUTTON_MANAGER_H

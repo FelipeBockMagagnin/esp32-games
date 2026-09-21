@@ -9,11 +9,14 @@ public:
     String upgradeName;
     String upgradeDescription;
 
-    uint32_t copperPrice;
-    uint32_t silverPrice;
-    uint32_t goldPrice;
+    uint64_t copperPrice;
+    uint64_t silverPrice;
+    uint64_t goldPrice;
 
     String buyCount;
+
+    bool selected;
+    bool affordable;
 
     UpgradeRow(int16_t x = 0, int16_t y = 0, const String &upgradeName = "", const String &upgradeDescription = "")
         : UI(x, y, 230, 34),
@@ -22,11 +25,40 @@ public:
           copperPrice(0),
           silverPrice(0),
           goldPrice(0),
-          buyCount("0")
+          buyCount("0"),
+          selected(false),
+          affordable(false)
     {
     }
 
-    void setCopperPrice(uint32_t newPrice)
+    void setDescription(const String &description)
+    {
+        if (upgradeDescription != description)
+        {
+            upgradeDescription = description;
+            markDirty();
+        }
+    }
+
+    void setSelected(bool isSelected)
+    {
+        if (selected != isSelected)
+        {
+            selected = isSelected;
+            markDirty();
+        }
+    }
+
+    void setAffordable(bool canBuy)
+    {
+        if (affordable != canBuy)
+        {
+            affordable = canBuy;
+            markDirty();
+        }
+    }
+
+    void setCopperPrice(uint64_t newPrice)
     {
         if (copperPrice != newPrice)
         {
@@ -35,7 +67,7 @@ public:
         }
     }
 
-    void setSilverPrice(uint32_t newPrice)
+    void setSilverPrice(uint64_t newPrice)
     {
         if (silverPrice != newPrice)
         {
@@ -44,7 +76,7 @@ public:
         }
     }
 
-    void setGoldPrice(uint32_t newPrice)
+    void setGoldPrice(uint64_t newPrice)
     {
         if (goldPrice != newPrice)
         {

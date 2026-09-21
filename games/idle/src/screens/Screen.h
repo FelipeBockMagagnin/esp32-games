@@ -24,6 +24,9 @@ public:
     virtual void update(unsigned long now);
     virtual void render(TFT_eSPI &tft);
 
+    virtual void onConfirmPress() {}
+    virtual void onSelectPress() {}
+
     uint16_t getBgColor() const { return bgColor; }
     void setBgColor(uint16_t color);
 };

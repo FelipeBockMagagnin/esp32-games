@@ -26,6 +26,9 @@ public:
     int getScreenCount() const;
 
     void update(unsigned long now);
+
+    void handleConfirmPress();
+    void handleSelectPress();
 };
 
 #endif // SCREEN_MANAGER_H

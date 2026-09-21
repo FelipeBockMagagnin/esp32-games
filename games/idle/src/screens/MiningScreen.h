@@ -8,6 +8,8 @@
 #include "../ui/Ellipse.h"
 #include "../assets/Assets.h"
 #include "../enum/OreEnum.h"
+#include "../game/GameState.h"
+#include "../managers/SoundManager.h"
 
 class MiningScreen : public Screen
 {
@@ -24,6 +26,11 @@ private:
     Text silverLabel;
     Ellipse goldIndicator;
     Text goldLabel;
+
+    // Automatic production of each ore, under its label
+    Text copperRate;
+    Text silverRate;
+    Text goldRate;
 
     // Center ore display
     Image oreImage;
@@ -42,10 +49,18 @@ private:
     Image humidityIcon;
     Text humidityText;
 
+    GameState &game;
+    SoundManager &sound;
+    unsigned long lastRefresh;
+
 public:
-    MiningScreen();
+    MiningScreen(GameState &game, SoundManager &sound);
 
     void update(unsigned long now) override;
+
+    // Confirm mines the current ore, select switches which ore is mined
+    void onConfirmPress() override;
+    void onSelectPress() override;
 };
 
 #endif // MINING_SCREEN_H
