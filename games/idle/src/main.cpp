@@ -4,8 +4,10 @@
 #include "pitches.h"
 #include "button.h"
 #include "./managers/ScreenManager.h"
-#include "screens/HomeScreen.h"
 #include "screens/InventoryScreen.h"
+#include "screens/MiningScreen.h"
+#include "screens/CombatScreen.h"
+#include "screens/UpgradeScreen.h"
 
 // Screen Dimensions
 #define SCREEN_WIDTH 240
@@ -18,8 +20,11 @@ TFT_eSPI tft = TFT_eSPI();
 Button btn = Button(BUTTON_PIN);
 
 ScreenManager screenManager(tft);
-HomeScreen homeScreen;
+
 InventoryScreen inventoryScreen;
+MiningScreen miningScreen;
+CombatScreen combatScreen;
+UpgradeScreen upgradeScreen;
 
 void setup()
 {
@@ -32,8 +37,10 @@ void setup()
     tft.setRotation(2);
     tft.fillScreen(0x0000);
 
-    screenManager.addScreen(&homeScreen);
+    screenManager.addScreen(&miningScreen);
     screenManager.addScreen(&inventoryScreen);
+    screenManager.addScreen(&combatScreen);
+    screenManager.addScreen(&upgradeScreen);
 }
 
 void loop()
