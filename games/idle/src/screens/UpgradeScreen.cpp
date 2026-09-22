@@ -8,8 +8,11 @@ static const uint16_t SELECTED_COLOR = 0xFFE0; // Yellow
 static const uint16_t BOUGHT_COLOR = 0x07E0;   // Green
 static const uint16_t LOCKED_COLOR = 0x7BEF;   // Gray, not enough gold
 
-static const int16_t SLOT_X[GOLD_UPGRADE_COUNT] = {9, 46, 83, 119, 156, 193};
-static const int16_t SLOT_Y = 55;
+// Slots are laid out in rows of 6; the first row holds production upgrades, the next holds click upgrades
+static const uint8_t SLOTS_PER_ROW = 6;
+
+static const int16_t SLOT_X[SLOTS_PER_ROW] = {9, 46, 83, 119, 156, 193};
+static const int16_t SLOT_Y[2] = {55, 91};
 static const int16_t SLOT_W = 32;
 static const int16_t SLOT_H = 31;
 // Icon offset inside each slot box
@@ -47,8 +50,10 @@ UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
 
     for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
     {
-        slotBoxes[i] = Box(SLOT_X[i], SLOT_Y, SLOT_W, SLOT_H, 0xFFFF);
-        slotIcons[i] = Image(SLOT_X[i] + SLOT_ICON_DX, SLOT_Y + SLOT_ICON_DY, 11, 16, image_cursor_black_white_bits, 0xFFFF);
+        int16_t slotX = SLOT_X[i % SLOTS_PER_ROW];
+        int16_t slotY = SLOT_Y[i / SLOTS_PER_ROW];
+        slotBoxes[i] = Box(slotX, slotY, SLOT_W, SLOT_H, 0xFFFF);
+        slotIcons[i] = Image(slotX + SLOT_ICON_DX, slotY + SLOT_ICON_DY, 11, 16, image_cursor_black_white_bits, 0xFFFF);
         addElement(&slotBoxes[i]);
         addElement(&slotIcons[i]);
     }

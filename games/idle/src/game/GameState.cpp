@@ -46,11 +46,12 @@ void GameState::update(unsigned long now)
     productionRemainder = scaled % 1000;
 }
 
-bool GameState::mine()
+uint32_t GameState::mine(bool &leveledUp)
 {
-    gold += MINE_AMOUNT;
+    uint32_t gained = getClickAmount();
+    gold += (uint64_t)gained * GOLD_SCALE;
 
-    bool leveledUp = false;
+    leveledUp = false;
     miningXp += MINE_XP;
     while (miningXp >= getXpToNextLevel())
     {
@@ -58,7 +59,7 @@ bool GameState::mine()
         miningLevel++;
         leveledUp = true;
     }
-    return leveledUp;
+    return gained;
 }
 
 bool GameState::buyBuilding(uint8_t id)
@@ -97,8 +98,15 @@ uint32_t GameState::getProductionPerSecond() const
     {
         total += (uint64_t)BUILDINGS[i].productionPerLevel * buildingLevels[i];
     }
-    total = total * (100 + getGoldBonusPercent()) / 100;
+    total = total * (100 + getProductionBonusPercent()) / 100;
     return total > UINT32_MAX ? UINT32_MAX : (uint32_t)total;
+}
+
+uint32_t GameState::getClickAmount() const
+{
+    uint64_t amount = ORE_TIERS[getOreTier()].clickAmount;
+    amount = amount * (100 + getClickBonusPercent()) / 100;
+    return amount > UINT32_MAX ? UINT32_MAX : (uint32_t)amount;
 }
 
 uint16_t GameState::getBuildingLevel(uint8_t id) const
@@ -141,15 +149,34 @@ bool GameState::canAffordGoldUpgrade(uint8_t id) const
     return id < GOLD_UPGRADE_COUNT && !goldUpgradesBought[id] && getGold() >= GOLD_UPGRADES[id].cost;
 }
 
-uint32_t GameState::getGoldBonusPercent() const
+uint32_t GameState::getProductionBonusPercent() const
 {
     uint32_t total = 0;
     for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
     {
-        if (goldUpgradesBought[i])
+        if (goldUpgradesBought[i] && GOLD_UPGRADES[i].target == UpgradeTarget::PRODUCTION)
         {
             total += GOLD_UPGRADES[i].bonusPercent;
         }
     }
     return total;
+}
+
+uint32_t GameState::getClickBonusPercent() const
+{
+    uint32_t total = 0;
+    for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
+    {
+        if (goldUpgradesBought[i] && GOLD_UPGRADES[i].target == UpgradeTarget::CLICK)
+        {
+            total += GOLD_UPGRADES[i].bonusPercent;
+        }
+    }
+    return total;
+}
+
+uint8_t GameState::getOreTier() const
+{
+    uint16_t tier = (miningLevel - 1) / LEVELS_PER_TIER;
+    return tier < ORE_TIER_COUNT ? (uint8_t)tier : ORE_TIER_COUNT - 1;
 }

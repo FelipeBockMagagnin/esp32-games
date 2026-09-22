@@ -15,7 +15,8 @@ MiningScreen::MiningScreen(GameState &game, SoundManager &sound)
       // Center ore display
       // Covers the empty space above the ore so popups can float into it
       oreDisplay(48, 58, 144, 128, image_Icon31_33_pixels, 24, 29, 96, 96, 0xFFFF),
-      currentOreText(96, 188, "Gold", 0xFFFF, 2),
+      // Centered: the ore name's length changes with the tier ("Gold Ore" vs "Mythril Ore")
+      currentOreText(120, 188, ORE_TIERS[0].name, 0xFFFF, 2, TC_DATUM),
 
       // Progress
       levelText(99, 231, "Level XX", 0xFFFF, 1),
@@ -73,16 +74,20 @@ void MiningScreen::update(unsigned long now)
     goldLabel.setText(formatAmount(game.getGold()));
     goldRate.setText(formatPerSecond(game.getProductionPerSecond()));
 
+    currentOreText.setText(game.getOreTierName());
     levelText.setText(String("Level ") + game.getMiningLevel());
     expText.setText(String(game.getMiningXp()) + "/" + game.getXpToNextLevel());
 }
 
 void MiningScreen::onConfirmPress()
 {
-    oreDisplay.shake();
-    oreDisplay.addPopup(String("+") + formatAmount(MINE_AMOUNT / GOLD_SCALE));
+    bool leveledUp;
+    uint32_t gained = game.mine(leveledUp);
 
-    if (game.mine())
+    oreDisplay.shake();
+    oreDisplay.addPopup(String("+") + formatAmount(gained));
+
+    if (leveledUp)
     {
         sound.playLevelUp();
     }

@@ -15,13 +15,14 @@ public:
     void update(unsigned long now);
 
     // Actions
-    bool mine(); // Returns true when the click leveled up mining
+    uint32_t mine(bool &leveledUp); // Returns the gold gained (whole units); leveledUp is set on a level-up
     bool buyBuilding(uint8_t id);
     bool buyGoldUpgrade(uint8_t id);
 
     // Gold
     uint64_t getGold() const; // Whole units
     uint32_t getProductionPerSecond() const; // GOLD_SCALE units
+    uint32_t getClickAmount() const; // Whole units gained by the next mine(), current tier + click upgrades
 
     // Buildings
     uint16_t getBuildingLevel(uint8_t id) const;
@@ -31,12 +32,15 @@ public:
     // Gold upgrades
     bool isGoldUpgradeBought(uint8_t id) const;
     bool canAffordGoldUpgrade(uint8_t id) const;
-    uint32_t getGoldBonusPercent() const; // Sum of the bought gold upgrade bonuses
+    uint32_t getProductionBonusPercent() const; // Sum of the bought production upgrade bonuses
+    uint32_t getClickBonusPercent() const;      // Sum of the bought click upgrade bonuses
 
     // Mining progression
     uint16_t getMiningLevel() const { return miningLevel; }
     uint32_t getMiningXp() const { return miningXp; }
     uint32_t getXpToNextLevel() const { return XP_PER_LEVEL * miningLevel; }
+    uint8_t getOreTier() const; // Index into ORE_TIERS, based on the mining level
+    const char *getOreTierName() const { return ORE_TIERS[getOreTier()].name; }
 
 private:
     uint64_t gold;                // GOLD_SCALE units
