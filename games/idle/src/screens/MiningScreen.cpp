@@ -5,25 +5,16 @@ static const unsigned long REFRESH_MS = 100;
 static const uint16_t RATE_COLOR = 0xAD55; // Light gray, secondary to the ore amounts
 
 MiningScreen::MiningScreen(GameState &game, SoundManager &sound)
-    : // Header
-      titleMining(90, 11, "Mining", 0xFFFF, 2),
-      navUpgradeText(189, 5, "Upgrade", 0xFFFF, 1),
-      navUpgradeArrow(234, 7, 3, 5, image_ButtonRightSmall_bits, 0xFFFF),
+    : header("Mining", "", "Buildings"),
 
-      // Ore type indicators
-      copperIndicator(15, 39, 3, 3, getOreInfo(OreEnum::COPPER).color),
-      copperLabel(24, 36, getOreInfo(OreEnum::COPPER).name, 0xFFFF, 1),
-      silverIndicator(98, 40, 3, 3, getOreInfo(OreEnum::SILVER).color),
-      silverLabel(107, 37, getOreInfo(OreEnum::SILVER).name, 0xFFFF, 1),
-      goldIndicator(183, 40, 3, 3, getOreInfo(OreEnum::GOLD).color),
-      goldLabel(192, 37, getOreInfo(OreEnum::GOLD).name, 0xFFFF, 1),
-      copperRate(18, 48, "+0/s", RATE_COLOR, 1),
-      silverRate(101, 49, "+0/s", RATE_COLOR, 1),
-      goldRate(186, 49, "+0/s", RATE_COLOR, 1),
+      // Gold balance
+      goldIndicator(12, 40, 3, 3, GOLD_COLOR, true),
+      goldLabel(21, 37, "0", 0xFFFF, 1),
+      goldRate(15, 49, "+0/s", RATE_COLOR, 1),
 
       // Center ore display
       oreImage(72, 87, 96, 96, image_Icon31_33_pixels),
-      currentOreText(86, 179, getOreInfo(OreEnum::COPPER).name, 0xFFFF, 2),
+      currentOreText(96, 179, "Gold", 0xFFFF, 2),
 
       // Progress
       levelText(99, 231, "Level XX", 0xFFFF, 1),
@@ -42,20 +33,11 @@ MiningScreen::MiningScreen(GameState &game, SoundManager &sound)
       sound(sound),
       lastRefresh(0)
 {
-    // Header
-    addElement(&titleMining);
-    addElement(&navUpgradeText);
-    addElement(&navUpgradeArrow);
+    addElement(&header);
 
-    // Ore indicators
-    addElement(&copperIndicator);
-    addElement(&copperLabel);
-    addElement(&silverIndicator);
-    addElement(&silverLabel);
+    // Gold balance
     addElement(&goldIndicator);
     addElement(&goldLabel);
-    addElement(&copperRate);
-    addElement(&silverRate);
     addElement(&goldRate);
 
     // Center ore display
@@ -84,22 +66,9 @@ void MiningScreen::update(unsigned long now)
     }
     lastRefresh = now;
 
-    // Ore labels show the stock of each ore; the dot color identifies which one
-    copperLabel.setText(formatAmount(game.getOre(OreEnum::COPPER)));
-    silverLabel.setText(formatAmount(game.getOre(OreEnum::SILVER)));
-    goldLabel.setText(formatAmount(game.getOre(OreEnum::GOLD)));
+    goldLabel.setText(formatAmount(game.getGold()));
+    goldRate.setText(formatPerSecond(game.getProductionPerSecond()));
 
-    copperRate.setText(formatPerSecond(game.getProductionPerSecond(OreEnum::COPPER)));
-    silverRate.setText(formatPerSecond(game.getProductionPerSecond(OreEnum::SILVER)));
-    goldRate.setText(formatPerSecond(game.getProductionPerSecond(OreEnum::GOLD)));
-
-    // The filled dot marks the ore being mined
-    OreEnum current = game.getCurrentOre();
-    copperIndicator.setFilled(current == OreEnum::COPPER);
-    silverIndicator.setFilled(current == OreEnum::SILVER);
-    goldIndicator.setFilled(current == OreEnum::GOLD);
-
-    currentOreText.setText(getOreInfo(current).name);
     levelText.setText(String("Level ") + game.getMiningLevel());
     expText.setText(String(game.getMiningXp()) + "/" + game.getXpToNextLevel());
 }
@@ -114,12 +83,5 @@ void MiningScreen::onConfirmPress()
     {
         sound.playMine();
     }
-    lastRefresh = 0;
-}
-
-void MiningScreen::onSelectPress()
-{
-    uint8_t next = (static_cast<uint8_t>(game.getCurrentOre()) + 1) % ORE_COUNT;
-    game.setCurrentOre(static_cast<OreEnum>(next));
     lastRefresh = 0;
 }

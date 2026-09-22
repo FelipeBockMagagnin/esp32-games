@@ -2,8 +2,7 @@
 
 InventoryScreen::InventoryScreen()
     : Screen(0x0000),
-      // Header
-      titleText(70, 6, "Inventory", 0xFFFF, 2),
+      header("Inventory", "Upgrade", "Combat"),
 
       playerAttackIcon(16, 285, 16, 16, image_sword_02b_pixels),
       playerAttackText(33, 286, "100", 0xFFFF, 2),
@@ -25,7 +24,7 @@ InventoryScreen::InventoryScreen()
       swordSlotBox(156, 114, 32, 32)
 {
     // Register all elements
-    addElement(&titleText);
+    addElement(&header);
     addElement(&playerAttackIcon);
     addElement(&playerAttackText);
 

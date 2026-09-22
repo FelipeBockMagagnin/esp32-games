@@ -1,17 +1,12 @@
 #include "UpgradeRow.h"
 #include "../assets/Assets.h"
-#include "../enum/OreEnum.h"
+#include "../game/GameConfig.h"
 #include "../game/Format.h"
 
 static const uint16_t FRAME_COLOR = 0xFFFF;
 static const uint16_t SELECTED_COLOR = 0xFFE0;
 static const uint16_t BUY_COLOR = 0x07E0;
 static const uint16_t DISABLED_COLOR = 0x7BEF;
-
-static String formatPrice(uint64_t price)
-{
-    return price == 0 ? String("-") : formatAmount(price);
-}
 
 void UpgradeRow::draw(TFT_eSPI &tft)
 {
@@ -35,13 +30,8 @@ void UpgradeRow::draw(TFT_eSPI &tft)
     // Price Square
     tft.drawRect(x + 149, y, 51, 33, frame);
 
-    tft.drawString(formatPrice(copperPrice), x + 163, y + 3);
-    tft.drawString(formatPrice(silverPrice), x + 163, y + 13);
-    tft.drawString(formatPrice(goldPrice), x + 163, y + 23);
-
-    tft.drawEllipse(x + 156, y + 6, 3, 3, getOreInfo(OreEnum::COPPER).color);
-    tft.drawEllipse(x + 156, y + 16, 3, 3, getOreInfo(OreEnum::SILVER).color);
-    tft.drawEllipse(x + 156, y + 26, 3, 3, getOreInfo(OreEnum::GOLD).color);
+    tft.drawString(formatAmount(price), x + 163, y + 13);
+    tft.drawEllipse(x + 156, y + 16, 3, 3, GOLD_COLOR);
 
     // Buy Square
     tft.drawRect(x + 199, y, 31, 33, frame);

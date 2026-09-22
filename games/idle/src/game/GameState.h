@@ -16,18 +16,22 @@ public:
 
     // Actions
     bool mine(); // Returns true when the click leveled up mining
-    bool buyUpgrade(uint8_t id);
+    bool buyBuilding(uint8_t id);
+    bool buyGoldUpgrade(uint8_t id);
 
-    // Ore
-    uint64_t getOre(OreEnum ore) const; // Whole units
-    uint32_t getProductionPerSecond(OreEnum ore) const; // ORE_SCALE units
-    OreEnum getCurrentOre() const { return currentOre; }
-    void setCurrentOre(OreEnum ore) { currentOre = ore; }
+    // Gold
+    uint64_t getGold() const; // Whole units
+    uint32_t getProductionPerSecond() const; // GOLD_SCALE units
 
-    // Upgrades
-    uint16_t getUpgradeLevel(uint8_t id) const;
-    uint64_t getUpgradeCost(uint8_t id, OreEnum ore) const; // Whole units
-    bool canAfford(uint8_t id) const;
+    // Buildings
+    uint16_t getBuildingLevel(uint8_t id) const;
+    uint64_t getBuildingCost(uint8_t id) const; // Whole units
+    bool canAffordBuilding(uint8_t id) const;
+
+    // Gold upgrades
+    bool isGoldUpgradeBought(uint8_t id) const;
+    bool canAffordGoldUpgrade(uint8_t id) const;
+    uint32_t getGoldBonusPercent() const; // Sum of the bought gold upgrade bonuses
 
     // Mining progression
     uint16_t getMiningLevel() const { return miningLevel; }
@@ -35,18 +39,16 @@ public:
     uint32_t getXpToNextLevel() const { return XP_PER_LEVEL * miningLevel; }
 
 private:
-    uint64_t ore[ORE_COUNT];                // ORE_SCALE units
-    uint32_t productionRemainder[ORE_COUNT]; // Leftover (units * ms) below one ORE_SCALE step
-    uint16_t upgradeLevels[UPGRADE_COUNT];
+    uint64_t gold;                // GOLD_SCALE units
+    uint32_t productionRemainder; // Leftover (units * ms) below one GOLD_SCALE step
+    uint16_t buildingLevels[BUILDING_COUNT];
+    bool goldUpgradesBought[GOLD_UPGRADE_COUNT];
 
-    OreEnum currentOre;
     uint16_t miningLevel;
     uint32_t miningXp;
 
     bool started;
     unsigned long lastUpdate;
-
-    void addOre(OreEnum type, uint64_t amount);
 };
 
 #endif // GAME_STATE_H

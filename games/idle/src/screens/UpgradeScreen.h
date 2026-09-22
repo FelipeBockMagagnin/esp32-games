@@ -3,32 +3,42 @@
 
 #include "Screen.h"
 #include "../ui/Text.h"
+#include "../ui/Header.h"
 #include "../ui/Box.h"
 #include "../ui/Image.h"
+#include "../ui/Ellipse.h"
 #include "../assets/Assets.h"
-#include "../ui/CoinDisplay.h"
-#include "../ui/UpgradeRow.h"
 #include "../game/GameState.h"
 #include "../managers/SoundManager.h"
 
 class UpgradeScreen : public Screen
 {
 private:
-    Text titleText;
+    Header header;
 
-    Image headerLeftIcon;
-    Text backText;
+    // Gold balance and automatic production
+    Ellipse goldIndicator;
+    Text goldText;
+    Text goldRate;
 
-    Image headerRightIcon;
-    Text nextText;
+    // Upgrade slots
+    Box slotBoxes[GOLD_UPGRADE_COUNT];
+    Image slotIcons[GOLD_UPGRADE_COUNT];
 
-    CoinDisplay oreDisplays[ORE_COUNT];
-    UpgradeRow upgradeRows[UPGRADE_COUNT];
+    // Selected upgrade details
+    Box detailBox;
+    Text detailTitle;
+    Text detailLine1;
+    Text detailLine2;
+    Ellipse priceIndicator;
+    Text priceText;
 
     GameState &game;
     SoundManager &sound;
     unsigned long lastRefresh;
     uint8_t selectedUpgrade;
+
+    void refreshDetails();
 
 public:
     UpgradeScreen(GameState &game, SoundManager &sound);

@@ -9,9 +9,7 @@ public:
     String upgradeName;
     String upgradeDescription;
 
-    uint64_t copperPrice;
-    uint64_t silverPrice;
-    uint64_t goldPrice;
+    uint64_t price;
 
     String buyCount;
 
@@ -22,9 +20,7 @@ public:
         : UI(x, y, 230, 34),
           upgradeName(upgradeName),
           upgradeDescription(upgradeDescription),
-          copperPrice(0),
-          silverPrice(0),
-          goldPrice(0),
+          price(0),
           buyCount("0"),
           selected(false),
           affordable(false)
@@ -58,29 +54,11 @@ public:
         }
     }
 
-    void setCopperPrice(uint64_t newPrice)
+    void setPrice(uint64_t newPrice)
     {
-        if (copperPrice != newPrice)
+        if (price != newPrice)
         {
-            copperPrice = newPrice;
-            markDirty();
-        }
-    }
-
-    void setSilverPrice(uint64_t newPrice)
-    {
-        if (silverPrice != newPrice)
-        {
-            silverPrice = newPrice;
-            markDirty();
-        }
-    }
-
-    void setGoldPrice(uint64_t newPrice)
-    {
-        if (goldPrice != newPrice)
-        {
-            goldPrice = newPrice;
+            price = newPrice;
             markDirty();
         }
     }

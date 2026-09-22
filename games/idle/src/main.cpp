@@ -9,6 +9,7 @@
 #include "screens/InventoryScreen.h"
 #include "screens/MiningScreen.h"
 #include "screens/CombatScreen.h"
+#include "screens/BuildingScreen.h"
 #include "screens/UpgradeScreen.h"
 
 // Screen Dimensions
@@ -32,6 +33,7 @@ ScreenManager screenManager(tft);
 InventoryScreen inventoryScreen;
 MiningScreen miningScreen(game, sound);
 CombatScreen combatScreen;
+BuildingScreen buildingScreen(game, sound);
 UpgradeScreen upgradeScreen(game, sound);
 
 void setup()
@@ -48,6 +50,7 @@ void setup()
     tft.fillScreen(0x0000);
 
     screenManager.addScreen(&miningScreen);
+    screenManager.addScreen(&buildingScreen);
     screenManager.addScreen(&upgradeScreen);
     screenManager.addScreen(&inventoryScreen);
     screenManager.addScreen(&combatScreen);

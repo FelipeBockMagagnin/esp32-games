@@ -29,8 +29,8 @@ String formatAmount(uint64_t value)
 static String formatRateNumber(uint32_t perSecond)
 {
     char number[16];
-    unsigned whole = perSecond / ORE_SCALE;
-    unsigned frac = perSecond % ORE_SCALE;
+    unsigned whole = perSecond / GOLD_SCALE;
+    unsigned frac = perSecond % GOLD_SCALE;
 
     if (frac == 0 || whole >= 10000)
     {
@@ -47,11 +47,9 @@ static String formatRateNumber(uint32_t perSecond)
     return String(number);
 }
 
-String formatRate(uint32_t perSecond, OreEnum ore)
+String formatRate(uint32_t perSecond)
 {
-    String name(getOreInfo(ore).name);
-    name.toLowerCase();
-    return String("+") + formatRateNumber(perSecond) + " " + name + "/s";
+    return String("+") + formatRateNumber(perSecond) + " gold/s";
 }
 
 String formatPerSecond(uint32_t perSecond)

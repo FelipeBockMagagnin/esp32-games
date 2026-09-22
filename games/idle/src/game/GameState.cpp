@@ -1,25 +1,20 @@
 #include "GameState.h"
 
-static uint8_t idx(OreEnum ore)
-{
-    return static_cast<uint8_t>(ore);
-}
-
 GameState::GameState()
-    : currentOre(OreEnum::COPPER),
+    : gold(0),
+      productionRemainder(0),
       miningLevel(1),
       miningXp(0),
       started(false),
       lastUpdate(0)
 {
-    for (uint8_t i = 0; i < ORE_COUNT; i++)
+    for (uint8_t i = 0; i < BUILDING_COUNT; i++)
     {
-        ore[i] = 0;
-        productionRemainder[i] = 0;
+        buildingLevels[i] = 0;
     }
-    for (uint8_t i = 0; i < UPGRADE_COUNT; i++)
+    for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
     {
-        upgradeLevels[i] = 0;
+        goldUpgradesBought[i] = false;
     }
 }
 
@@ -39,24 +34,21 @@ void GameState::update(unsigned long now)
     }
     lastUpdate = now;
 
-    for (uint8_t i = 0; i < ORE_COUNT; i++)
+    uint32_t perSecond = getProductionPerSecond();
+    if (perSecond == 0)
     {
-        uint32_t perSecond = getProductionPerSecond(static_cast<OreEnum>(i));
-        if (perSecond == 0)
-        {
-            continue;
-        }
-
-        // perSecond is ORE_SCALE units per 1000 ms, so keep the sub-unit remainder between frames
-        uint64_t scaled = (uint64_t)perSecond * elapsed + productionRemainder[i];
-        ore[i] += scaled / 1000;
-        productionRemainder[i] = scaled % 1000;
+        return;
     }
+
+    // perSecond is GOLD_SCALE units per 1000 ms, so keep the sub-unit remainder between frames
+    uint64_t scaled = (uint64_t)perSecond * elapsed + productionRemainder;
+    gold += scaled / 1000;
+    productionRemainder = scaled % 1000;
 }
 
 bool GameState::mine()
 {
-    addOre(currentOre, MINE_AMOUNT);
+    gold += MINE_AMOUNT;
 
     bool leveledUp = false;
     miningXp += MINE_XP;
@@ -69,82 +61,95 @@ bool GameState::mine()
     return leveledUp;
 }
 
-bool GameState::buyUpgrade(uint8_t id)
+bool GameState::buyBuilding(uint8_t id)
 {
-    if (id >= UPGRADE_COUNT || !canAfford(id))
+    if (!canAffordBuilding(id))
     {
         return false;
     }
 
-    for (uint8_t i = 0; i < ORE_COUNT; i++)
-    {
-        ore[i] -= getUpgradeCost(id, static_cast<OreEnum>(i)) * ORE_SCALE;
-    }
-    upgradeLevels[id]++;
+    gold -= getBuildingCost(id) * GOLD_SCALE;
+    buildingLevels[id]++;
     return true;
 }
 
-uint64_t GameState::getOre(OreEnum type) const
+bool GameState::buyGoldUpgrade(uint8_t id)
 {
-    return ore[idx(type)] / ORE_SCALE;
-}
-
-uint32_t GameState::getProductionPerSecond(OreEnum type) const
-{
-    uint32_t total = 0;
-    for (uint8_t i = 0; i < UPGRADE_COUNT; i++)
+    if (!canAffordGoldUpgrade(id))
     {
-        if (UPGRADES[i].producedOre == type)
-        {
-            total += UPGRADES[i].productionPerLevel * upgradeLevels[i];
-        }
+        return false;
     }
-    return total;
+
+    gold -= (uint64_t)GOLD_UPGRADES[id].cost * GOLD_SCALE;
+    goldUpgradesBought[id] = true;
+    return true;
 }
 
-uint16_t GameState::getUpgradeLevel(uint8_t id) const
+uint64_t GameState::getGold() const
 {
-    return id < UPGRADE_COUNT ? upgradeLevels[id] : 0;
+    return gold / GOLD_SCALE;
 }
 
-uint64_t GameState::getUpgradeCost(uint8_t id, OreEnum type) const
+uint32_t GameState::getProductionPerSecond() const
 {
-    if (id >= UPGRADE_COUNT)
+    uint64_t total = 0;
+    for (uint8_t i = 0; i < BUILDING_COUNT; i++)
+    {
+        total += (uint64_t)BUILDINGS[i].productionPerLevel * buildingLevels[i];
+    }
+    total = total * (100 + getGoldBonusPercent()) / 100;
+    return total > UINT32_MAX ? UINT32_MAX : (uint32_t)total;
+}
+
+uint16_t GameState::getBuildingLevel(uint8_t id) const
+{
+    return id < BUILDING_COUNT ? buildingLevels[id] : 0;
+}
+
+uint64_t GameState::getBuildingCost(uint8_t id) const
+{
+    if (id >= BUILDING_COUNT)
     {
         return 0;
     }
 
-    const UpgradeDef &def = UPGRADES[id];
-    uint64_t cost = def.baseCost[idx(type)];
-    for (uint16_t level = 0; level < upgradeLevels[id]; level++)
+    const BuildingsDef &def = BUILDINGS[id];
+    uint64_t cost = def.baseCost;
+    for (uint16_t level = 0; level < buildingLevels[id]; level++)
     {
-        if (cost > UINT64_MAX / ORE_SCALE / def.costGrowthPercent)
+        if (cost > UINT64_MAX / GOLD_SCALE / def.costGrowthPercent)
         {
-            return UINT64_MAX / ORE_SCALE; // Too expensive to ever afford
+            return UINT64_MAX / GOLD_SCALE; // Too expensive to ever afford
         }
         cost = cost * def.costGrowthPercent / 100;
     }
     return cost;
 }
 
-bool GameState::canAfford(uint8_t id) const
+bool GameState::canAffordBuilding(uint8_t id) const
 {
-    if (id >= UPGRADE_COUNT)
-    {
-        return false;
-    }
-
-    for (uint8_t i = 0; i < ORE_COUNT; i++)
-    {
-        if (getOre(static_cast<OreEnum>(i)) < getUpgradeCost(id, static_cast<OreEnum>(i)))
-        {
-            return false;
-        }
-    }
-    return true;
+    return id < BUILDING_COUNT && getGold() >= getBuildingCost(id);
 }
 
-void GameState::addOre(OreEnum type, uint64_t amount)
+bool GameState::isGoldUpgradeBought(uint8_t id) const
 {
-    ore[idx(type)] += amount;
+    return id < GOLD_UPGRADE_COUNT && goldUpgradesBought[id];
+}
+
+bool GameState::canAffordGoldUpgrade(uint8_t id) const
+{
+    return id < GOLD_UPGRADE_COUNT && !goldUpgradesBought[id] && getGold() >= GOLD_UPGRADES[id].cost;
+}
+
+uint32_t GameState::getGoldBonusPercent() const
+{
+    uint32_t total = 0;
+    for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
+    {
+        if (goldUpgradesBought[i])
+        {
+            total += GOLD_UPGRADES[i].bonusPercent;
+        }
+    }
+    return total;
 }

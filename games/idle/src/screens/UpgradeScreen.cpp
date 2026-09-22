@@ -1,48 +1,92 @@
 #include "UpgradeScreen.h"
-#include "../enum/OreEnum.h"
 #include "../game/Format.h"
 
-// Values change every frame while producing, so only rebuild the texts a few times per second
 static const unsigned long REFRESH_MS = 100;
 
-static const int16_t ORE_DISPLAY_X[ORE_COUNT] = {19, 102, 182};
-static const int16_t ORE_DISPLAY_Y = 40;
-static const int16_t ROW_X = 5;
-static const int16_t FIRST_ROW_Y = 56;
-static const int16_t ROW_SPACING = 38;
+static const uint16_t RATE_COLOR = 0xAD55;     // Light gray, secondary to the gold amount
+static const uint16_t SELECTED_COLOR = 0xFFE0; // Yellow
+static const uint16_t BOUGHT_COLOR = 0x07E0;   // Green
+static const uint16_t LOCKED_COLOR = 0x7BEF;   // Gray, not enough gold
+
+static const int16_t SLOT_X[GOLD_UPGRADE_COUNT] = {9, 46, 83, 119, 156, 193};
+static const int16_t SLOT_Y = 55;
+static const int16_t SLOT_W = 32;
+static const int16_t SLOT_H = 31;
+// Icon offset inside each slot box
+static const int16_t SLOT_ICON_DX = 11;
+static const int16_t SLOT_ICON_DY = 9;
+
+// Size 1 characters are 6px wide, so this many fit inside the detail box
+static const uint8_t DETAIL_LINE_CHARS = 34;
 
 UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
-    : titleText(80, 12, "Upgrade", 0xFFFF, 2),
-      headerLeftIcon(4, 7, 3, 5, image_ButtonLeftSmall_bits, 0xFFFF),
-      backText(10, 5, "Mining"),
-      headerRightIcon(235, 7, 3, 5, image_ButtonRightSmall_bits, 0xFFFF),
-      nextText(197, 5, "Craft"),
+    : header("Upgrade", "Buildings", "Inventory"),
+
+      goldIndicator(12, 40, 3, 3, GOLD_COLOR),
+      goldText(21, 37, "0"),
+      // Right-aligned on the gold line; the slots start right below it
+      goldRate(229, 37, "+0/s", RATE_COLOR, 1, TR_DATUM),
+
+      detailBox(11, 261, 218, 48, 0xFFFF),
+      detailTitle(14, 265, "", 0xFFFF, 2),
+      detailLine1(16, 283, ""),
+      detailLine2(16, 293, ""),
+      priceIndicator(190, 268, 3, 3, GOLD_COLOR),
+      priceText(196, 265, ""),
+
       game(game),
       sound(sound),
       lastRefresh(0),
       selectedUpgrade(0)
 {
-    addElement(&titleText);
+    addElement(&header);
 
-    addElement(&headerLeftIcon);
-    addElement(&backText);
-    addElement(&headerRightIcon);
-    addElement(&nextText);
+    addElement(&goldIndicator);
+    addElement(&goldText);
+    addElement(&goldRate);
 
-    for (uint8_t i = 0; i < ORE_COUNT; i++)
+    for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
     {
-        OreEnum ore = static_cast<OreEnum>(i);
-        oreDisplays[i] = CoinDisplay(ORE_DISPLAY_X[i], ORE_DISPLAY_Y, "0", ore);
-        addElement(&oreDisplays[i]);
+        slotBoxes[i] = Box(SLOT_X[i], SLOT_Y, SLOT_W, SLOT_H, 0xFFFF);
+        slotIcons[i] = Image(SLOT_X[i] + SLOT_ICON_DX, SLOT_Y + SLOT_ICON_DY, 11, 16, image_cursor_black_white_bits, 0xFFFF);
+        addElement(&slotBoxes[i]);
+        addElement(&slotIcons[i]);
     }
 
-    for (uint8_t i = 0; i < UPGRADE_COUNT; i++)
+    addElement(&detailBox);
+    addElement(&detailTitle);
+    addElement(&detailLine1);
+    addElement(&detailLine2);
+    addElement(&priceIndicator);
+    addElement(&priceText);
+
+    refreshDetails();
+}
+
+void UpgradeScreen::refreshDetails()
+{
+    const GoldUpgradeDef &def = GOLD_UPGRADES[selectedUpgrade];
+    detailTitle.setText(def.name);
+
+    // Wrap the description at the last space that fits on the first line
+    String description = def.description;
+    if (description.length() <= DETAIL_LINE_CHARS)
     {
-        const UpgradeDef &def = UPGRADES[i];
-        upgradeRows[i] = UpgradeRow(ROW_X, FIRST_ROW_Y + i * ROW_SPACING, def.name,
-                                    formatRate(def.productionPerLevel, def.producedOre));
-        addElement(&upgradeRows[i]);
+        detailLine1.setText(description);
+        detailLine2.setText("");
     }
+    else
+    {
+        int split = description.lastIndexOf(' ', DETAIL_LINE_CHARS);
+        if (split <= 0)
+        {
+            split = DETAIL_LINE_CHARS;
+        }
+        detailLine1.setText(description.substring(0, split));
+        detailLine2.setText(description.substring(split + 1));
+    }
+
+    priceText.setText(game.isGoldUpgradeBought(selectedUpgrade) ? "Owned" : formatAmount(def.cost));
 }
 
 void UpgradeScreen::update(unsigned long now)
@@ -53,33 +97,40 @@ void UpgradeScreen::update(unsigned long now)
     }
     lastRefresh = now;
 
-    for (uint8_t i = 0; i < ORE_COUNT; i++)
+    goldText.setText(formatAmount(game.getGold()));
+    goldRate.setText(formatPerSecond(game.getProductionPerSecond()));
+
+    for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
     {
-        oreDisplays[i].setText(formatAmount(game.getOre(static_cast<OreEnum>(i))));
+        uint16_t color = 0xFFFF;
+        if (i == selectedUpgrade)
+        {
+            color = SELECTED_COLOR;
+        }
+        else if (game.isGoldUpgradeBought(i))
+        {
+            color = BOUGHT_COLOR;
+        }
+        else if (!game.canAffordGoldUpgrade(i))
+        {
+            color = LOCKED_COLOR;
+        }
+        slotBoxes[i].setBorderColor(color);
     }
 
-    for (uint8_t i = 0; i < UPGRADE_COUNT; i++)
-    {
-        UpgradeRow &row = upgradeRows[i];
-        row.setCopperPrice(game.getUpgradeCost(i, OreEnum::COPPER));
-        row.setSilverPrice(game.getUpgradeCost(i, OreEnum::SILVER));
-        row.setGoldPrice(game.getUpgradeCost(i, OreEnum::GOLD));
-        row.setBuyCount((uint32_t)game.getUpgradeLevel(i));
-        row.setAffordable(game.canAfford(i));
-        row.setSelected(i == selectedUpgrade);
-    }
+    refreshDetails();
 }
 
 void UpgradeScreen::onSelectPress()
 {
-    selectedUpgrade = (selectedUpgrade + 1) % UPGRADE_COUNT;
+    selectedUpgrade = (selectedUpgrade + 1) % GOLD_UPGRADE_COUNT;
     lastRefresh = 0;
 }
 
 void UpgradeScreen::onConfirmPress()
 {
-    // buyUpgrade only spends ore when the player can afford it
-    if (game.buyUpgrade(selectedUpgrade))
+    // buyGoldUpgrade only spends gold when the upgrade is not owned and affordable
+    if (game.buyGoldUpgrade(selectedUpgrade))
     {
         sound.playBuy();
     }
