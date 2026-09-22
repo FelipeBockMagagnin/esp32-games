@@ -7,6 +7,7 @@
 #include "../ui/Box.h"
 #include "../ui/Image.h"
 #include "../ui/Ellipse.h"
+#include "../ui/OreDisplay.h"
 #include "../assets/Assets.h"
 #include "../game/GameState.h"
 #include "../managers/SoundManager.h"
@@ -21,8 +22,8 @@ private:
     Text goldLabel;
     Text goldRate;
 
-    // Center ore display
-    Image oreImage;
+    // Center ore display, animated on each click
+    OreDisplay oreDisplay;
     Text currentOreText;
 
     // Progress

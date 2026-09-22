@@ -13,8 +13,9 @@ MiningScreen::MiningScreen(GameState &game, SoundManager &sound)
       goldRate(15, 49, "+0/s", RATE_COLOR, 1),
 
       // Center ore display
-      oreImage(72, 87, 96, 96, image_Icon31_33_pixels),
-      currentOreText(96, 179, "Gold", 0xFFFF, 2),
+      // Covers the empty space above the ore so popups can float into it
+      oreDisplay(48, 58, 144, 128, image_Icon31_33_pixels, 24, 29, 96, 96, 0xFFFF),
+      currentOreText(96, 188, "Gold", 0xFFFF, 2),
 
       // Progress
       levelText(99, 231, "Level XX", 0xFFFF, 1),
@@ -41,7 +42,7 @@ MiningScreen::MiningScreen(GameState &game, SoundManager &sound)
     addElement(&goldRate);
 
     // Center ore display
-    addElement(&oreImage);
+    addElement(&oreDisplay);
     addElement(&currentOreText);
 
     // Progress
@@ -60,6 +61,9 @@ MiningScreen::MiningScreen(GameState &game, SoundManager &sound)
 
 void MiningScreen::update(unsigned long now)
 {
+    // Animations run at their own frame rate, independent of the text refresh below
+    oreDisplay.update(now);
+
     if (lastRefresh != 0 && now - lastRefresh < REFRESH_MS)
     {
         return;
@@ -75,6 +79,9 @@ void MiningScreen::update(unsigned long now)
 
 void MiningScreen::onConfirmPress()
 {
+    oreDisplay.shake();
+    oreDisplay.addPopup(String("+") + formatAmount(MINE_AMOUNT / GOLD_SCALE));
+
     if (game.mine())
     {
         sound.playLevelUp();
