@@ -8,9 +8,13 @@ static const int16_t ROW_X = 5;
 static const int16_t FIRST_ROW_Y = 56;
 static const int16_t ROW_SPACING = 38;
 
+static const uint16_t RATE_COLOR = 0xAD55; // Light gray, secondary to the gold amount
+
 BuildingScreen::BuildingScreen(GameState &game, SoundManager &sound)
     : header("Buildings", "Mining", "Upgrade"),
-      goldDisplay(12, 40, "0"),
+      goldIndicator(13, 40, 5, 5, GOLD_COLOR, true),
+      goldText(21, 32, "0", 0xFFFF, 2),
+      goldRate(229, 32, "+0/s", RATE_COLOR, 2, TR_DATUM),
       game(game),
       sound(sound),
       lastRefresh(0),
@@ -18,13 +22,15 @@ BuildingScreen::BuildingScreen(GameState &game, SoundManager &sound)
 {
     addElement(&header);
 
-    addElement(&goldDisplay);
+    addElement(&goldIndicator);
+    addElement(&goldText);
+    addElement(&goldRate);
 
     for (uint8_t i = 0; i < BUILDING_COUNT; i++)
     {
         const BuildingsDef &def = BUILDINGS[i];
         buildingRows[i] = UpgradeRow(ROW_X, FIRST_ROW_Y + i * ROW_SPACING, def.name,
-                                    formatRate(def.productionPerLevel));
+                                     formatRate(def.productionPerLevel));
         addElement(&buildingRows[i]);
     }
 }
@@ -37,7 +43,8 @@ void BuildingScreen::update(unsigned long now)
     }
     lastRefresh = now;
 
-    goldDisplay.setText(formatAmount(game.getGold()));
+    goldText.setText(formatAmount(game.getGold()));
+    goldRate.setText(formatPerSecond(game.getProductionPerSecond()));
 
     for (uint8_t i = 0; i < BUILDING_COUNT; i++)
     {

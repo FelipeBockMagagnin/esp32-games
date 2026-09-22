@@ -43,5 +43,16 @@ void ProgressBar::draw(TFT_eSPI &tft)
     {
         tft.drawRect(x, y, w, h, borderColor);
     }
+
+    // Label last, on top of the fill; drawn every redraw so it never gets partially erased
+    // by a fill/clear that only repaints part of the bar
+    if (label.length() > 0)
+    {
+        tft.setTextColor(labelColor);
+        tft.setTextSize(1);
+        tft.setTextDatum(MC_DATUM);
+        tft.drawString(label, x + w / 2, y + h / 2);
+        tft.setTextDatum(TL_DATUM);
+    }
 }
 

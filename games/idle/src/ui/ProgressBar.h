@@ -13,6 +13,11 @@ public:
     uint16_t borderColor;
     bool showBorder;
 
+    // Optional text centered over the bar (e.g. "23/100"). Drawn fresh every redraw, on top
+    // of the fill, so the label never gets left over stale pixels when the fill width changes.
+    String label;
+    uint16_t labelColor;
+
     ProgressBar()
         : UI(0, 0, 0, 0),
           current(0),
@@ -20,7 +25,9 @@ public:
           fillColor(0x15D0),
           bgColor(0x0000),
           borderColor(0xFFFF),
-          showBorder(true)
+          showBorder(true),
+          label(""),
+          labelColor(0xFFFF)
     {
     }
 
@@ -31,7 +38,9 @@ public:
           fillColor(fillColor),
           bgColor(bgColor),
           borderColor(borderColor),
-          showBorder(true)
+          showBorder(true),
+          label(""),
+          labelColor(0xFFFF)
     {
     }
 
@@ -50,6 +59,15 @@ public:
         if (fillColor != color)
         {
             fillColor = color;
+            markDirty();
+        }
+    }
+
+    void setLabel(const String &newLabel)
+    {
+        if (label != newLabel)
+        {
+            label = newLabel;
             markDirty();
         }
     }

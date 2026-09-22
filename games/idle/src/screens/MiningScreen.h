@@ -4,10 +4,10 @@
 #include "Screen.h"
 #include "../ui/Text.h"
 #include "../ui/Header.h"
-#include "../ui/Box.h"
 #include "../ui/Image.h"
 #include "../ui/Ellipse.h"
 #include "../ui/OreDisplay.h"
+#include "../ui/ProgressBar.h"
 #include "../assets/Assets.h"
 #include "../game/GameState.h"
 #include "../managers/SoundManager.h"
@@ -28,8 +28,7 @@ private:
 
     // Progress
     Text levelText;
-    Box expBox;
-    Text expText;
+    ProgressBar expBar;
 
     // Bottom sensors
     Image brightnessIcon;

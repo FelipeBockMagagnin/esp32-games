@@ -25,10 +25,10 @@ static const uint8_t DETAIL_LINE_CHARS = 34;
 UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
     : header("Upgrade", "Buildings", "Inventory"),
 
-      goldIndicator(12, 40, 3, 3, GOLD_COLOR),
-      goldText(21, 37, "0"),
+      goldIndicator(13, 40, 5, 5, GOLD_COLOR, true),
+      goldText(21, 32, "0", 0xFFFF, 2),
       // Right-aligned on the gold line; the slots start right below it
-      goldRate(229, 37, "+0/s", RATE_COLOR, 1, TR_DATUM),
+      goldRate(229, 32, "+0/s", RATE_COLOR, 2, TR_DATUM),
 
       detailBox(11, 261, 218, 48, 0xFFFF),
       detailTitle(14, 265, "", 0xFFFF, 2),

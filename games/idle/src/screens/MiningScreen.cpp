@@ -2,15 +2,16 @@
 #include "../game/Format.h"
 
 static const unsigned long REFRESH_MS = 100;
-static const uint16_t RATE_COLOR = 0xAD55; // Light gray, secondary to the ore amounts
+static const uint16_t RATE_COLOR = 0xAD55;   // Light gray, secondary to the ore amounts
+static const uint16_t XP_BAR_COLOR = 0x07FF; // Cyan, distinct from the gold/ore amber tones
 
 MiningScreen::MiningScreen(GameState &game, SoundManager &sound)
     : header("Mining", "", "Buildings"),
 
-      // Gold balance
-      goldIndicator(12, 40, 3, 3, GOLD_COLOR, true),
-      goldLabel(21, 37, "0", 0xFFFF, 1),
-      goldRate(15, 49, "+0/s", RATE_COLOR, 1),
+      // Gold balance; the dot and rate stay small, the amount is the screen's headline number
+      goldIndicator(13, 40, 5, 5, GOLD_COLOR, true),
+      goldLabel(24, 32, "0", 0xFFFF, 2),
+      goldRate(24, 49, "+0/s", RATE_COLOR, 1),
 
       // Center ore display
       // Covers the empty space above the ore so popups can float into it
@@ -18,10 +19,9 @@ MiningScreen::MiningScreen(GameState &game, SoundManager &sound)
       // Centered: the ore name's length changes with the tier ("Gold Ore" vs "Mythril Ore")
       currentOreText(120, 188, ORE_TIERS[0].name, 0xFFFF, 2, TC_DATUM),
 
-      // Progress
-      levelText(99, 231, "Level XX", 0xFFFF, 1),
-      expBox(76, 243, 90, 13, 0xFFFF),
-      expText(96, 246, "23/10000", 0xFFFF, 1),
+      // Progress: level number above an XP bar that fills as the player mines
+      levelText(120, 222, "Level 1", 0xFFFF, 2, TC_DATUM),
+      expBar(75, 241, 90, 15, 0, XP_PER_LEVEL, XP_BAR_COLOR),
 
       // Bottom sensors
       brightnessIcon(7, 298, 15, 16, image_display_brightness_bits, 0xFFFF),
@@ -48,8 +48,7 @@ MiningScreen::MiningScreen(GameState &game, SoundManager &sound)
 
     // Progress
     addElement(&levelText);
-    addElement(&expBox);
-    addElement(&expText);
+    addElement(&expBar);
 
     // Bottom sensors
     addElement(&brightnessIcon);
@@ -76,7 +75,11 @@ void MiningScreen::update(unsigned long now)
 
     currentOreText.setText(game.getOreTierName());
     levelText.setText(String("Level ") + game.getMiningLevel());
-    expText.setText(String(game.getMiningXp()) + "/" + game.getXpToNextLevel());
+
+    uint32_t xp = game.getMiningXp();
+    uint32_t xpToNext = game.getXpToNextLevel();
+    expBar.setProgress(xp, xpToNext);
+    expBar.setLabel(String(xp) + "/" + xpToNext);
 }
 
 void MiningScreen::onConfirmPress()

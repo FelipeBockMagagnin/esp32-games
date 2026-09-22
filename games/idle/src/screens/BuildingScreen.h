@@ -10,13 +10,18 @@
 #include "../ui/UpgradeRow.h"
 #include "../game/GameState.h"
 #include "../managers/SoundManager.h"
+#include "../ui/Ellipse.h"
+#include "../ui/Text.h"
 
 class BuildingScreen : public Screen
 {
 private:
     Header header;
 
-    CoinDisplay goldDisplay;
+    Ellipse goldIndicator;
+    Text goldText;
+    Text goldRate;
+
     UpgradeRow buildingRows[BUILDING_COUNT];
 
     GameState &game;
