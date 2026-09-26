@@ -5,7 +5,7 @@ static const unsigned long REFRESH_MS = 100;
 static const uint16_t RATE_COLOR = 0xAD55;   // Light gray, secondary to the ore amounts
 static const uint16_t XP_BAR_COLOR = 0x07FF; // Cyan, distinct from the gold/ore amber tones
 
-MiningScreen::MiningScreen(GameState &game, SoundManager &sound)
+MiningScreen::MiningScreen(GameState &game, SoundManager &sound, ClimateManager &climate, LuminosityManager &luminosity)
     : header("Mining", "", "Buildings"),
 
       // Gold balance; the dot and rate stay small, the amount is the screen's headline number
@@ -25,14 +25,16 @@ MiningScreen::MiningScreen(GameState &game, SoundManager &sound)
 
       // Bottom sensors
       brightnessIcon(7, 298, 15, 16, image_display_brightness_bits, 0xFFFF),
-      brightnessText(25, 302, "Light", 0xFFFF, 1),
+      brightnessText(25, 302, "--%", 0xFFFF, 1),
       temperatureIcon(101, 298, 16, 16, image_weather_temperature_bits, 0xFFFF),
-      temperatureText(119, 304, "temp", 0xFFFF, 1),
+      temperatureText(119, 304, "--C", 0xFFFF, 1),
       humidityIcon(196, 297, 11, 16, image_weather_humidity_white_bits, 0xFFFF),
-      humidityText(212, 304, "um", 0xFFFF, 1),
+      humidityText(212, 304, "--%", 0xFFFF, 1),
 
       game(game),
       sound(sound),
+      climate(climate),
+      luminosity(luminosity),
       lastRefresh(0)
 {
     addElement(&header);
@@ -80,6 +82,10 @@ void MiningScreen::update(unsigned long now)
     uint32_t xpToNext = game.getXpToNextLevel();
     expBar.setProgress(xp, xpToNext);
     expBar.setLabel(String(xp) + "/" + xpToNext);
+
+    brightnessText.setText(luminosity.getPercentText());
+    temperatureText.setText(climate.getTemperatureText());
+    humidityText.setText(climate.getHumidityText());
 }
 
 void MiningScreen::onConfirmPress()

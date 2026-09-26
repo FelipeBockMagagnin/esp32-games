@@ -6,6 +6,8 @@
 #include "managers/ScreenManager.h"
 #include "game/GameState.h"
 #include "managers/SoundManager.h"
+#include "managers/ClimateManager.h"
+#include "managers/LuminosityManager.h"
 #include "screens/InventoryScreen.h"
 #include "screens/MiningScreen.h"
 #include "screens/CombatScreen.h"
@@ -20,6 +22,8 @@ const int MENU_BUTTON_PIN = 23;    // Switches to the next screen
 const int CONFIRM_BUTTON_PIN = 27; // Confirms on the current screen: mines / buys
 const int SELECT_BUTTON_PIN = 22;  // Selects the next item inside the current screen
 const int BUZZER_PIN = 32;
+const int DHT_PIN = 25;        // Must be output-capable, so not 34-39
+const int LUMINOSITY_PIN = 34; // LDR, read through ADC1
 
 TFT_eSPI tft = TFT_eSPI();
 Button menuButton = Button(MENU_BUTTON_PIN);
@@ -28,10 +32,12 @@ Button selectButton = Button(SELECT_BUTTON_PIN);
 
 GameState game;
 SoundManager sound(BUZZER_PIN);
+ClimateManager climate(DHT_PIN);
+LuminosityManager luminosity(LUMINOSITY_PIN);
 ScreenManager screenManager(tft);
 
 InventoryScreen inventoryScreen;
-MiningScreen miningScreen(game, sound);
+MiningScreen miningScreen(game, sound, climate, luminosity);
 CombatScreen combatScreen;
 BuildingScreen buildingScreen(game, sound);
 UpgradeScreen upgradeScreen(game, sound);
@@ -43,6 +49,8 @@ void setup()
     menuButton.setup();
     confirmButton.setup();
     selectButton.setup();
+    climate.setup();
+    luminosity.setup();
     delay(100);
 
     tft.init();
@@ -63,6 +71,8 @@ void loop()
     menuButton.loop();
     confirmButton.loop();
     selectButton.loop();
+    climate.loop(now);
+    luminosity.loop(now);
 
     if (menuButton.wasPressed())
     {

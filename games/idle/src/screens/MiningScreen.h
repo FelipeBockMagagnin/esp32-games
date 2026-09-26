@@ -11,6 +11,8 @@
 #include "../assets/Assets.h"
 #include "../game/GameState.h"
 #include "../managers/SoundManager.h"
+#include "../managers/ClimateManager.h"
+#include "../managers/LuminosityManager.h"
 
 class MiningScreen : public Screen
 {
@@ -40,10 +42,12 @@ private:
 
     GameState &game;
     SoundManager &sound;
+    ClimateManager &climate;
+    LuminosityManager &luminosity;
     unsigned long lastRefresh;
 
 public:
-    MiningScreen(GameState &game, SoundManager &sound);
+    MiningScreen(GameState &game, SoundManager &sound, ClimateManager &climate, LuminosityManager &luminosity);
 
     void update(unsigned long now) override;
 
