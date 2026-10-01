@@ -38,7 +38,7 @@ static String describeStats(const Stats &s)
 }
 
 InventoryScreen::InventoryScreen(GameState &game, Inventory &inventory, SoundManager &sound)
-    : header("Inventory", "Upgrade", "Zones"),
+    : header("Inventory", "Awards", "Zones"),
 
       attackIcon(8, FOOTER_ICON_Y, 16, 16, image_sword_02b_pixels),
       attackText(28, FOOTER_TEXT_Y, "0", 0xFFFF, 2),
@@ -56,6 +56,7 @@ InventoryScreen::InventoryScreen(GameState &game, Inventory &inventory, SoundMan
       lastRevision(0)
 {
     addElement(&header);
+    setHeader(&header);
 
     for (uint8_t i = 0; i < ListView::VISIBLE_ROWS; i++)
     {

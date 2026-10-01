@@ -30,6 +30,9 @@ public:
     int8_t getEquipped(EquipSlot slot) const;
 
     // Walking the owned items of one slot, for the equip list
+    uint8_t countOwnedItems() const;
+    uint8_t getHighestItemLevel() const;
+
     uint8_t countItemsForSlot(EquipSlot slot) const;
     int8_t itemForSlotAt(EquipSlot slot, uint8_t index) const;
 

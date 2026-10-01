@@ -39,6 +39,16 @@ public:
         tone(pin, NOTE_C7, 120);
     }
 
+    // Longer fanfare than a level-up, so an achievement is unmistakable
+    void playAchievement()
+    {
+        tone(pin, NOTE_E6, 90);
+        tone(pin, NOTE_G6, 90);
+        tone(pin, NOTE_C7, 90);
+        tone(pin, NOTE_E7, 90);
+        tone(pin, NOTE_G7, 220);
+    }
+
     // Low note when the player can't afford the upgrade
     void playError()
     {

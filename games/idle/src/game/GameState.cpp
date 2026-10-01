@@ -1,12 +1,16 @@
 #include "GameState.h"
 #include "Inventory.h"
+#include "Achievements.h"
 
-GameState::GameState(Inventory &inventory)
+GameState::GameState(Inventory &inventory, Achievements &achievements)
     : inventory(inventory),
+      achievements(achievements),
       gold(0),
       productionRemainder(0),
       miningLevel(1),
       miningXp(0),
+      totalClicks(0),
+      totalGoldEarned(0),
       started(false),
       lastUpdate(0)
 {
@@ -44,14 +48,15 @@ void GameState::update(unsigned long now)
 
     // perSecond is GOLD_SCALE units per 1000 ms, so keep the sub-unit remainder between frames
     uint64_t scaled = perSecond * elapsed + productionRemainder;
-    gold += scaled / 1000;
+    creditGold(scaled / 1000);
     productionRemainder = scaled % 1000;
 }
 
 uint32_t GameState::mine(bool &leveledUp)
 {
     uint32_t gained = getClickAmount();
-    gold += (uint64_t)gained * GOLD_SCALE;
+    creditGold((uint64_t)gained * GOLD_SCALE);
+    totalClicks++;
 
     leveledUp = false;
     miningXp += MINE_XP;
@@ -90,7 +95,13 @@ bool GameState::buyGoldUpgrade(uint8_t id)
 
 void GameState::addGold(uint64_t amount)
 {
-    gold += amount * GOLD_SCALE;
+    creditGold(amount * GOLD_SCALE);
+}
+
+void GameState::creditGold(uint64_t scaledAmount)
+{
+    gold += scaledAmount;
+    totalGoldEarned += scaledAmount;
 }
 
 uint64_t GameState::getGold() const
@@ -185,7 +196,9 @@ uint32_t GameState::getBonusPercent(UpgradeTarget target) const
 
 uint32_t GameState::getProductionBonusPercent() const
 {
-    return getBonusPercent(UpgradeTarget::PRODUCTION) + inventory.getGoldProductionBonusPercent();
+    return getBonusPercent(UpgradeTarget::PRODUCTION) +
+           inventory.getGoldProductionBonusPercent() +
+           achievements.getProductionBonusPercent();
 }
 
 uint32_t GameState::getClickBonusPercent() const
@@ -223,6 +236,34 @@ bool GameState::isZoneUnlockedByUpgrade(uint8_t zoneId) const
     return false;
 }
 
+uint64_t GameState::getTotalGoldEarned() const
+{
+    return totalGoldEarned / GOLD_SCALE;
+}
+
+uint32_t GameState::getTotalBuildingLevels() const
+{
+    uint32_t total = 0;
+    for (uint8_t i = 0; i < BUILDING_COUNT; i++)
+    {
+        total += buildingLevels[i];
+    }
+    return total;
+}
+
+uint8_t GameState::getUpgradesBoughtCount() const
+{
+    uint8_t total = 0;
+    for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
+    {
+        if (goldUpgradesBought[i])
+        {
+            total++;
+        }
+    }
+    return total;
+}
+
 uint8_t GameState::getOreTier() const
 {
     uint16_t tier = (miningLevel - 1) / LEVELS_PER_TIER;
@@ -235,6 +276,8 @@ void GameState::save(Snapshot &out) const
     out.productionRemainder = productionRemainder;
     out.miningLevel = miningLevel;
     out.miningXp = miningXp;
+    out.totalClicks = totalClicks;
+    out.totalGoldEarned = totalGoldEarned;
     for (uint8_t i = 0; i < BUILDING_COUNT; i++)
     {
         out.buildingLevels[i] = buildingLevels[i];
@@ -251,6 +294,8 @@ void GameState::load(const Snapshot &in)
     productionRemainder = in.productionRemainder;
     miningLevel = in.miningLevel > 0 ? in.miningLevel : 1;
     miningXp = in.miningXp;
+    totalClicks = in.totalClicks;
+    totalGoldEarned = in.totalGoldEarned;
     for (uint8_t i = 0; i < BUILDING_COUNT; i++)
     {
         buildingLevels[i] = in.buildingLevels[i];

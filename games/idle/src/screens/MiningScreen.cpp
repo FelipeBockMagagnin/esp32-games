@@ -38,6 +38,7 @@ MiningScreen::MiningScreen(GameState &game, SoundManager &sound, ClimateManager 
       lastRefresh(0)
 {
     addElement(&header);
+    setHeader(&header);
 
     // Gold balance
     addElement(&goldIndicator);

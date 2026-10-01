@@ -28,6 +28,7 @@ CombatState::CombatState(GameState &game, Inventory &inventory)
       autoAttackAt(0),
       enemyAttackAt(0),
       strikeReadyAt(0),
+      smiteReadyAt(0),
       guardReadyAt(0),
       guardEndsAt(0),
       respawnAt(0),
@@ -127,8 +128,51 @@ void CombatState::startFight(unsigned long now)
 uint32_t CombatState::damageTo(uint32_t defense, uint8_t multiplier) const
 {
     uint32_t attack = cachedStats.attack * multiplier;
-    // A hit always lands for at least 1, so no fight can stall completely
-    return attack > defense ? attack - defense : 1;
+    // No floor: an attack that cannot beat the defense does nothing at all. That is what
+    // stops the auto-attack from grinding down anything given enough time, and makes
+    // better gear the only way into a tougher zone.
+    return attack > defense ? attack - defense : 0;
+}
+
+uint32_t CombatState::getAutoAttackDamage() const
+{
+    return phase == IDLE ? 0 : damageTo(getEnemy().defense, 1);
+}
+
+uint32_t CombatState::getStrikeDamage() const
+{
+    return phase == IDLE ? 0 : damageTo(getEnemy().defense, STRIKE_MULTIPLIER);
+}
+
+uint32_t CombatState::getSmiteDamage() const
+{
+    if (phase == IDLE || !isSmiteUnlocked())
+    {
+        return 0;
+    }
+    return damageTo(getEnemy().defense, SMITE_MULTIPLIER);
+}
+
+uint32_t CombatState::getBestAttackDamage() const
+{
+    uint32_t strikeDamage = getStrikeDamage();
+    uint32_t smiteDamage = getSmiteDamage();
+    return smiteDamage > strikeDamage ? smiteDamage : strikeDamage;
+}
+
+bool CombatState::isSmiteUnlocked() const
+{
+    return inventory.getEquipped(EquipSlot::AMULET) != NO_ITEM;
+}
+
+uint32_t CombatState::getEnemyAttackDamage() const
+{
+    if (phase == IDLE)
+    {
+        return 0;
+    }
+    uint32_t attack = getEnemy().attack;
+    return attack > cachedStats.defense ? attack - cachedStats.defense : 0;
 }
 
 void CombatState::onEnemyKilled(unsigned long now)
@@ -223,11 +267,14 @@ void CombatState::update(unsigned long now)
         autoAttackAt = now + AUTO_ATTACK_MS;
 
         uint32_t damage = damageTo(enemy.defense, 1);
-        enemyHp = enemyHp > damage ? enemyHp - damage : 0;
-        if (enemyHp == 0)
+        if (damage > 0)
         {
-            onEnemyKilled(now);
-            return;
+            enemyHp = enemyHp > damage ? enemyHp - damage : 0;
+            if (enemyHp == 0)
+            {
+                onEnemyKilled(now);
+                return;
+            }
         }
     }
 
@@ -235,23 +282,22 @@ void CombatState::update(unsigned long now)
     {
         enemyAttackAt = now + enemy.attackIntervalMs;
 
-        uint32_t damage = enemy.attack > cachedStats.defense ? enemy.attack - cachedStats.defense : 1;
+        uint32_t damage = enemy.attack > cachedStats.defense ? enemy.attack - cachedStats.defense : 0;
         if (isGuarding(now))
         {
             damage = damage * GUARD_DAMAGE_PERCENT / 100;
-            if (damage == 0)
-            {
-                damage = 1;
-            }
         }
 
-        if (playerHp > damage)
+        if (damage > 0)
         {
-            playerHp -= damage;
-        }
-        else
-        {
-            onPlayerDied(now);
+            if (playerHp > damage)
+            {
+                playerHp -= damage;
+            }
+            else
+            {
+                onPlayerDied(now);
+            }
         }
     }
 }
@@ -263,9 +309,36 @@ bool CombatState::strike()
     {
         return false;
     }
+    uint32_t damage = damageTo(getEnemy().defense, STRIKE_MULTIPLIER);
+    if (damage == 0)
+    {
+        return false;
+    }
     strikeReadyAt = now + STRIKE_COOLDOWN_MS;
 
-    uint32_t damage = damageTo(getEnemy().defense, STRIKE_MULTIPLIER);
+    enemyHp = enemyHp > damage ? enemyHp - damage : 0;
+    if (enemyHp == 0)
+    {
+        onEnemyKilled(now);
+    }
+    return true;
+}
+
+bool CombatState::smite()
+{
+    unsigned long now = millis();
+    if (phase != FIGHTING || !isSmiteUnlocked() || !reached(now, smiteReadyAt))
+    {
+        return false;
+    }
+
+    uint32_t damage = damageTo(getEnemy().defense, SMITE_MULTIPLIER);
+    if (damage == 0)
+    {
+        return false;
+    }
+    smiteReadyAt = now + SMITE_COOLDOWN_MS;
+
     enemyHp = enemyHp > damage ? enemyHp - damage : 0;
     if (enemyHp == 0)
     {
@@ -291,14 +364,34 @@ uint16_t CombatState::getZoneKills(uint8_t zoneId) const
     return zoneId < ZONE_COUNT ? zoneKills[zoneId] : 0;
 }
 
+uint32_t CombatState::getTotalKills() const
+{
+    uint32_t total = 0;
+    for (uint8_t i = 0; i < ZONE_COUNT; i++)
+    {
+        total += zoneKills[i];
+    }
+    return total;
+}
+
 unsigned long CombatState::getAutoAttackRemaining(unsigned long now) const
 {
     return phase == FIGHTING ? remainingUntil(now, autoAttackAt) : 0;
 }
 
+unsigned long CombatState::getEnemyAttackRemaining(unsigned long now) const
+{
+    return phase == FIGHTING ? remainingUntil(now, enemyAttackAt) : 0;
+}
+
 unsigned long CombatState::getStrikeCooldownRemaining(unsigned long now) const
 {
     return remainingUntil(now, strikeReadyAt);
+}
+
+unsigned long CombatState::getSmiteCooldownRemaining(unsigned long now) const
+{
+    return remainingUntil(now, smiteReadyAt);
 }
 
 unsigned long CombatState::getGuardCooldownRemaining(unsigned long now) const

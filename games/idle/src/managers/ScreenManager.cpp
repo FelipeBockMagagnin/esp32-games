@@ -104,3 +104,14 @@ void ScreenManager::handleSelectPress()
         screen->onSelectPress();
     }
 }
+
+void ScreenManager::handleBackPress()
+{
+    // The current screen gets first refusal; combat claims it for its amulet attack
+    Screen *screen = getCurrentScreen();
+    if (screen != nullptr && screen->onBackPress())
+    {
+        return;
+    }
+    previousScreen();
+}

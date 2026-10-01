@@ -99,6 +99,32 @@ int8_t Inventory::getEquipped(EquipSlot slot) const
     return index < EQUIP_SLOT_COUNT ? equipped[index] : NO_ITEM;
 }
 
+uint8_t Inventory::countOwnedItems() const
+{
+    uint8_t total = 0;
+    for (uint8_t i = 0; i < ITEM_COUNT; i++)
+    {
+        if (itemLevels[i] > 0)
+        {
+            total++;
+        }
+    }
+    return total;
+}
+
+uint8_t Inventory::getHighestItemLevel() const
+{
+    uint8_t best = 0;
+    for (uint8_t i = 0; i < ITEM_COUNT; i++)
+    {
+        if (itemLevels[i] > best)
+        {
+            best = itemLevels[i];
+        }
+    }
+    return best;
+}
+
 uint8_t Inventory::countItemsForSlot(EquipSlot slot) const
 {
     uint8_t total = 0;

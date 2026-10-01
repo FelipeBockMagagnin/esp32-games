@@ -5,6 +5,10 @@
 
 // Screen header: centered title with optional navigation labels to the previous and next screens.
 // An empty label hides that side, arrow included.
+//
+// It doubles as the notification area: while a notice is set it takes over the whole bar,
+// which is how an achievement unlocked on any screen gets shown without each screen
+// reserving space for it.
 class Header : public UI
 {
 public:
@@ -18,7 +22,9 @@ public:
         : UI(0, 0, TFT_WIDTH, HEIGHT),
           title(title),
           backLabel(backLabel),
-          nextLabel(nextLabel)
+          nextLabel(nextLabel),
+          notice(""),
+          hasNotice(false)
     {
     }
 
@@ -49,7 +55,24 @@ public:
         }
     }
 
+    // nullptr or an empty name gives the bar back to the title and nav labels
+    void setNotice(const char *name)
+    {
+        bool wanted = name != nullptr && name[0] != '\0';
+        if (wanted == hasNotice && (!wanted || notice == name))
+        {
+            return;
+        }
+        hasNotice = wanted;
+        notice = wanted ? name : "";
+        markDirty();
+    }
+
     void draw(TFT_eSPI &tft) override;
+
+private:
+    String notice;
+    bool hasNotice;
 };
 
 #endif // UI_HEADER_H

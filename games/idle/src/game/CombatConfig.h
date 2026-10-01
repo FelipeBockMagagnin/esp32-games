@@ -10,6 +10,12 @@
 static const unsigned long AUTO_ATTACK_MS = 2000;
 static const unsigned long STRIKE_COOLDOWN_MS = 3000;
 static const uint8_t STRIKE_MULTIPLIER = 2; // Manual strike hits this many times as hard
+// Smite is the heavy hit an equipped amulet grants. The multiplier is what lets it reach
+// defenses the ordinary strike cannot, and the long cooldown is what keeps it from
+// out-damaging the strike over time.
+static const uint8_t SMITE_MULTIPLIER = 4;
+static const unsigned long SMITE_COOLDOWN_MS = 12000;
+
 static const unsigned long GUARD_COOLDOWN_MS = 9000;
 static const unsigned long GUARD_DURATION_MS = 3000;
 static const uint8_t GUARD_DAMAGE_PERCENT = 50; // Incoming damage while guarding
@@ -118,30 +124,36 @@ static constexpr DropDef CORE_GOLEM_DROPS[] = {
 
 #define DROPS(table) table, sizeof(table) / sizeof(table[0])
 
+// Balance rule: each zone's defense sits ABOVE the attack of the gear the player arrives
+// with, so the auto-attack alone does nothing, but BELOW twice it, so the manual strike
+// still breaks through. Equipping and levelling items is what turns a zone idle-farmable.
+//
+// Player attack with a full set at item level 1: 10 starting (sword only), then 13 / 29 /
+// 77 / 221 for gear tiers 1-4. Player defense: 7 starting, then 20 / 58 / 172 / 514.
 static constexpr EnemyDef SEWER_ENEMIES[] = {
     //  name             hp      atk   def   interval  gold    sprite        drops
-    {"Sewer Rat",        30,     4,    0,    2500,     5,      RAT_SPRITE,   DROPS(SEWER_RAT_DROPS)},
-    {"Sewer Slime",      50,     6,    1,    2600,     10,     RAT_SPRITE,   DROPS(SEWER_SLIME_DROPS)},
+    {"Sewer Rat",        30,     10,   11,   2500,     10,     RAT_SPRITE,   DROPS(SEWER_RAT_DROPS)},
+    {"Sewer Slime",      45,     12,   12,   2600,     20,     RAT_SPRITE,   DROPS(SEWER_SLIME_DROPS)},
 };
 
 static constexpr EnemyDef CAVE_ENEMIES[] = {
-    {"Cave Bat",         150,    12,   3,    2200,     40,     RAT_SPRITE,   DROPS(CAVE_BAT_DROPS)},
-    {"Rock Crawler",     250,    18,   8,    2600,     80,     RAT_SPRITE,   DROPS(ROCK_CRAWLER_DROPS)},
+    {"Cave Bat",         250,    22,   18,   2200,     60,     RAT_SPRITE,   DROPS(CAVE_BAT_DROPS)},
+    {"Rock Crawler",     400,    28,   22,   2600,     120,    RAT_SPRITE,   DROPS(ROCK_CRAWLER_DROPS)},
 };
 
 static constexpr EnemyDef CRYPT_ENEMIES[] = {
-    {"Bone Digger",      900,    45,   25,   2200,     400,    RAT_SPRITE,   DROPS(BONE_DIGGER_DROPS)},
-    {"Crypt Ghoul",      1400,   60,   35,   2400,     700,    RAT_SPRITE,   DROPS(CRYPT_GHOUL_DROPS)},
+    {"Bone Digger",      1500,   70,   35,   2200,     600,    RAT_SPRITE,   DROPS(BONE_DIGGER_DROPS)},
+    {"Crypt Ghoul",      2200,   90,   45,   2400,     1000,   RAT_SPRITE,   DROPS(CRYPT_GHOUL_DROPS)},
 };
 
 static constexpr EnemyDef DEPTH_ENEMIES[] = {
-    {"Deep Lurker",      5000,   180,  110,  2000,     3000,   RAT_SPRITE,   DROPS(DEEP_LURKER_DROPS)},
-    {"Abyss Worm",       8000,   240,  150,  2200,     6000,   RAT_SPRITE,   DROPS(ABYSS_WORM_DROPS)},
+    {"Deep Lurker",      8000,   200,  90,   2000,     4500,   RAT_SPRITE,   DROPS(DEEP_LURKER_DROPS)},
+    {"Abyss Worm",       12000,  260,  115,  2200,     9000,   RAT_SPRITE,   DROPS(ABYSS_WORM_DROPS)},
 };
 
 static constexpr EnemyDef CORE_ENEMIES[] = {
-    {"Magma Hound",      30000,  700,  450,  1900,     25000,  RAT_SPRITE,   DROPS(MAGMA_HOUND_DROPS)},
-    {"Core Golem",       55000,  950,  600,  2100,     50000,  RAT_SPRITE,   DROPS(CORE_GOLEM_DROPS)},
+    {"Magma Hound",      45000,  600,  250,  1900,     35000,  RAT_SPRITE,   DROPS(MAGMA_HOUND_DROPS)},
+    {"Core Golem",       70000,  800,  320,  2100,     65000,  RAT_SPRITE,   DROPS(CORE_GOLEM_DROPS)},
 };
 
 #define ZONE(table) table, sizeof(table) / sizeof(table[0])

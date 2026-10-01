@@ -25,25 +25,23 @@ String formatAmount(uint64_t value)
     return String(buf);
 }
 
-// Rate number without sign or unit: "0.1", "12", "12.3K"
+// Rate number without sign or unit, at one decimal place: "0.1", "1.2", "12", "12.3K"
 static String formatRateNumber(uint64_t perSecond)
 {
     char number[16];
-    uint64_t whole = perSecond / GOLD_SCALE;
-    unsigned frac = perSecond % GOLD_SCALE;
 
-    if (frac == 0 || whole >= 10000)
+    // Round to tenths first, so the decimal shown is the rounded one rather than a
+    // truncation of the thousandths GOLD_SCALE actually stores
+    uint64_t tenths = (perSecond + GOLD_SCALE / 20) / (GOLD_SCALE / 10);
+    uint64_t whole = tenths / 10;
+    unsigned tenth = (unsigned)(tenths % 10);
+
+    if (tenth == 0 || whole >= 10000)
     {
         return formatAmount(whole);
     }
 
-    snprintf(number, sizeof(number), "%u.%03u", (unsigned)whole, frac);
-    // Trim trailing zeros: "0.100" -> "0.1"
-    char *end = number + strlen(number) - 1;
-    while (*end == '0')
-    {
-        *end-- = '\0';
-    }
+    snprintf(number, sizeof(number), "%u.%u", (unsigned)whole, tenth);
     return String(number);
 }
 

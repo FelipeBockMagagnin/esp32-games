@@ -29,6 +29,7 @@ public:
 
     void handleConfirmPress();
     void handleSelectPress();
+    void handleBackPress();
 };
 
 #endif // SCREEN_MANAGER_H

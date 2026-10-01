@@ -32,9 +32,12 @@ public:
 
     void update(unsigned long now);
 
-    // Actions; both return false when still on cooldown or out of combat
+    // Actions; all return false when still on cooldown, out of combat, or unavailable
     bool strike();
     bool guard();
+    bool smite(); // Needs an amulet equipped
+
+    bool isSmiteUnlocked() const;
 
     bool enterZone(uint8_t zoneId);
     void leaveZone();
@@ -50,11 +53,24 @@ public:
     uint32_t getPlayerHp() const { return playerHp; }
     const Stats &getPlayerStats() const { return cachedStats; }
 
+    // Zero means the attack cannot beat the enemy's defense, so the zone is out of reach
+    uint32_t getAutoAttackDamage() const;
+    uint32_t getStrikeDamage() const;
+    uint32_t getSmiteDamage() const;
+    // The best single hit the player can currently land; zero means the zone is out of reach
+    uint32_t getBestAttackDamage() const;
+    // What the enemy's next hit would take off, ignoring any active guard. Zero means the
+    // player's defense shuts it out entirely.
+    uint32_t getEnemyAttackDamage() const;
+
     uint16_t getZoneKills(uint8_t zoneId) const;
+    uint32_t getTotalKills() const; // Summed from the per-zone counts, so it persists with them
 
     // Milliseconds left, for the countdowns on the combat screen
     unsigned long getAutoAttackRemaining(unsigned long now) const;
+    unsigned long getEnemyAttackRemaining(unsigned long now) const;
     unsigned long getStrikeCooldownRemaining(unsigned long now) const;
+    unsigned long getSmiteCooldownRemaining(unsigned long now) const;
     unsigned long getGuardCooldownRemaining(unsigned long now) const;
     unsigned long getReviveRemaining(unsigned long now) const;
     bool isGuarding(unsigned long now) const;
@@ -95,6 +111,7 @@ private:
     unsigned long autoAttackAt;
     unsigned long enemyAttackAt;
     unsigned long strikeReadyAt;
+    unsigned long smiteReadyAt;
     unsigned long guardReadyAt;
     unsigned long guardEndsAt;
     unsigned long respawnAt;

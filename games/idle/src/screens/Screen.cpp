@@ -1,8 +1,21 @@
 #include "Screen.h"
 
 Screen::Screen(uint16_t bgColor)
-    : bgColor(bgColor)
+    : bgColor(bgColor), headerElement(nullptr)
 {
+}
+
+void Screen::setHeader(Header *header)
+{
+    headerElement = header;
+}
+
+void Screen::applyNotice(const char *name)
+{
+    if (headerElement != nullptr)
+    {
+        headerElement->setNotice(name);
+    }
 }
 
 void Screen::addElement(UI *element)

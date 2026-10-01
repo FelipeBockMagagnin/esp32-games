@@ -21,7 +21,7 @@ static const int16_t SLOT_ICON_DY = 9;
 static const uint8_t DETAIL_LINE_CHARS = 34;
 
 UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
-    : header("Upgrade", "Buildings", "Inventory"),
+    : header("Upgrade", "Buildings", "Awards"),
 
       goldIndicator(13, 40, 5, 5, GOLD_COLOR, true),
       goldText(21, 32, "0", 0xFFFF, 2),
@@ -42,6 +42,7 @@ UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
       selectedSlot(0)
 {
     addElement(&header);
+    setHeader(&header);
 
     addElement(&goldIndicator);
     addElement(&goldText);

@@ -5,6 +5,7 @@
 #include "GameConfig.h"
 
 class Inventory;
+class Achievements;
 
 // Owns all game progress. Updated every loop regardless of the visible screen;
 // screens only read from it and call its actions.
@@ -21,9 +22,11 @@ public:
         bool goldUpgradesBought[GOLD_UPGRADE_COUNT];
         uint16_t miningLevel;
         uint32_t miningXp;
+        uint32_t totalClicks;
+        uint64_t totalGoldEarned;
     };
 
-    GameState(Inventory &inventory);
+    GameState(Inventory &inventory, Achievements &achievements);
 
     // Advances automatic production up to `now` (millis)
     void update(unsigned long now);
@@ -48,7 +51,8 @@ public:
     bool isGoldUpgradeBought(uint8_t id) const;
     bool isGoldUpgradeUnlocked(uint8_t id) const; // Requirements met, so the shop may show it
     bool canAffordGoldUpgrade(uint8_t id) const;
-    // Both fold in the bonuses of equipped items, so rare gear feeds the economy
+    // Production folds in equipped items and unlocked achievements, click folds in items,
+    // so gear and milestones both feed the economy
     uint32_t getProductionBonusPercent() const;
     uint32_t getClickBonusPercent() const;
 
@@ -65,13 +69,21 @@ public:
     uint8_t getOreTier() const; // Index into ORE_TIERS, based on the mining level
     const char *getOreTierName() const { return ORE_TIERS[getOreTier()].name; }
 
+    // Lifetime totals, which only achievements read today
+    uint32_t getTotalClicks() const { return totalClicks; }
+    uint64_t getTotalGoldEarned() const; // Whole units
+    uint32_t getTotalBuildingLevels() const;
+    uint8_t getUpgradesBoughtCount() const;
+
     void save(Snapshot &out) const;
     void load(const Snapshot &in);
 
 private:
     uint32_t getBonusPercent(UpgradeTarget target) const;
+    void creditGold(uint64_t scaledAmount); // Single place where gold comes in
 
     Inventory &inventory;
+    Achievements &achievements;
 
     uint64_t gold;                // GOLD_SCALE units
     uint32_t productionRemainder; // Leftover (units * ms) below one GOLD_SCALE step
@@ -80,6 +92,9 @@ private:
 
     uint16_t miningLevel;
     uint32_t miningXp;
+
+    uint32_t totalClicks;
+    uint64_t totalGoldEarned; // GOLD_SCALE units, never spent down
 
     bool started;
     unsigned long lastUpdate;

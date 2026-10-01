@@ -58,6 +58,7 @@ ZoneScreen::ZoneScreen(GameState &game, Inventory &inventory, CombatState &comba
       lastRefresh(0)
 {
     addElement(&header);
+    setHeader(&header);
 
     for (uint8_t i = 0; i < ListView::VISIBLE_ROWS; i++)
     {

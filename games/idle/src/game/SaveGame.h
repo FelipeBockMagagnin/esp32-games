@@ -5,6 +5,7 @@
 #include "GameState.h"
 #include "Inventory.h"
 #include "CombatState.h"
+#include "Achievements.h"
 
 // Nothing is persisted yet, but every piece of state is already shaped for it: each
 // Snapshot holds only primitives and indices into the constexpr config tables, never a
@@ -12,7 +13,7 @@
 //
 // Adding a field to any Snapshot changes the layout, so bump SAVE_VERSION and have
 // loadGame() reject or migrate anything older.
-static const uint16_t SAVE_VERSION = 1;
+static const uint16_t SAVE_VERSION = 2;
 
 struct SaveBlob
 {
@@ -20,6 +21,7 @@ struct SaveBlob
     GameState::Snapshot game;
     Inventory::Snapshot inventory;
     CombatState::Snapshot combat;
+    Achievements::Snapshot achievements;
 };
 
 // TODO: implement over Preferences (NVS). Both are no-ops for now, so a boot always

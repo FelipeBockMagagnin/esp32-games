@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-An idle/clicker game for an ESP32 with a 240x320 ILI9341 SPI display, three push buttons, a passive buzzer, a DHT11 and an LDR. PlatformIO + Arduino framework, C++. Two halves feed each other: a Cookie-Clicker-style gold economy (mining clicks, buildings, one-time upgrades) and an idle combat loop (zones, enemies, item drops, equipment).
+An idle/clicker game for an ESP32 with a 240x320 ILI9341 SPI display, four push buttons, a passive buzzer, a DHT11 and an LDR. PlatformIO + Arduino framework, C++. Two halves feed each other: a Cookie-Clicker-style gold economy (mining clicks, buildings, one-time upgrades) and an idle combat loop (zones, enemies, item drops, equipment).
 
 ## Commands
 
@@ -23,7 +23,8 @@ There are no tests (`test/` is empty); `pio test` would run them if added.
 ## Hardware configuration
 
 - **All TFT_eSPI setup lives in `platformio.ini` `build_flags`**, not in a `User_Setup.h`. This is deliberate so the config survives `pio run -t clean` and library updates. Changing display wiring means editing those `-D` flags.
-- **Pin assignments are `const int` at the top of `src/main.cpp`.** Two constraints are load-bearing: the DHT pin must be output-capable (so not GPIO 34-39), and the LDR must be on an ADC1 pin (34-39) because ADC2 is unusable while WiFi is active.
+- **Pin assignments are `const int` at the top of `src/main.cpp`.** Two constraints are load-bearing: the DHT pin must be output-capable (so not GPIO 34-39), and the LDR must be on an ADC1 pin (34-39) because ADC2 is unusable while WiFi is active. Buttons are `INPUT_PULLUP`, so they also need pins that are neither flash (6-11) nor input-only, and avoiding strapping pins (0, 2, 5, 12, 15) keeps boot behaviour clean.
+- **Four buttons:** menu (23) cycles forward through the screens, back (26) steps backward, confirm (27) and select (22) are the two in-screen actions.
 
 ## Architecture
 
@@ -37,23 +38,28 @@ Elapsed-time math uses unsigned subtraction (`now - lastUpdate`), and deadlines 
 **Global declaration order matters.** `GameState` holds an `Inventory &` (for item gold bonuses) and `CombatState` holds both, so they must be declared in dependency order: `Inventory` → `GameState` → `CombatState`. Globals in one translation unit initialize in declaration order.
 
 ### Screens
-`ScreenManager` holds `Screen*` in the order they were added in `setup()`, and the menu button cycles forward through them. The current order is:
+`ScreenManager` holds `Screen*` in the order they were added in `setup()`; the menu button cycles forward through them and the back button steps backward. The current order is:
 
 ```
-Mining → Buildings → Upgrade → Inventory → Zones → Combat → (wraps to Mining)
+Mining → Buildings → Upgrade → Awards → Inventory → Zones → Combat → (wraps to Mining)
 ```
 
 **Screen order is the navigation order, and each screen's `Header` labels name its neighbours as hardcoded strings.** Inserting or reordering a screen means updating those labels in the affected constructors by hand.
+
+Header text is width-constrained: the size-2 title and the size-1 nav labels share one 28px bar, so a 12-char title leaves no room for labels on either side. That is why the achievements screen is titled **"Awards"** rather than "Achievements" — six characters is what fits with both neighbours named.
 
 A `Screen` is a list of `UI*` elements plus a background color. Subclasses:
 - declare their elements as **members** (not heap-allocated), initialize them in the constructor's init list with their layout coordinates, then `addElement(&member)`;
 - override `update(now)` to push fresh values into elements;
 - override `onConfirmPress()` / `onSelectPress()` for input;
+- optionally override `onBackPress()`, which returns a bool: **true consumes the back button**, false lets `ScreenManager::handleBackPress()` fall through to `previousScreen()`. `CombatScreen` claims it for the smite only while an amulet is equipped, so the button stays navigation otherwise;
 - override `onEnter(tft)` when arriving needs to reset screen-local state (and then call `Screen::onEnter(tft)`).
 
 `ScreenManager::update()` calls the current screen's `update()` then `render()` each loop. Screens follow a `REFRESH_MS = 100` pattern: expensive text rebuilds are gated to ~10 Hz while animations advance every frame. Button handlers set `lastRefresh = 0` to force an immediate refresh past that gate.
 
 Only the visible screen's `update()` runs, so a screen that reacts to background events (a drop landing, a kill) diffs a monotonic counter from the engine against its own last-seen value, and resyncs those counters in `onEnter` so it does not replay a backlog on arrival. `CombatScreen` does this for kill sounds and drop notifications.
+
+**Global notifications go through the `Header`.** Every screen registers its header with `Screen::setHeader(&header)` next to `addElement`, and the main loop pushes the active notice to whatever screen is visible via `getCurrentScreen()->applyNotice(...)`. While a notice is set the header paints it over the whole bar instead of the title and labels. This is the one place that is the same shape on every screen, so a notification needs no reserved space anywhere else.
 
 ### Rendering: dirty-flag, no full redraws
 `src/ui/UI.h` is the base class and the core of the render strategy. The screen is never cleared per frame; instead each element tracks a `dirty` flag and the bounds of its **last** draw (`drawnX/Y/W/H`). `redraw()` erases the old area only when the element became hidden, moved, or resized, then redraws. Consequences to respect when adding UI:
@@ -78,13 +84,27 @@ The screen keeps a **fixed** `ListRow rows[ListView::VISIBLE_ROWS]` registered o
 ### Game state
 Three objects own all progress, all constructed in `main.cpp` and passed **by reference** into the screens that need them:
 
-- **`src/game/GameState.h`** — gold, buildings, upgrades, mining level. Gold is fixed-point in thousandths (`GOLD_SCALE = 1000`) so fractional production like 0.1/s is exact; `productionRemainder` carries the sub-unit leftover between frames. `getProductionPerSecond()` returns scaled units and is `uint64_t` because the late buildings pass 4.3e9. Use `src/game/Format.h` (`formatAmount`, `formatRate`, `formatPerSecond`) for display — raw numbers won't fit the 240px width.
+- **`src/game/GameState.h`** — gold, buildings, upgrades, mining level. Gold is fixed-point in thousandths (`GOLD_SCALE = 1000`) so fractional production like 0.1/s is exact; `productionRemainder` carries the sub-unit leftover between frames. `getProductionPerSecond()` returns scaled units and is `uint64_t` because the late buildings pass 4.3e9. Use `src/game/Format.h` (`formatAmount`, `formatRate`, `formatPerSecond`) for display — raw numbers won't fit the 240px width. Both cap at **one decimal place**: amounts switch to a K/M/B/T/Q suffix past 9999, and rates round to tenths rather than truncating the thousandths that `GOLD_SCALE` stores.
 - **`src/game/Inventory.h`** — one byte per item (`0` = not owned, `>= 1` = level) plus the equipped item index per slot. A duplicate drop raises the item's level instead of stacking. `getRevision()` is bumped on every change so screens and combat notice without polling each item.
 - **`src/game/CombatState.h`** — the fight: current zone, enemy HP, player HP, cooldowns, kill counts, drop rolls.
+- **`src/game/Achievements.h`** — which achievements are unlocked and the gold production they add together. It deliberately **holds no references**: that is what lets `GameState` read its bonus while `evaluate()` takes the other three states as arguments, instead of a dependency cycle. It is self-throttled, so the main loop can call `evaluate()` every iteration.
 
 `src/game/Stats.h` holds the `Stats` struct and `resolvePlayerStats(game, inv)`, the single source of truth for the player's attack/defense/max HP (base values + equipment + upgrade bonuses). Everything that displays or uses stats goes through it.
 
-**The two halves cross over in both directions:** `UpgradeTarget::ATTACK`/`DEFENSE`/`MAX_HP`/`UNLOCK_ZONE` upgrades feed combat, and an `ItemDef`'s `goldProductionBonusPercent`/`clickBonusPercent` feed the economy through `GameState::getProductionBonusPercent()`/`getClickBonusPercent()`.
+**The two halves cross over in both directions:** `UpgradeTarget::ATTACK`/`DEFENSE`/`MAX_HP`/`UNLOCK_ZONE` upgrades feed combat, and an `ItemDef`'s `goldProductionBonusPercent`/`clickBonusPercent` feed the economy through `GameState::getProductionBonusPercent()`/`getClickBonusPercent()`. Achievements add to the same production total, so milestones on either side pay out as gold.
+
+`GameState` keeps the lifetime counters that achievements need (`totalClicks`, `totalGoldEarned`), and every income path goes through the private `creditGold()` so the lifetime total cannot drift from the balance.
+
+### Combat difficulty
+Damage is `attack - defense` **with no floor**: an attack that cannot beat the defense does literally nothing. This is deliberate and load-bearing — a floor of 1 would let the auto-attack grind down any enemy given enough time, which would make gear optional.
+
+The consequence is the progression rule the enemy tables are tuned to: **a zone's defense sits above the attack of the gear the player arrives with, but below twice it.** The auto-attack is therefore blocked while the manual strike (`STRIKE_MULTIPLIER`) still breaks through, so a new zone has to be fought actively and only becomes idle-farmable once items are equipped and levelled. Defense works the same way in reverse, so a zone you have outgrown stops hurting you at all and farms itself.
+
+Reference numbers the tables assume, for a full set at item level 1: player attack 10 (starting sword only), then 13 / 29 / 77 / 221 for gear tiers 1-4; player defense 7, then 20 / 58 / 172 / 514.
+
+Three actions multiply that attack before the subtraction, which is what gives each a distinct reach: the auto-attack (x1, every `AUTO_ATTACK_MS`), the strike (`STRIKE_MULTIPLIER`, Confirm), and the smite (`SMITE_MULTIPLIER` on a long cooldown, Back, unlocked by equipping an amulet). A higher multiplier beats a higher defense, so the gate is softened by gear and by which actions are available, never bypassed.
+
+Because a blocked attack just leaves the health bar still, the combat screen shows the effective damage on each attack bar rather than leaving the player to subtract. The player's bar is **hidden outright** when its damage is 0, the enemy's goes full and gray (`enemy cannot hurt you`), and the message line only speaks up for the hard case where `getBestAttackDamage()` is 0 too, meaning no action reaches. `strike()` and `smite()` refuse rather than burning their cooldown when they would deal nothing.
 
 ### Persistence
 Nothing is saved yet — a reboot starts fresh. But the shape for it is in place and should be kept: `GameState`, `Inventory` and `CombatState` each expose a POD `Snapshot` with `save()`/`load()`, aggregated by `SaveBlob` in `src/game/SaveGame.h` (whose `saveGame`/`loadGame` are no-op stubs over a future `Preferences`/NVS implementation).
@@ -92,13 +112,16 @@ Nothing is saved yet — a reboot starts fresh. But the shape for it is in place
 **Persistent state must stay POD: only primitives and indices into the `constexpr` config tables, never a `String` or a pointer.** Names, descriptions, icons and sprites live in the tables; state stores the index. Adding a field to a `Snapshot` changes the layout, so bump `SAVE_VERSION`.
 
 ### Content is table-driven
-Four headers hold `static constexpr` tables with `*_COUNT` derived via `sizeof`, so adding content is adding a row:
+Five headers hold `static constexpr` tables with `*_COUNT` derived via `sizeof`, so adding content is adding a row:
 
 - **`src/game/GameConfig.h`** — `ORE_TIERS`, `BUILDINGS` (Cookie Clicker's curve: each tier ~10x the cost and ~5.5x the output, `costGrowthPercent = 115`), `GOLD_UPGRADES`. An upgrade is hidden until its `reqBuilding`/`reqBuildingLevel`/`reqMiningLevel` gates are met (Cookie-Clicker-style gates at 1, 5, 25, 50), which is what makes the shop reveal itself gradually. For `UNLOCK_ZONE` upgrades, `bonusPercent` carries the **zone index** instead of a percentage.
 - **`src/game/ItemConfig.h`** — `EquipSlot` (9 slots, all unlocked from the start), `ITEMS`, and the `ItemId` enum that drop tables reference by name. **The enum order must match the table order.** `scaleItemStat()` applies `ITEM_LEVEL_GROWTH_PERCENT` per level above 1.
-- **`src/game/CombatConfig.h`** — combat pacing constants, `ZONES`, per-zone `EnemyDef` arrays and per-enemy `DropDef` tables (chance in basis points). Zone indices line up with the `bonusPercent` of the `UNLOCK_ZONE` upgrades, so a zone only needs a `requiresUnlockUpgrade` flag rather than an upgrade index.
+- **`src/game/CombatConfig.h`** — combat pacing constants, `ZONES`, per-zone `EnemyDef` arrays and per-enemy `DropDef` tables (chance in basis points). Zone indices line up with the `bonusPercent` of the `UNLOCK_ZONE` upgrades, so a zone only needs a `requiresUnlockUpgrade` flag rather than an upgrade index. **Enemy `defense` is the difficulty dial** — see the balance rule below.
+- **`src/game/AchievementConfig.h`** — `ACHIEVEMENTS`, each a threshold on a counter the game already tracks (`AchKind`) plus the gold production it grants. Adding one is a row; adding a *new kind* of condition means a new `AchKind` and one `case` in `Achievements::isConditionMet`. Names cap at 13 chars and descriptions at 32 to fit a list row.
 
 Note the per-field comments: building and zone names cap at ~12 chars and item names at ~11 to fit a list row title at text size 2; upgrade names cap at 14 for the detail box, and descriptions wrap to two lines of 34.
+
+`GameConfig.h` and `ItemConfig.h` also carry `BuildingId` and `ItemId` enums so other tables can point at a row by name. **Both enums must stay in the same order as the table they name.**
 
 `UpgradeScreen` can only show 12 upgrades at once (a 6x2 grid), so it builds a `visibleIds[]` of unlocked-and-unbought upgrades each refresh and selects into **that** list, not into `GOLD_UPGRADES` directly.
 

@@ -4,46 +4,45 @@
 #include "Screen.h"
 #include "../ui/Text.h"
 #include "../ui/Header.h"
-#include "../ui/Box.h"
 #include "../ui/Image.h"
 #include "../ui/ProgressBar.h"
 #include "../assets/Assets.h"
 #include "../game/CombatState.h"
 #include "../managers/SoundManager.h"
 
-// Shows the fight that CombatState is already running. Confirm lands a manual strike,
-// Select raises the guard; both are on cooldowns shown at the bottom.
+// Shows the fight that CombatState is already running. Three actions sit between the
+// enemy block and the player block: Confirm strikes, Select guards, and Back smites once
+// an amulet is equipped (without one, Back goes back a screen as it does everywhere else).
+//
+// Laid out as two mirrored blocks, enemy above and player below, each with a health bar
+// and an attack countdown. Warm colors belong to the enemy, cool ones to the player, and
+// the bars all share one width so they read as a stack.
 class CombatScreen : public Screen
 {
 private:
     Header header;
 
-    Image enemySprite;
     Text enemyName;
+    Image enemySprite;
     ProgressBar enemyHpBar;
-    Image enemyAtkIcon;
-    Text enemyAtkText;
-    Image enemyDefIcon;
-    Text enemyDefText;
+    ProgressBar enemyAttackBar; // Drains towards the enemy's next hit
 
-    // Countdown to the next automatic attack, and what a manual strike multiplies it by
-    Box timerBox;
-    Text timerText;
-    Text timerMultiplier;
-
-    // Its own strip below the timer, never overlapping it: carries drop notifications
-    // while they are fresh, otherwise whatever the fight is waiting on
+    // Its own strip: carries drop notifications while they are fresh, otherwise
+    // whatever the fight is waiting on
     Text messageText;
 
-    Image strikeIcon;
     Text strikeLabel;
     Text strikeState;
-    Image guardIcon;
     Text guardLabel;
     Text guardState;
+    Text smiteLabel;
+    Text smiteState;
 
-    Image playerHeartIcon;
+    ProgressBar playerAttackBar; // Hidden entirely when it cannot damage the enemy
     ProgressBar playerHpBar;
+    // Both sides' raw numbers on one line: the player's sheet plus the enemy defense,
+    // which is the only enemy stat the attack bars do not already express as damage
+    Text statsLine;
 
     CombatState &combat;
     SoundManager &sound;
@@ -51,10 +50,12 @@ private:
     unsigned long lastRefresh;
     uint32_t seenKills;
     uint32_t seenDrops;
-    unsigned long messageUntil; // A drop notification holds the line until this time
+    unsigned long messageUntil; // A drop notification holds the message line until this time
 
     void showFightElements(bool visible);
     void showDropMessage(unsigned long now);
+    void refreshActionStates(unsigned long now, bool fighting);
+    void refreshTimerBars(unsigned long now, bool fighting);
 
 public:
     CombatScreen(CombatState &combat, SoundManager &sound);
@@ -64,6 +65,7 @@ public:
 
     void onConfirmPress() override;
     void onSelectPress() override;
+    bool onBackPress() override;
 };
 
 #endif // COMBAT_SCREEN_H

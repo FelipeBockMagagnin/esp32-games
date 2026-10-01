@@ -41,6 +41,15 @@ struct BuildingsDef
     uint16_t costGrowthPercent;     // Cost multiplier per level bought (115 = +15%)
 };
 
+// Names for the BUILDINGS table below, for anything that needs to point at one row.
+// The order here must match the table.
+enum BuildingId : uint8_t
+{
+    BUILDING_PICKAXE, BUILDING_MINECART, BUILDING_DRILL, BUILDING_EXCAVATOR,
+    BUILDING_ORE_MILL, BUILDING_SMELTER, BUILDING_DEEP_SHAFT, BUILDING_RUNE_FORGE,
+    BUILDING_ORE_BARGE, BUILDING_TRANSMUTER
+};
+
 // Costs and rates follow Cookie Clicker's curve: each tier costs roughly 10x the
 // previous one and produces roughly 5.5x as much
 static constexpr BuildingsDef BUILDINGS[] = {

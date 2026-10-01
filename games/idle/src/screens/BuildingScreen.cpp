@@ -22,6 +22,7 @@ BuildingScreen::BuildingScreen(GameState &game, SoundManager &sound)
       lastRefresh(0)
 {
     addElement(&header);
+    setHeader(&header);
 
     addElement(&goldIndicator);
     addElement(&goldText);
