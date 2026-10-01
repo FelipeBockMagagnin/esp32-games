@@ -5,10 +5,12 @@
 static const unsigned long REFRESH_MS = 100;
 
 static const int16_t ROW_X = 5;
-static const int16_t FIRST_ROW_Y = 56;
-static const int16_t ROW_SPACING = 38;
+static const int16_t LIST_TOP = 54; // Below the gold line
+static const int16_t ROW_PITCH = 28;
 
-static const uint16_t RATE_COLOR = 0xAD55; // Light gray, secondary to the gold amount
+static const uint16_t RATE_COLOR = 0xAD55;    // Light gray, secondary to the gold amount
+static const uint16_t AFFORD_COLOR = 0x07E0;  // Green price when the player can buy
+static const uint16_t TOO_DEAR_COLOR = 0x7BEF; // Gray price when they cannot
 
 BuildingScreen::BuildingScreen(GameState &game, SoundManager &sound)
     : header("Buildings", "Mining", "Upgrade"),
@@ -17,8 +19,7 @@ BuildingScreen::BuildingScreen(GameState &game, SoundManager &sound)
       goldRate(229, 32, "+0/s", RATE_COLOR, 2, TR_DATUM),
       game(game),
       sound(sound),
-      lastRefresh(0),
-      selectedBuilding(0)
+      lastRefresh(0)
 {
     addElement(&header);
 
@@ -26,13 +27,16 @@ BuildingScreen::BuildingScreen(GameState &game, SoundManager &sound)
     addElement(&goldText);
     addElement(&goldRate);
 
-    for (uint8_t i = 0; i < BUILDING_COUNT; i++)
+    for (uint8_t i = 0; i < ListView::VISIBLE_ROWS; i++)
     {
-        const BuildingsDef &def = BUILDINGS[i];
-        buildingRows[i] = UpgradeRow(ROW_X, FIRST_ROW_Y + i * ROW_SPACING, def.name,
-                                     formatRate(def.productionPerLevel));
-        addElement(&buildingRows[i]);
+        rows[i].setPosition(ROW_X, LIST_TOP + i * ROW_PITCH);
+        rows[i].setShowCoin(true);
+        rows[i].setIconBitmap(image_cursor_black_white_bits, 11, 16);
+        rowBuilding[i] = 0xFF;
+        addElement(&rows[i]);
     }
+
+    list.setCount(BUILDING_COUNT);
 }
 
 void BuildingScreen::update(unsigned long now)
@@ -46,26 +50,45 @@ void BuildingScreen::update(unsigned long now)
     goldText.setText(formatAmount(game.getGold()));
     goldRate.setText(formatPerSecond(game.getProductionPerSecond()));
 
-    for (uint8_t i = 0; i < BUILDING_COUNT; i++)
+    uint8_t visible = list.getVisibleCount();
+    for (uint8_t i = 0; i < ListView::VISIBLE_ROWS; i++)
     {
-        UpgradeRow &row = buildingRows[i];
-        row.setPrice(game.getBuildingCost(i));
-        row.setBuyCount((uint32_t)game.getBuildingLevel(i));
-        row.setAffordable(game.canAffordBuilding(i));
-        row.setSelected(i == selectedBuilding);
+        ListRow &row = rows[i];
+        if (i >= visible)
+        {
+            row.setVisible(false);
+            continue;
+        }
+
+        uint8_t id = (uint8_t)(list.getFirstVisible() + i);
+        row.setVisible(true);
+
+        if (rowBuilding[i] != id)
+        {
+            rowBuilding[i] = id;
+            row.setTitle(BUILDINGS[id].name);
+            row.setSubtitle(formatRate(BUILDINGS[id].productionPerLevel));
+        }
+
+        char buf[16];
+        row.setValue(formatAmount(game.getBuildingCost(id)));
+        snprintf(buf, sizeof(buf), "x%u", (unsigned)game.getBuildingLevel(id));
+        row.setValueSub(buf);
+        row.setValueColor(game.canAffordBuilding(id) ? AFFORD_COLOR : TOO_DEAR_COLOR);
+        row.setState(id == list.getSelected() ? ListRow::SELECTED : ListRow::NORMAL);
     }
 }
 
 void BuildingScreen::onSelectPress()
 {
-    selectedBuilding = (selectedBuilding + 1) % BUILDING_COUNT;
+    list.next();
     lastRefresh = 0;
 }
 
 void BuildingScreen::onConfirmPress()
 {
     // buyBuilding only spends gold when the player can afford it
-    if (game.buyBuilding(selectedBuilding))
+    if (game.buyBuilding((uint8_t)list.getSelected()))
     {
         sound.playBuy();
     }

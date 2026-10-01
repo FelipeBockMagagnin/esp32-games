@@ -6,7 +6,7 @@ static const uint16_t RATE_COLOR = 0xAD55;   // Light gray, secondary to the ore
 static const uint16_t XP_BAR_COLOR = 0x07FF; // Cyan, distinct from the gold/ore amber tones
 
 MiningScreen::MiningScreen(GameState &game, SoundManager &sound, ClimateManager &climate, LuminosityManager &luminosity)
-    : header("Mining", "", "Buildings"),
+    : header("Mining", "Combat", "Buildings"),
 
       // Gold balance; the dot and rate stay small, the amount is the screen's headline number
       goldIndicator(13, 40, 5, 5, GOLD_COLOR, true),

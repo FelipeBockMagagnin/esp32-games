@@ -4,12 +4,26 @@
 #include <Arduino.h>
 #include "GameConfig.h"
 
+class Inventory;
+
 // Owns all game progress. Updated every loop regardless of the visible screen;
 // screens only read from it and call its actions.
 class GameState
 {
 public:
-    GameState();
+    // Persistent fields only, all POD so the whole struct can be written to flash as-is.
+    // Runtime timing (lastUpdate/started) is deliberately left out.
+    struct Snapshot
+    {
+        uint64_t gold;
+        uint32_t productionRemainder;
+        uint16_t buildingLevels[BUILDING_COUNT];
+        bool goldUpgradesBought[GOLD_UPGRADE_COUNT];
+        uint16_t miningLevel;
+        uint32_t miningXp;
+    };
+
+    GameState(Inventory &inventory);
 
     // Advances automatic production up to `now` (millis)
     void update(unsigned long now);
@@ -18,10 +32,11 @@ public:
     uint32_t mine(bool &leveledUp); // Returns the gold gained (whole units); leveledUp is set on a level-up
     bool buyBuilding(uint8_t id);
     bool buyGoldUpgrade(uint8_t id);
+    void addGold(uint64_t amount); // Whole units; used by combat rewards
 
     // Gold
     uint64_t getGold() const; // Whole units
-    uint32_t getProductionPerSecond() const; // GOLD_SCALE units
+    uint64_t getProductionPerSecond() const; // GOLD_SCALE units
     uint32_t getClickAmount() const; // Whole units gained by the next mine(), current tier + click upgrades
 
     // Buildings
@@ -31,9 +46,17 @@ public:
 
     // Gold upgrades
     bool isGoldUpgradeBought(uint8_t id) const;
+    bool isGoldUpgradeUnlocked(uint8_t id) const; // Requirements met, so the shop may show it
     bool canAffordGoldUpgrade(uint8_t id) const;
-    uint32_t getProductionBonusPercent() const; // Sum of the bought production upgrade bonuses
-    uint32_t getClickBonusPercent() const;      // Sum of the bought click upgrade bonuses
+    // Both fold in the bonuses of equipped items, so rare gear feeds the economy
+    uint32_t getProductionBonusPercent() const;
+    uint32_t getClickBonusPercent() const;
+
+    // Combat bonuses granted by upgrades; the rest of a player's stats come from equipment
+    uint32_t getAttackBonusPercent() const;
+    uint32_t getDefenseBonusPercent() const;
+    uint32_t getMaxHpBonusPercent() const;
+    bool isZoneUnlockedByUpgrade(uint8_t zoneId) const;
 
     // Mining progression
     uint16_t getMiningLevel() const { return miningLevel; }
@@ -42,7 +65,14 @@ public:
     uint8_t getOreTier() const; // Index into ORE_TIERS, based on the mining level
     const char *getOreTierName() const { return ORE_TIERS[getOreTier()].name; }
 
+    void save(Snapshot &out) const;
+    void load(const Snapshot &in);
+
 private:
+    uint32_t getBonusPercent(UpgradeTarget target) const;
+
+    Inventory &inventory;
+
     uint64_t gold;                // GOLD_SCALE units
     uint32_t productionRemainder; // Leftover (units * ms) below one GOLD_SCALE step
     uint16_t buildingLevels[BUILDING_COUNT];

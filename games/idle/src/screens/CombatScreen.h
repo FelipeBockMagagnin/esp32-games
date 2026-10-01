@@ -3,58 +3,67 @@
 
 #include "Screen.h"
 #include "../ui/Text.h"
+#include "../ui/Header.h"
 #include "../ui/Box.h"
 #include "../ui/Image.h"
+#include "../ui/ProgressBar.h"
 #include "../assets/Assets.h"
+#include "../game/CombatState.h"
+#include "../managers/SoundManager.h"
 
+// Shows the fight that CombatState is already running. Confirm lands a manual strike,
+// Select raises the guard; both are on cooldowns shown at the bottom.
 class CombatScreen : public Screen
 {
 private:
-    // Header Navigation
-    Image navMiningArrow;
-    Text navMiningText;
-    Image navSewersArrow;
-    Text titleSewers;
-    Text navSkillTreeText;
-    Image navSkillTreeArrow;
+    Header header;
 
-    // Enemy / Central Sprite Section
-    Image enemyRato;
+    Image enemySprite;
     Text enemyName;
+    ProgressBar enemyHpBar;
+    Image enemyAtkIcon;
+    Text enemyAtkText;
+    Image enemyDefIcon;
+    Text enemyDefText;
 
-    // Enemy Stats Row
-    Image swordIcon;
-    Text swordStat;
-    Image armorIcon;
-    Text armorStat;
-    Image enemyHeartIcon;
-    Text enemyHp;
-
-    // Countdown / Progress Section
+    // Countdown to the next automatic attack, and what a manual strike multiplies it by
     Box timerBox;
     Text timerText;
-    Text timerMultiplierText;
+    Text timerMultiplier;
 
-    // Bottom Action / Player Section
-    Image actionArmorIcon;
-    Image actionOkBtn1;
-    Text actionTimer1;
-    Image actionSwordIcon;
-    Image actionOkBtn2;
-    Text actionTimer2;
+    // Its own strip below the timer, never overlapping it: carries drop notifications
+    // while they are fresh, otherwise whatever the fight is waiting on
+    Text messageText;
+
+    Image strikeIcon;
+    Text strikeLabel;
+    Text strikeState;
+    Image guardIcon;
+    Text guardLabel;
+    Text guardState;
+
     Image playerHeartIcon;
-    Text playerHp;
+    ProgressBar playerHpBar;
 
-    // Dynamic state
-    static const unsigned long TIMER_PERIOD_MS = 3000;
-    static const unsigned long TIMER_REFRESH_MS = 100;
-    unsigned long timerDeadline;
-    unsigned long lastTimerRefresh;
+    CombatState &combat;
+    SoundManager &sound;
+
+    unsigned long lastRefresh;
+    uint32_t seenKills;
+    uint32_t seenDrops;
+    unsigned long messageUntil; // A drop notification holds the line until this time
+
+    void showFightElements(bool visible);
+    void showDropMessage(unsigned long now);
 
 public:
-    CombatScreen();
+    CombatScreen(CombatState &combat, SoundManager &sound);
 
+    void onEnter(TFT_eSPI &tft) override;
     void update(unsigned long now) override;
+
+    void onConfirmPress() override;
+    void onSelectPress() override;
 };
 
 #endif // COMBAT_SCREEN_H

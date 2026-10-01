@@ -54,8 +54,15 @@ public:
     {
     }
 
+    // Like every other setter in src/ui, a no-op when nothing changed: pushing an
+    // unchanged 128x128 sprite every refresh would cost a full SPI blit for nothing
     void setPixels(const uint16_t *newPixels, int16_t newW, int16_t newH, bool hasTrans = false, uint16_t transColor = 0)
     {
+        if (type == IMAGE_RGB565 && pixels == newPixels && w == newW && h == newH &&
+            useTransparent == hasTrans && color == transColor)
+        {
+            return;
+        }
         pixels = newPixels;
         w = newW;
         h = newH;
@@ -67,6 +74,11 @@ public:
 
     void setBitmap(const uint8_t *newBitmap, int16_t newW, int16_t newH, uint16_t newColor = 0xFFFF, bool transBg = true, uint16_t newBg = 0x0000)
     {
+        if (type == IMAGE_BITMAP_1BIT && bitmap == newBitmap && w == newW && h == newH &&
+            color == newColor && useTransparent == transBg && bgColor == newBg)
+        {
+            return;
+        }
         bitmap = newBitmap;
         w = newW;
         h = newH;

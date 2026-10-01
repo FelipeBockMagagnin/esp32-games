@@ -5,10 +5,8 @@ static const unsigned long REFRESH_MS = 100;
 
 static const uint16_t RATE_COLOR = 0xAD55;     // Light gray, secondary to the gold amount
 static const uint16_t SELECTED_COLOR = 0xFFE0; // Yellow
-static const uint16_t BOUGHT_COLOR = 0x07E0;   // Green
 static const uint16_t LOCKED_COLOR = 0x7BEF;   // Gray, not enough gold
 
-// Slots are laid out in rows of 6; the first row holds production upgrades, the next holds click upgrades
 static const uint8_t SLOTS_PER_ROW = 6;
 
 static const int16_t SLOT_X[SLOTS_PER_ROW] = {9, 46, 83, 119, 156, 193};
@@ -40,7 +38,8 @@ UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
       game(game),
       sound(sound),
       lastRefresh(0),
-      selectedUpgrade(0)
+      visibleCount(0),
+      selectedSlot(0)
 {
     addElement(&header);
 
@@ -48,12 +47,13 @@ UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
     addElement(&goldText);
     addElement(&goldRate);
 
-    for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
+    for (uint8_t i = 0; i < MAX_VISIBLE_SLOTS; i++)
     {
         int16_t slotX = SLOT_X[i % SLOTS_PER_ROW];
         int16_t slotY = SLOT_Y[i / SLOTS_PER_ROW];
         slotBoxes[i] = Box(slotX, slotY, SLOT_W, SLOT_H, 0xFFFF);
         slotIcons[i] = Image(slotX + SLOT_ICON_DX, slotY + SLOT_ICON_DY, 11, 16, image_cursor_black_white_bits, 0xFFFF);
+        visibleIds[i] = 0;
         addElement(&slotBoxes[i]);
         addElement(&slotIcons[i]);
     }
@@ -65,12 +65,43 @@ UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
     addElement(&priceIndicator);
     addElement(&priceText);
 
+    rebuildVisible();
     refreshDetails();
+}
+
+void UpgradeScreen::rebuildVisible()
+{
+    visibleCount = 0;
+    for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT && visibleCount < MAX_VISIBLE_SLOTS; i++)
+    {
+        if (game.isGoldUpgradeUnlocked(i) && !game.isGoldUpgradeBought(i))
+        {
+            visibleIds[visibleCount++] = i;
+        }
+    }
+
+    // A purchase shrinks the list, so the selection can end up past the end
+    if (selectedSlot >= visibleCount)
+    {
+        selectedSlot = visibleCount > 0 ? visibleCount - 1 : 0;
+    }
 }
 
 void UpgradeScreen::refreshDetails()
 {
-    const GoldUpgradeDef &def = GOLD_UPGRADES[selectedUpgrade];
+    if (visibleCount == 0)
+    {
+        detailTitle.setText("No upgrades");
+        detailLine1.setText("Buy buildings to unlock more");
+        detailLine2.setText("");
+        priceText.setText("");
+        priceIndicator.setVisible(false);
+        return;
+    }
+
+    priceIndicator.setVisible(true);
+
+    const GoldUpgradeDef &def = GOLD_UPGRADES[visibleIds[selectedSlot]];
     detailTitle.setText(def.name);
 
     // Wrap the description at the last space that fits on the first line
@@ -91,7 +122,7 @@ void UpgradeScreen::refreshDetails()
         detailLine2.setText(description.substring(split + 1));
     }
 
-    priceText.setText(game.isGoldUpgradeBought(selectedUpgrade) ? "Owned" : formatAmount(def.cost));
+    priceText.setText(formatAmount(def.cost));
 }
 
 void UpgradeScreen::update(unsigned long now)
@@ -105,18 +136,24 @@ void UpgradeScreen::update(unsigned long now)
     goldText.setText(formatAmount(game.getGold()));
     goldRate.setText(formatPerSecond(game.getProductionPerSecond()));
 
-    for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
+    rebuildVisible();
+
+    for (uint8_t i = 0; i < MAX_VISIBLE_SLOTS; i++)
     {
+        bool used = i < visibleCount;
+        slotBoxes[i].setVisible(used);
+        slotIcons[i].setVisible(used);
+        if (!used)
+        {
+            continue;
+        }
+
         uint16_t color = 0xFFFF;
-        if (i == selectedUpgrade)
+        if (i == selectedSlot)
         {
             color = SELECTED_COLOR;
         }
-        else if (game.isGoldUpgradeBought(i))
-        {
-            color = BOUGHT_COLOR;
-        }
-        else if (!game.canAffordGoldUpgrade(i))
+        else if (!game.canAffordGoldUpgrade(visibleIds[i]))
         {
             color = LOCKED_COLOR;
         }
@@ -128,14 +165,17 @@ void UpgradeScreen::update(unsigned long now)
 
 void UpgradeScreen::onSelectPress()
 {
-    selectedUpgrade = (selectedUpgrade + 1) % GOLD_UPGRADE_COUNT;
+    if (visibleCount > 0)
+    {
+        selectedSlot = (selectedSlot + 1) % visibleCount;
+    }
     lastRefresh = 0;
 }
 
 void UpgradeScreen::onConfirmPress()
 {
-    // buyGoldUpgrade only spends gold when the upgrade is not owned and affordable
-    if (game.buyGoldUpgrade(selectedUpgrade))
+    // buyGoldUpgrade only spends gold when the upgrade is unlocked, unowned and affordable
+    if (visibleCount > 0 && game.buyGoldUpgrade(visibleIds[selectedSlot]))
     {
         sound.playBuy();
     }

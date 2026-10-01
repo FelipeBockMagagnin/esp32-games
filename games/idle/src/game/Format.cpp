@@ -26,10 +26,10 @@ String formatAmount(uint64_t value)
 }
 
 // Rate number without sign or unit: "0.1", "12", "12.3K"
-static String formatRateNumber(uint32_t perSecond)
+static String formatRateNumber(uint64_t perSecond)
 {
     char number[16];
-    unsigned whole = perSecond / GOLD_SCALE;
+    uint64_t whole = perSecond / GOLD_SCALE;
     unsigned frac = perSecond % GOLD_SCALE;
 
     if (frac == 0 || whole >= 10000)
@@ -37,7 +37,7 @@ static String formatRateNumber(uint32_t perSecond)
         return formatAmount(whole);
     }
 
-    snprintf(number, sizeof(number), "%u.%03u", whole, frac);
+    snprintf(number, sizeof(number), "%u.%03u", (unsigned)whole, frac);
     // Trim trailing zeros: "0.100" -> "0.1"
     char *end = number + strlen(number) - 1;
     while (*end == '0')
@@ -47,12 +47,12 @@ static String formatRateNumber(uint32_t perSecond)
     return String(number);
 }
 
-String formatRate(uint32_t perSecond)
+String formatRate(uint64_t perSecond)
 {
     return String("+") + formatRateNumber(perSecond) + " gold/s";
 }
 
-String formatPerSecond(uint32_t perSecond)
+String formatPerSecond(uint64_t perSecond)
 {
     return String("+") + formatRateNumber(perSecond) + "/s";
 }

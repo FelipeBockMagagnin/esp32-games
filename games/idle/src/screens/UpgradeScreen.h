@@ -13,6 +13,10 @@
 
 class UpgradeScreen : public Screen
 {
+public:
+    // The grid holds two rows of six; upgrades beyond that wait until a slot frees up
+    static const uint8_t MAX_VISIBLE_SLOTS = 12;
+
 private:
     Header header;
 
@@ -22,8 +26,8 @@ private:
     Text goldRate;
 
     // Upgrade slots
-    Box slotBoxes[GOLD_UPGRADE_COUNT];
-    Image slotIcons[GOLD_UPGRADE_COUNT];
+    Box slotBoxes[MAX_VISIBLE_SLOTS];
+    Image slotIcons[MAX_VISIBLE_SLOTS];
 
     // Selected upgrade details
     Box detailBox;
@@ -36,8 +40,14 @@ private:
     GameState &game;
     SoundManager &sound;
     unsigned long lastRefresh;
-    uint8_t selectedUpgrade;
 
+    // Only unlocked, unbought upgrades get a slot, so the grid stays small as the
+    // upgrade table grows. selectedSlot indexes this list, not GOLD_UPGRADES.
+    uint8_t visibleIds[MAX_VISIBLE_SLOTS];
+    uint8_t visibleCount;
+    uint8_t selectedSlot;
+
+    void rebuildVisible();
     void refreshDetails();
 
 public:

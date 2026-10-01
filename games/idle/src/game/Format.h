@@ -7,9 +7,9 @@
 String formatAmount(uint64_t value);
 
 // "+0.1 gold/s" from a rate in GOLD_SCALE units per second
-String formatRate(uint32_t perSecond);
+String formatRate(uint64_t perSecond);
 
 // "+0.1/s", short form for narrow spots
-String formatPerSecond(uint32_t perSecond);
+String formatPerSecond(uint64_t perSecond);
 
 #endif // GAME_FORMAT_H

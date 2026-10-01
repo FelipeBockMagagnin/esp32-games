@@ -3,15 +3,13 @@
 
 #include "Screen.h"
 #include "../ui/Header.h"
-#include "../ui/Box.h"
-#include "../ui/Image.h"
-#include "../assets/Assets.h"
-#include "../ui/CoinDisplay.h"
-#include "../ui/UpgradeRow.h"
-#include "../game/GameState.h"
-#include "../managers/SoundManager.h"
+#include "../ui/ListRow.h"
+#include "../ui/ListView.h"
 #include "../ui/Ellipse.h"
 #include "../ui/Text.h"
+#include "../assets/Assets.h"
+#include "../game/GameState.h"
+#include "../managers/SoundManager.h"
 
 class BuildingScreen : public Screen
 {
@@ -22,12 +20,16 @@ private:
     Text goldText;
     Text goldRate;
 
-    UpgradeRow buildingRows[BUILDING_COUNT];
+    ListRow rows[ListView::VISIBLE_ROWS];
+    ListView list;
+
+    // Which building each row currently shows, so the fields that never change for a
+    // building are not rebuilt on every refresh
+    uint8_t rowBuilding[ListView::VISIBLE_ROWS];
 
     GameState &game;
     SoundManager &sound;
     unsigned long lastRefresh;
-    uint8_t selectedBuilding;
 
 public:
     BuildingScreen(GameState &game, SoundManager &sound);
