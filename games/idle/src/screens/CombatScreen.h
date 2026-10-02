@@ -5,43 +5,68 @@
 #include "../ui/Text.h"
 #include "../ui/Header.h"
 #include "../ui/Image.h"
+#include "../ui/Box.h"
+#include "../ui/ButtonBadge.h"
 #include "../ui/ProgressBar.h"
 #include "../assets/Assets.h"
 #include "../game/CombatState.h"
 #include "../managers/SoundManager.h"
 
 // Shows the fight that CombatState is already running. Three actions sit between the
-// enemy block and the player block: Confirm strikes, Select guards, and Back smites once
-// an amulet is equipped (without one, Back goes back a screen as it does everywhere else).
-//
-// Laid out as two mirrored blocks, enemy above and player below, each with a health bar
-// and an attack countdown. Warm colors belong to the enemy, cool ones to the player, and
-// the bars all share one width so they read as a stack.
+// enemy block and the player block: Confirm strikes, Up smites (with amulet), and Down guards.
+// Laid out with the enemy sprite and its stat card side-by-side above, action buttons
+// clearly labeled with button badges in the middle, and the player status below.
 class CombatScreen : public Screen
 {
 private:
     Header header;
 
+    // Enemy block
     Text enemyName;
     Image enemySprite;
+    Box enemyStatsBox;
+    Box enemyStatsBand; // Filled title strip across the top of the card
+    Text enemyStatsHeader;
+    Image enemyAtkIcon;
+    Text enemyAtkText;
+    Image enemyDefIcon;
+    Text enemyDefText;
+    Box enemyDropsDivider;
+    Text enemyDropsLabel;
+    // Drop pool as a 2-column grid of item icon + chance, indexed by drop slot and hidden
+    // when unused. The chance is green for an item not owned yet and gold for one that
+    // would only level up, matching the colors of the drop notification.
+    static const uint8_t MAX_DROPS = 6;
+    Image dropIcon[MAX_DROPS];
+    Text dropPct[MAX_DROPS];
+
     ProgressBar enemyHpBar;
     ProgressBar enemyAttackBar; // Drains towards the enemy's next hit
 
-    // Its own strip: carries drop notifications while they are fresh, otherwise
-    // whatever the fight is waiting on
+    // Dedicated status/drop notification line
     Text messageText;
 
-    Text strikeLabel;
-    Text strikeState;
-    Text guardLabel;
-    Text guardState;
+    // Action panel: one row per button, laid out top to bottom like the physical
+    // Up / Confirm / Down. Each row is the button's drawing, the action name, what it
+    // does right now (multiplier and effective damage, or the guard's effect), and
+    // whether it is ready.
+    Box actionBox;
+    ButtonBadge smiteBadge;
     Text smiteLabel;
+    Text smiteDetail;
     Text smiteState;
+    ButtonBadge strikeBadge;
+    Text strikeLabel;
+    Text strikeDetail;
+    Text strikeState;
+    ButtonBadge guardBadge;
+    Text guardLabel;
+    Text guardDetail;
+    Text guardState;
 
+    // Player block
     ProgressBar playerAttackBar; // Hidden entirely when it cannot damage the enemy
     ProgressBar playerHpBar;
-    // Both sides' raw numbers on one line: the player's sheet plus the enemy defense,
-    // which is the only enemy stat the attack bars do not already express as damage
     Text statsLine;
 
     CombatState &combat;
@@ -53,6 +78,8 @@ private:
     unsigned long messageUntil; // A drop notification holds the message line until this time
 
     void showFightElements(bool visible);
+    void hideDrops();
+    void refreshDrops(const EnemyDef &enemy);
     void showDropMessage(unsigned long now);
     void refreshActionStates(unsigned long now, bool fighting);
     void refreshTimerBars(unsigned long now, bool fighting);

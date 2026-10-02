@@ -52,6 +52,7 @@ public:
     uint32_t getEnemyHp() const { return enemyHp; }
     uint32_t getPlayerHp() const { return playerHp; }
     const Stats &getPlayerStats() const { return cachedStats; }
+    const Inventory &getInventory() const { return inventory; }
 
     // Zero means the attack cannot beat the enemy's defense, so the zone is out of reach
     uint32_t getAutoAttackDamage() const;
@@ -74,6 +75,7 @@ public:
     unsigned long getGuardCooldownRemaining(unsigned long now) const;
     unsigned long getReviveRemaining(unsigned long now) const;
     bool isGuarding(unsigned long now) const;
+    unsigned long getGuardRemaining(unsigned long now) const; // 0 when not guarding
 
     // Monotonic counters the screen diffs against its own last-seen values, so it can
     // react to a kill or a drop without the engine knowing about the UI

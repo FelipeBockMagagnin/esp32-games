@@ -13,7 +13,7 @@ static int8_t findItem(const char *name)
     return NO_ITEM;
 }
 
-static const char *const STARTING_KIT[] = {"Rusty Sword", "Cloth Vest", "Worn Boots"};
+static const char *const STARTING_KIT[] = {"Rusty Sword", "Cloth Vest"};
 
 Inventory::Inventory()
     : revision(0)

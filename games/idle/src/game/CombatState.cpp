@@ -409,6 +409,11 @@ bool CombatState::isGuarding(unsigned long now) const
     return guardEndsAt != 0 && !reached(now, guardEndsAt);
 }
 
+unsigned long CombatState::getGuardRemaining(unsigned long now) const
+{
+    return isGuarding(now) ? guardEndsAt - now : 0;
+}
+
 void CombatState::save(Snapshot &out) const
 {
     out.currentZone = currentZone;
