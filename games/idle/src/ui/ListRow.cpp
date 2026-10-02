@@ -1,7 +1,6 @@
 #include "ListRow.h"
 #include "../game/GameConfig.h"
 
-static const uint16_t FRAME_COLOR = 0xFFFF;
 static const uint16_t SELECTED_COLOR = 0xFFE0; // Yellow
 static const uint16_t OWNED_COLOR = 0x07E0;    // Green
 static const uint16_t DIMMED_COLOR = 0x7BEF;   // Gray
@@ -60,9 +59,10 @@ void ListRow::draw(TFT_eSPI &tft)
         return;
     }
 
-    tft.fillRect(x, y, w, h, eraseColor);
+    bool highlighted = state == SELECTED && hasSelectedFill;
+    tft.fillRect(x, y, w, h, highlighted ? selectedFill : eraseColor);
 
-    uint16_t frame = FRAME_COLOR;
+    uint16_t frame = frameColor;
     uint16_t titleColor = 0xFFFF;
     uint16_t subColor = SUBTITLE_COLOR;
 
@@ -92,7 +92,8 @@ void ListRow::draw(TFT_eSPI &tft)
         int16_t iconY = y + (h - iconH) / 2;
         if (iconPixels != nullptr)
         {
-            tft.pushImage(iconX, iconY, iconW, iconH, iconPixels);
+            // Black is transparent, so an icon on a highlighted row keeps the highlight around it
+            tft.pushImage(iconX, iconY, iconW, iconH, iconPixels, (uint16_t)0x0000);
         }
         else if (iconBitmap != nullptr)
         {

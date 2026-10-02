@@ -2,6 +2,7 @@
 #define GAME_CONFIG_H
 
 #include <Arduino.h>
+#include "../assets/Assets.h"
 
 // Gold is stored in thousandths so fractional production (e.g. 0.1/s) stays exact
 static const uint32_t GOLD_SCALE = 1000;
@@ -43,6 +44,7 @@ struct BuildingsDef
     uint32_t productionPerLevel;    // Per second, in GOLD_SCALE units (100 = 0.1/s)
     uint64_t baseCost;              // Whole gold units; 64-bit because the late tiers pass 4.3e9
     uint16_t costGrowthPercent;     // Cost multiplier per level bought (115 = +15%)
+    const uint16_t *icon;           // 16x16 RGB565, black transparent
 };
 
 // Names for the BUILDINGS table below, for anything that needs to point at one row.
@@ -57,17 +59,17 @@ enum BuildingId : uint8_t
 // Costs and rates follow Cookie Clicker's curve: each tier costs roughly 10x the
 // previous one and produces roughly 5.5x as much
 static constexpr BuildingsDef BUILDINGS[] = {
-    //  name            gold/s        cost            growth%
-    {"Pickaxe",         100,          10,             115},
-    {"Minecart",        1000,         100,            115},
-    {"Drill",           8000,         1100,           115},
-    {"Excavator",       47000,        12000,          115},
-    {"Ore Mill",        260000,       130000,         115},
-    {"Smelter",         1400000,      1400000,        115},
-    {"Deep Shaft",      7800000,      20000000,       115},
-    {"Rune Forge",      44000000,     330000000,      115},
-    {"Ore Barge",       260000000,    5100000000ULL,  115},
-    {"Transmuter",      1600000000,   75000000000ULL, 115},
+    //  name            gold/s        cost            growth%  icon
+    {"Pickaxe",         100,          10,             115, image_building_pickaxe_pixels},
+    {"Minecart",        1000,         100,            115, image_building_minecart_pixels},
+    {"Drill",           8000,         1100,           115, image_building_drill_pixels},
+    {"Excavator",       47000,        12000,          115, image_building_excavator_pixels},
+    {"Ore Mill",        260000,       130000,         115, image_building_ore_mill_pixels},
+    {"Smelter",         1400000,      1400000,        115, image_building_smelter_pixels},
+    {"Deep Shaft",      7800000,      20000000,       115, image_building_deep_shaft_pixels},
+    {"Rune Forge",      44000000,     330000000,      115, image_building_rune_forge_pixels},
+    {"Ore Barge",       260000000,    5100000000ULL,  115, image_building_ore_barge_pixels},
+    {"Transmuter",      1600000000,   75000000000ULL, 115, image_building_transmuter_pixels},
 };
 // Derived from the table, so adding a row is all it takes to add a building
 static constexpr uint8_t BUILDING_COUNT = sizeof(BUILDINGS) / sizeof(BUILDINGS[0]);

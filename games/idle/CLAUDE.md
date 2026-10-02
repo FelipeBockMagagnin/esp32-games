@@ -75,7 +75,9 @@ Only the visible screen's `update()` runs, so a screen that reacts to background
 Four screens navigate a vertical list with two buttons, via two pieces:
 
 - **`src/ui/ListRow.h`** — one row: optional icon (1-bit or RGB565), title (size 2), subtitle (size 1), and two right-aligned value fields, plus `NORMAL`/`SELECTED`/`DIMMED`/`OWNED` states. Like `CoinDisplay`, it composes everything with direct `fillRect`/`drawRect`/`drawBitmap`/`drawString` calls inside `draw()` rather than child `UI` objects.
-- **`src/ui/ListView.h`** — selection and scroll arithmetic only, no drawing. `VISIBLE_ROWS = 9`.
+- **`src/ui/ListView.h`** — selection and scroll arithmetic only, no drawing. `VISIBLE_ROWS = 9` is the default and the maximum; a screen that needs room for a panel passes a smaller count to the constructor (`BuildingScreen` uses 8 for its detail panel).
+
+`ListRow` frames are white and pixel icons treat black as transparent. `setFrameColor()` and `setSelectedFill()` are opt-in styling (a dark frame, plus a highlight bar on the selected row) that `BuildingScreen` uses and the other list screens do not yet.
 
 The screen keeps a **fixed** `ListRow rows[ListView::VISIBLE_ROWS]` registered once in the constructor and fills row `i` from item `getFirstVisible() + i`, hiding the leftovers. Elements are never added or removed as the list scrolls — the dirty-flag system cannot cope with that.
 
@@ -122,6 +124,8 @@ Five headers hold `static constexpr` tables with `*_COUNT` derived via `sizeof`,
 Note the per-field comments: building and zone names cap at ~12 chars and item names at ~11 to fit a list row title at text size 2; upgrade names cap at 14 for the detail box, and descriptions wrap to two lines of 34.
 
 `GameConfig.h` and `ItemConfig.h` also carry `BuildingId` and `ItemId` enums so other tables can point at a row by name. **Both enums must stay in the same order as the table they name.**
+
+Each `BUILDINGS` row carries its own 16x16 `icon`, hand-drawn rather than taken from the icon library, which has no mining art. `BuildingScreen` hides a building as `???` until the one before it is owned. It still shows the price and can still be bought.
 
 `UpgradeScreen` can only show 12 upgrades at once (a 6x2 grid), so it builds a `visibleIds[]` of unlocked-and-unbought upgrades each refresh and selects into **that** list, not into `GOLD_UPGRADES` directly.
 

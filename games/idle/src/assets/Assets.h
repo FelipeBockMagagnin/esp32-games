@@ -25,4 +25,16 @@ extern const unsigned char image_cursor_black_white_bits[];
 extern const unsigned char image_device_key_retro_bits[];
 extern const unsigned char image_door_closed_bits[];
 
+// 16x16 building icons, one per BUILDINGS row
+extern const uint16_t image_building_pickaxe_pixels[];
+extern const uint16_t image_building_minecart_pixels[];
+extern const uint16_t image_building_drill_pixels[];
+extern const uint16_t image_building_excavator_pixels[];
+extern const uint16_t image_building_ore_mill_pixels[];
+extern const uint16_t image_building_smelter_pixels[];
+extern const uint16_t image_building_deep_shaft_pixels[];
+extern const uint16_t image_building_rune_forge_pixels[];
+extern const uint16_t image_building_ore_barge_pixels[];
+extern const uint16_t image_building_transmuter_pixels[];
+
 #endif // ASSETS_H

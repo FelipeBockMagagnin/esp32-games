@@ -8,9 +8,13 @@
 class ListView
 {
 public:
+    // Default and maximum rows on screen; size row arrays with this. A screen that
+    // shows fewer (to make room for a panel) passes its count to the constructor.
     static const uint8_t VISIBLE_ROWS = 9;
 
-    ListView() : count(0), selectedIndex(0), scrollOffset(0) {}
+    ListView(uint8_t visibleRows = VISIBLE_ROWS)
+        : count(0), selectedIndex(0), scrollOffset(0),
+          visibleRows(visibleRows < VISIBLE_ROWS ? visibleRows : VISIBLE_ROWS) {}
 
     void setCount(uint16_t newCount)
     {
@@ -66,13 +70,13 @@ public:
     uint8_t getVisibleCount() const
     {
         uint16_t remaining = count - scrollOffset;
-        return remaining < VISIBLE_ROWS ? (uint8_t)remaining : VISIBLE_ROWS;
+        return remaining < visibleRows ? (uint8_t)remaining : visibleRows;
     }
 
 private:
     void clampScroll()
     {
-        if (count <= VISIBLE_ROWS)
+        if (count <= visibleRows)
         {
             scrollOffset = 0;
             return;
@@ -82,20 +86,21 @@ private:
         {
             scrollOffset = selectedIndex;
         }
-        else if (selectedIndex >= scrollOffset + VISIBLE_ROWS)
+        else if (selectedIndex >= scrollOffset + visibleRows)
         {
-            scrollOffset = selectedIndex - VISIBLE_ROWS + 1;
+            scrollOffset = selectedIndex - visibleRows + 1;
         }
 
-        if (scrollOffset + VISIBLE_ROWS > count)
+        if (scrollOffset + visibleRows > count)
         {
-            scrollOffset = count - VISIBLE_ROWS;
+            scrollOffset = count - visibleRows;
         }
     }
 
     uint16_t count;
     uint16_t selectedIndex;
     uint16_t scrollOffset;
+    uint8_t visibleRows;
 };
 
 #endif // UI_LIST_VIEW_H

@@ -40,6 +40,9 @@ public:
     // Gold
     uint64_t getGold() const; // Whole units
     uint64_t getProductionPerSecond() const; // GOLD_SCALE units
+    // One building's share of that, all its levels and one level, with the same bonuses applied
+    uint64_t getBuildingProduction(uint8_t id) const;      // GOLD_SCALE units
+    uint64_t getBuildingProductionPerLevel(uint8_t id) const; // GOLD_SCALE units
     uint32_t getClickAmount() const; // Whole units gained by the next mine(), current tier + click upgrades
 
     // Buildings

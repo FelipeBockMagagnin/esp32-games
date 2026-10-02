@@ -119,6 +119,20 @@ uint64_t GameState::getProductionPerSecond() const
     return total * (100 + getProductionBonusPercent()) / 100;
 }
 
+uint64_t GameState::getBuildingProduction(uint8_t id) const
+{
+    return getBuildingProductionPerLevel(id) * getBuildingLevel(id);
+}
+
+uint64_t GameState::getBuildingProductionPerLevel(uint8_t id) const
+{
+    if (id >= BUILDING_COUNT)
+    {
+        return 0;
+    }
+    return (uint64_t)BUILDINGS[id].productionPerLevel * (100 + getProductionBonusPercent()) / 100;
+}
+
 uint32_t GameState::getClickAmount() const
 {
     uint64_t amount = ORE_TIERS[getOreTier()].clickAmount;

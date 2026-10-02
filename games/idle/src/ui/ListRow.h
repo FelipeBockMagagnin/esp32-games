@@ -19,6 +19,7 @@ public:
 
     static const int16_t DEFAULT_W = 230;
     static const int16_t DEFAULT_H = 26;
+    static const uint16_t DEFAULT_FRAME_COLOR = 0xFFFF;
 
     ListRow(int16_t x = 0, int16_t y = 0, int16_t w = DEFAULT_W, int16_t h = DEFAULT_H)
         : UI(x, y, w, h),
@@ -33,7 +34,10 @@ public:
           iconPixels(nullptr),
           iconW(0),
           iconH(0),
-          iconColor(0xFFFF)
+          iconColor(0xFFFF),
+          frameColor(DEFAULT_FRAME_COLOR),
+          selectedFill(0x0000),
+          hasSelectedFill(false)
     {
     }
 
@@ -70,6 +74,28 @@ public:
         }
     }
 
+    // Frame of a NORMAL row; the other states keep their own colors
+    void setFrameColor(uint16_t v)
+    {
+        if (frameColor != v)
+        {
+            frameColor = v;
+            markDirty();
+        }
+    }
+
+    // Fills a SELECTED row's background, so the selection reads as a highlight bar
+    // rather than only a frame. Text and icons are drawn over it.
+    void setSelectedFill(uint16_t v)
+    {
+        if (!hasSelectedFill || selectedFill != v)
+        {
+            selectedFill = v;
+            hasSelectedFill = true;
+            markDirty();
+        }
+    }
+
     void setIconBitmap(const unsigned char *bitmap, int16_t bw, int16_t bh, uint16_t color = 0xFFFF);
     void setIconPixels(const uint16_t *pixels, int16_t pw, int16_t ph);
     void clearIcon();
@@ -100,6 +126,10 @@ private:
     int16_t iconW;
     int16_t iconH;
     uint16_t iconColor;
+
+    uint16_t frameColor;
+    uint16_t selectedFill;
+    bool hasSelectedFill;
 };
 
 #endif // UI_LIST_ROW_H
