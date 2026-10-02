@@ -37,7 +37,9 @@ public:
           iconColor(0xFFFF),
           frameColor(DEFAULT_FRAME_COLOR),
           selectedFill(0x0000),
-          hasSelectedFill(false)
+          hasSelectedFill(false),
+          titleColorOverride(0xFFFF),
+          hasTitleColor(false)
     {
     }
 
@@ -70,6 +72,17 @@ public:
         if (showCoin != v)
         {
             showCoin = v;
+            markDirty();
+        }
+    }
+
+    // Title color for every state but DIMMED, which stays gray; overrides OWNED's green title
+    void setTitleColor(uint16_t v)
+    {
+        if (!hasTitleColor || titleColorOverride != v)
+        {
+            titleColorOverride = v;
+            hasTitleColor = true;
             markDirty();
         }
     }
@@ -135,6 +148,8 @@ private:
     uint16_t frameColor;
     uint16_t selectedFill;
     bool hasSelectedFill;
+    uint16_t titleColorOverride;
+    bool hasTitleColor;
 };
 
 #endif // UI_LIST_ROW_H

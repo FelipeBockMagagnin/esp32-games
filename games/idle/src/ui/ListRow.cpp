@@ -113,6 +113,11 @@ void ListRow::draw(TFT_eSPI &tft)
         break;
     }
 
+    if (hasTitleColor && state != DIMMED)
+    {
+        titleColor = titleColorOverride;
+    }
+
     tft.drawRect(x, y, w, h, frame);
 
     if (iconW > 0 && iconH > 0)
