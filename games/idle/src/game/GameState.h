@@ -43,7 +43,7 @@ public:
     // One building's share of that, all its levels and one level, with the same bonuses applied
     uint64_t getBuildingProduction(uint8_t id) const;      // GOLD_SCALE units
     uint64_t getBuildingProductionPerLevel(uint8_t id) const; // GOLD_SCALE units
-    uint32_t getClickAmount() const; // Whole units gained by the next mine(), current tier + click upgrades
+    uint32_t getClickAmount() const; // Whole units gained by the next mine(): ore tier, click upgrades, share of production
 
     // Buildings
     uint16_t getBuildingLevel(uint8_t id) const;
@@ -58,6 +58,9 @@ public:
     // so gear and milestones both feed the economy
     uint32_t getProductionBonusPercent() const;
     uint32_t getClickBonusPercent() const;
+    // Share of production per second that every click adds on top (CLICK_PRODUCTION
+    // upgrades), which keeps clicking worth it once buildings dwarf the ore's own value
+    uint32_t getClickProductionPercent() const;
 
     // Combat bonuses granted by upgrades; the rest of a player's stats come from equipment
     uint32_t getAttackBonusPercent() const;

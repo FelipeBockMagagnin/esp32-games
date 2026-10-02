@@ -137,6 +137,7 @@ uint32_t GameState::getClickAmount() const
 {
     uint64_t amount = ORE_TIERS[getOreTier()].clickAmount;
     amount = amount * (100 + getClickBonusPercent()) / 100;
+    amount += getProductionPerSecond() * getClickProductionPercent() / 100 / GOLD_SCALE;
     return amount > UINT32_MAX ? UINT32_MAX : (uint32_t)amount;
 }
 
@@ -218,6 +219,11 @@ uint32_t GameState::getProductionBonusPercent() const
 uint32_t GameState::getClickBonusPercent() const
 {
     return getBonusPercent(UpgradeTarget::CLICK) + inventory.getClickBonusPercent();
+}
+
+uint32_t GameState::getClickProductionPercent() const
+{
+    return getBonusPercent(UpgradeTarget::CLICK_PRODUCTION);
 }
 
 uint32_t GameState::getAttackBonusPercent() const

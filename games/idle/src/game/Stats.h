@@ -13,7 +13,7 @@ struct Stats
 // What the player is worth with nothing equipped, so the first zone is fightable bare
 static const uint32_t BASE_ATTACK = 5;
 static const uint32_t BASE_DEFENSE = 1;
-static const uint32_t BASE_MAX_HP = 50;
+static const uint32_t BASE_MAX_HP = 80; // Enough to survive the starting fights with a timed guard
 
 class GameState;
 class Inventory;

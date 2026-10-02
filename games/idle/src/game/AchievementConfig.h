@@ -74,9 +74,9 @@ static constexpr AchievementDef ACHIEVEMENTS[] = {
     {"Well Equipped", "Find 18 different items",          AchKind::ITEMS_OWNED,      NO_ACH_TARGET,         18,           3},
     {"Hoarder",      "Find every item",                   AchKind::ITEMS_OWNED,      NO_ACH_TARGET,         ITEM_COUNT,   8},
 
-    {"Refined",      "Raise an item to level 10",         AchKind::ITEM_LEVEL,       NO_ACH_TARGET,         10,           2},
-    {"Masterwork",   "Raise an item to level 25",         AchKind::ITEM_LEVEL,       NO_ACH_TARGET,         25,           4},
-    {"Legendary",    "Raise an item to level 50",         AchKind::ITEM_LEVEL,       NO_ACH_TARGET,         50,           6},
+    {"Refined",      "Raise an item to level 4",          AchKind::ITEM_LEVEL,       NO_ACH_TARGET,         4,           2},
+    {"Masterwork",   "Raise an item to level 7",          AchKind::ITEM_LEVEL,       NO_ACH_TARGET,         7,           4},
+    {"Legendary",    "Raise an item to max level",        AchKind::ITEM_LEVEL,       NO_ACH_TARGET,         ITEM_MAX_LEVEL,           6},
 
     {"Decorated",    "Unlock 10 achievements",            AchKind::ACHIEVEMENTS,     NO_ACH_TARGET,         10,           3},
     {"Hall of Fame", "Unlock 25 achievements",            AchKind::ACHIEVEMENTS,     NO_ACH_TARGET,         25,           6},

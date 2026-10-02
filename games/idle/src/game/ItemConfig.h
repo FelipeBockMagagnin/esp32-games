@@ -33,9 +33,10 @@ static const char *const ITEM_TIER_NAMES[ITEM_TIER_COUNT] = {"Common", "Uncommon
 static const uint16_t ITEM_TIER_COLORS[ITEM_TIER_COUNT] = {0xD69A, 0x7F0F, 0x655F, 0xD3DF};
 
 // A duplicate drop levels an item up instead of stacking, adding this much of its
-// base stats per level above 1
+// base stats per level above 1. The cap keeps a maxed item (+135%) below the next
+// tier's base (3x), so farming duplicates never replaces moving on to a new zone.
 static const uint16_t ITEM_LEVEL_GROWTH_PERCENT = 15;
-static const uint8_t ITEM_MAX_LEVEL = 99;
+static const uint8_t ITEM_MAX_LEVEL = 10;
 
 struct ItemDef
 {

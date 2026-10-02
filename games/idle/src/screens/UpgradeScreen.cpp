@@ -32,6 +32,7 @@ static const CategoryStyle CATEGORY_STYLES[] = {
     {"DEFENSE", 0x6E7F, image_armor_01b_pixels},                  // DEFENSE
     {"HEALTH", 0x2D45, image_upgrade_heart_pixels},               // MAX_HP
     {"NEW ZONE", 0xB3DF, image_upgrade_map_pixels},               // UNLOCK_ZONE
+    {"MINING", 0xFC60, image_upgrade_click_pixels},               // CLICK_PRODUCTION
 };
 
 static const CategoryStyle &styleFor(UpgradeTarget target)
@@ -192,11 +193,15 @@ void UpgradeScreen::formatEffect(const GoldUpgradeDef &def, char *buf, size_t si
         return;
     }
     case UpgradeTarget::CLICK:
+    case UpgradeTarget::CLICK_PRODUCTION:
     {
-        uint64_t base = ORE_TIERS[game.getOreTier()].clickAmount;
-        uint64_t after = base * (100 + game.getClickBonusPercent() + def.bonusPercent) / 100;
-        snprintf(buf, size, "Per click +%s > +%s", formatAmount(game.getClickAmount()).c_str(),
-                 formatAmount(after).c_str());
+        // Both add to what a click already earns: the ore's base value scaled up, or a
+        // share of production per second
+        uint64_t added = def.target == UpgradeTarget::CLICK
+                             ? (uint64_t)ORE_TIERS[game.getOreTier()].clickAmount * def.bonusPercent / 100
+                             : game.getProductionPerSecond() * def.bonusPercent / 100 / GOLD_SCALE;
+        uint64_t now = game.getClickAmount();
+        snprintf(buf, size, "Per click +%s > +%s", formatAmount(now).c_str(), formatAmount(now + added).c_str());
         return;
     }
     case UpgradeTarget::ATTACK:

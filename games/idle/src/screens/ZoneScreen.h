@@ -52,7 +52,6 @@ private:
     Text enemyName[ENEMY_LINES];
     Text enemyStats[ENEMY_LINES];
     Text enemyDeal[ENEMY_LINES];
-    Text enemyHurt[ENEMY_LINES];
     Text dropsCaption;
     Text dropsFound;
     IconStrip dropIcons;

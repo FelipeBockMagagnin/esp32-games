@@ -58,28 +58,28 @@ struct ZoneDef
 #define RAT_SPRITE image_rato_pixels, 128, 128
 
 static constexpr DropDef SEWER_RAT_DROPS[] = {
-    {ITEM_RUSTY_SWORD, 400},
-    {ITEM_CLOTH_HOOD, 500},
-    {ITEM_RAG_GLOVES, 500},
+    {ITEM_RUSTY_SWORD, 550},
+    {ITEM_CLOTH_HOOD, 550},
+    {ITEM_RAG_GLOVES, 550},
 };
 static constexpr DropDef SEWER_SLIME_DROPS[] = {
-    {ITEM_CLOTH_VEST, 500},
-    {ITEM_CLOTH_PANTS, 500},
-    {ITEM_WORN_BOOTS, 500},
-    {ITEM_WOOD_SHIELD, 300},
-    {ITEM_TIN_RING, 120},
-    {ITEM_BONE_CHARM, 120},
+    {ITEM_CLOTH_VEST, 550},
+    {ITEM_CLOTH_PANTS, 550},
+    {ITEM_WORN_BOOTS, 550},
+    {ITEM_WOOD_SHIELD, 400},
+    {ITEM_TIN_RING, 200},
+    {ITEM_BONE_CHARM, 200},
 };
 
 static constexpr DropDef CAVE_BAT_DROPS[] = {
-    {ITEM_IRON_HELM, 450},
-    {ITEM_IRON_GLOVES, 450},
-    {ITEM_IRON_SWORD, 350},
+    {ITEM_IRON_HELM, 400},
+    {ITEM_IRON_GLOVES, 400},
+    {ITEM_IRON_SWORD, 400},
 };
 static constexpr DropDef ROCK_CRAWLER_DROPS[] = {
-    {ITEM_IRON_MAIL, 450},
-    {ITEM_IRON_LEGS, 450},
-    {ITEM_IRON_BOOTS, 450},
+    {ITEM_IRON_MAIL, 400},
+    {ITEM_IRON_LEGS, 400},
+    {ITEM_IRON_BOOTS, 400},
     {ITEM_IRON_SHIELD, 300},
     {ITEM_GOLD_RING, 100},
     {ITEM_JADE_AMULET, 100},
@@ -88,73 +88,80 @@ static constexpr DropDef ROCK_CRAWLER_DROPS[] = {
 static constexpr DropDef BONE_DIGGER_DROPS[] = {
     {ITEM_STEEL_HELM, 400},
     {ITEM_STEEL_GRIPS, 400},
-    {ITEM_STEEL_SWORD, 300},
+    {ITEM_STEEL_SWORD, 400},
 };
 static constexpr DropDef CRYPT_GHOUL_DROPS[] = {
     {ITEM_STEEL_PLATE, 400},
     {ITEM_STEEL_LEGS, 400},
     {ITEM_STEEL_BOOTS, 400},
-    {ITEM_STEEL_GUARD, 250},
-    {ITEM_RUBY_RING, 80},
-    {ITEM_GOLD_AMULET, 80},
+    {ITEM_STEEL_GUARD, 300},
+    {ITEM_RUBY_RING, 100},
+    {ITEM_GOLD_AMULET, 100},
 };
 
 static constexpr DropDef DEEP_LURKER_DROPS[] = {
-    {ITEM_RUNE_HELM, 300},
-    {ITEM_RUNE_GRIPS, 300},
-    {ITEM_RUNE_BLADE, 200},
+    {ITEM_RUNE_HELM, 400},
+    {ITEM_RUNE_GRIPS, 400},
+    {ITEM_RUNE_BLADE, 400},
 };
 static constexpr DropDef ABYSS_WORM_DROPS[] = {
-    {ITEM_RUNE_PLATE, 300},
-    {ITEM_RUNE_LEGS, 300},
-    {ITEM_RUNE_BOOTS, 300},
-    {ITEM_RUNE_AEGIS, 200},
+    {ITEM_RUNE_PLATE, 400},
+    {ITEM_RUNE_LEGS, 400},
+    {ITEM_RUNE_BOOTS, 400},
+    {ITEM_RUNE_AEGIS, 300},
 };
 
 static constexpr DropDef MAGMA_HOUND_DROPS[] = {
     {ITEM_RUNE_BLADE, 400},
-    {ITEM_RUNE_AEGIS, 400},
-    {ITEM_MINER_RING, 60},
+    {ITEM_RUNE_AEGIS, 300},
+    {ITEM_MINER_RING, 100},
 };
 static constexpr DropDef CORE_GOLEM_DROPS[] = {
-    {ITEM_RUNE_PLATE, 500},
-    {ITEM_RUNE_HELM, 500},
-    {ITEM_MINER_RING, 120},
-    {ITEM_CORE_SIGIL, 120},
+    {ITEM_RUNE_PLATE, 400},
+    {ITEM_RUNE_HELM, 400},
+    {ITEM_MINER_RING, 100},
+    {ITEM_CORE_SIGIL, 100},
 };
 
 #define DROPS(table) table, sizeof(table) / sizeof(table[0])
 
-// Balance rule: each zone's defense sits ABOVE the attack of the gear the player arrives
-// with, so the auto-attack alone does nothing, but BELOW twice it, so the manual strike
-// still breaks through. Equipping and levelling items is what turns a zone idle-farmable.
+// Balance rule: each zone is tuned against the stats a player typically arrives with
+// (the previous zone's full set near the level cap, plus the combat upgrades bought by
+// then), measured by simulation rather than assumed:
 //
-// Player attack with a full set at item level 1: 10 starting (sword only), then 13 / 29 /
-// 77 / 221 for gear tiers 1-4. Player defense: 7 starting, then 20 / 58 / 172 / 514.
+//   arrival (atk / def / hp):  Sewers 10/5/90 (starting kit)   Caves 21/34/119
+//                              Crypt 70/162/523   Depths 400/575/1408   Core 1060/2790/3960
+//
+// Defense sits at 1.2-1.4x that attack, so the auto-attack is blocked on arrival while the
+// strike lands for 60-80% of it. Attack costs roughly a tenth of max HP per hit, so a fresh
+// arrival dies every four to six kills unless the guard is timed. Health makes an arrival
+// fight last 10-18 s. The zone's own drops are what make it idle-farmable.
+//
+// The Sewers are set by hand: fought with the starting kit, they cost about 40% of health
+// per fight and a death every three to four kills until the first drops come in.
+//
+// Gold per kill is about 5x the expected gold/s when the zone opens, so fighting actively
+// adds roughly 40% on top of the buildings at that point and fades as production grows.
 static constexpr EnemyDef SEWER_ENEMIES[] = {
-    //  name             hp      atk   def   interval  gold    sprite        drops
-    {"Sewer Rat",        30,     10,   11,   2500,     10,     RAT_SPRITE,   DROPS(SEWER_RAT_DROPS)},
-    {"Sewer Slime",      45,     12,   12,   2600,     20,     RAT_SPRITE,   DROPS(SEWER_SLIME_DROPS)},
+    //  name             hp      atk   def   interval  gold      sprite        drops
+    {"Sewer Rat",        30,     10,   12,   2400,     5,        RAT_SPRITE,   DROPS(SEWER_RAT_DROPS)},
+    {"Sewer Slime",      36,     12,   13,   2800,     8,        RAT_SPRITE,   DROPS(SEWER_SLIME_DROPS)},
 };
-
 static constexpr EnemyDef CAVE_ENEMIES[] = {
-    {"Cave Bat",         250,    22,   18,   2200,     60,     RAT_SPRITE,   DROPS(CAVE_BAT_DROPS)},
-    {"Rock Crawler",     400,    28,   22,   2600,     120,    RAT_SPRITE,   DROPS(ROCK_CRAWLER_DROPS)},
+    {"Cave Bat",         71,     49,   25,   2400,     800,      RAT_SPRITE,   DROPS(CAVE_BAT_DROPS)},
+    {"Rock Crawler",     80,     57,   29,   2600,     1300,     RAT_SPRITE,   DROPS(ROCK_CRAWLER_DROPS)},
 };
-
 static constexpr EnemyDef CRYPT_ENEMIES[] = {
-    {"Bone Digger",      1500,   70,   35,   2200,     600,    RAT_SPRITE,   DROPS(BONE_DIGGER_DROPS)},
-    {"Crypt Ghoul",      2200,   90,   45,   2400,     1000,   RAT_SPRITE,   DROPS(CRYPT_GHOUL_DROPS)},
+    {"Bone Digger",      240,    210,  84,   2400,     30000,    RAT_SPRITE,   DROPS(BONE_DIGGER_DROPS)},
+    {"Crypt Ghoul",      270,    240,  98,   2600,     45000,    RAT_SPRITE,   DROPS(CRYPT_GHOUL_DROPS)},
 };
-
 static constexpr EnemyDef DEPTH_ENEMIES[] = {
-    {"Deep Lurker",      8000,   200,  90,   2000,     4500,   RAT_SPRITE,   DROPS(DEEP_LURKER_DROPS)},
-    {"Abyss Worm",       12000,  260,  115,  2200,     9000,   RAT_SPRITE,   DROPS(ABYSS_WORM_DROPS)},
+    {"Deep Lurker",      1400,   690,  480,  2400,     250000,   RAT_SPRITE,   DROPS(DEEP_LURKER_DROPS)},
+    {"Abyss Worm",       1500,   740,  560,  2600,     400000,   RAT_SPRITE,   DROPS(ABYSS_WORM_DROPS)},
 };
-
 static constexpr EnemyDef CORE_ENEMIES[] = {
-    {"Magma Hound",      45000,  600,  250,  1900,     35000,  RAT_SPRITE,   DROPS(MAGMA_HOUND_DROPS)},
-    {"Core Golem",       70000,  800,  320,  2100,     65000,  RAT_SPRITE,   DROPS(CORE_GOLEM_DROPS)},
+    {"Magma Hound",      3600,   3100, 1300, 2400,     4000000,  RAT_SPRITE,   DROPS(MAGMA_HOUND_DROPS)},
+    {"Core Golem",       4000,   3200, 1500, 2600,     6000000,  RAT_SPRITE,   DROPS(CORE_GOLEM_DROPS)},
 };
 
 #define ZONE(table) table, sizeof(table) / sizeof(table[0])
@@ -163,10 +170,10 @@ static constexpr EnemyDef CORE_ENEMIES[] = {
 static constexpr ZoneDef ZONES[] = {
     //  name           enemies                   needsUpgrade  prevZoneKills  icon
     {"Sewers",      ZONE(SEWER_ENEMIES),       false,        0,             image_zone_sewers_pixels},
-    {"Caves",       ZONE(CAVE_ENEMIES),        true,         10,            image_zone_caves_pixels},
-    {"Crypt",       ZONE(CRYPT_ENEMIES),       true,         25,            image_zone_crypt_pixels},
-    {"Depths",      ZONE(DEPTH_ENEMIES),       true,         50,            image_zone_depths_pixels},
-    {"Molten Core", ZONE(CORE_ENEMIES),        true,         100,           image_zone_core_pixels},
+    {"Caves",       ZONE(CAVE_ENEMIES),        true,         25,            image_zone_caves_pixels},
+    {"Crypt",       ZONE(CRYPT_ENEMIES),       true,         50,            image_zone_crypt_pixels},
+    {"Depths",      ZONE(DEPTH_ENEMIES),       true,         100,           image_zone_depths_pixels},
+    {"Molten Core", ZONE(CORE_ENEMIES),        true,         150,           image_zone_core_pixels},
 };
 static constexpr uint8_t ZONE_COUNT = sizeof(ZONES) / sizeof(ZONES[0]);
 

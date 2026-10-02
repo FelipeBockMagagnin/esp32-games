@@ -169,11 +169,9 @@ ZoneScreen::ZoneScreen(GameState &game, Inventory &inventory, CombatState &comba
         enemyName[i] = Text(TEXT_X, lineY, "", ENEMY_NAME_COLOR, 1);
         enemyStats[i] = Text(TEXT_RIGHT, lineY, "", STATS_COLOR, 1, TR_DATUM);
         enemyDeal[i] = Text(TEXT_X, lineY + ENEMY_LINE2_DY, "", 0xFFFF, 1);
-        enemyHurt[i] = Text(TEXT_RIGHT, lineY + ENEMY_LINE2_DY, "", 0xFFFF, 1, TR_DATUM);
         addElement(&enemyName[i]);
         addElement(&enemyStats[i]);
         addElement(&enemyDeal[i]);
-        addElement(&enemyHurt[i]);
     }
     addElement(&dropsCaption);
     addElement(&dropsFound);
@@ -258,8 +256,8 @@ void ZoneScreen::refreshPanel(const Stats &stats)
     statusText.setText(isActive ? "Fighting here" : unlocked ? "" : "Locked");
     statusText.setColor(isActive ? ACTIVE_COLOR : HINT_COLOR);
 
-    // Each enemy: its stats, then what each of the player's actions would deal to it
-    // and what it would deal back. Shown for locked zones too, as something to gear for.
+    // Each enemy: its stats, then what each of the player's actions would deal to it.
+    // Shown for locked zones too, as something to gear for.
     uint32_t minGold = 0;
     uint32_t maxGold = 0;
     for (uint8_t i = 0; i < ENEMY_LINES; i++)
@@ -268,7 +266,6 @@ void ZoneScreen::refreshPanel(const Stats &stats)
         enemyName[i].setVisible(shown);
         enemyStats[i].setVisible(shown);
         enemyDeal[i].setVisible(shown);
-        enemyHurt[i].setVisible(shown);
         if (!shown)
         {
             continue;
@@ -293,11 +290,6 @@ void ZoneScreen::refreshPanel(const Stats &stats)
         }
         enemyDeal[i].setText(buf);
         enemyDeal[i].setColor(REACH_COLORS[reachAgainst(stats, enemy, smiteUnlocked)]);
-
-        uint32_t hurt = damageThrough(enemy.attack, stats.defense);
-        snprintf(buf, sizeof(buf), hurt > 0 ? "takes %lu" : "takes none", (unsigned long)hurt);
-        enemyHurt[i].setText(buf);
-        enemyHurt[i].setColor(hurt > 0 ? REACH_COLORS[REACH_BLOCKED] : REACH_COLORS[REACH_IDLE]);
 
         if (i == 0 || enemy.goldReward < minGold)
         {
