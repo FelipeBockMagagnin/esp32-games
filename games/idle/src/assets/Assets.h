@@ -37,4 +37,10 @@ extern const uint16_t image_building_rune_forge_pixels[];
 extern const uint16_t image_building_ore_barge_pixels[];
 extern const uint16_t image_building_transmuter_pixels[];
 
+// 16x16 upgrade category icons
+extern const uint16_t image_upgrade_production_pixels[];
+extern const uint16_t image_upgrade_click_pixels[];
+extern const uint16_t image_upgrade_heart_pixels[];
+extern const uint16_t image_upgrade_map_pixels[];
+
 #endif // ASSETS_H

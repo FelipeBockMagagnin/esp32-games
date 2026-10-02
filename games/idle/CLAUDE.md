@@ -127,7 +127,7 @@ Note the per-field comments: building and zone names cap at ~12 chars and item n
 
 Each `BUILDINGS` row carries its own 16x16 `icon`, hand-drawn rather than taken from the icon library, which has no mining art. `BuildingScreen` hides a building as `???` until the one before it is owned. It still shows the price and can still be bought.
 
-`UpgradeScreen` can only show 12 upgrades at once (a 6x2 grid), so it builds a `visibleIds[]` of unlocked-and-unbought upgrades each refresh and selects into **that** list, not into `GOLD_UPGRADES` directly.
+`UpgradeScreen` can only show 18 upgrades at once (a 6x3 grid of `UpgradeSlot` tiles, tinted and iconed per `UpgradeTarget` from its `CATEGORY_STYLES` table, which must stay in enum order), so it builds a `visibleIds[]` of unlocked-and-unbought upgrades each refresh and selects into **that** list, not into `GOLD_UPGRADES` directly.
 
 ### Assets
 `src/assets/Assets.cpp` contains the image data as `PROGMEM` arrays (RGB565 `uint16_t` for color images, 1-bit packed `unsigned char` for monochrome icons), each declared `extern` in `Assets.h`. `Image` renders both, selected by constructor overload.
