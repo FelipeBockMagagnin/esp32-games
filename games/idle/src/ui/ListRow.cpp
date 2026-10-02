@@ -1,5 +1,6 @@
 #include "ListRow.h"
 #include "../game/GameConfig.h"
+#include "IconUtil.h"
 
 static const uint16_t SELECTED_COLOR = 0xFFE0; // Yellow
 static const uint16_t OWNED_COLOR = 0x07E0;    // Green
@@ -53,34 +54,6 @@ void ListRow::clearIcon()
     markDirty();
 }
 
-// A locked row's color icon goes gray and faint, like its 1-bit icons and text do. The
-// icon is composed in a buffer: asset words are byte-swapped, as pushImage sends them raw.
-void ListRow::drawDimmedIcon(TFT_eSPI &tft, int16_t iconX, int16_t iconY)
-{
-    uint16_t buffer[DIM_ICON_MAX_PIXELS];
-    int16_t count = iconW * iconH;
-    for (int16_t i = 0; i < count; i++)
-    {
-        uint16_t raw = pgm_read_word(iconPixels + i);
-        if (raw == 0)
-        {
-            buffer[i] = 0;
-            continue;
-        }
-        uint16_t color = (uint16_t)((raw >> 8) | (raw << 8));
-        // Luminance from the 5/6/5 channels, scaled to 0..63
-        uint16_t luma = (((color >> 11) * 2) * 77 + ((color >> 5) & 0x3F) * 150 + ((color & 0x1F) * 2) * 29) >> 8;
-        luma = luma * DIM_ICON_PERCENT / 100;
-        uint16_t gray = (uint16_t)(((luma >> 1) << 11) | (luma << 5) | (luma >> 1));
-        if (gray == 0)
-        {
-            gray = 0x0020; // Stay opaque: pure black is the transparent key
-        }
-        buffer[i] = (uint16_t)((gray >> 8) | (gray << 8));
-    }
-    tft.pushImage(iconX, iconY, iconW, iconH, buffer, (uint16_t)0x0000);
-}
-
 void ListRow::draw(TFT_eSPI &tft)
 {
     if (w <= 0 || h <= 0)
@@ -124,14 +97,15 @@ void ListRow::draw(TFT_eSPI &tft)
     {
         int16_t iconX = x + (ICON_CELL_W - iconW) / 2;
         int16_t iconY = y + (h - iconH) / 2;
-        if (iconPixels != nullptr && state == DIMMED && iconW * iconH <= DIM_ICON_MAX_PIXELS)
+        if (iconPixels != nullptr && state == DIMMED)
         {
-            drawDimmedIcon(tft, iconX, iconY);
+            // A locked row's color icon goes gray, like its 1-bit icons and text do
+            pushIconGray(tft, iconX, iconY, iconW, iconH, iconPixels, DIM_ICON_PERCENT);
         }
         else if (iconPixels != nullptr)
         {
             // Black is transparent, so an icon on a highlighted row keeps the highlight around it
-            tft.pushImage(iconX, iconY, iconW, iconH, iconPixels, (uint16_t)0x0000);
+            pushIcon(tft, iconX, iconY, iconW, iconH, iconPixels);
         }
         else if (iconBitmap != nullptr)
         {

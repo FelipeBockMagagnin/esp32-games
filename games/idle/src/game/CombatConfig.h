@@ -52,6 +52,7 @@ struct ZoneDef
     uint8_t enemyCount;
     bool requiresUnlockUpgrade; // Needs the UNLOCK_ZONE upgrade that carries this zone index
     uint16_t reqPrevZoneKills;  // Kills needed in the zone before it; 0 for none
+    const uint16_t *icon;       // 16x16 RGB565, black transparent
 };
 
 #define RAT_SPRITE image_rato_pixels, 128, 128
@@ -160,12 +161,12 @@ static constexpr EnemyDef CORE_ENEMIES[] = {
 
 // Zone indices line up with the bonusPercent of the UNLOCK_ZONE upgrades in GameConfig.h
 static constexpr ZoneDef ZONES[] = {
-    //  name           enemies                   needsUpgrade  prevZoneKills
-    {"Sewers",      ZONE(SEWER_ENEMIES),       false,        0},
-    {"Caves",       ZONE(CAVE_ENEMIES),        true,         10},
-    {"Crypt",       ZONE(CRYPT_ENEMIES),       true,         25},
-    {"Depths",      ZONE(DEPTH_ENEMIES),       true,         50},
-    {"Molten Core", ZONE(CORE_ENEMIES),        true,         100},
+    //  name           enemies                   needsUpgrade  prevZoneKills  icon
+    {"Sewers",      ZONE(SEWER_ENEMIES),       false,        0,             image_zone_sewers_pixels},
+    {"Caves",       ZONE(CAVE_ENEMIES),        true,         10,            image_zone_caves_pixels},
+    {"Crypt",       ZONE(CRYPT_ENEMIES),       true,         25,            image_zone_crypt_pixels},
+    {"Depths",      ZONE(DEPTH_ENEMIES),       true,         50,            image_zone_depths_pixels},
+    {"Molten Core", ZONE(CORE_ENEMIES),        true,         100,           image_zone_core_pixels},
 };
 static constexpr uint8_t ZONE_COUNT = sizeof(ZONES) / sizeof(ZONES[0]);
 

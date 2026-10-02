@@ -106,6 +106,8 @@ Reference numbers the tables assume, for a full set at item level 1: player atta
 
 Three actions multiply that attack before the subtraction, which is what gives each a distinct reach: the auto-attack (x1, every `AUTO_ATTACK_MS`), the strike (`STRIKE_MULTIPLIER`, Confirm), and the smite (`SMITE_MULTIPLIER` on a long cooldown, Up, unlocked by equipping an amulet). A higher multiplier beats a higher defense, so the gate is softened by gear and by which actions are available, never bypassed.
 
+`ZoneScreen` applies the same rule ahead of time: each zone row is labelled `IDLE` / `STRIKE` / `SMITE` / `TOO HARD` by the weakest action that gets through its hardest enemy, and the panel shows each enemy's per-action damage, the damage taken, and the zone's drops grayed until found. It duplicates the `attack - defense` formula from `CombatState::damageTo`, so a change to damage math must change both. `IconStrip` and `ui/IconUtil.h` (`pushIcon`/`pushIconGray`) are the shared way to draw a 16x16 icon in color or grayed out.
+
 Because a blocked attack just leaves the health bar still, the combat screen shows the effective damage on each attack bar rather than leaving the player to subtract. The player's bar is **hidden outright** when its damage is 0, the enemy's goes full and gray (`enemy cannot hurt you`), and the message line only speaks up for the hard case where `getBestAttackDamage()` is 0 too, meaning no action reaches. `strike()` and `smite()` refuse rather than burning their cooldown when they would deal nothing.
 
 ### Persistence

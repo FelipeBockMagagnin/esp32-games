@@ -84,4 +84,11 @@ extern const uint16_t image_item_jade_amulet_pixels[];
 extern const uint16_t image_item_gold_amulet_pixels[];
 extern const uint16_t image_item_core_sigil_pixels[];
 
+// 16x16 zone icons, one per ZONES row
+extern const uint16_t image_zone_sewers_pixels[];
+extern const uint16_t image_zone_caves_pixels[];
+extern const uint16_t image_zone_crypt_pixels[];
+extern const uint16_t image_zone_depths_pixels[];
+extern const uint16_t image_zone_core_pixels[];
+
 #endif // ASSETS_H
