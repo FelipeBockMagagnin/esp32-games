@@ -25,8 +25,9 @@
 
 const int MENU_BUTTON_PIN = 23;    // Switches to the next screen
 const int CONFIRM_BUTTON_PIN = 27; // Confirms on the current screen: mines / buys
-const int SELECT_BUTTON_PIN = 22;  // Selects the next item inside the current screen
-const int BACK_BUTTON_PIN = 26;    // Steps back through the screens; combat uses it to smite
+const int UP_BUTTON_PIN = 19;      // Navigates up inside the current screen
+const int DOWN_BUTTON_PIN = 22;    // Renamed from SELECT: navigates down inside current screen
+const int BACK_BUTTON_PIN = 26;    // Steps back through the screens
 const int BUZZER_PIN = 32;
 const int DHT_PIN = 25;        // Must be output-capable, so not 34-39
 const int LUMINOSITY_PIN = 34; // LDR, read through ADC1
@@ -34,7 +35,8 @@ const int LUMINOSITY_PIN = 34; // LDR, read through ADC1
 TFT_eSPI tft = TFT_eSPI();
 Button menuButton = Button(MENU_BUTTON_PIN);
 Button confirmButton = Button(CONFIRM_BUTTON_PIN);
-Button selectButton = Button(SELECT_BUTTON_PIN);
+Button upButton = Button(UP_BUTTON_PIN);
+Button downButton = Button(DOWN_BUTTON_PIN);
 Button backButton = Button(BACK_BUTTON_PIN);
 
 // Declared before GameState, which reads both for its gold bonuses. Globals in one
@@ -69,12 +71,13 @@ void setup()
 
     menuButton.setup();
     confirmButton.setup();
-    selectButton.setup();
+    upButton.setup();
+    downButton.setup();
     backButton.setup();
     climate.setup();
     luminosity.setup();
     delay(100);
-
+    
     tft.init();
     tft.setRotation(2);
     tft.fillScreen(0x0000);
@@ -96,7 +99,8 @@ void loop()
 
     menuButton.loop();
     confirmButton.loop();
-    selectButton.loop();
+    upButton.loop();
+    downButton.loop();
     backButton.loop();
     climate.loop(now);
     luminosity.loop(now);
@@ -112,14 +116,22 @@ void loop()
         screenManager.handleConfirmPress();
     }
 
-    if (selectButton.wasPressed())
+    if (upButton.wasPressed())
     {
-        screenManager.handleSelectPress();
+        screenManager.handleUpPress();
+    }
+
+    if (downButton.wasPressed())
+    {
+        screenManager.handleDownPress();
     }
 
     if (backButton.wasPressed())
     {
-        screenManager.handleBackPress();
+        if (!screenManager.handleBackPress())
+        {
+            sound.playMenu();
+        }
     }
 
     // Game progress runs every loop, whichever screen is visible

@@ -24,7 +24,7 @@ There are no tests (`test/` is empty); `pio test` would run them if added.
 
 - **All TFT_eSPI setup lives in `platformio.ini` `build_flags`**, not in a `User_Setup.h`. This is deliberate so the config survives `pio run -t clean` and library updates. Changing display wiring means editing those `-D` flags.
 - **Pin assignments are `const int` at the top of `src/main.cpp`.** Two constraints are load-bearing: the DHT pin must be output-capable (so not GPIO 34-39), and the LDR must be on an ADC1 pin (34-39) because ADC2 is unusable while WiFi is active. Buttons are `INPUT_PULLUP`, so they also need pins that are neither flash (6-11) nor input-only, and avoiding strapping pins (0, 2, 5, 12, 15) keeps boot behaviour clean.
-- **Four buttons:** menu (23) cycles forward through the screens, back (26) steps backward, confirm (27) and select (22) are the two in-screen actions.
+- **Five buttons:** menu (23) cycles forward through the screens, back (26) steps backward, confirm (27), up (33) and down (22) are the three in-screen actions.
 
 ## Architecture
 
@@ -51,8 +51,8 @@ Header text is width-constrained: the size-2 title and the size-1 nav labels sha
 A `Screen` is a list of `UI*` elements plus a background color. Subclasses:
 - declare their elements as **members** (not heap-allocated), initialize them in the constructor's init list with their layout coordinates, then `addElement(&member)`;
 - override `update(now)` to push fresh values into elements;
-- override `onConfirmPress()` / `onSelectPress()` for input;
-- optionally override `onBackPress()`, which returns a bool: **true consumes the back button**, false lets `ScreenManager::handleBackPress()` fall through to `previousScreen()`. `CombatScreen` claims it for the smite only while an amulet is equipped, so the button stays navigation otherwise;
+- override `onConfirmPress()` / `onUpPress()` / `onDownPress()` for input;
+- optionally override `onBackPress()`, which returns a bool: **true consumes the back button**, false lets `ScreenManager::handleBackPress()` fall through to `previousScreen()`. `InventoryScreen` claims it while inspecting items to return to the slot list;
 - override `onEnter(tft)` when arriving needs to reset screen-local state (and then call `Screen::onEnter(tft)`).
 
 `ScreenManager::update()` calls the current screen's `update()` then `render()` each loop. Screens follow a `REFRESH_MS = 100` pattern: expensive text rebuilds are gated to ~10 Hz while animations advance every frame. Button handlers set `lastRefresh = 0` to force an immediate refresh past that gate.
@@ -102,7 +102,7 @@ The consequence is the progression rule the enemy tables are tuned to: **a zone'
 
 Reference numbers the tables assume, for a full set at item level 1: player attack 10 (starting sword only), then 13 / 29 / 77 / 221 for gear tiers 1-4; player defense 7, then 20 / 58 / 172 / 514.
 
-Three actions multiply that attack before the subtraction, which is what gives each a distinct reach: the auto-attack (x1, every `AUTO_ATTACK_MS`), the strike (`STRIKE_MULTIPLIER`, Confirm), and the smite (`SMITE_MULTIPLIER` on a long cooldown, Back, unlocked by equipping an amulet). A higher multiplier beats a higher defense, so the gate is softened by gear and by which actions are available, never bypassed.
+Three actions multiply that attack before the subtraction, which is what gives each a distinct reach: the auto-attack (x1, every `AUTO_ATTACK_MS`), the strike (`STRIKE_MULTIPLIER`, Confirm), and the smite (`SMITE_MULTIPLIER` on a long cooldown, Up, unlocked by equipping an amulet). A higher multiplier beats a higher defense, so the gate is softened by gear and by which actions are available, never bypassed.
 
 Because a blocked attack just leaves the health bar still, the combat screen shows the effective damage on each attack bar rather than leaving the player to subtract. The player's bar is **hidden outright** when its damage is 0, the enemy's goes full and gray (`enemy cannot hurt you`), and the message line only speaks up for the hard case where `getBestAttackDamage()` is 0 too, meaning no action reaches. `strike()` and `smite()` refuse rather than burning their cooldown when they would deal nothing.
 

@@ -32,7 +32,9 @@ public:
     virtual void render(TFT_eSPI &tft);
 
     virtual void onConfirmPress() {}
-    virtual void onSelectPress() {}
+    virtual void onUpPress() {}
+    virtual void onDownPress() {}
+    virtual void onSelectPress() { onDownPress(); }
 
     // Return true to consume the back button. Screens that do not override it fall
     // through to ScreenManager, which steps back through the rotation.

@@ -64,8 +64,8 @@ public:
     void update(unsigned long now) override;
 
     void onConfirmPress() override;
-    void onSelectPress() override;
-    bool onBackPress() override;
+    void onUpPress() override;
+    void onDownPress() override;
 };
 
 #endif // COMBAT_SCREEN_H

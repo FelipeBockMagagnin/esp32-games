@@ -164,7 +164,16 @@ void UpgradeScreen::update(unsigned long now)
     refreshDetails();
 }
 
-void UpgradeScreen::onSelectPress()
+void UpgradeScreen::onUpPress()
+{
+    if (visibleCount > 0)
+    {
+        selectedSlot = (selectedSlot == 0) ? (visibleCount - 1) : (selectedSlot - 1);
+    }
+    lastRefresh = 0;
+}
+
+void UpgradeScreen::onDownPress()
 {
     if (visibleCount > 0)
     {

@@ -55,8 +55,9 @@ public:
 
     void update(unsigned long now) override;
 
-    // Select button moves to the next upgrade, confirm button buys the selected one
-    void onSelectPress() override;
+    // Up / Down buttons navigate through upgrades, confirm button buys the selected one
+    void onUpPress() override;
+    void onDownPress() override;
     void onConfirmPress() override;
 };
 

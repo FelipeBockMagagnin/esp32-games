@@ -237,7 +237,13 @@ void InventoryScreen::update(unsigned long now)
     refreshTotals();
 }
 
-void InventoryScreen::onSelectPress()
+void InventoryScreen::onUpPress()
+{
+    list.previous();
+    lastRefresh = 0;
+}
+
+void InventoryScreen::onDownPress()
 {
     list.next();
     lastRefresh = 0;
@@ -276,4 +282,15 @@ void InventoryScreen::onConfirmPress()
         sound.playError();
     }
     enterSlotList();
+}
+
+bool InventoryScreen::onBackPress()
+{
+    if (mode == ITEM_LIST)
+    {
+        sound.playMenu();
+        enterSlotList();
+        return true;
+    }
+    return false;
 }

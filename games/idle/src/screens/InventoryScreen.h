@@ -56,8 +56,10 @@ public:
     void onEnter(TFT_eSPI &tft) override;
     void update(unsigned long now) override;
 
-    void onSelectPress() override;
+    void onUpPress() override;
+    void onDownPress() override;
     void onConfirmPress() override;
+    bool onBackPress() override;
 };
 
 #endif // INVENTORY_SCREEN_H

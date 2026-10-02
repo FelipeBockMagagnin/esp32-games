@@ -103,7 +103,13 @@ void AchievementScreen::update(unsigned long now)
     bonusText.setText(buf);
 }
 
-void AchievementScreen::onSelectPress()
+void AchievementScreen::onUpPress()
+{
+    list.previous();
+    lastRefresh = 0;
+}
+
+void AchievementScreen::onDownPress()
 {
     list.next();
     lastRefresh = 0;

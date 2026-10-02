@@ -36,8 +36,7 @@ struct AchievementDef
 
 static constexpr AchievementDef ACHIEVEMENTS[] = {
     //  name             description                          kind                        target                 amount        bonus%
-    {"First Swing",  "Mine ore by hand 10 times",         AchKind::TOTAL_CLICKS,     NO_ACH_TARGET,         10,           1},
-    {"Handy Miner",  "Mine ore by hand 100 times",        AchKind::TOTAL_CLICKS,     NO_ACH_TARGET,         100,          2},
+    {"Handy Miner",  "Mine ore by hand 100 times",        AchKind::TOTAL_CLICKS,     NO_ACH_TARGET,         100,          1},
     {"Pickaxe Pro",  "Mine ore by hand 1000 times",       AchKind::TOTAL_CLICKS,     NO_ACH_TARGET,         1000,         3},
     {"Blistered",    "Mine ore by hand 10000 times",      AchKind::TOTAL_CLICKS,     NO_ACH_TARGET,         10000,        5},
 

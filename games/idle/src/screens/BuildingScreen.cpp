@@ -80,7 +80,13 @@ void BuildingScreen::update(unsigned long now)
     }
 }
 
-void BuildingScreen::onSelectPress()
+void BuildingScreen::onUpPress()
+{
+    list.previous();
+    lastRefresh = 0;
+}
+
+void BuildingScreen::onDownPress()
 {
     list.next();
     lastRefresh = 0;

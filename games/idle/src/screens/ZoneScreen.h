@@ -46,8 +46,9 @@ public:
 
     void update(unsigned long now) override;
 
-    // Select cycles the zones, Confirm enters the highlighted one and moves to combat
-    void onSelectPress() override;
+    // Up / Down cycles through zones, Confirm enters the highlighted one and moves to combat
+    void onUpPress() override;
+    void onDownPress() override;
     void onConfirmPress() override;
 };
 

@@ -2,6 +2,7 @@
 #define BUTTON_MANAGER_H
 
 #include <Arduino.h>
+#include <driver/gpio.h>
 
 class Button
 {
@@ -22,6 +23,11 @@ public:
     void setup()
     {
         pinMode(pinNumber, INPUT_PULLUP);
+    }
+
+    int getPin() const
+    {
+        return pinNumber;
     }
 
     void loop()

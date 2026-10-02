@@ -28,8 +28,10 @@ public:
     void update(unsigned long now);
 
     void handleConfirmPress();
-    void handleSelectPress();
-    void handleBackPress();
+    void handleUpPress();
+    void handleDownPress();
+    void handleSelectPress() { handleDownPress(); }
+    bool handleBackPress();
 };
 
 #endif // SCREEN_MANAGER_H

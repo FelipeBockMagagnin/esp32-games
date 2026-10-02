@@ -151,7 +151,13 @@ void ZoneScreen::update(unsigned long now)
     hpText.setText(buf);
 }
 
-void ZoneScreen::onSelectPress()
+void ZoneScreen::onUpPress()
+{
+    list.previous();
+    lastRefresh = 0;
+}
+
+void ZoneScreen::onDownPress()
 {
     list.next();
     lastRefresh = 0;

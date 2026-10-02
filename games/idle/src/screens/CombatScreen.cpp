@@ -366,26 +366,11 @@ void CombatScreen::onConfirmPress()
     lastRefresh = 0;
 }
 
-void CombatScreen::onSelectPress()
+void CombatScreen::onUpPress()
 {
-    if (combat.guard())
-    {
-        sound.playMenu();
-    }
-    else
-    {
-        sound.playError();
-    }
-    lastRefresh = 0;
-}
-
-bool CombatScreen::onBackPress()
-{
-    // Without an amulet there is no smite, so the button keeps its usual job of
-    // stepping back a screen
     if (!combat.isSmiteUnlocked())
     {
-        return false;
+        return;
     }
 
     if (combat.smite())
@@ -397,5 +382,17 @@ bool CombatScreen::onBackPress()
         sound.playError();
     }
     lastRefresh = 0;
-    return true;
+}
+
+void CombatScreen::onDownPress()
+{
+    if (combat.guard())
+    {
+        sound.playMenu();
+    }
+    else
+    {
+        sound.playError();
+    }
+    lastRefresh = 0;
 }

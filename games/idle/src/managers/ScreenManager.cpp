@@ -96,22 +96,32 @@ void ScreenManager::handleConfirmPress()
     }
 }
 
-void ScreenManager::handleSelectPress()
+void ScreenManager::handleUpPress()
 {
     Screen *screen = getCurrentScreen();
     if (screen != nullptr)
     {
-        screen->onSelectPress();
+        screen->onUpPress();
     }
 }
 
-void ScreenManager::handleBackPress()
+void ScreenManager::handleDownPress()
 {
-    // The current screen gets first refusal; combat claims it for its amulet attack
+    Screen *screen = getCurrentScreen();
+    if (screen != nullptr)
+    {
+        screen->onDownPress();
+    }
+}
+
+bool ScreenManager::handleBackPress()
+{
+    // The current screen gets first refusal (e.g. inventory sub-list or combat smite)
     Screen *screen = getCurrentScreen();
     if (screen != nullptr && screen->onBackPress())
     {
-        return;
+        return true;
     }
     previousScreen();
+    return false;
 }

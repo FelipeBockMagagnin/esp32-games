@@ -35,7 +35,8 @@ public:
 
     void update(unsigned long now) override;
 
-    void onSelectPress() override;
+    void onUpPress() override;
+    void onDownPress() override;
     void onConfirmPress() override;
 };
 

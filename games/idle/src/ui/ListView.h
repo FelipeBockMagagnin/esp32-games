@@ -33,6 +33,17 @@ public:
         clampScroll();
     }
 
+    // Cycles backward, wrapping to the bottom from the top item
+    void previous()
+    {
+        if (count == 0)
+        {
+            return;
+        }
+        selectedIndex = (selectedIndex == 0) ? (count - 1) : (selectedIndex - 1);
+        clampScroll();
+    }
+
     void setSelected(uint16_t index)
     {
         if (index < count)
