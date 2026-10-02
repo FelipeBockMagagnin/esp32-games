@@ -16,18 +16,22 @@ struct OreTierDef
 {
     const char *name;
     uint32_t clickAmount; // Whole gold units gained per click at this tier, before click upgrades
+    uint16_t palette[3];  // Light, mid and dark shades the ore sprite is recolored to (RGB565)
 };
 
+// Every tier shares one ore sprite; the palette swap is what tells them apart, so a
+// new tier needs three shades rather than another 18 KB image. Copper is the sprite's
+// own colors, which is why its row matches ORE_SPRITE_PALETTE in MiningScreen.cpp.
 static constexpr OreTierDef ORE_TIERS[] = {
-    //  name             gold/click
-    {"Copper Ore",       1},
-    {"Tin Ore",          2},
-    {"Iron Ore",         4},
-    {"Silver Ore",       8},
-    {"Gold Ore",         16},
-    {"Platinum Ore",     32},
-    {"Diamond Ore",      64},
-    {"Mythril Ore",      128},
+    //  name             gold/click   light   mid     dark
+    {"Copper Ore",       1,           {0xFC08, 0xD163, 0x806A}},
+    {"Tin Ore",          2,           {0xCEBB, 0x8453, 0x422B}},
+    {"Iron Ore",         4,           {0xCC8E, 0x92A7, 0x4945}},
+    {"Silver Ore",       8,           {0xF7BF, 0xADB9, 0x5B0F}},
+    {"Gold Ore",         16,          {0xFEEA, 0xE4C2, 0x8221}},
+    {"Platinum Ore",     32,          {0xD7DE, 0x7E18, 0x3B0E}},
+    {"Diamond Ore",      64,          {0x9F9F, 0x2D5D, 0x1231}},
+    {"Mythril Ore",      128,         {0xD53F, 0x8A9D, 0x40F0}},
 };
 static constexpr uint8_t ORE_TIER_COUNT = sizeof(ORE_TIERS) / sizeof(ORE_TIERS[0]);
 static constexpr uint8_t LEVELS_PER_TIER = 5; // Mining levels spent on each ore before the next

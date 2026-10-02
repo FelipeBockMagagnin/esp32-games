@@ -12,6 +12,23 @@ static const int16_t POPUP_RISE = 45;          // Pixels travelled over its life
 static const unsigned long POPUP_FADE_MS = 300; // Fades out during the last part
 static const int16_t POPUP_SPREAD = 20;         // Random horizontal jitter so fast clicks don't stack
 
+// Halo behind the ore: rings from the outside in, each a stronger blend of the glow
+// color into the background. Radii are relative to the ore's size.
+static const uint8_t GLOW_RINGS = 3;
+static const uint8_t GLOW_RADIUS_PERCENT[GLOW_RINGS] = {56, 46, 36};
+static const uint8_t GLOW_ALPHA[GLOW_RINGS] = {28, 48, 72};
+
+// Flat shadow under the ore, so it reads as resting on the ground rather than floating
+static const uint8_t SHADOW_Y_PERCENT = 86;   // Down from the ore's top
+static const uint8_t SHADOW_RX_PERCENT = 40;
+static const int16_t SHADOW_RY = 5;
+static const uint8_t SHADOW_ALPHA = 200; // Background blended over the halo
+
+static uint16_t swapBytes(uint16_t color)
+{
+    return (uint16_t)((color >> 8) | (color << 8));
+}
+
 OreDisplay::OreDisplay(int16_t x, int16_t y, int16_t w, int16_t h,
                        const uint16_t *orePixels, int16_t oreX, int16_t oreY, int16_t oreW, int16_t oreH,
                        uint16_t popupColor)
@@ -22,6 +39,10 @@ OreDisplay::OreDisplay(int16_t x, int16_t y, int16_t w, int16_t h,
       oreW(oreW),
       oreH(oreH),
       popupColor(popupColor),
+      paletteSource(nullptr),
+      paletteTarget(nullptr),
+      paletteCount(0),
+      glowColor(0x0000),
       nextPopup(0),
       shaking(false),
       shakeStart(0),
@@ -63,6 +84,26 @@ void OreDisplay::addPopup(const String &text)
     popup.x = oreX + oreW / 2 + random(-POPUP_SPREAD, POPUP_SPREAD + 1);
     popup.text = text;
     lastFrame = 0;
+}
+
+void OreDisplay::setPalette(const uint16_t *source, const uint16_t *target, uint8_t count)
+{
+    if (paletteSource != source || paletteTarget != target || paletteCount != count)
+    {
+        paletteSource = source;
+        paletteTarget = target;
+        paletteCount = count;
+        markDirty();
+    }
+}
+
+void OreDisplay::setGlowColor(uint16_t color)
+{
+    if (glowColor != color)
+    {
+        glowColor = color;
+        markDirty();
+    }
 }
 
 void OreDisplay::update(unsigned long time)
@@ -109,6 +150,62 @@ int16_t OreDisplay::shakeOffset() const
     return step < SHAKE_STEPS ? SHAKE_OFFSETS[step] : 0;
 }
 
+void OreDisplay::drawBackdrop(TFT_eSPI &tft)
+{
+    int16_t cx = oreX + oreW / 2;
+    int16_t cy = oreY + oreH / 2;
+    int16_t size = oreW < oreH ? oreW : oreH;
+
+    for (uint8_t i = 0; i < GLOW_RINGS; i++)
+    {
+        uint16_t ring = tft.alphaBlend(GLOW_ALPHA[i], glowColor, eraseColor);
+        sprite->fillCircle(cx, cy, size * GLOW_RADIUS_PERCENT[i] / 100, ring);
+    }
+
+    uint16_t shadow = tft.alphaBlend(SHADOW_ALPHA, eraseColor, tft.alphaBlend(GLOW_ALPHA[GLOW_RINGS - 1], glowColor, eraseColor));
+    sprite->fillEllipse(cx, oreY + oreH * SHADOW_Y_PERCENT / 100, size * SHADOW_RX_PERCENT / 100, SHADOW_RY, shadow);
+}
+
+// Copies the ore into the sprite pixel by pixel: the sprite's own pushImage has no
+// transparent variant and cannot recolor. The sprite buffer and the image array both
+// hold byte-swapped words (pushImage copies one into the other untouched), so pixels
+// are swapped to compare against the palette and swapped back to store.
+void OreDisplay::drawOre(int16_t left)
+{
+    uint16_t *buffer = (uint16_t *)sprite->getPointer();
+    for (int16_t row = 0; row < oreH; row++)
+    {
+        int16_t sy = oreY + row;
+        if (sy < 0 || sy >= h)
+        {
+            continue;
+        }
+        for (int16_t col = 0; col < oreW; col++)
+        {
+            int16_t sx = left + col;
+            uint16_t raw = pgm_read_word(orePixels + row * oreW + col);
+            if (raw == 0 || sx < 0 || sx >= w)
+            {
+                continue;
+            }
+
+            if (paletteTarget != nullptr)
+            {
+                uint16_t color = swapBytes(raw);
+                for (uint8_t i = 0; i < paletteCount; i++)
+                {
+                    if (paletteSource[i] == color)
+                    {
+                        raw = swapBytes(paletteTarget[i]);
+                        break;
+                    }
+                }
+            }
+            buffer[sy * w + sx] = raw;
+        }
+    }
+}
+
 void OreDisplay::draw(TFT_eSPI &tft)
 {
     if (sprite == nullptr)
@@ -137,7 +234,8 @@ void OreDisplay::draw(TFT_eSPI &tft)
     }
 
     sprite->fillSprite(eraseColor);
-    sprite->pushImage(oreX + shakeOffset(), oreY, oreW, oreH, (uint16_t *)orePixels);
+    drawBackdrop(tft);
+    drawOre(oreX + shakeOffset());
 
     sprite->setTextSize(2);
     sprite->setTextDatum(MC_DATUM);
