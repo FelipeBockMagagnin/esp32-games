@@ -27,7 +27,7 @@ static const uint8_t NO_ACH_TARGET = 0xFF;
 struct AchievementDef
 {
     const char *name;        // Up to 13 chars to fit a list row title at text size 2
-    const char *description; // Up to 32 chars for the row subtitle at text size 1
+    const char *description; // Up to 28 chars: the row subtitle at size 1, beside a progress %
     AchKind kind;
     uint8_t target;       // Index into BUILDINGS or ZONES, else NO_ACH_TARGET
     uint64_t amount;      // Threshold the counter has to reach

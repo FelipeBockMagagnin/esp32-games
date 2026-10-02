@@ -43,4 +43,9 @@ extern const uint16_t image_upgrade_click_pixels[];
 extern const uint16_t image_upgrade_heart_pixels[];
 extern const uint16_t image_upgrade_map_pixels[];
 
+// 16x16 award icons
+extern const uint16_t image_award_trophy_pixels[];
+extern const uint16_t image_award_skull_pixels[];
+extern const uint16_t image_award_scroll_pixels[];
+
 #endif // ASSETS_H

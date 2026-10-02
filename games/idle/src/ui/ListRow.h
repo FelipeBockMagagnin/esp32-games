@@ -103,6 +103,11 @@ public:
     void draw(TFT_eSPI &tft) override;
 
 private:
+    // Largest pixel icon drawDimmedIcon composes on the stack; bigger ones draw undimmed
+    static const int16_t DIM_ICON_MAX_PIXELS = 16 * 16;
+
+    void drawDimmedIcon(TFT_eSPI &tft, int16_t iconX, int16_t iconY);
+
     void assign(String &field, const String &v)
     {
         if (field != v)

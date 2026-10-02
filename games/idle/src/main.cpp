@@ -56,7 +56,7 @@ CombatScreen combatScreen(combat, sound);
 BuildingScreen buildingScreen(game, sound);
 UpgradeScreen upgradeScreen(game, sound);
 ZoneScreen zoneScreen(game, inventory, combat, sound, screenManager);
-AchievementScreen achievementScreen(achievements, sound);
+AchievementScreen achievementScreen(achievements, game, inventory, combat, sound);
 
 // Last achievement count the loop played a sound for
 uint8_t seenAchievements = 0;

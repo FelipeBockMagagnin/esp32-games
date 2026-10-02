@@ -29,6 +29,11 @@ public:
     uint8_t getUnlockedCount() const { return unlockedCount; }
     uint32_t getProductionBonusPercent() const { return bonusPercent; }
 
+    // Current value of the counter an achievement watches; it unlocks once this reaches
+    // the def's amount. Lets a screen show how close a locked one is.
+    uint64_t getProgress(const AchievementDef &def, const GameState &game, const Inventory &inventory,
+                         const CombatState &combat) const;
+
     // Name of the achievement whose notice is still on screen, or nullptr when none.
     // Whichever screen is visible paints it over its own header.
     const char *getNotice(unsigned long now) const;

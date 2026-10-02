@@ -28,32 +28,38 @@ bool Achievements::isUnlocked(uint8_t id) const
 bool Achievements::isConditionMet(const AchievementDef &def, const GameState &game,
                                   const Inventory &inventory, const CombatState &combat) const
 {
+    return getProgress(def, game, inventory, combat) >= def.amount;
+}
+
+uint64_t Achievements::getProgress(const AchievementDef &def, const GameState &game,
+                                   const Inventory &inventory, const CombatState &combat) const
+{
     switch (def.kind)
     {
     case AchKind::TOTAL_CLICKS:
-        return game.getTotalClicks() >= def.amount;
+        return game.getTotalClicks();
     case AchKind::TOTAL_GOLD:
-        return game.getTotalGoldEarned() >= def.amount;
+        return game.getTotalGoldEarned();
     case AchKind::TOTAL_BUILDINGS:
-        return game.getTotalBuildingLevels() >= def.amount;
+        return game.getTotalBuildingLevels();
     case AchKind::BUILDING_LEVEL:
-        return game.getBuildingLevel(def.target) >= def.amount;
+        return game.getBuildingLevel(def.target);
     case AchKind::UPGRADES_BOUGHT:
-        return game.getUpgradesBoughtCount() >= def.amount;
+        return game.getUpgradesBoughtCount();
     case AchKind::MINING_LEVEL:
-        return game.getMiningLevel() >= def.amount;
+        return game.getMiningLevel();
     case AchKind::TOTAL_KILLS:
-        return combat.getTotalKills() >= def.amount;
+        return combat.getTotalKills();
     case AchKind::ZONE_KILLS:
-        return combat.getZoneKills(def.target) >= def.amount;
+        return combat.getZoneKills(def.target);
     case AchKind::ITEMS_OWNED:
-        return inventory.countOwnedItems() >= def.amount;
+        return inventory.countOwnedItems();
     case AchKind::ITEM_LEVEL:
-        return inventory.getHighestItemLevel() >= def.amount;
+        return inventory.getHighestItemLevel();
     case AchKind::ACHIEVEMENTS:
-        return unlockedCount >= def.amount;
+        return unlockedCount;
     }
-    return false;
+    return 0;
 }
 
 void Achievements::unlock(uint8_t id, unsigned long now)
