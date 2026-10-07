@@ -21,6 +21,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 FP_ROOT = "/usr/share/kicad/footprints"
 CORNER_R = 3.0
 PITCH = 2.54
+# Smallest silkscreen a budget fab prints legibly (JLCPCB: 1.0 mm high, 0.153 mm line)
+SILK_MIN_SIZE = 1.0
+SILK_MIN_LINE = 0.18
 
 mm = pcbnew.FromMM
 
@@ -29,9 +32,9 @@ def pt(x, y):
     return pcbnew.VECTOR2I(mm(x), mm(y))
 
 
-# The 2.8" ILI9341 module's 14-pin header in the order it reads with the module face up
-# and its header along the top edge. Here the header is along the bottom edge, so on the
-# board pin 1 (VCC) is the rightmost. The touch pins stay unconnected.
+# The 2.8" ILI9341 module's 14-pin header in the order it reads left to right with the
+# module face up and its header along the bottom edge, as it sits on the board: pin 1
+# (VCC) is the leftmost, as measured on a real module. The touch pins stay unconnected.
 DISPLAY_PINS = ["VCC", "GND", "CS", "RESET", "DC", "MOSI", "SCK", "LED", "MISO",
                 "T_CLK", "T_CS", "T_DIN", "T_DO", "T_IRQ"]
 
@@ -67,7 +70,7 @@ DISPLAY_NETS = {
 # Coordinates are KiCad's (y down), in mm; pad 1 positions, and back footprints mirror,
 # so their other pads go to -x.
 BOARD = dict(
-    name="esp32-idle-game", version="v5.0",
+    name="esp32-idle-game", version="v5.1",
     board=(62.0, 100.0),
     display_header_y=66.3,  # Module's bottom edge at ~68.8, clear of the UP cap
     esp_row_y=7.8, esp_x0=8.5,  # Upper row, and its pin nearest the USB end
@@ -76,8 +79,11 @@ BOARD = dict(
     buzzer=(9.0, 50.0), r1=(40.0, 45.5), q1=(26.0, 46.0), d1=(40.0, 51.5),
     c1=(52.0, 48.0), title_y=59.0,
 )
-BUZZER_D = 9.0      # 9x5.5 mm passive buzzer
-BUZZER_PITCH = 4.0
+# 12x10 mm passive buzzer (Eletrogate's, the one easy to find). Its pin spacing is not
+# published and 12 mm buzzers come at 6.5 or 7.6 mm, so the holes are slots that take
+# either. At 10 mm tall it is deeper than the ESP32, so the case floor has a hole for it.
+BUZZER_D = 12.0
+BUZZER_PITCHES = (6.5, 7.6)
 C1_LYING = (11.0, 5.0)  # 5x11 mm capacitor bent flat, body towards the D-pad
 
 POWER_NETS = ["+5V", "GND", "BUZ_N"]
@@ -116,11 +122,12 @@ class Builder:
     def text(self, s, x, y, size=1.0, layer=pcbnew.F_SilkS, angle=0.0,
              justify=pcbnew.GR_TEXT_H_ALIGN_CENTER, bold=False):
         t = pcbnew.PCB_TEXT(self.board)
+        size = max(size, SILK_MIN_SIZE)
         t.SetText(s)
         t.SetLayer(layer)
         t.SetPosition(pt(x, y))
         t.SetTextSize(pcbnew.VECTOR2I(mm(size), mm(size)))
-        t.SetTextThickness(mm(size * (0.2 if bold else 0.15)))
+        t.SetTextThickness(mm(max(size * (0.2 if bold else 0.15), SILK_MIN_LINE)))
         t.SetTextAngleDegrees(angle)
         t.SetHorizJustify(justify)
         if layer == pcbnew.B_SilkS:
@@ -138,22 +145,27 @@ class Builder:
         self.board.Add(s)
 
     def buzzer(self, ref, cx, cy, pads):
-        # The library has no small round buzzer, so this one is drawn here: two pads
-        # BUZZER_PITCH apart (pad 1, +, square) inside a BUZZER_D outline, on the back
+        # Drawn here rather than taken from the library, whose buzzers have round holes at
+        # one pitch: two slotted pads (pad 1, +, square) that reach from the narrower
+        # BUZZER_PITCHES spacing to the wider one, inside a BUZZER_D outline, on the back
+        lo, hi = BUZZER_PITCHES
+        half = (lo + hi) / 4             # Slot centre, from the footprint's centre
+        slot = (hi - lo) / 2 + 1.0       # 1 mm hole, stretched by the spread
         fp = pcbnew.FOOTPRINT(self.board)
-        fp.SetFPID(pcbnew.LIB_ID("", "Buzzer_D9mm_P4mm"))  # Board-local, no library
+        fp.SetFPID(pcbnew.LIB_ID("", "Buzzer_D12mm_P6.5-7.6mm"))  # Board-local, no library
         fp.SetReference(ref)
-        fp.SetValue("Passive buzzer 9mm")
+        fp.SetValue("Passive buzzer 12mm")
         fp.Value().SetVisible(False)
         fp.Reference().SetFPRelativePosition(pt(0, -BUZZER_D / 2 - 1.2))
-        for number, dx, shape in [(1, BUZZER_PITCH / 2, pcbnew.PAD_SHAPE_RECT),
-                                  (2, -BUZZER_PITCH / 2, pcbnew.PAD_SHAPE_CIRCLE)]:
+        for number, dx, shape in [(1, half, pcbnew.PAD_SHAPE_RECT),
+                                  (2, -half, pcbnew.PAD_SHAPE_OVAL)]:
             pad = pcbnew.PAD(fp)
             pad.SetNumber(str(number))
             pad.SetAttribute(pcbnew.PAD_ATTRIB_PTH)
             pad.SetShape(shape)
-            pad.SetSize(pcbnew.VECTOR2I(mm(1.8), mm(1.8)))
-            pad.SetDrillSize(pcbnew.VECTOR2I(mm(1.0), mm(1.0)))
+            pad.SetSize(pcbnew.VECTOR2I(mm(slot + 0.8), mm(1.8)))
+            pad.SetDrillShape(pcbnew.PAD_DRILL_SHAPE_OBLONG)
+            pad.SetDrillSize(pcbnew.VECTOR2I(mm(slot), mm(1.0)))
             pad.SetLayerSet(pad.PTHMask())
             pad.SetFPRelativePosition(pt(dx, 0))
             fp.Add(pad)
@@ -168,8 +180,9 @@ class Builder:
         plus = pcbnew.PCB_TEXT(fp)
         plus.SetText("+")
         plus.SetLayer(pcbnew.F_SilkS)
-        plus.SetFPRelativePosition(pt(BUZZER_PITCH / 2, -2.2))
+        plus.SetFPRelativePosition(pt(half, -2.2))
         plus.SetTextSize(pcbnew.VECTOR2I(mm(1), mm(1)))
+        plus.SetTextThickness(mm(SILK_MIN_LINE))
         fp.Add(plus)
         self.board.Add(fp)
         fp.SetPosition(pt(cx, cy))
@@ -264,7 +277,7 @@ def place(b, v):
     w, h = v["board"]
     cx = w / 2
     pins = DISPLAY_PINS
-    display_right = cx + (len(pins) - 1) / 2 * PITCH  # Pin 1; the header is centred
+    display_left = cx - (len(pins) - 1) / 2 * PITCH  # Pin 1; the header is centred
     hy = v["display_header_y"]
     row_y, x0 = v["esp_row_y"], v["esp_x0"]
 
@@ -274,15 +287,15 @@ def place(b, v):
     # Front: display header just above the D-pad; the module rises from it, 2.5 mm up
     display_pads = {i + 1: DISPLAY_NETS[name]
                     for i, name in enumerate(pins) if name in DISPLAY_NETS}
-    # Footprint runs downwards from pin 1, so -90 lays it out right to left
+    # Footprint runs downwards from pin 1, so 90 lays it out left to right
     b.footprint("Connector_PinHeader_2.54mm",
                 "PinHeader_1x%02d_P2.54mm_Vertical" % len(pins),
-                "J1", "ILI9341 2.8in", display_right, hy, -90, display_pads)
+                "J1", "ILI9341 2.8in", display_left, hy, 90, display_pads)
     for i, name in enumerate(pins):
-        b.text(name, display_right - i * PITCH, hy - 2.2, 0.8, angle=90,
+        b.text(name, display_left + i * PITCH, hy - 2.2, 1.0, angle=90,
                justify=pcbnew.GR_TEXT_H_ALIGN_LEFT)
     b.text("DISPLAY 2.8\" ILI9341", cx, v["display_text_y"], 1.2)
-    b.text("face up, header at the bottom - check VCC/GND", cx, v["display_text_y"] + 2.3, 0.9)
+    b.text("face up, header at the bottom - check VCC/GND", cx, v["display_text_y"] + 2.3, 1.0)
 
     # D-pad: confirm in the middle, the four directions around it. Right is MENU (next
     # screen) and left is BACK (previous screen).
@@ -312,12 +325,12 @@ def place(b, v):
         # justification reads backwards)
         just = pcbnew.GR_TEXT_H_ALIGN_RIGHT if label_dy < 0 else pcbnew.GR_TEXT_H_ALIGN_LEFT
         for i, name in enumerate(row):
-            b.text(name, x0 + i * PITCH, y + label_dy, 0.8, layer=pcbnew.B_SilkS,
+            b.text(name, x0 + i * PITCH, y + label_dy, 1.0, layer=pcbnew.B_SilkS,
                    angle=90, justify=just)
     mid_y = row_y + 5 * PITCH
     b.text("USB", x0 - 5.0, mid_y, 1.2, layer=pcbnew.B_SilkS, angle=90, bold=True)
     b.text("ESP32 DevKit V1 30p", x0 + 7 * PITCH, mid_y - 1.2, 1.0, layer=pcbnew.B_SilkS)
-    b.text("(components facing out)", x0 + 7 * PITCH, mid_y + 1.2, 0.8, layer=pcbnew.B_SilkS)
+    b.text("(components facing out)", x0 + 7 * PITCH, mid_y + 1.2, 1.0, layer=pcbnew.B_SilkS)
 
     # Buzzer driver, driven low-side from 5 V so it is louder than straight off a 3.3 V
     # pin. Everything here is on the back, below the ESP32, and no taller than it.
@@ -328,7 +341,7 @@ def place(b, v):
     b.footprint("Package_TO_SOT_THT", "TO-92_Inline_Wide", "Q1", "S8050 (EBC)",
                 q1[0], q1[1], 0, {1: "GND", 2: "BUZ_B", 3: "BUZ_N"}, back=True)
     for i, pin in enumerate("EBC"):
-        b.text(pin, q1[0] - i * PITCH, q1[1] + 2.8, 0.8, layer=pcbnew.B_SilkS)
+        b.text(pin, q1[0] - i * PITCH, q1[1] + 2.8, 1.0, layer=pcbnew.B_SilkS)
     b.footprint("Diode_THT", "D_DO-35_SOD27_P7.62mm_Horizontal", "D1", "1N4148",
                 d1[0], d1[1], 0, {1: "+5V", 2: "BUZ_N"}, back=True)
     b.footprint("Capacitor_THT", "CP_Radial_D5.0mm_P2.00mm", "C1", "100uF 16V",
@@ -338,7 +351,7 @@ def place(b, v):
     mid = c1[0] - 1.0  # Between the two pads
     top = c1[1] + 2.8   # Clear of the footprint's own outline
     b.rect(mid - dia / 2, top, mid + dia / 2, top + length, pcbnew.B_SilkS)
-    b.text("C1", mid, top + length / 2, 0.8, layer=pcbnew.B_SilkS, angle=90)
+    b.text("C1", mid, top + length / 2, 1.0, layer=pcbnew.B_SilkS, angle=90)
 
     for i, (x, y) in enumerate(v["holes"]):
         b.footprint("MountingHole", "MountingHole_3.2mm_M3", "H%d" % (i + 1), "M3", x, y)

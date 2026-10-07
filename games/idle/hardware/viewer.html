@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Encaixe da Placa</title>
+<style>
+:root {
+  --bg: #f4f3ef; --panel: #ffffff; --text: #1d1d1b; --muted: #6b6a65; --line: #dedcd5;
+  --accent: #2563eb; --ok: #15803d; --warn: #b45309; --bad: #b91c1c; --scene: #e9e7e1;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161615; --panel: #1f1f1d; --text: #ecebe6; --muted: #9a9890; --line: #33322f;
+    --accent: #60a5fa; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171; --scene: #121211;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161615; --panel: #1f1f1d; --text: #ecebe6; --muted: #9a9890; --line: #33322f;
+  --accent: #60a5fa; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171; --scene: #121211;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--text);
+  font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  display: grid; grid-template-columns: 300px 1fr; overflow: hidden;
+}
+aside {
+  background: var(--panel); border-right: 1px solid var(--line);
+  overflow-y: auto; padding: 14px 16px 24px;
+}
+h1 { font-size: 16px; margin: 0 0 2px; }
+.sub { color: var(--muted); margin: 0 0 12px; font-size: 12px; }
+h2 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+  margin: 18px 0 6px; font-weight: 600;
+}
+.views { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+button {
+  font: inherit; font-size: 12px; padding: 5px 4px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--line); background: transparent; color: var(--text);
+}
+button:hover { border-color: var(--accent); }
+button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+label.row { display: flex; align-items: center; gap: 8px; padding: 2px 0; cursor: pointer; }
+.sw { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.slider { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; margin: 4px 0; }
+.slider input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+.slider span:last-of-type { color: var(--muted); font-variant-numeric: tabular-nums; }
+.params { display: grid; grid-template-columns: 1fr 64px; gap: 4px 8px; align-items: center; }
+.params input {
+  font: inherit; width: 64px; padding: 2px 4px; border-radius: 4px; text-align: right;
+  border: 1px solid var(--line); background: var(--bg); color: var(--text);
+}
+.check { border-left: 3px solid var(--line); padding: 4px 0 4px 8px; margin: 6px 0; }
+.check b { display: block; font-size: 12px; }
+.check span { color: var(--muted); font-size: 12px; }
+.check.ok { border-color: var(--ok); } .check.ok b::before { content: "✓ "; color: var(--ok); }
+.check.warn { border-color: var(--warn); } .check.warn b::before { content: "! "; color: var(--warn); }
+.check.bad { border-color: var(--bad); } .check.bad b::before { content: "✕ "; color: var(--bad); }
+#info {
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 52px;
+  font-size: 12px; color: var(--muted);
+}
+#info b { color: var(--text); display: block; font-size: 13px; }
+main { position: relative; background: var(--scene); }
+#scene { position: absolute; inset: 0; }
+#labels { position: absolute; inset: 0; pointer-events: none; }
+.lbl {
+  font: 600 10px/1 system-ui, sans-serif; color: #fff; background: rgba(20, 20, 20, .72);
+  padding: 2px 4px; border-radius: 3px; white-space: nowrap;
+}
+.lbl.pin { writing-mode: vertical-rl; transform: rotate(180deg); padding: 3px 1px; font-size: 9px; }
+.lbl.vcc { background: #c81e1e; } .lbl.gnd { background: #111; outline: 1px solid #888; }
+.lbl.warn { background: #b45309; }
+#hint {
+  position: absolute; left: 12px; bottom: 10px; color: var(--muted); font-size: 12px;
+  background: color-mix(in srgb, var(--panel) 80%, transparent); padding: 4px 8px; border-radius: 6px;
+}
+#err { position: absolute; inset: 0; display: none; place-items: center; padding: 24px; text-align: center; }
+@media (max-width: 760px) {
+  body { grid-template-columns: 1fr; grid-template-rows: 55vh 1fr; overflow: auto; }
+  main { grid-row: 1; } aside { grid-row: 2; border-right: 0; border-top: 1px solid var(--line); }
+}
+</style>
+</head>
+<body>
+<aside>
+  <h1>Encaixe da placa</h1>
+  <p class="sub">ESP32 Idle Game · PCB 62×100 mm. Pads, trilhas e furos lidos do <code>.kicad_pcb</code>; medidas das peças do <code>case.scad</code>.</p>
+
+  <h2>Vista</h2>
+  <div class="views">
+    <button data-view="iso" class="on">3D</button>
+    <button data-view="front">Frente</button>
+    <button data-view="back">Verso</button>
+    <button data-view="side">Lado</button>
+  </div>
+
+  <div class="slider">
+    <span>Explodir</span><span id="explodeV">0 mm</span>
+    <input id="explode" type="range" min="0" max="25" step="0.5" value="0">
+  </div>
+  <div class="slider">
+    <span>Transparência do display</span><span id="dispOpV">0%</span>
+    <input id="dispOp" type="range" min="0" max="90" step="5" value="0">
+  </div>
+
+  <h2>Corte</h2>
+  <div class="views" style="grid-template-columns: repeat(3, 1fr)">
+    <button data-cut="none" class="on">Sem corte</button>
+    <button data-cut="y">Horizontal</button>
+    <button data-cut="x">Vertical</button>
+  </div>
+  <div class="slider" id="cutBox" style="display:none">
+    <span id="cutName">Posição</span><span id="cutV"></span>
+    <input id="cut" type="range" step="0.1">
+  </div>
+
+  <h2>Mostrar</h2>
+  <div id="toggles"></div>
+
+  <h2>Peça selecionada</h2>
+  <div id="info">Clique numa peça para ver o que é e como entra.</div>
+
+  <h2>Medidas para conferir</h2>
+  <div class="params">
+    <span>Altura do slot SD, medida do verso do display (mm)</span><input id="sdH" type="number" step="0.1" placeholder="meça">
+    <span>Pontas cortadas + solda (mm)</span><input id="stub" type="number" step="0.1" value="1.0">
+    <span>Altura da cabeça do parafuso (mm)</span><input id="headH" type="number" step="0.1" value="3.0">
+    <span>Diâmetro da cabeça do parafuso (mm)</span><input id="headD" type="number" step="0.1" value="5.5">
+  </div>
+
+  <h2>Folgas</h2>
+  <div id="checks"></div>
+</aside>
+<main>
+  <div id="scene"></div>
+  <div id="labels"></div>
+  <div id="hint">Arraste para girar · roda para zoom · botão direito para mover</div>
+  <div id="err">Não foi possível carregar o Three.js. Esta página precisa de internet para baixá-lo de cdn.jsdelivr.net.</div>
+</main>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script>
+  // Shown only if the module below never starts (CDN unreachable)
+  window.__viewerStarted = false;
+  setTimeout(() => { if (!window.__viewerStarted) document.getElementById('err').style.display = 'grid'; }, 6000);
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+window.__viewerStarted = true;
+
+// Filled in by viewer.py from esp32-idle-game.kicad_pcb
+const PCB = /*PCB_DATA*/{"pads":[{"ref":"H1","num":"","x":3.0,"y":3.0,"net":"","shape":"circle","size":3.2,"drill":3.2,"npth":true},{"ref":"SW1","num":"1","x":27.75,"y":72.05,"net":"BTN_UP","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"SW1","num":"1","x":34.25,"y":72.05,"net":"BTN_UP","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"SW1","num":"2","x":27.75,"y":76.55,"net":"GND","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"SW1","num":"2","x":34.25,"y":76.55,"net":"GND","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"J1","num":"1","x":14.49,"y":66.3,"net":"+5V","shape":"rect","size":1.7,"drill":1.0,"npth":false},{"ref":"J1","num":"2","x":17.03,"y":66.3,"net":"GND","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J1","num":"3","x":19.57,"y":66.3,"net":"TFT_CS","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J1","num":"4","x":22.11,"y":66.3,"net":"EN","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J1","num":"5","x":24.65,"y":66.3,"net":"TFT_DC","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J1","num":"6","x":27.19,"y":66.3,"net":"TFT_MOSI","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J1","num":"7","x":29.73,"y":66.3,"net":"TFT_SCK","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J1","num":"8","x":32.27,"y":66.3,"net":"TFT_LED","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J1","num":"9","x":34.81,"y":66.3,"net":"TFT_MISO","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J1","num":"10","x":37.35,"y":66.3,"net":"","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J1","num":"11","x":39.89,"y":66.3,"net":"","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J1","num":"12","x":42.43,"y":66.3,"net":"","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J1","num":"13","x":44.97,"y":66.3,"net":"","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J1","num":"14","x":47.51,"y":66.3,"net":"","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"H2","num":"","x":59.0,"y":3.0,"net":"","shape":"circle","size":3.2,"drill":3.2,"npth":true},{"ref":"H3","num":"","x":3.5,"y":96.5,"net":"","shape":"circle","size":3.2,"drill":3.2,"npth":true},{"ref":"SW5","num":"1","x":38.25,"y":82.55,"net":"BTN_MENU","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"SW5","num":"1","x":44.75,"y":82.55,"net":"BTN_MENU","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"SW5","num":"2","x":38.25,"y":87.05,"net":"GND","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"SW5","num":"2","x":44.75,"y":87.05,"net":"GND","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"SW4","num":"1","x":17.25,"y":82.55,"net":"BTN_BACK","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"SW4","num":"1","x":23.75,"y":82.55,"net":"BTN_BACK","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"SW4","num":"2","x":17.25,"y":87.05,"net":"GND","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"SW4","num":"2","x":23.75,"y":87.05,"net":"GND","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"SW2","num":"1","x":27.75,"y":93.05,"net":"BTN_DOWN","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"SW2","num":"1","x":34.25,"y":93.05,"net":"BTN_DOWN","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"SW2","num":"2","x":27.75,"y":97.55,"net":"GND","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"SW2","num":"2","x":34.25,"y":97.55,"net":"GND","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"H4","num":"","x":58.5,"y":96.5,"net":"","shape":"circle","size":3.2,"drill":3.2,"npth":true},{"ref":"SW3","num":"1","x":27.75,"y":82.55,"net":"BTN_CONFIRM","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"SW3","num":"1","x":34.25,"y":82.55,"net":"BTN_CONFIRM","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"SW3","num":"2","x":27.75,"y":87.05,"net":"GND","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"SW3","num":"2","x":34.25,"y":87.05,"net":"GND","shape":"circle","size":2.0,"drill":1.1,"npth":false},{"ref":"BZ1","num":"1","x":5.475,"y":50.0,"net":"+5V","shape":"rect","size":2.349999,"drill":1.0,"npth":false},{"ref":"BZ1","num":"2","x":12.525,"y":50.0,"net":"BUZ_N","shape":"oval","size":2.349999,"drill":1.0,"npth":false},{"ref":"C1","num":"1","x":52.0,"y":48.0,"net":"+5V","shape":"roundrect","size":1.6,"drill":0.8,"npth":false},{"ref":"C1","num":"2","x":50.0,"y":48.0,"net":"GND","shape":"circle","size":1.6,"drill":0.8,"npth":false},{"ref":"D1","num":"1","x":40.0,"y":51.5,"net":"+5V","shape":"roundrect","size":1.6,"drill":0.8,"npth":false},{"ref":"D1","num":"2","x":32.38,"y":51.5,"net":"BUZ_N","shape":"circle","size":1.6,"drill":0.8,"npth":false},{"ref":"J3","num":"1","x":8.5,"y":33.2,"net":"+5V","shape":"rect","size":1.7,"drill":1.0,"npth":false},{"ref":"J3","num":"2","x":11.04,"y":33.2,"net":"GND","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J3","num":"3","x":13.58,"y":33.2,"net":"TFT_MOSI","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J3","num":"4","x":16.12,"y":33.2,"net":"TFT_MISO","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J3","num":"5","x":18.66,"y":33.2,"net":"TFT_SCK","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J3","num":"6","x":21.2,"y":33.2,"net":"BTN_CONFIRM","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J3","num":"7","x":23.74,"y":33.2,"net":"BTN_BACK","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J3","num":"8","x":26.28,"y":33.2,"net":"","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J3","num":"9","x":28.82,"y":33.2,"net":"","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J3","num":"10","x":31.36,"y":33.2,"net":"BUZZER","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J3","num":"11","x":33.9,"y":33.2,"net":"","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J3","num":"12","x":36.44,"y":33.2,"net":"","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J3","num":"13","x":38.98,"y":33.2,"net":"","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J3","num":"14","x":41.52,"y":33.2,"net":"","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J3","num":"15","x":44.06,"y":33.2,"net":"EN","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"Q1","num":"1","x":26.0,"y":46.0,"net":"GND","shape":"rect","size":1.5,"drill":0.8,"npth":false},{"ref":"Q1","num":"2","x":23.46,"y":46.0,"net":"BUZ_B","shape":"circle","size":1.5,"drill":0.8,"npth":false},{"ref":"Q1","num":"3","x":20.92,"y":46.0,"net":"BUZ_N","shape":"circle","size":1.5,"drill":0.8,"npth":false},{"ref":"J2","num":"1","x":8.5,"y":7.8,"net":"","shape":"rect","size":1.7,"drill":1.0,"npth":false},{"ref":"J2","num":"2","x":11.04,"y":7.8,"net":"GND","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J2","num":"3","x":13.58,"y":7.8,"net":"TFT_CS","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J2","num":"4","x":16.12,"y":7.8,"net":"TFT_DC","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J2","num":"5","x":18.66,"y":7.8,"net":"","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J2","num":"6","x":21.2,"y":7.8,"net":"","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J2","num":"7","x":23.74,"y":7.8,"net":"","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J2","num":"8","x":26.28,"y":7.8,"net":"","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J2","num":"9","x":28.82,"y":7.8,"net":"","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J2","num":"10","x":31.36,"y":7.8,"net":"BTN_UP","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J2","num":"11","x":33.9,"y":7.8,"net":"TFT_LED","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J2","num":"12","x":36.44,"y":7.8,"net":"","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J2","num":"13","x":38.98,"y":7.8,"net":"","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J2","num":"14","x":41.52,"y":7.8,"net":"BTN_DOWN","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"J2","num":"15","x":44.06,"y":7.8,"net":"BTN_MENU","shape":"circle","size":1.7,"drill":1.0,"npth":false},{"ref":"R1","num":"1","x":40.0,"y":45.5,"net":"BUZZER","shape":"circle","size":1.6,"drill":0.8,"npth":false},{"ref":"R1","num":"2","x":32.38,"y":45.5,"net":"BUZ_B","shape":"circle","size":1.6,"drill":0.8,"npth":false}],"segs":[[8.5,34.602,5.475,37.627,0.6,true,"+5V"],[8.5,33.2,8.5,34.602,0.6,true,"+5V"],[5.475,37.627,5.475,50.0,0.6,true,"+5V"],[14.49,66.3,14.49,64.898,0.6,false,"+5V"],[5.475,50.0,5.475,51.452,0.6,false,"+5V"],[5.475,51.452,5.551,51.452,0.6,false,"+5V"],[40.0,51.5,48.5,51.5,0.6,false,"+5V"],[14.49,64.898,14.49,60.391,0.6,false,"+5V"],[5.551,51.452,14.49,60.391,0.6,false,"+5V"],[14.49,60.391,31.109,60.391,0.6,false,"+5V"],[48.5,51.5,52.0,48.0,0.6,false,"+5V"],[31.109,60.391,40.0,51.5,0.6,false,"+5V"],[11.04,7.8,11.04,33.2,0.6,true,"GND"],[35.802,88.602,37.802,86.602,0.6,true,"GND"],[36.25,85.05,37.802,86.602,0.6,true,"GND"],[10.755,60.025,10.755,33.485,0.6,true,"GND"],[35.802,88.602,34.25,87.05,0.6,true,"GND"],[17.03,66.3,10.755,60.025,0.6,true,"GND"],[36.25,78.55,36.25,85.05,0.6,true,"GND"],[34.25,97.55,35.802,95.998,0.6,true,"GND"],[10.755,33.485,11.04,33.2,0.6,true,"GND"],[37.802,86.602,38.25,87.05,0.6,true,"GND"],[34.25,76.55,36.25,78.55,0.6,true,"GND"],[35.802,95.998,35.802,88.602,0.6,true,"GND"],[27.28,76.55,27.75,76.55,0.6,false,"GND"],[27.302,46.0,29.164,44.138,0.6,false,"GND"],[27.75,87.05,23.75,87.05,0.6,false,"GND"],[34.25,76.55,27.75,76.55,0.6,false,"GND"],[11.04,33.2,21.91,44.07,0.6,false,"GND"],[29.164,44.138,36.365,44.138,0.6,false,"GND"],[24.07,44.07,26.0,46.0,0.6,false,"GND"],[34.25,97.55,27.75,97.55,0.6,false,"GND"],[17.03,66.3,27.28,76.55,0.6,false,"GND"],[21.91,44.07,24.07,44.07,0.6,false,"GND"],[23.75,87.05,17.25,87.05,0.6,false,"GND"],[40.227,48.0,50.0,48.0,0.6,false,"GND"],[44.75,87.05,38.25,87.05,0.6,false,"GND"],[36.365,44.138,40.227,48.0,0.6,false,"GND"],[27.75,87.05,34.25,87.05,0.6,false,"GND"],[26.0,46.0,27.302,46.0,0.6,false,"GND"],[14.208,60.938,19.57,66.3,0.3,true,"TFT_CS"],[14.208,36.121,14.208,60.938,0.3,true,"TFT_CS"],[12.31,34.223,14.208,36.121,0.3,true,"TFT_CS"],[13.58,7.8,12.31,9.07,0.3,true,"TFT_CS"],[12.31,9.07,12.31,34.223,0.3,true,"TFT_CS"],[45.365,34.505,45.365,52.812,0.3,true,"EN"],[44.06,33.2,45.365,34.505,0.3,true,"EN"],[23.489,64.921,22.11,66.3,0.3,false,"EN"],[33.257,64.921,23.489,64.921,0.3,false,"EN"],[45.365,52.812,33.257,64.921,0.3,false,"EN"],[16.12,7.8,17.39,9.07,0.3,true,"TFT_DC"],[17.39,9.07,17.39,59.04,0.3,true,"TFT_DC"],[17.39,59.04,24.65,66.3,0.3,true,"TFT_DC"],[24.389,69.101,27.19,66.3,0.3,true,"TFT_MOSI"],[23.228,69.101,24.389,69.101,0.3,true,"TFT_MOSI"],[21.677,67.55,23.228,69.101,0.225,true,"TFT_MOSI"],[14.76,57.96,20.84,64.04,0.3,true,"TFT_MOSI"],[20.84,64.04,20.84,67.55,0.3,true,"TFT_MOSI"],[20.84,67.55,21.677,67.55,0.225,true,"TFT_MOSI"],[13.58,33.2,14.76,34.38,0.3,true,"TFT_MOSI"],[14.76,34.38,14.76,57.96,0.3,true,"TFT_MOSI"],[29.73,66.3,18.66,55.23,0.3,true,"TFT_SCK"],[18.66,55.23,18.66,33.2,0.3,true,"TFT_SCK"],[30.09,34.45,31.112,35.472,0.3,true,"TFT_LED"],[33.9,7.8,32.587,6.487,0.3,true,"TFT_LED"],[32.587,6.487,30.883,6.487,0.3,true,"TFT_LED"],[30.09,7.281,30.09,34.45,0.3,true,"TFT_LED"],[31.112,35.472,31.112,52.522,0.3,true,"TFT_LED"],[30.883,6.487,30.09,7.281,0.3,true,"TFT_LED"],[31.112,52.522,32.27,53.681,0.3,true,"TFT_LED"],[32.27,53.681,32.27,66.3,0.3,true,"TFT_LED"],[34.81,66.3,34.81,43.165,0.3,true,"TFT_MISO"],[16.12,33.2,16.971,34.051,0.3,false,"TFT_MISO"],[16.971,34.051,16.971,34.45,0.3,false,"TFT_MISO"],[16.971,34.45,26.096,34.45,0.225,false,"TFT_MISO"],[26.096,34.45,34.81,43.165,0.225,false,"TFT_MISO"],[33.56,65.439,33.56,65.788,0.225,true,"BTN_UP"],[33.612,65.386,33.56,65.439,0.3,true,"BTN_UP"],[31.36,7.8,32.63,9.07,0.3,true,"BTN_UP"],[33.54,71.34,34.25,72.05,0.3,true,"BTN_UP"],[32.61,38.855,33.612,39.858,0.3,true,"BTN_UP"],[32.63,33.309,32.61,33.329,0.225,true,"BTN_UP"],[33.612,39.858,33.612,65.386,0.3,true,"BTN_UP"],[33.54,65.808,33.54,71.34,0.3,true,"BTN_UP"],[32.63,9.07,32.63,33.309,0.3,true,"BTN_UP"],[33.56,65.788,33.54,65.808,0.225,true,"BTN_UP"],[32.61,33.329,32.61,38.855,0.225,true,"BTN_UP"],[34.25,72.05,27.75,72.05,0.3,false,"BTN_UP"],[36.08,72.708,36.08,40.359,0.3,true,"BTN_DOWN"],[36.08,40.359,40.25,36.189,0.3,true,"BTN_DOWN"],[32.802,75.986,36.08,72.708,0.3,true,"BTN_DOWN"],[34.25,93.05,32.802,91.602,0.3,true,"BTN_DOWN"],[32.802,91.602,32.802,75.986,0.3,true,"BTN_DOWN"],[40.25,36.189,40.25,9.07,0.3,true,"BTN_DOWN"],[40.25,9.07,41.52,7.8,0.3,true,"BTN_DOWN"],[34.25,93.05,27.75,93.05,0.3,false,"BTN_DOWN"],[30.463,42.463,30.463,52.929,0.3,true,"BTN_CONFIRM"],[31.015,79.285,27.75,82.55,0.3,true,"BTN_CONFIRM"],[21.2,33.2,30.463,42.463,0.3,true,"BTN_CONFIRM"],[31.015,53.481,31.015,79.285,0.3,true,"BTN_CONFIRM"],[30.463,52.929,31.015,53.481,0.3,true,"BTN_CONFIRM"],[34.25,82.55,27.75,82.55,0.3,false,"BTN_CONFIRM"],[3.862,40.368,3.862,69.162,0.3,false,"BTN_BACK"],[23.75,82.55,17.25,82.55,0.3,false,"BTN_BACK"],[9.77,33.889,10.056,34.175,0.225,false,"BTN_BACK"],[3.862,69.162,17.25,82.55,0.3,false,"BTN_BACK"],[22.488,31.948,10.511,31.948,0.3,false,"BTN_BACK"],[9.77,32.69,9.77,33.309,0.3,false,"BTN_BACK"],[9.77,33.309,9.77,33.889,0.225,false,"BTN_BACK"],[10.056,34.175,3.862,40.368,0.3,false,"BTN_BACK"],[23.74,33.2,22.488,31.948,0.3,false,"BTN_BACK"],[10.511,31.948,9.77,32.69,0.3,false,"BTN_BACK"],[44.75,82.55,43.7,81.5,0.3,true,"BTN_MENU"],[43.7,66.191,43.72,66.171,0.225,true,"BTN_MENU"],[43.72,66.171,43.72,50.225,0.225,true,"BTN_MENU"],[43.72,50.225,42.79,49.295,0.3,true,"BTN_MENU"],[42.79,49.295,42.79,9.07,0.3,true,"BTN_MENU"],[43.7,81.5,43.7,66.191,0.3,true,"BTN_MENU"],[42.79,9.07,44.06,7.8,0.3,true,"BTN_MENU"],[44.75,82.55,38.25,82.55,0.3,false,"BTN_MENU"],[31.36,33.2,40.0,41.84,0.3,false,"BUZZER"],[40.0,41.84,40.0,45.5,0.3,false,"BUZZER"],[20.92,48.716,29.596,48.716,0.6,false,"BUZ_N"],[19.636,50.0,20.92,48.716,0.6,false,"BUZ_N"],[12.525,50.0,19.636,50.0,0.6,false,"BUZ_N"],[29.596,48.716,32.38,51.5,0.6,false,"BUZ_N"],[20.92,48.716,20.92,46.0,0.6,false,"BUZ_N"],[24.617,47.157,23.46,46.0,0.3,false,"BUZ_B"],[32.38,45.5,30.723,47.157,0.3,false,"BUZ_B"],[30.723,47.157,24.617,47.157,0.3,false,"BUZ_B"]],"vias":[[45.3654,52.8125,0.8,0.4],[34.81,43.1647,0.8,0.4]]}/*END_PCB_DATA*/;
+
+// ---- Dimensions, mirroring case/case.scad and generate_pcb.py (mm, KiCad x/y) ----
+const W = 62, H = 100, T = 1.6, CORNER = 3;
+const GAP = 2.5;                         // Header spacer: modules sit this far off the board
+const DISP = { x0: 6, y0: -17.2, w: 50, h: 86, thick: 4.5, glassH: 69.2, area: [43.2, 57.6] };
+const DISP_CY = 68.8 - 86 / 2;
+// Pin 1 of J1 decides which long edge of the module is the VCC side, where its SD slot sits
+const VCC_LEFT = (PCB.pads.find((p) => p.ref === 'J1' && p.num === '1')?.x ?? 0) < 62 / 2;
+const SD = { w: 19.4, d: 27.2, y0: 68.8 - 59.4 };
+SD.x0 = VCC_LEFT ? 6 : 6 + 50 - SD.w;
+const ESP = { usbX: 1.5, len: 51.5, wid: 28, midY: 7.8 + 12.7, parts: 3.5 };
+const HEADER_Y = 66.3, ROW1 = 7.8, ROW2 = 7.8 + 25.4, ESP_X0 = 8.5, PITCH = 2.54;
+const DPAD = { x: 31, y: 84.8, step: 10.5 };
+const HOLES = [[3, 3], [59, 3], [3.5, 96.5], [58.5, 96.5]];
+const SWITCH_H = 5;
+const BUZZER_H = 10;
+// Case
+const FLOOR_TOP = -(GAP + T + ESP.parts) - 1.2, FLOOR_T = 1.6, WALL = 2, CGAP = 0.5;
+const DISPLAY_TOP = T + GAP + DISP.thick, PLATE_BOT = DISPLAY_TOP + 0.2, PLATE_T = 1.6;
+const WINDOW = [46, 62], CAP_D = 8.5;
+
+// Pin names, as in generate_pcb.py
+const DISPLAY_PINS = ["VCC", "GND", "CS", "RESET", "DC", "MOSI", "SCK", "LED", "MISO",
+  "T_CLK", "T_CS", "T_DIN", "T_DO", "T_IRQ"];
+const ESP_LEFT = ["3V3", "GND", "D15", "D2", "D4", "RX2", "TX2", "D5", "D18", "D19", "D21",
+  "RX0", "TX0", "D22", "D23"];
+const ESP_RIGHT = ["VIN", "GND", "D13", "D12", "D14", "D27", "D26", "D25", "D33", "D32", "D35",
+  "D34", "VN", "VP", "EN"];
+
+// ---- Scene ----
+const host = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+host.appendChild(renderer.domElement);
+const labelRenderer = new CSS2DRenderer({ element: document.getElementById('labels') });
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, 1, 1, 3000);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(W / 2, 0, 35);
+controls.enableDamping = true;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x666655, 1.6));
+const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(80, 160, 120); scene.add(sun);
+const fill = new THREE.DirectionalLight(0xffffff, 0.8); fill.position.set(-60, -140, -40); scene.add(fill);
+
+function sceneColor() {
+  const c = getComputedStyle(document.documentElement).getPropertyValue('--scene').trim();
+  scene.background = new THREE.Color(c || '#e9e7e1');
+}
+sceneColor();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', sceneColor);
+
+// KiCad (x, y) on the board plane, z = height above the board's bottom face (front = +z)
+// -> three.js (x, z, y): y is up, z runs down the board like KiCad's y
+const V = (x, y, z) => new THREE.Vector3(x, z, y);
+
+const allMaterials = [];
+function mat(color, opts = {}) {
+  const m = new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: 0.05,
+    side: THREE.DoubleSide, ...opts });
+  allMaterials.push(m);
+  return m;
+}
+const M = {
+  pcb: mat(0x1f6b3a), track: mat(0x3b9a5a), pad: mat(0xd4d4d4, { metalness: 0.7, roughness: 0.35 }),
+  black: mat(0x1b1b1b), plastic: mat(0x2a2a2a), pin: mat(0xd9b14a, { metalness: 0.8, roughness: 0.3 }),
+  dispPcb: mat(0xb83a32), glass: mat(0x0b0e14, { roughness: 0.15, metalness: 0.3 }),
+  screen: mat(0x1d3550, { roughness: 0.2, emissive: 0x0b1a2b }),
+  espPcb: mat(0x15151f), steel: mat(0xb9bcc2, { metalness: 0.85, roughness: 0.3 }),
+  dark: mat(0x303036), stem: mat(0x585858), resistor: mat(0xd9c49a), diode: mat(0xd05a2c, { roughness: 0.3 }),
+  dispPlastic: mat(0x2a2a2a), dispPin: mat(0xd9b14a, { metalness: 0.8, roughness: 0.3 }),
+  cap: mat(0x2348a8), sd: mat(0xf59e0b, { transparent: true, opacity: 0.55, depthWrite: false }),
+  caseB: mat(0x9aa3ad, { transparent: true, opacity: 0.22, depthWrite: false }),
+  caseT: mat(0xc7b8a1, { transparent: true, opacity: 0.25, depthWrite: false }),
+  boss: mat(0x9aa3ad, { transparent: true, opacity: 0.5, depthWrite: false }),
+};
+
+// Groups, each one a toggle and an explode direction
+const groups = {};
+const labels = [];
+function group(key, name, color, explode, visible = true) {
+  const g = new THREE.Group();
+  g.userData = { name, color, explode };
+  g.visible = visible;
+  scene.add(g);
+  groups[key] = g;
+  return g;
+}
+const G = {
+  caseTop: group('caseTop', 'Case: tampa', '#c7b8a1', 3.2, false),
+  screws: group('screws', 'Parafusos M3', '#b9bcc2', 2.4),
+  display: group('display', 'Display 2.8" ILI9341', '#b83a32', 1.8),
+  buttons: group('buttons', 'Botões (frente)', '#585858', 0.8),
+  pcb: group('pcb', 'PCB', '#1f6b3a', 0),
+  tracks: group('tracks', 'Trilhas', '#3b9a5a', 0),
+  back: group('back', 'Buzzer, Q1, R1, D1, C1 (verso)', '#2348a8', -0.8),
+  esp: group('esp', 'ESP32 DevKit V1', '#15151f', -1.8),
+  caseBottom: group('caseBottom', 'Case: bandeja', '#9aa3ad', -3.2, false),
+};
+let showLabels = true, showPinLabels = true;
+
+function info(obj, title, text) { obj.userData.info = { title, text }; return obj; }
+
+// Box from KiCad corner (x0, y0), size w x d on the board plane, z0 .. z0 + h
+function box(g, m, x0, y0, w, d, z0, h, title, text) {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+  mesh.position.copy(V(x0 + w / 2, y0 + d / 2, z0 + h / 2));
+  g.add(mesh);
+  if (title) info(mesh, title, text);
+  return mesh;
+}
+// Upright cylinder at (x, y), z0 .. z0 + h
+function cylZ(g, m, x, y, r, z0, h, title, text) {
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 32), m);
+  mesh.position.copy(V(x, y, z0 + h / 2));
+  g.add(mesh);
+  if (title) info(mesh, title, text);
+  return mesh;
+}
+// Lying cylinder centred at (x, y, z), along KiCad x ('x') or y ('y')
+function cylLying(g, m, x, y, z, r, len, axis, title, text) {
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 32), m);
+  mesh.position.copy(V(x, y, z));
+  if (axis === 'x') mesh.rotation.z = Math.PI / 2; else mesh.rotation.x = Math.PI / 2;
+  g.add(mesh);
+  if (title) info(mesh, title, text);
+  return mesh;
+}
+function label(g, text, x, y, z, cls = '') {
+  const el = document.createElement('div');
+  el.className = 'lbl ' + cls;
+  el.textContent = text;
+  const o = new CSS2DObject(el);
+  o.position.copy(V(x, y, z));
+  o.userData.pin = cls.includes('pin');
+  o.userData.side = z < 0 ? -1 : 1;
+  g.add(o);
+  labels.push(o);
+  return o;
+}
+function roundedRect(shape, x0, y0, w, h, r) {
+  shape.moveTo(x0 + r, y0);
+  shape.lineTo(x0 + w - r, y0); shape.absarc(x0 + w - r, y0 + r, r, -Math.PI / 2, 0);
+  shape.lineTo(x0 + w, y0 + h - r); shape.absarc(x0 + w - r, y0 + h - r, r, 0, Math.PI / 2);
+  shape.lineTo(x0 + r, y0 + h); shape.absarc(x0 + r, y0 + h - r, r, Math.PI / 2, Math.PI);
+  shape.lineTo(x0, y0 + r); shape.absarc(x0 + r, y0 + r, r, Math.PI, Math.PI * 1.5);
+  return shape;
+}
+// Extrudes a shape drawn in KiCad x/y into a slab from z0 to z0 + depth
+function slab(g, m, shape, z0, depth, title, text) {
+  const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 20 });
+  geo.rotateX(Math.PI / 2);      // shape y -> scene z; extrusion -> scene -y
+  geo.translate(0, z0 + depth, 0);
+  const mesh = new THREE.Mesh(geo, m);
+  g.add(mesh);
+  if (title) info(mesh, title, text);
+  return mesh;
+}
+
+// ---- PCB ----
+{
+  const shape = roundedRect(new THREE.Shape(), 0, 0, W, H, CORNER);
+  for (const p of PCB.pads) if (p.drill > 0) {
+    const hole = new THREE.Path(); hole.absarc(p.x, p.y, p.drill / 2, 0, Math.PI * 2, true); shape.holes.push(hole);
+  }
+  for (const [x, y, , d] of PCB.vias) {
+    const hole = new THREE.Path(); hole.absarc(x, y, d / 2, 0, Math.PI * 2, true); shape.holes.push(hole);
+  }
+  slab(G.pcb, M.pcb, shape, 0, T, 'PCB 62×100 mm, 2 camadas',
+    'Frente: display e botões. Verso: ESP32, buzzer, Q1, R1, D1 e C1. Cada peça entra pelo lado em que fica e é soldada pelo lado oposto.');
+
+  const padGeo = {};
+  const ringGeo = (p) => {
+    const key = `${p.shape}${p.size}${p.drill}`;
+    if (padGeo[key]) return padGeo[key];
+    const s = new THREE.Shape();
+    if (p.shape === 'rect') { s.moveTo(-p.size / 2, -p.size / 2); s.lineTo(p.size / 2, -p.size / 2);
+      s.lineTo(p.size / 2, p.size / 2); s.lineTo(-p.size / 2, p.size / 2); s.closePath(); }
+    else s.absarc(0, 0, p.size / 2, 0, Math.PI * 2, false);
+    const h = new THREE.Path(); h.absarc(0, 0, p.drill / 2, 0, Math.PI * 2, true); s.holes.push(h);
+    return (padGeo[key] = new THREE.ShapeGeometry(s, 24));
+  };
+  for (const p of PCB.pads) {
+    if (p.npth) continue;
+    for (const z of [T + 0.03, -0.03]) {
+      const m = new THREE.Mesh(ringGeo(p), M.pad);
+      m.rotation.x = -Math.PI / 2;
+      m.position.copy(V(p.x, p.y, z));
+      info(m, `${p.ref} pino ${p.num}`, p.net ? `Rede ${p.net}` : 'Sem ligação');
+      G.pcb.add(m);
+    }
+  }
+  if (!PCB.pads.length) label(G.pcb, 'Sem dados da placa: rode python3 hardware/viewer.py', W / 2, H / 2, T + 1, 'warn');
+
+  for (const [x1, y1, x2, y2, w, front, net] of PCB.segs) {
+    const len = Math.hypot(x2 - x1, y2 - y1), z = front ? T + 0.02 : -0.06;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(len, 0.04, w), M.track);
+    m.position.copy(V((x1 + x2) / 2, (y1 + y2) / 2, z + 0.02));
+    m.rotation.y = -Math.atan2(y2 - y1, x2 - x1);
+    info(m, `Trilha ${net}`, `${front ? 'Frente' : 'Verso'} · ${w} mm de largura`);
+    G.tracks.add(m);
+    for (const [x, y] of [[x1, y1], [x2, y2]]) {
+      const c = new THREE.Mesh(new THREE.CylinderGeometry(w / 2, w / 2, 0.04, 12), M.track);
+      c.position.copy(V(x, y, z + 0.02));
+      G.tracks.add(c);
+    }
+  }
+}
+
+// ---- Display (front, 2.5 mm up on its header spacer) ----
+const sdMesh = (() => {
+  const g = G.display, z0 = T + GAP;
+  box(g, M.dispPcb, DISP.x0, DISP.y0, DISP.w, DISP.h, z0, T, 'Display 2.8" ILI9341 (módulo 50×86 mm)',
+    'Face para cima e o conector embaixo, perto dos botões. Os ~17 mm de cima passam da borda da placa e se apoiam nos trilhos da bandeja. Na frente da placa, o jumper J1 do módulo precisa estar aberto (entrada de 5 V).');
+  const glassY0 = DISP_CY - DISP.glassH / 2;
+  box(g, M.glass, DISP.x0, glassY0, DISP.w, DISP.glassH, z0 + T, DISP.thick - T, 'Vidro do LCD',
+    'A espessura total do módulo (placa + vidro) é 4,5 mm no case.scad (display_thick).');
+  box(g, M.screen, W / 2 - DISP.area[0] / 2, DISP_CY - DISP.area[1] / 2,
+    DISP.area[0], DISP.area[1], z0 + DISP.thick + 0.01, 0.02, 'Área visível 43,2×57,6 mm',
+    'A janela da tampa tem 46×62 mm, um pouco maior.');
+  // Header: plastic spacer and the 14 pins, through the board and clipped on the back
+  box(g, M.dispPlastic, W / 2 - 14 * PITCH / 2, HEADER_Y - 1.25, 14 * PITCH, 2.5, T, GAP,
+    'Espaçador do conector do display', 'Encosta na frente da placa: é ele que define os 2,5 mm de folga embaixo do módulo.');
+  // Pin positions come from the board's J1 pads, so this follows whichever side pin 1 is on
+  const j1 = Object.fromEntries(PCB.pads.filter((p) => p.ref === 'J1').map((p) => [+p.num, p.x]));
+  const pinX = (i) => j1[i + 1] ?? (W / 2 - 13 * PITCH / 2 + i * PITCH);
+  DISPLAY_PINS.forEach((name, i) => {
+    const x = pinX(i);
+    const pm = box(g, M.dispPin, x - 0.32, HEADER_Y - 0.32, 0.64, 0.64, -1, T + GAP + T + 2,
+      `Pino ${i + 1} do display: ${name}`,
+      i < 9 ? `Ligado na rede ${['+5V', 'GND', 'TFT_CS', 'EN', 'TFT_DC', 'TFT_MOSI', 'TFT_SCK', 'TFT_LED', 'TFT_MISO'][i]}.`
+            : 'Pino do touch, sem ligação.');
+    pm.userData.stub = 'display';
+    const cls = 'pin' + (name === 'VCC' ? ' vcc' : name === 'GND' ? ' gnd' : '');
+    label(g, name, x, HEADER_Y - 4.5, z0 + T + 0.3, cls);
+  });
+  const vccLeft = pinX(0) < W / 2;
+  label(g, vccLeft ? 'VCC: primeiro pino à esquerda →' : '← VCC: último pino à direita',
+    pinX(0) + (vccLeft ? -10 : 10), HEADER_Y, z0 + T + 0.5);
+  label(g, 'Display 2.8"', W / 2, DISP_CY, DISPLAY_TOP + 1);
+  // SD card slot on the module's underside, placed from the manual's photo of the back
+  // (DLS23028B / MSP2807): 32-59 mm from the header end, along the long edge on the VCC side
+  const sd = box(g, M.sd, 0, 0, 1, 1, 0, 1, 'Slot do cartão SD',
+    'No verso do módulo, entre 32 e 59 mm a partir da borda do conector, encostado na borda longa do lado do VCC (posição tirada da foto do manual). Fica sobre a fileira J3 da ESP32. A altura varia com o fabricante: meça no seu display.');
+  label(g, 'slot SD', SD.x0 + SD.w / 2, SD.y0 + SD.d / 2, T + GAP - 1.5, 'warn');
+  return sd;
+})();
+
+// ---- Buttons ----
+const BUTTONS = [['UP', DPAD.x, DPAD.y - DPAD.step], ['DOWN', DPAD.x, DPAD.y + DPAD.step],
+  ['OK', DPAD.x, DPAD.y], ['BACK', DPAD.x - DPAD.step, DPAD.y], ['MENU', DPAD.x + DPAD.step, DPAD.y]];
+for (const [name, x, y] of BUTTONS) {
+  box(G.buttons, M.black, x - 3, y - 3, 6, 6, T, 3.5, `Botão ${name} (6×6×5 mm)`,
+    'Encaixa por pressão na frente e é soldado pelo verso, rente à placa. A altura de 5 mm é a que a case espera (switch_h).');
+  cylZ(G.buttons, M.stem, x, y, 1.75, T + 3.5, SWITCH_H - 3.5);
+  label(G.buttons, name, x, y + 4.4, T + 1);
+}
+
+// ---- ESP32 (back, hanging under its header spacers, components facing out) ----
+{
+  const g = G.esp, zFace = -GAP, zPcb = zFace - T, y0 = ESP.midY - ESP.wid / 2;
+  for (const row of [ROW1, ROW2])
+    box(g, M.plastic, ESP_X0 - PITCH / 2, row - 1.25, 15 * PITCH, 2.5, -GAP, GAP,
+      'Espaçador dos pinos da ESP32', 'Encosta no verso da placa. Os 30 pinos saem na frente e precisam ser cortados rentes (< 1 mm): ficam embaixo do display.');
+  [[ROW1, ESP_LEFT], [ROW2, ESP_RIGHT]].forEach(([row, names]) => names.forEach((n, i) => {
+    const pm = box(g, M.pin, ESP_X0 + i * PITCH - 0.32, row - 0.32, 0.64, 0.64, zPcb, T + GAP + T + 1,
+      `ESP32 ${n}`, `Fileira ${row === ROW1 ? 'J2 (de cima)' : 'J3 (de baixo)'}`);
+    pm.userData.stub = 'esp';
+  }));
+  box(g, M.espPcb, ESP.usbX, y0, ESP.len, ESP.wid, zPcb, T, 'ESP32 DevKit V1, 30 pinos',
+    'Deitada no verso, com os componentes para fora e o USB para a borda esquerda (vista de frente). As fileiras precisam estar a 25,4 mm.');
+  box(g, M.steel, ESP.usbX + ESP.len - 6.5 - 17.6, ESP.midY - 9, 17.6, 18, zPcb - 3.1, 3.1,
+    'Blindagem do WROOM-32', 'A parte mais alta da ESP32, 3,1 mm.');
+  box(g, M.dark, ESP.usbX + ESP.len - 6.5, ESP.midY - 9, 6.5, 18, zPcb - 0.8, 0.8,
+    'Antena do WROOM-32', 'Fica sobre o plano de terra. Só faria diferença se o jogo usasse WiFi ou Bluetooth.');
+  box(g, M.steel, ESP.usbX - 1, ESP.midY - 4, 6, 8, zPcb - 2.9, 2.9,
+    'Conector micro-USB', 'Sai pela abertura de 12×8 mm na parede esquerda da bandeja.');
+  box(g, M.dark, ESP.usbX + 11, ESP.midY - 3, 5, 6, zPcb - 1.5, 1.5, 'Conversor USB-serial');
+  label(g, 'ESP32 (verso)', ESP.usbX + ESP.len / 2, ESP.midY, zPcb - 4);
+  label(g, 'USB', ESP.usbX + 2, ESP.midY, zPcb - 4);
+}
+
+// ---- Back parts: buzzer driver ----
+{
+  const g = G.back;
+  cylZ(g, M.black, 9, 50, 6, -BUZZER_H, BUZZER_H, 'BZ1: buzzer passivo 12×10 mm (Eletrogate)',
+    'Encostado no verso, + no pad quadrado. Os furos são oblongos e aceitam pernas a 6,5 ou 7,6 mm. Com 10 mm de altura ele passa do fundo da bandeja, então fica dentro de um furo de 13 mm no fundo, que também deixa o som sair.');
+  label(g, 'BZ1', 9, 50, -BUZZER_H - 1);
+  const q = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, 4.5, 32, 1, false, 0, Math.PI * 1.45), M.black);
+  q.position.copy(V(23.46, 46, -0.5 - 2.25)); q.rotation.y = Math.PI * 0.275;
+  info(q, 'Q1: transistor NPN TO-92', 'S8050 ou 2N2222A seguem as letras E B C. Um BC337 (C-B-E) entra girado 180°. Corpo a ~1 mm da placa.');
+  g.add(q);
+  for (const x of [26, 23.46, 20.92]) box(g, M.pin, x - 0.2, 45.8, 0.4, 0.4, -0.6, T + 1.6);
+  label(g, 'Q1', 23.46, 46, -6.2);
+  cylLying(g, M.resistor, 36.19, 45.5, -1.25, 1.25, 6.3, 'x', 'R1: resistor 1 kΩ', 'Deitado, sem polaridade.');
+  label(g, 'R1', 36.19, 45.5, -3);
+  cylLying(g, M.diode, 36.19, 51.5, -0.95, 0.95, 3.8, 'x', 'D1: diodo 1N4148', 'Faixa preta (catodo) do lado marcado K, que é o +5V.');
+  label(g, 'D1', 36.19, 51.5, -2.6);
+  cylLying(g, M.cap, 51, 50.8 + 5.5, -2.5, 2.5, 11, 'y', 'C1: capacitor 100 µF',
+    'Pernas dobradas a 90° rente ao corpo, deitado sobre o retângulo "C1" na direção dos botões. Perna longa (+) no pad marcado +.');
+  label(g, 'C1', 51, 56.3, -5.6);
+}
+
+// ---- Screws ----
+const screwHeads = HOLES.map(([x, y]) => {
+  cylZ(G.screws, M.steel, x, y, 1.5, FLOOR_TOP + 1, T - FLOOR_TOP - 1, 'Parafuso M3×6',
+    'Entra pela frente e abre rosca no ressalto da bandeja (furo de 2,6 mm). Não aperte demais.');
+  return cylZ(G.screws, M.steel, x, y, 1, T, 1, 'Cabeça do parafuso M3',
+    'As duas de cima ficam embaixo das bordas do display, que está 2,5 mm acima da placa.');
+});
+
+// ---- Case ----
+{
+  const top = DISP.y0, len = H - top;
+  const outline = (d) => roundedRect(new THREE.Shape(), -d, top - d, W + 2 * d, len + 2 * d, CORNER + d);
+  const floorBot = FLOOR_TOP - FLOOR_T, outer = CGAP + WALL;
+  const floor = outline(outer);
+  const bzHole = new THREE.Path(); bzHole.absarc(9, 50, 6.5, 0, Math.PI * 2, true); floor.holes.push(bzHole);
+  slab(G.caseBottom, M.caseB, floor, floorBot, FLOOR_T, 'Bandeja (case_bottom.stl)',
+    'A PCB é parafusada nela e a ESP32 fica pendurada dentro. Fundo 1,2 mm abaixo da peça mais baixa da ESP, com um furo de 13 mm onde o buzzer se encaixa.');
+  const wallShape = outline(outer); wallShape.holes.push(outline(CGAP));
+  const usbZ = -(GAP + T + 1.6), usbZ0 = Math.max(usbZ - 4, floorBot + 0.6), usbZ1 = usbZ + 4;
+  // Walls in three bands so the left wall can carry the USB opening
+  const bandZ0 = Math.max(usbZ0, FLOOR_TOP);
+  if (usbZ0 > FLOOR_TOP) slab(G.caseBottom, M.caseB, wallShape, FLOOR_TOP, usbZ0 - FLOOR_TOP, 'Parede da bandeja');
+  slab(G.caseBottom, M.caseB, wallShape, usbZ1, T + GAP - usbZ1, 'Parede da bandeja');
+  const band = new THREE.Shape();
+  band.moveTo(-outer, top - outer); band.lineTo(W + outer, top - outer); band.lineTo(W + outer, H + outer);
+  band.lineTo(-outer, H + outer); band.lineTo(-outer, ESP.midY + 6); band.lineTo(-CGAP, ESP.midY + 6);
+  band.lineTo(-CGAP, H + CGAP); band.lineTo(W + CGAP, H + CGAP); band.lineTo(W + CGAP, top - CGAP);
+  band.lineTo(-CGAP, top - CGAP); band.lineTo(-CGAP, ESP.midY - 6); band.lineTo(-outer, ESP.midY - 6);
+  band.closePath();
+  slab(G.caseBottom, M.caseB, band, bandZ0, usbZ1 - bandZ0, 'Abertura do USB', 'Recorte de 12×8 mm na parede esquerda, alinhado ao conector da ESP32.');
+  label(G.caseBottom, 'abertura USB', -outer - 1, ESP.midY, usbZ);
+  for (const [x, y] of HOLES) cylZ(G.caseBottom, M.boss, x, y, 3.25, FLOOR_TOP, -FLOOR_TOP, 'Ressalto do parafuso', 'A PCB se apoia nele.');
+  for (const x of [DISP.x0, DISP.x0 + DISP.w - 3])
+    box(G.caseBottom, M.boss, x, top, 3, -0.5 - top, FLOOR_TOP, T + GAP - FLOOR_TOP, 'Trilho do display',
+      'Apoia a parte do display que passa da placa, pelas bordas, longe do slot SD no meio.');
+
+  const plate = outline(outer);
+  const win = new THREE.Path();
+  win.moveTo(W / 2 - WINDOW[0] / 2, DISP_CY - WINDOW[1] / 2); win.lineTo(W / 2 - WINDOW[0] / 2, DISP_CY + WINDOW[1] / 2);
+  win.lineTo(W / 2 + WINDOW[0] / 2, DISP_CY + WINDOW[1] / 2); win.lineTo(W / 2 + WINDOW[0] / 2, DISP_CY - WINDOW[1] / 2);
+  win.closePath(); plate.holes.push(win);
+  for (const [, x, y] of BUTTONS) { const h = new THREE.Path(); h.absarc(x, y, CAP_D / 2, 0, Math.PI * 2, true); plate.holes.push(h); }
+  slab(G.caseTop, M.caseT, plate, PLATE_BOT, PLATE_T, 'Tampa (case_top.stl)',
+    'Fica 0,2 mm acima do vidro do display. Os 5 botões impressos levam o toque até as chaves.');
+  const tWall = outline(outer); tWall.holes.push(outline(CGAP + 0.01));
+  slab(G.caseTop, M.caseT, tWall, T + GAP, PLATE_BOT - T - GAP, 'Parede da tampa');
+}
+
+// ---- Toggles ----
+const toggles = document.getElementById('toggles');
+for (const [key, g] of Object.entries(groups)) {
+  const row = document.createElement('label'); row.className = 'row';
+  row.innerHTML = `<input type="checkbox" ${g.visible ? 'checked' : ''}><span class="sw" style="background:${g.userData.color}"></span>${g.userData.name}`;
+  row.querySelector('input').addEventListener('change', (e) => { g.visible = e.target.checked; refreshLabels(); });
+  toggles.appendChild(row);
+}
+for (const [text, get, set] of [['Nomes das peças', () => showLabels, (v) => (showLabels = v)],
+                                ['Nomes dos pinos do display', () => showPinLabels, (v) => (showPinLabels = v)]]) {
+  const row = document.createElement('label'); row.className = 'row';
+  row.innerHTML = `<input type="checkbox" ${get() ? 'checked' : ''}><span class="sw" style="background:#555"></span>${text}`;
+  row.querySelector('input').addEventListener('change', (e) => { set(e.target.checked); refreshLabels(); });
+  toggles.appendChild(row);
+}
+function refreshLabels() {
+  for (const l of labels) {
+    let vis = l.userData.pin ? showPinLabels : showLabels, p = l.parent;
+    while (p && vis) { vis = p.visible; p = p.parent; }
+    l.userData.on = vis;
+    l.visible = vis;
+  }
+}
+refreshLabels();
+
+// ---- Explode and display transparency ----
+const explode = document.getElementById('explode');
+explode.addEventListener('input', () => {
+  const e = +explode.value;
+  for (const g of Object.values(groups)) g.position.y = g.userData.explode * e;
+  document.getElementById('explodeV').textContent = `${e} mm`;
+});
+const dispOp = document.getElementById('dispOp');
+const dispMats = new Set();
+G.display.traverse((o) => { if (o.isMesh && o.material !== M.sd) dispMats.add(o.material); });
+dispOp.addEventListener('input', () => {
+  const t = +dispOp.value / 100;
+  for (const m of dispMats) { m.transparent = t > 0; m.opacity = 1 - t; m.depthWrite = t === 0; m.needsUpdate = true; }
+  document.getElementById('dispOpV').textContent = `${dispOp.value}%`;
+});
+
+// ---- Section cut ----
+const plane = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
+const cut = document.getElementById('cut');
+let cutAxis = 'none';
+function applyCut() {
+  if (cutAxis === 'none') { renderer.clippingPlanes = []; return; }
+  const v = +cut.value;
+  if (cutAxis === 'y') plane.set(new THREE.Vector3(0, 0, -1), v); else plane.set(new THREE.Vector3(-1, 0, 0), v);
+  renderer.clippingPlanes = [plane];
+  document.getElementById('cutV').textContent = `${cutAxis} = ${v.toFixed(1)} mm`;
+}
+document.querySelectorAll('[data-cut]').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-cut]').forEach((x) => x.classList.toggle('on', x === b));
+  cutAxis = b.dataset.cut;
+  document.getElementById('cutBox').style.display = cutAxis === 'none' ? 'none' : '';
+  if (cutAxis === 'y') {
+    Object.assign(cut, { min: -18, max: 101 }); cut.value = ROW1;
+    document.getElementById('cutName').textContent = 'Linha de corte (de cima para baixo)';
+  } else if (cutAxis === 'x') {
+    Object.assign(cut, { min: -3, max: 65 }); cut.value = W / 2;
+    document.getElementById('cutName').textContent = 'Linha de corte (da esquerda para a direita)';
+  }
+  applyCut(); cutCamera();
+}));
+cut.addEventListener('input', applyCut);
+// Looks at the kept side of the cut face, from just beyond it
+function cutCamera() {
+  const v = +cut.value;
+  if (cutAxis === 'y') goTo([W / 2, 2, v + 115], [W / 2, 0, v]);
+  else if (cutAxis === 'x') goTo([v + 150, 2, 41], [v, 0, 41]);
+}
+
+// ---- Views ----
+let anim = null;
+function goTo(pos, target = [W / 2, 0, 38]) {
+  anim = { t0: performance.now(), p0: camera.position.clone(), c0: controls.target.clone(),
+    p1: new THREE.Vector3(...pos), c1: new THREE.Vector3(...target) };
+}
+const VIEWS = {
+  iso: [[150, 150, 190]],
+  front: [[W / 2, 270, 38.5]],
+  back: [[W / 2, -270, 37.5]],
+  side: [[-280, 4, 38]],
+};
+document.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-view]').forEach((x) => x.classList.toggle('on', x === b));
+  goTo(...VIEWS[b.dataset.view]);
+}));
+camera.position.set(...VIEWS.iso[0]);
+
+// ---- Picking ----
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
+let down = null, picked = null, pickedEmissive = null;
+renderer.domElement.addEventListener('pointerdown', (e) => (down = [e.clientX, e.clientY]));
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 4) return;
+  const r = renderer.domElement.getBoundingClientRect();
+  mouse.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(mouse, camera);
+  const hits = ray.intersectObjects(scene.children, true).filter((h) => {
+    if (!h.object.userData.info) return false;
+    for (let p = h.object; p; p = p.parent) if (!p.visible) return false;
+    return !renderer.clippingPlanes.length || renderer.clippingPlanes[0].distanceToPoint(h.point) >= 0;
+  });
+  if (picked) { picked.material = pickedEmissive; picked = null; }
+  const el = document.getElementById('info');
+  if (!hits.length) { el.textContent = 'Clique numa peça para ver o que é e como entra.'; return; }
+  const o = hits[0].object;
+  pickedEmissive = o.material;
+  o.material = o.material.clone(); o.material.emissive = new THREE.Color(0x2563eb); o.material.emissiveIntensity = 0.6;
+  picked = o;
+  el.innerHTML = `<b></b><span></span>`;
+  el.querySelector('b').textContent = o.userData.info.title;
+  el.querySelector('span').textContent = o.userData.info.text || '';
+});
+
+// ---- Measurements and clearance checks ----
+const num = (id) => parseFloat(document.getElementById(id).value) || 0;
+function check(level, title, text) { return `<div class="check ${level}"><b>${title}</b><span>${text}</span></div>`; }
+const mm = (v) => `${v.toFixed(2).replace('.', ',')} mm`;
+function update() {
+  const sdRaw = parseFloat(document.getElementById('sdH').value), sdMeasured = !Number.isNaN(sdRaw);
+  const sdH = sdMeasured ? sdRaw : 2.0, stub = num('stub'), headH = num('headH'), headD = num('headD');
+  // SD slot box
+  sdMesh.scale.set(SD.w, sdH, SD.d);
+  sdMesh.position.copy(V(SD.x0 + SD.w / 2, SD.y0 + SD.d / 2, T + GAP - sdH / 2));
+  // Clipped pin stubs: ESP pins poke out of the front, display pins out of the back
+  scene.traverse((o) => {
+    if (o.userData.stub === 'esp') { const h = T + GAP + T + stub; o.scale.y = h / o.geometry.parameters.height;
+      o.position.y = -GAP - T + h / 2; }
+    if (o.userData.stub === 'display') { const h = stub + T + GAP + T + 2; o.scale.y = h / o.geometry.parameters.height;
+      o.position.y = -stub + h / 2; }
+  });
+  for (const s of screwHeads) { s.scale.set(headD / 2, headH, headD / 2); s.position.y = T + headH / 2; }
+
+  const out = [];
+  // 1. SD slot against the board and the ESP pins under it
+  const sdBottom = T + GAP - sdH;
+  const under = PCB.pads.filter((p) => (p.ref === 'J2' || p.ref === 'J3') &&
+    p.x + p.size / 2 > SD.x0 && p.x - p.size / 2 < SD.x0 + SD.w &&
+    p.y + p.size / 2 > SD.y0 && p.y - p.size / 2 < SD.y0 + SD.d);
+  const names = (ref) => under.filter((p) => p.ref === ref).map((p) => (ref === 'J2' ? ESP_LEFT : ESP_RIGHT)[p.num - 1]);
+  const clearBoard = sdBottom - T, clearPins = sdBottom - (T + stub);
+  const where = [['J2', names('J2')], ['J3', names('J3')]].filter(([, n]) => n.length)
+    .map(([r, n]) => `${r} (${n.join(', ')})`).join(' e ');
+  let lvl, txt;
+  if (!sdMeasured) { lvl = 'warn'; txt = `Fica sobre os pinos ${where || 'da ESP'}. Meça a altura do slot no seu display e digite acima; a folga disponível é ${mm(GAP)} menos as pontas cortadas.`; }
+  else if (clearBoard < 0) { lvl = 'bad'; txt = `O slot é ${mm(-clearBoard)} mais alto que o espaçador de ${mm(GAP)}: o display não assenta na placa.`; }
+  else if (under.length && clearPins < 0) { lvl = 'bad'; txt = `Fica sobre os pinos ${where} e bate nas pontas (${mm(-clearPins)} de interferência). Corte esses pinos o mais rente possível e lixe a solda, ou use um espaçador mais alto e ajuste module_gap no case.scad.`; }
+  else if (under.length && clearPins < 0.3) { lvl = 'warn'; txt = `Fica sobre os pinos ${where} com só ${mm(clearPins)} de folga. Corte bem rente e cubra as pontas com kapton.`; }
+  else { lvl = 'ok'; txt = under.length ? `Passa sobre ${where} com ${mm(clearPins)} de folga.` : `Não fica sobre nenhum pino da ESP. Folga até a placa: ${mm(clearBoard)}.`; }
+  sdMesh.material.color.set(lvl === 'bad' ? 0xdc2626 : lvl === 'warn' ? 0xf59e0b : 0x22c55e);
+  out.push(check(lvl, 'Slot SD do display × pinos da ESP32', txt + (sdMeasured ? ' Posição do slot pela foto do manual; a altura é a que você digitou.' : '')));
+
+  // 2. Top screw heads against the display's side edges
+  const lateral = DISP.x0 - (HOLES[0][0] + headD / 2);
+  if (lateral >= 0.2) out.push(check(lateral < 0.5 ? 'warn' : 'ok', 'Cabeça dos parafusos de cima × display',
+    `Ficam ao lado do módulo, com ${mm(lateral)} de folga lateral. ${lateral < 0.5 ? 'É justo: se o display ficar torto, ele encosta na cabeça.' : ''}`));
+  else out.push(check(headH <= GAP - 0.2 ? 'warn' : 'bad', 'Cabeça dos parafusos de cima × display',
+    `A cabeça entra ${mm(-lateral)} embaixo do display. ${headH <= GAP - 0.2 ? `Cabe na altura (${mm(GAP - headH)} livres).` : `Com ${mm(headH)} de altura, ela bate no display (só há ${mm(GAP)}). Use uma cabeça mais baixa.`}`));
+
+  // Which side the board puts the display's VCC on (the module tested has it on the left)
+  const j1p1 = PCB.pads.find((p) => p.ref === 'J1' && p.num === '1');
+  if (j1p1) out.unshift(j1p1.x < W / 2
+    ? check('ok', 'Pino 1 (VCC) do display', 'Na placa, o VCC fica à esquerda (tela para você, conector embaixo), como no módulo medido.')
+    : check('bad', 'Pino 1 (VCC) do display', 'Esta placa ainda tem o VCC à direita, o espelho do módulo medido. Gere a placa de novo (build.sh) antes de fabricar.'));
+
+  // 3. Display bottom edge vs the UP switch
+  const upEdge = DPAD.y - DPAD.step - 3, dispEdge = DISP.y0 + DISP.h;
+  out.push(check('ok', 'Borda do display × botão UP', `${mm(upEdge - dispEdge)} entre a borda de baixo do módulo e o corpo da chave.`));
+
+  // 4. Back side: tallest part vs the ESP stack and the case floor
+  const espLow = GAP + T + ESP.parts;
+  out.push(check('ok', 'Peças do verso × ESP32', `Q1 desce ${mm(5.5)} e a ESP32 ${mm(espLow)}. O buzzer desce ${mm(BUZZER_H)} e é o único que passa dela.`));
+  const floorOut = -FLOOR_TOP + FLOOR_T;
+  out.push(check(BUZZER_H < floorOut ? 'ok' : 'bad', 'Buzzer × fundo da bandeja',
+    `Passa ${mm(BUZZER_H + FLOOR_TOP)} do topo do fundo e se encaixa no furo de 13 mm, ficando ${mm(floorOut - BUZZER_H)} para dentro da face de fora.`));
+  out.push(check('ok', 'ESP32 × fundo da bandeja', `${mm(-FLOOR_TOP - espLow)} entre a blindagem do WROOM e o fundo.`));
+
+  // 5. Display glass vs the bezel
+  out.push(check('ok', 'Vidro do display × tampa', `${mm(PLATE_BOT - DISPLAY_TOP)} de folga, se o módulo tiver 4,5 mm de espessura. Meça o seu: se for mais grosso, ajuste display_thick no case.scad.`));
+
+  // 6. Display pins on the back vs the ESP
+  out.push(check('ok', 'Solda do display (verso) × ESP32', `O conector do display fica em y = ${HEADER_Y} mm, ${mm(HEADER_Y - (ESP.midY + ESP.wid / 2))} abaixo da borda da ESP32: dá para soldar com ela já montada.`));
+  document.getElementById('checks').innerHTML = out.join('');
+}
+document.querySelectorAll('.params input').forEach((i) => i.addEventListener('input', update));
+update();
+
+{
+  const q = new URLSearchParams(location.hash.slice(1));
+  if (q.get('view')) document.querySelector(`[data-view="${q.get('view')}"]`)?.click();
+  if (q.get('explode')) { explode.value = q.get('explode'); explode.dispatchEvent(new Event('input')); }
+  if (q.get('show')) for (const k of q.get('show').split(',')) if (groups[k]) { groups[k].visible = true;
+    [...toggles.querySelectorAll('input')][Object.keys(groups).indexOf(k)].checked = true; }
+  if (q.get('cut')) { const [axis, v] = q.get('cut').split(':'); document.querySelector(`[data-cut="${axis}"]`)?.click();
+    if (v) { cut.value = v; applyCut(); cutCamera(); } }
+  refreshLabels();
+}
+
+// ---- Loop ----
+function resize() {
+  const w = host.clientWidth, h = host.clientHeight;
+  renderer.setSize(w, h); labelRenderer.setSize(w, h);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(host);
+resize();
+renderer.setAnimationLoop((now) => {
+  if (anim) {
+    const k = Math.min(1, (now - anim.t0) / 600), e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+    camera.position.lerpVectors(anim.p0, anim.p1, e);
+    controls.target.lerpVectors(anim.c0, anim.c1, e);
+    if (k === 1) anim = null;
+  }
+  controls.update();
+  const seen = camera.position.y - controls.target.y, exploded = +explode.value > 6;
+  for (const l of labels) l.visible = l.userData.on && cutAxis === 'none' &&
+    (exploded || Math.abs(seen) < 40 || Math.sign(seen) === l.userData.side);
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+});
+</script>
+</body>
+</html>

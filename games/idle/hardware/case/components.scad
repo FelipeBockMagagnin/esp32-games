@@ -61,7 +61,7 @@ module esp_parts_dark() {
 
 // Back of the board, in the strip below the ESP32
 module buzzer() {
-    at(buzzer_pos, -5.5) cylinder(h = 5.5, d = 9);
+    at(buzzer_pos, -buzzer_h) cylinder(h = buzzer_h, d = buzzer_d);
 }
 
 module transistor() {

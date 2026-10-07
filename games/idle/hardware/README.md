@@ -19,6 +19,7 @@ Placa portátil de **62×100 mm**, 2 camadas, só com componentes PTH (fáceis d
 - `esp32-idle-game.kicad_pcb`: a placa, que abre no KiCad 10.
 - `bom.csv`: lista de componentes por referência.
 - `generate_pcb.py` e `build.sh`: geram tudo do zero (posicionamento, roteamento com Freerouting, plano de terra, DRC, Gerbers e prévias). Mudanças se fazem no `.py`, não no KiCad.
+- `viewer.html`: visualização 3D de como display, ESP32, peças, parafusos e case se encaixam, com vista explodida, corte e checagem de folgas. Abre direto no navegador (precisa de internet para carregar o Three.js). O `build.sh` atualiza os dados dela via `viewer.py`.
 - `case/`: a case impressa em 3D (seção 7).
 
 ```bash
@@ -50,19 +51,28 @@ Duas listas com tudo o que entra numa unidade montada: uma comprando só no Bras
 |---|---|---|---|
 | 1 | ESP32 DevKit V1, **30 pinos** | [Mercado Livre](https://lista.mercadolivre.com.br/esp32-30-pinos) | 33 – 60 |
 | 1 | Display TFT **2.8"** ILI9341 SPI (14 pinos, com ou sem touch) | [Mercado Livre](https://lista.mercadolivre.com.br/display-tft-ili9341) | 64 – 93 |
-| 5 | Chave táctil 6×6×5 mm | [Eletrogate](https://www.eletrogate.com/push-button-chave-tactil-6x6x5mm) | 0,75 |
-| 1 | Buzzer passivo 9 mm, 5 V | [Saravati](https://www.saravati.com.br/buzzer-9mm-5v-passivo.html) | 2 |
-| 1 | Transistor S8050 (ou 2N2222A) | [Mercado Livre](https://lista.mercadolivre.com.br/transistor-s8050) | 0,30 – 1 |
-| 1 | Diodo 1N4148 | [Mercado Livre](https://lista.mercadolivre.com.br/diodo-1n4148) | 0,10 – 0,30 |
-| 1 | Resistor 1 kΩ 1/4 W | [Mercado Livre](https://lista.mercadolivre.com.br/resistor-1k-1-4w) | 0,10 |
-| 1 | Capacitor eletrolítico 100 µF 16 V (5×11 mm) | [Mercado Livre](https://lista.mercadolivre.com.br/capacitor-eletrolitico-100uf-16v) | 0,30 – 1 |
+| 5 | Chave táctil 6×6×5 mm (vendida por unidade) | [Eletrogate](https://www.eletrogate.com/push-button-chave-tactil-6x6x5mm) | 0,75 |
+| 1 | Buzzer passivo **12 mm**, 5 V (12×10 mm; pernas a 6,5 ou 7,6 mm) | [Eletrogate](https://www.eletrogate.com/buzzer-passivo-5v) | 1,90 |
+| 1 | Transistor S8050 ou 2N2222A, **ou BC337 girado** (veja abaixo) | [Mercado Livre](https://lista.mercadolivre.com.br/transistor-s8050) · [Eletrogate BC337](https://www.eletrogate.com/transistor-npn-bc337) | 0,30 – 1 |
+| 1 pct | Diodo 1N4148 (10 un.) | [Eletrogate](https://www.eletrogate.com/diodo-1n4148) | 1,40 |
+| 1 pct | Resistor 1 kΩ 1/4 W (10 un.) | [Eletrogate](https://www.eletrogate.com/resistor-1k-1-4w-10-unidades) | 0,70 |
+| 1 | Capacitor eletrolítico 100 µF, 16 ou 25 V | [Eletrogate (25 V)](https://www.eletrogate.com/capacitor-eletrolitico-100uf-x-25v) | 0,30 |
 | 4 | Parafuso M3×6 | [Mercado Livre](https://lista.mercadolivre.com.br/parafuso-m3x6) | 2 – 5 |
+| *opc.* | Fita kapton, se o slot SD do display encostar nos pinos do J2 | [Mercado Livre](https://lista.mercadolivre.com.br/fita-kapton) | 8 – 15 |
+| *opc.* | Capacitor 10 µF 16 V, se a gravação falhar com a case fechada (entre EN e GND) | [Eletrogate](https://www.eletrogate.com/capacitor-eletrolitico-10uf-x-16v) | 0,20 |
 | 1 | PCB 62×100 mm, 2 camadas (lote de 5) | [PCB Brasil](https://pcbbrasil.com.br/prototipos) (cotação online com o zip) | a cotar |
 | ~50 g | Filamento PLA para a case | Se já tiver impressora | 5 – 8 |
 | — | Frete de 2 a 3 lojas | | 30 – 60 |
 | | **Total, sem a PCB** | | **~140 – 230 (típico ~165)** |
 
 O display de 2.8" é fácil de achar no Brasil, o que deixa a compra nacional mais em conta do que com a tela de 2.2".
+
+**Na Eletrogate** (estoque conferido em 07/10/2026) dá para comprar os componentes pequenos e o buzzer, mas não os módulos:
+
+- **ESP32:** a de 30 pinos está esgotada, e a página informa 25,5 mm de largura, o que sugere fileiras a 22,86 mm, que não encaixam.
+- **Display:** não vendem o 2.8" SPI.
+
+**BC337 no lugar do S8050:** o S8050 e o 2N2222 estavam esgotados. O BC337 serve, mas a ordem das pernas dele é C-B-E, invertida em relação à placa. Monte-o **girado 180°**, com a face plana para o lado oposto ao desenho da serigrafia, para que cada perna caia no furo E, B ou C certo.
 
 Não encontrei preço publicado da PCB Brasil. Para comparar, envie `fab/esp32-idle-game-gerbers.zip` na cotação. Se der menos de uns R$ 140 pelas 5 placas entregues, sai mais barato que a JLCPCB.
 
@@ -73,7 +83,7 @@ Não encontrei preço publicado da PCB Brasil. Para comparar, envie `fab/esp32-i
 | 1 | ESP32 DevKit V1, **30 pinos** | [AliExpress](https://www.aliexpress.com/w/wholesale-esp32-devkit-v1-30pin.html) | 3 |
 | 1 | Display TFT **2.8"** ILI9341 SPI (14 pinos, 50×86 mm) | [AliExpress](https://www.aliexpress.com/w/wholesale-2.8-tft-lcd-ili9341.html) | 6 |
 | 1 pct | Chave táctil 6×6×5 mm | [AliExpress](https://www.aliexpress.com/w/wholesale-tactile-switch-6x6x5mm.html) | 1 |
-| 1 pct | Buzzer passivo 9×5,5 mm, 5 V | [AliExpress](https://www.aliexpress.com/w/wholesale-passive-buzzer-9x5.5mm-5v.html) | 1 |
+| 1 pct | Buzzer passivo 12 mm, 5 V (12×9,5 ou 12×10 mm) | [AliExpress](https://www.aliexpress.com/w/wholesale-passive-buzzer-12mm-5v.html) | 1 |
 | 1 pct | Transistor S8050, TO-92 | [AliExpress](https://www.aliexpress.com/w/wholesale-s8050-to-92-transistor.html) | 1 |
 | 1 pct | Diodo 1N4148 | [AliExpress](https://www.aliexpress.com/w/wholesale-1n4148-diode.html) | 0,5 |
 | 1 pct | Resistor 1 kΩ 1/4 W | [AliExpress](https://www.aliexpress.com/w/wholesale-resistor-1k-1%2F4w.html) | 0,5 |
@@ -107,15 +117,15 @@ A regra geral: **cada peça entra pelo lado em que fica e é soldada pelo lado o
 O display fica a só 2,5 mm da frente da placa, e a ESP32 a 2,5 mm do verso. Por isso, **todo terminal soldado embaixo deles precisa ser cortado rente**, a menos de 1 mm. E a ordem importa: a ESP32 vem antes do display, porque a solda dela fica escondida embaixo do display.
 
 ### Antes de começar: confira
-1. **Ordem dos pinos do display.** Acima do J1, na frente da placa, estão impressos os nomes dos 14 pinos (VCC, GND, CS… T_IRQ). Com o display de face para cima e o conector embaixo, o VCC fica à **direita**. Compare com a marcação do seu módulo. Se estiver espelhado, **não solde**: inverta `DISPLAY_PINS` no `generate_pcb.py` e gere a placa de novo.
+1. **Ordem dos pinos do display.** Acima do J1, na frente da placa, estão impressos os nomes dos 14 pinos (VCC, GND, CS… T_IRQ). Com o display de face para cima e o conector embaixo, o VCC fica à **esquerda** (conferido num módulo real). Compare com a marcação do seu módulo. Se estiver espelhado, **não solde**: troque o lado do pino 1 do J1 no `generate_pcb.py` (`display_left` e o ângulo do footprint) e gere a placa de novo.
 2. **Largura da ESP32.** Meça a distância entre as duas fileiras de pinos, centro a centro. Precisa dar 25,4 mm.
 3. **A ESP32 funciona?** Ligue-a no USB e grave o jogo (seção 6) antes de soldar. Depois de soldada, trocar dá trabalho.
 
 ### Verso (lado azul na prévia): componentes abaixo da ESP32
 4. **R1 (1 kΩ):** dobre as pernas, encaixe pelo verso e solde pela frente. Não tem polaridade.
 5. **D1 (1N4148):** a faixa preta do diodo vai do lado marcado **K**.
-6. **Q1 (S8050):** as pernas seguem as letras **E B C** impressas. Empurre até o corpo ficar a ~1 mm da placa.
-7. **Buzzer:** a perna **+** vai no pad quadrado (marcado com +). Encostado na placa.
+6. **Q1 (S8050):** as pernas seguem as letras **E B C** impressas. Empurre até o corpo ficar a ~1 mm da placa. Um BC337 (pernas C-B-E) entra girado 180°, com a face plana para o lado oposto ao desenho.
+7. **Buzzer:** a perna **+** vai no pad quadrado (marcado com +). Os furos são oblongos: servem para pernas a 6,5 ou 7,6 mm. Encostado na placa. Com 10 mm de altura, ele passa do fundo da case e se encaixa no furo de 13 mm que há nela.
 8. **C1 (100 µF):** a perna longa (+) vai no pad marcado com **+**. Dobre as pernas a 90° rente ao corpo e deite o capacitor sobre o retângulo "C1" impresso, na direção dos botões.
 9. Corte rente, na frente, as pernas de todos eles: essa área fica embaixo do display.
 
@@ -162,7 +172,7 @@ Os arquivos estão em `case/`: o modelo paramétrico `case.scad` (OpenSCAD) e tr
 
 | Arquivo | Peça | Como imprimir |
 |---|---|---|
-| `case_bottom.stl` | Bandeja: a PCB é parafusada nela; a ESP32 fica dentro | Fundo na mesa |
+| `case_bottom.stl` | Bandeja: a PCB é parafusada nela; a ESP32 fica dentro e o buzzer se encaixa num furo do fundo | Fundo na mesa |
 | `case_top.stl` | Moldura com a janela do display e os furos da cruz | **De cabeça para baixo** (face externa na mesa) |
 | `case_caps.stl` | 5 botões, que levam o toque da tampa até as chaves | Base na mesa |
 

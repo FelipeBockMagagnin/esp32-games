@@ -39,8 +39,11 @@ display_center = [31, 68.8 - 86 / 2];
 window = [46, 62]; // A little larger than the 43.2x57.6 visible area
 overhang = display_size[1] / 2 - display_center[1]; // Beyond the board's top edge
 
-// KiCad coordinates of the 9 mm buzzer, on the back below the ESP32
+// KiCad coordinates of the 12 mm buzzer, on the back below the ESP32. At 10 mm tall it
+// reaches past the floor's top, so it sits in a hole through the floor
 buzzer_pos = [9, 50];
+buzzer_d = 12;
+buzzer_h = 10;
 
 /* [Buttons] D-pad centre and spacing, as in generate_pcb.py */
 dpad_y = 84.8;
@@ -129,10 +132,8 @@ module bottom() {
         usb_z0 = max(usb_z - usb_size[1] / 2, floor_bot + 0.6);
         translate([-10, ky([0, usb_y])[1] - usb_size[0] / 2, usb_z0])
             cube([10, usb_size[0], usb_z + usb_size[1] / 2 - usb_z0]);
-        // Grille under the buzzer, which faces the floor
-        for (i = [-1:1], j = [-1:1])
-            translate([buzzer_pos[0] + i * 3.5, ky(buzzer_pos)[1] + j * 3.5, floor_bot - 1])
-                cylinder(h = floor_t + 2, d = 2.2);
+        // Hole the buzzer sits in, which also lets its sound out through the floor
+        translate([each ky(buzzer_pos), floor_bot - 1]) cylinder(h = floor_t + 2, d = buzzer_d + 1);
     }
 }
 

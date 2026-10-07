@@ -8,7 +8,9 @@ NAME=esp32-idle-game
 PCB=$NAME.kicad_pcb
 FAB=fab/gerbers
 
-python3 generate_pcb.py --freerouting "$1"
+# pcbnew ships with the system python, which a version manager can shadow on PATH
+"${PYTHON:-/usr/bin/python3}" generate_pcb.py --freerouting "$1"
+python3 viewer.py
 
 mkdir -p build
 kicad-cli pcb drc --severity-all --exit-code-violations -o build/drc.rpt "$PCB"
