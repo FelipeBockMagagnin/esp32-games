@@ -1,0 +1,13 @@
+Ref,Qtd,Item,Especificação,Lado,Footprint
+U1,1,ESP32 DevKit V1 (DOIT),30 pinos; fileiras a 25.4 mm; soldada direto e deitada (J2/J3),verso,-
+LCD1,1,Display TFT 2.8" ILI9341,SPI 240x320; header de 14 pinos; módulo 50x86 mm; soldado direto (J1) com o conector embaixo,frente,-
+J1,-,Furos do header do display,1x14 2.54 mm,frente,PinHeader_1x14_P2.54mm_Vertical
+"J2,J3",-,Furos dos pinos da ESP32,1x15 2.54 mm,verso,PinHeader_1x15_P2.54mm_Vertical
+SW1-SW5,5,Chave táctil,6x6x5 mm THT 4 terminais,frente,SW_PUSH_6mm
+BZ1,1,Buzzer passivo,9x5.5 mm; 5 V; terminais a 4 mm,verso,Buzzer_D9mm_P4mm (desenhado no gerador)
+Q1,1,Transistor NPN S8050 (ou 2N2222A),TO-92 pinagem E-B-C,verso,TO-92_Inline_Wide
+R1,1,Resistor 1 kΩ,1/4 W,verso,R_Axial_DIN0207 P7.62mm
+D1,1,Diodo 1N4148,DO-35,verso,D_DO-35 P7.62mm
+C1,1,Capacitor eletrolítico 100 µF,16 V; 5x11 mm; passo 2 mm; montado deitado,verso,CP_Radial_D5.0mm_P2.00mm
+H1-H4,4,Parafuso M3x6,fixa a PCB na case impressa (sem case: espaçador M3 de 12 mm),-,MountingHole_3.2mm_M3
+PCB,1,Placa de circuito impresso,62x100 mm; 2 camadas; 1.6 mm; HASL,-,fab/esp32-idle-game-gerbers.zip

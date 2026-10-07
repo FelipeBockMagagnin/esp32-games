@@ -1,0 +1,4 @@
+(version 1)
+# A pad squeezed down to one spoke is still fed by its track and by the other layer's pour
+(rule "one spoke is enough"
+    (constraint min_resolved_spokes 1))

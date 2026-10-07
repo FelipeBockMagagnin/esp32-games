@@ -1,0 +1,5 @@
+build/
+fab/gerbers/
+*-backups/
+fp-info-cache
+*.kicad_prl
