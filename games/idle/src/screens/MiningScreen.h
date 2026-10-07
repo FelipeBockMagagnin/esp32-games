@@ -5,7 +5,6 @@
 #include "../ui/Box.h"
 #include "../ui/Text.h"
 #include "../ui/Header.h"
-#include "../ui/Image.h"
 #include "../ui/Ellipse.h"
 #include "../ui/OreDisplay.h"
 #include "../ui/ProgressBar.h"
@@ -13,8 +12,6 @@
 #include "../assets/Assets.h"
 #include "../game/GameState.h"
 #include "../managers/SoundManager.h"
-#include "../managers/ClimateManager.h"
-#include "../managers/LuminosityManager.h"
 
 class MiningScreen : public Screen
 {
@@ -42,26 +39,15 @@ private:
     Text mineLabel;
     Text mineValue;
 
-    // Bottom sensors, under a divider
-    Box footerDivider;
-    Image brightnessIcon;
-    Text brightnessText;
-    Image temperatureIcon;
-    Text temperatureText;
-    Image humidityIcon;
-    Text humidityText;
-
     GameState &game;
     SoundManager &sound;
-    ClimateManager &climate;
-    LuminosityManager &luminosity;
     unsigned long lastRefresh;
     uint8_t shownTier; // Ore tier the tier-dependent elements were last set for
 
     void applyOreTier(uint8_t tier);
 
 public:
-    MiningScreen(GameState &game, SoundManager &sound, ClimateManager &climate, LuminosityManager &luminosity);
+    MiningScreen(GameState &game, SoundManager &sound);
 
     void update(unsigned long now) override;
 

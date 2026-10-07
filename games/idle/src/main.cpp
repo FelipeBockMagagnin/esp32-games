@@ -9,8 +9,6 @@
 #include "game/Achievements.h"
 #include "game/CombatState.h"
 #include "managers/SoundManager.h"
-#include "managers/ClimateManager.h"
-#include "managers/LuminosityManager.h"
 #include "screens/InventoryScreen.h"
 #include "screens/MiningScreen.h"
 #include "screens/CombatScreen.h"
@@ -29,8 +27,6 @@ const int UP_BUTTON_PIN = 19;      // Navigates up inside the current screen
 const int DOWN_BUTTON_PIN = 22;    // Renamed from SELECT: navigates down inside current screen
 const int BACK_BUTTON_PIN = 26;    // Steps back through the screens
 const int BUZZER_PIN = 32;
-const int DHT_PIN = 25;        // Must be output-capable, so not 34-39
-const int LUMINOSITY_PIN = 34; // LDR, read through ADC1
 
 TFT_eSPI tft = TFT_eSPI();
 Button menuButton = Button(MENU_BUTTON_PIN);
@@ -46,12 +42,10 @@ Inventory inventory;
 GameState game(inventory, achievements);
 CombatState combat(game, inventory);
 SoundManager sound(BUZZER_PIN);
-ClimateManager climate(DHT_PIN);
-LuminosityManager luminosity(LUMINOSITY_PIN);
 ScreenManager screenManager(tft);
 
 InventoryScreen inventoryScreen(game, inventory, sound);
-MiningScreen miningScreen(game, sound, climate, luminosity);
+MiningScreen miningScreen(game, sound);
 CombatScreen combatScreen(combat, sound);
 BuildingScreen buildingScreen(game, sound);
 UpgradeScreen upgradeScreen(game, sound);
@@ -74,8 +68,6 @@ void setup()
     upButton.setup();
     downButton.setup();
     backButton.setup();
-    climate.setup();
-    luminosity.setup();
     delay(100);
     
     tft.init();
@@ -102,8 +94,6 @@ void loop()
     upButton.loop();
     downButton.loop();
     backButton.loop();
-    climate.loop(now);
-    luminosity.loop(now);
 
     if (menuButton.wasPressed())
     {

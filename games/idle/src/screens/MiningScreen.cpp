@@ -14,11 +14,6 @@ static const uint16_t HINT_COLOR = 0x94B2;  // Mid gray for secondary lines
 static const uint16_t XP_BAR_COLOR = 0x04B5; // Teal fill, with a near-black tint and a mid tone
 static const uint16_t XP_BAR_BG = 0x00C4;    // of the same hue, like the combat bars
 static const uint16_t XP_BAR_BORDER = 0x02CD;
-static const uint16_t DIVIDER_COLOR = 0x3187;
-static const uint16_t SENSOR_TEXT_COLOR = 0xCE59;
-static const uint16_t BRIGHTNESS_COLOR = 0xFEA8; // Sunny yellow
-static const uint16_t TEMPERATURE_COLOR = 0xFB6A; // Warm red
-static const uint16_t HUMIDITY_COLOR = 0x5DBF;   // Water blue
 
 // Layout coordinates
 static const int16_t CENTER_X = 120;
@@ -44,28 +39,20 @@ static const int16_t ORE_AREA_W = 176;
 static const int16_t ORE_AREA_H = 118;
 static const int16_t ORE_SIZE = 96;
 static const int16_t ORE_NAME_Y = 198;
-static const int16_t NEXT_ORE_Y = 217;
+static const int16_t NEXT_ORE_Y = 219;
 
 // Level row: label and XP count above a full-width bar
-static const int16_t LEVEL_Y = 232;
-static const int16_t XP_TEXT_Y = 238; // Bottom-aligned with the size-2 level label
-static const int16_t XP_BAR_Y = 250;
+static const int16_t LEVEL_Y = 244;
+static const int16_t XP_TEXT_Y = 250; // Bottom-aligned with the size-2 level label
+static const int16_t XP_BAR_Y = 262;
 static const int16_t XP_BAR_H = 12;
 
 // Confirm hint; text (8px) and badge (11px) are both centred on the row's middle
-static const int16_t MINE_ROW_Y = 269;
+static const int16_t MINE_ROW_Y = 288;
 static const int16_t MINE_LABEL_X = MARGIN_X + ButtonBadge::SIZE + 4;
 static const int16_t BADGE_OFFSET_Y = (8 - ButtonBadge::SIZE) / 2;
 
-// Sensors: three equal columns, each an icon followed by its reading
-static const int16_t DIVIDER_Y = 284;
-static const int16_t SENSOR_ICON_Y = 292;
-static const int16_t SENSOR_TEXT_Y = 300; // Middle of the 16px icons
-static const int16_t BRIGHTNESS_X = 18;
-static const int16_t TEMPERATURE_X = 96;
-static const int16_t HUMIDITY_X = 180;
-
-MiningScreen::MiningScreen(GameState &game, SoundManager &sound, ClimateManager &climate, LuminosityManager &luminosity)
+MiningScreen::MiningScreen(GameState &game, SoundManager &sound)
     : header("Mining", "Combat", "Buildings"),
 
       // Gold card
@@ -91,19 +78,9 @@ MiningScreen::MiningScreen(GameState &game, SoundManager &sound, ClimateManager 
       mineLabel(MINE_LABEL_X, MINE_ROW_Y, "Mine", 0xFFFF, 1),
       mineValue(RIGHT_X, MINE_ROW_Y, "", GOLD_COLOR, 1, TR_DATUM),
 
-      // Bottom sensors, each icon tinted after what it measures
-      footerDivider(MARGIN_X, DIVIDER_Y, RIGHT_X - MARGIN_X, 1, DIVIDER_COLOR, true, DIVIDER_COLOR),
-      brightnessIcon(BRIGHTNESS_X, SENSOR_ICON_Y, 15, 16, image_display_brightness_bits, BRIGHTNESS_COLOR),
-      brightnessText(BRIGHTNESS_X + 19, SENSOR_TEXT_Y, "--%", SENSOR_TEXT_COLOR, 1, ML_DATUM),
-      temperatureIcon(TEMPERATURE_X, SENSOR_ICON_Y, 16, 16, image_weather_temperature_bits, TEMPERATURE_COLOR),
-      temperatureText(TEMPERATURE_X + 19, SENSOR_TEXT_Y, "--C", SENSOR_TEXT_COLOR, 1, ML_DATUM),
-      humidityIcon(HUMIDITY_X, SENSOR_ICON_Y, 11, 16, image_weather_humidity_white_bits, HUMIDITY_COLOR),
-      humidityText(HUMIDITY_X + 15, SENSOR_TEXT_Y, "--%", SENSOR_TEXT_COLOR, 1, ML_DATUM),
 
       game(game),
       sound(sound),
-      climate(climate),
-      luminosity(luminosity),
       lastRefresh(0),
       shownTier(0)
 {
@@ -130,15 +107,6 @@ MiningScreen::MiningScreen(GameState &game, SoundManager &sound, ClimateManager 
     addElement(&mineBadge);
     addElement(&mineLabel);
     addElement(&mineValue);
-
-    // Bottom sensors
-    addElement(&footerDivider);
-    addElement(&brightnessIcon);
-    addElement(&brightnessText);
-    addElement(&temperatureIcon);
-    addElement(&temperatureText);
-    addElement(&humidityIcon);
-    addElement(&humidityText);
 
     applyOreTier(0);
 }
@@ -202,10 +170,6 @@ void MiningScreen::update(unsigned long now)
     snprintf(buf, sizeof(buf), "+%s gold  +%lu XP", formatAmount(game.getClickAmount()).c_str(),
              (unsigned long)MINE_XP);
     mineValue.setText(buf);
-
-    brightnessText.setText(luminosity.getPercentText());
-    temperatureText.setText(climate.getTemperatureText());
-    humidityText.setText(climate.getHumidityText());
 }
 
 void MiningScreen::onConfirmPress()

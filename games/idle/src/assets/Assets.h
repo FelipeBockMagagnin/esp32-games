@@ -15,10 +15,7 @@ extern const unsigned char image_cards_hearts_bits[];
 extern const uint16_t image_rato_pixels[];
 extern const uint16_t image_sword_02b_pixels[];
 
-extern const unsigned char image_display_brightness_bits[];
 extern const uint16_t image_Icon31_33_pixels[];
-extern const unsigned char image_weather_humidity_white_bits[];
-extern const unsigned char image_weather_temperature_bits[];
 
 
 extern const unsigned char image_cursor_black_white_bits[];
