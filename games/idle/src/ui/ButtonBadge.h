@@ -38,6 +38,9 @@ public:
     }
 
     void draw(TFT_eSPI &tft) override;
+
+    // The cap itself, centred on (cx, cy), so larger drawings (CooldownRing) match it
+    static void drawCap(TFT_eSPI &tft, int16_t cx, int16_t cy, int16_t r, Kind kind, bool dimmed);
 };
 
 #endif // UI_BUTTON_BADGE_H

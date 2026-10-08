@@ -63,6 +63,15 @@ public:
         }
     }
 
+    void setBorderColor(uint16_t color)
+    {
+        if (borderColor != color)
+        {
+            borderColor = color;
+            markDirty();
+        }
+    }
+
     void setLabel(const String &newLabel)
     {
         if (label != newLabel)

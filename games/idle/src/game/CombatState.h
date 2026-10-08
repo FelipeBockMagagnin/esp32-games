@@ -21,6 +21,13 @@ public:
         DEAD        // Player down, health refilling
     };
 
+    // Which of the player's hits landed last, so the screen can name it
+    enum HitKind : uint8_t
+    {
+        HIT_AUTO,
+        HIT_STRIKE
+    };
+
     struct Snapshot
     {
         uint8_t currentZone;
@@ -35,9 +42,16 @@ public:
     // Actions; all return false when still on cooldown, out of combat, or unavailable
     bool strike();
     bool guard();
-    bool smite(); // Needs an amulet equipped
+    bool castSpell(); // The equipped amulet's spell; see SPELLS
 
-    bool isSmiteUnlocked() const;
+    // The spell the equipped amulet grants, or nullptr without one
+    const SpellDef *getSpell() const;
+    // Why castSpell() would refuse right now beyond the cooldown: full health for a heal,
+    // a Midas already armed. Lets the screen grey the button out instead of erroring.
+    bool isSpellUseless() const;
+    bool isWarded(unsigned long now) const;
+    unsigned long getWardRemaining(unsigned long now) const;
+    bool isMidasArmed() const { return midasArmed; }
 
     bool enterZone(uint8_t zoneId);
     void leaveZone();
@@ -57,7 +71,6 @@ public:
     // Zero means the attack cannot beat the enemy's defense, so the zone is out of reach
     uint32_t getAutoAttackDamage() const;
     uint32_t getStrikeDamage() const;
-    uint32_t getSmiteDamage() const;
     // The best single hit the player can currently land; zero means the zone is out of reach
     uint32_t getBestAttackDamage() const;
     // What the enemy's next hit would take off, ignoring any active guard. Zero means the
@@ -71,7 +84,7 @@ public:
     unsigned long getAutoAttackRemaining(unsigned long now) const;
     unsigned long getEnemyAttackRemaining(unsigned long now) const;
     unsigned long getStrikeCooldownRemaining(unsigned long now) const;
-    unsigned long getSmiteCooldownRemaining(unsigned long now) const;
+    unsigned long getSpellCooldownRemaining(unsigned long now) const;
     unsigned long getGuardCooldownRemaining(unsigned long now) const;
     unsigned long getReviveRemaining(unsigned long now) const;
     bool isGuarding(unsigned long now) const;
@@ -80,6 +93,15 @@ public:
     // Monotonic counters the screen diffs against its own last-seen values, so it can
     // react to a kill or a drop without the engine knowing about the UI
     uint32_t getKillEvents() const { return killEvents; }
+    uint32_t getLastKillGold() const { return lastKillGold; } // With any Midas multiplier
+    bool wasLastKillMidas() const { return lastKillMidas; }
+    // A hit on the enemy, and a hit on the player that did damage (after any guard)
+    uint32_t getHitEvents() const { return hitEvents; }
+    uint32_t getLastHitDamage() const { return lastHitDamage; }
+    HitKind getLastHitKind() const { return lastHitKind; }
+    uint32_t getHurtEvents() const { return hurtEvents; }
+    uint32_t getLastHurtDamage() const { return lastHurtDamage; }
+    bool wasLastHurtGuarded() const { return lastHurtGuarded; }
     uint32_t getDropEvents() const { return dropEvents; }
     int8_t getLastDrop() const { return lastDrop; }
     bool wasLastDropNew() const { return lastDropWasNew; }
@@ -93,6 +115,7 @@ private:
     void startFight(unsigned long now);
     void pickEnemy();
     uint32_t damageTo(uint32_t defense, uint8_t multiplier) const;
+    void hitEnemy(uint32_t damage, HitKind kind, unsigned long now);
     void onEnemyKilled(unsigned long now);
     void onPlayerDied(unsigned long now);
 
@@ -113,7 +136,9 @@ private:
     unsigned long autoAttackAt;
     unsigned long enemyAttackAt;
     unsigned long strikeReadyAt;
-    unsigned long smiteReadyAt;
+    unsigned long spellReadyAt;
+    unsigned long wardEndsAt;
+    bool midasArmed;
     unsigned long guardReadyAt;
     unsigned long guardEndsAt;
     unsigned long respawnAt;
@@ -121,6 +146,14 @@ private:
     unsigned long deathAt;
 
     uint32_t killEvents;
+    uint32_t lastKillGold;
+    bool lastKillMidas;
+    uint32_t hitEvents;
+    uint32_t lastHitDamage;
+    HitKind lastHitKind;
+    uint32_t hurtEvents;
+    uint32_t lastHurtDamage;
+    bool lastHurtGuarded;
     uint32_t dropEvents;
     int8_t lastDrop;
     bool lastDropWasNew;

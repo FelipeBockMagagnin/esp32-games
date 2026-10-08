@@ -58,6 +58,23 @@ public:
         tone(pin, NOTE_C7, 260);
     }
 
+    // Bright rising run for a new item, a step above the level-up so a drop stands out
+    void playDrop()
+    {
+        tone(pin, NOTE_C6, 70);
+        tone(pin, NOTE_G6, 70);
+        tone(pin, NOTE_C7, 70);
+        tone(pin, NOTE_E7, 70);
+        tone(pin, NOTE_G7, 260);
+    }
+
+    // Short falling thud when an enemy's hit lands, so a hit is heard from any screen glance
+    void playHurt()
+    {
+        tone(pin, NOTE_D4, 50);
+        tone(pin, NOTE_A3, 70);
+    }
+
     // Low note when the player can't afford the upgrade
     void playError()
     {

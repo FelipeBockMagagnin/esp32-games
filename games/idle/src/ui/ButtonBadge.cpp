@@ -12,9 +12,11 @@ static const uint16_t RIM_COLOR = Theme::TEXT_2; // Outline so the cap reads as 
 void ButtonBadge::draw(TFT_eSPI &tft)
 {
     int16_t r = SIZE / 2;
-    int16_t cx = x + r;
-    int16_t cy = y + r;
+    drawCap(tft, x + r, y + r, r, kind, dimmed);
+}
 
+void ButtonBadge::drawCap(TFT_eSPI &tft, int16_t cx, int16_t cy, int16_t r, Kind kind, bool dimmed)
+{
     if (kind == CONFIRM)
     {
         tft.fillCircle(cx, cy, r, dimmed ? CONFIRM_CAP_DIM : CONFIRM_CAP);
@@ -24,12 +26,13 @@ void ButtonBadge::draw(TFT_eSPI &tft)
 
     tft.fillCircle(cx, cy, r, dimmed ? ARROW_CAP_DIM : ARROW_CAP);
     tft.drawCircle(cx, cy, r, RIM_COLOR);
+    int16_t a = r - 2; // Arrow half-size: 3 on the 11px badge
     if (kind == UP)
     {
-        tft.fillTriangle(cx, cy - 3, cx - 3, cy + 2, cx + 3, cy + 2, ARROW_COLOR);
+        tft.fillTriangle(cx, cy - a, cx - a, cy + a - 1, cx + a, cy + a - 1, ARROW_COLOR);
     }
     else
     {
-        tft.fillTriangle(cx, cy + 3, cx - 3, cy - 2, cx + 3, cy - 2, ARROW_COLOR);
+        tft.fillTriangle(cx, cy + a, cx - a, cy - a + 1, cx + a, cy - a + 1, ARROW_COLOR);
     }
 }

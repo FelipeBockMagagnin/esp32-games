@@ -18,12 +18,11 @@ enum Reach : uint8_t
 {
     REACH_IDLE,    // The auto-attack gets through: the zone farms itself
     REACH_STRIKE,  // Only the manual strike gets through
-    REACH_SMITE,   // Only the amulet's smite gets through
     REACH_BLOCKED  // Nothing gets through yet
 };
 
-static const char *const REACH_LABELS[] = {"IDLE", "STRIKE", "SMITE", "TOO HARD"};
-static const uint16_t REACH_COLORS[] = {Theme::GOOD, Theme::GOLD, Theme::EPIC, Theme::BAD};
+static const char *const REACH_LABELS[] = {"IDLE", "STRIKE", "TOO HARD"};
+static const uint16_t REACH_COLORS[] = {Theme::GOOD, Theme::GOLD, Theme::BAD};
 
 // Stats card
 static const int16_t CARD_X = 5;
@@ -61,7 +60,7 @@ static uint32_t damageThrough(uint32_t attack, uint32_t defense)
     return attack > defense ? attack - defense : 0;
 }
 
-static Reach reachAgainst(const Stats &stats, const EnemyDef &enemy, bool smiteUnlocked)
+static Reach reachAgainst(const Stats &stats, const EnemyDef &enemy)
 {
     if (damageThrough(stats.attack, enemy.defense) > 0)
     {
@@ -71,20 +70,16 @@ static Reach reachAgainst(const Stats &stats, const EnemyDef &enemy, bool smiteU
     {
         return REACH_STRIKE;
     }
-    if (smiteUnlocked && damageThrough(stats.attack * SMITE_MULTIPLIER, enemy.defense) > 0)
-    {
-        return REACH_SMITE;
-    }
     return REACH_BLOCKED;
 }
 
 // A zone is only as easy as its hardest enemy, since the fight picks between them
-static Reach reachInZone(const Stats &stats, const ZoneDef &zone, bool smiteUnlocked)
+static Reach reachInZone(const Stats &stats, const ZoneDef &zone)
 {
     Reach worst = REACH_IDLE;
     for (uint8_t i = 0; i < zone.enemyCount; i++)
     {
-        Reach reach = reachAgainst(stats, zone.enemies[i], smiteUnlocked);
+        Reach reach = reachAgainst(stats, zone.enemies[i]);
         if (reach > worst)
         {
             worst = reach;
@@ -183,7 +178,6 @@ void ZoneScreen::refreshRows(const Stats &stats)
 {
     char buf[40];
     uint8_t visible = list.getVisibleCount();
-    bool smiteUnlocked = combat.isSmiteUnlocked();
 
     for (uint8_t i = 0; i < ROWS; i++)
     {
@@ -225,7 +219,7 @@ void ZoneScreen::refreshRows(const Stats &stats)
         snprintf(buf, sizeof(buf), isActive ? "%u kills, fighting" : "%u kills", (unsigned)combat.getZoneKills(id));
         row.setSubtitle(buf);
 
-        Reach reach = reachInZone(stats, zone, smiteUnlocked);
+        Reach reach = reachInZone(stats, zone);
         row.setValue(REACH_LABELS[reach]);
         row.setValueColor(REACH_COLORS[reach]);
 
@@ -246,7 +240,6 @@ void ZoneScreen::refreshPanel(const Stats &stats)
     const ZoneDef &zone = ZONES[id];
     bool unlocked = combat.isZoneUnlocked(id);
     bool isActive = combat.isInZone() && combat.getCurrentZone() == id;
-    bool smiteUnlocked = combat.isSmiteUnlocked();
     char buf[40];
 
     statusText.setText(isActive ? "Fighting here" : unlocked ? "" : "Locked");
@@ -298,18 +291,9 @@ void ZoneScreen::refreshPanel(const Stats &stats)
 
         uint32_t autoHit = damageThrough(stats.attack, enemy.defense);
         uint32_t strikeHit = damageThrough(stats.attack * STRIKE_MULTIPLIER, enemy.defense);
-        if (smiteUnlocked)
-        {
-            uint32_t smiteHit = damageThrough(stats.attack * SMITE_MULTIPLIER, enemy.defense);
-            snprintf(buf, sizeof(buf), "hit %lu / %lu / %lu", (unsigned long)autoHit, (unsigned long)strikeHit,
-                     (unsigned long)smiteHit);
-        }
-        else
-        {
-            snprintf(buf, sizeof(buf), "hit %lu / %lu", (unsigned long)autoHit, (unsigned long)strikeHit);
-        }
+        snprintf(buf, sizeof(buf), "hit %lu / %lu", (unsigned long)autoHit, (unsigned long)strikeHit);
         enemyDeal[i].setText(buf);
-        enemyDeal[i].setColor(REACH_COLORS[reachAgainst(stats, enemy, smiteUnlocked)]);
+        enemyDeal[i].setColor(REACH_COLORS[reachAgainst(stats, enemy)]);
     }
 
     // Every distinct item the zone can drop, grayed until found

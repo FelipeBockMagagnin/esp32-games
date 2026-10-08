@@ -21,8 +21,8 @@
 // Picks the fighting zone. Kept apart from the combat screen because both of that
 // screen's buttons are taken by the strike and guard actions.
 //
-// Each row says how the player's current gear fares there (idle, needs the strike or
-// smite, or out of reach), and the panel below spells it out for its easiest and toughest
+// Each row says how the player's current gear fares there (idle, needs the strike, or out
+// of reach), and the panel below spells it out for its easiest and toughest
 // enemy along with the zone's drops, so gearing up has a visible target.
 class ZoneScreen : public Screen
 {

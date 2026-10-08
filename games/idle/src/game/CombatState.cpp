@@ -28,13 +28,23 @@ CombatState::CombatState(GameState &game, Inventory &inventory)
       autoAttackAt(0),
       enemyAttackAt(0),
       strikeReadyAt(0),
-      smiteReadyAt(0),
+      spellReadyAt(0),
+      wardEndsAt(0),
+      midasArmed(false),
       guardReadyAt(0),
       guardEndsAt(0),
       respawnAt(0),
       reviveAt(0),
       deathAt(0),
       killEvents(0),
+      lastKillGold(0),
+      lastKillMidas(false),
+      hitEvents(0),
+      lastHitDamage(0),
+      lastHitKind(HIT_AUTO),
+      hurtEvents(0),
+      lastHurtDamage(0),
+      lastHurtGuarded(false),
       dropEvents(0),
       lastDrop(NO_ITEM),
       lastDropWasNew(false),
@@ -144,25 +154,43 @@ uint32_t CombatState::getStrikeDamage() const
     return phase == IDLE ? 0 : damageTo(getEnemy().defense, STRIKE_MULTIPLIER);
 }
 
-uint32_t CombatState::getSmiteDamage() const
-{
-    if (phase == IDLE || !isSmiteUnlocked())
-    {
-        return 0;
-    }
-    return damageTo(getEnemy().defense, SMITE_MULTIPLIER);
-}
-
 uint32_t CombatState::getBestAttackDamage() const
 {
-    uint32_t strikeDamage = getStrikeDamage();
-    uint32_t smiteDamage = getSmiteDamage();
-    return smiteDamage > strikeDamage ? smiteDamage : strikeDamage;
+    // Spells deal no damage, so the strike is the hardest hit there is
+    return getStrikeDamage();
 }
 
-bool CombatState::isSmiteUnlocked() const
+const SpellDef *CombatState::getSpell() const
 {
-    return inventory.getEquipped(EquipSlot::AMULET) != NO_ITEM;
+    return spellForItem(inventory.getEquipped(EquipSlot::AMULET));
+}
+
+bool CombatState::isSpellUseless() const
+{
+    const SpellDef *spell = getSpell();
+    if (spell == nullptr)
+    {
+        return true;
+    }
+    switch (spell->effect)
+    {
+    case SpellEffect::HEAL:
+        return playerHp >= cachedStats.maxHp;
+    case SpellEffect::MIDAS:
+        return midasArmed;
+    default:
+        return false;
+    }
+}
+
+bool CombatState::isWarded(unsigned long now) const
+{
+    return wardEndsAt != 0 && !reached(now, wardEndsAt);
+}
+
+unsigned long CombatState::getWardRemaining(unsigned long now) const
+{
+    return isWarded(now) ? wardEndsAt - now : 0;
 }
 
 uint32_t CombatState::getEnemyAttackDamage() const
@@ -175,11 +203,34 @@ uint32_t CombatState::getEnemyAttackDamage() const
     return attack > cachedStats.defense ? attack - cachedStats.defense : 0;
 }
 
+// Every hit on the enemy goes through here, so the screen hears about each one
+void CombatState::hitEnemy(uint32_t damage, HitKind kind, unsigned long now)
+{
+    lastHitDamage = damage;
+    lastHitKind = kind;
+    hitEvents++;
+
+    enemyHp = enemyHp > damage ? enemyHp - damage : 0;
+    if (enemyHp == 0)
+    {
+        onEnemyKilled(now);
+    }
+}
+
 void CombatState::onEnemyKilled(unsigned long now)
 {
     const EnemyDef &enemy = getEnemy();
 
-    game.addGold(enemy.goldReward);
+    // An armed Midas multiplies this kill's gold and is spent by it
+    lastKillMidas = midasArmed;
+    lastKillGold = enemy.goldReward;
+    if (midasArmed)
+    {
+        const SpellDef *spell = getSpell();
+        lastKillGold *= spell != nullptr && spell->effect == SpellEffect::MIDAS ? spell->power : 1;
+        midasArmed = false;
+    }
+    game.addGold(lastKillGold);
     if (zoneKills[currentZone] < UINT16_MAX)
     {
         zoneKills[currentZone]++;
@@ -208,7 +259,8 @@ void CombatState::onPlayerDied(unsigned long now)
     phase = DEAD;
     deathAt = now;
     reviveAt = now + REVIVE_MS;
-    guardEndsAt = 0; // Losing the fight drops the guard
+    guardEndsAt = 0; // Losing the fight drops the guard and the ward
+    wardEndsAt = 0;
 }
 
 void CombatState::update(unsigned long now)
@@ -257,6 +309,10 @@ void CombatState::update(unsigned long now)
     {
         guardEndsAt = 0;
     }
+    if (wardEndsAt != 0 && reached(now, wardEndsAt))
+    {
+        wardEndsAt = 0;
+    }
 
     const EnemyDef &enemy = getEnemy();
 
@@ -269,10 +325,9 @@ void CombatState::update(unsigned long now)
         uint32_t damage = damageTo(enemy.defense, 1);
         if (damage > 0)
         {
-            enemyHp = enemyHp > damage ? enemyHp - damage : 0;
-            if (enemyHp == 0)
+            hitEnemy(damage, HIT_AUTO, now);
+            if (phase != FIGHTING)
             {
-                onEnemyKilled(now);
                 return;
             }
         }
@@ -283,13 +338,21 @@ void CombatState::update(unsigned long now)
         enemyAttackAt = now + enemy.attackIntervalMs;
 
         uint32_t damage = enemy.attack > cachedStats.defense ? enemy.attack - cachedStats.defense : 0;
-        if (isGuarding(now))
+        bool guarded = isGuarding(now);
+        if (guarded)
         {
             damage = damage * GUARD_DAMAGE_PERCENT / 100;
+        }
+        if (isWarded(now))
+        {
+            damage = 0;
         }
 
         if (damage > 0)
         {
+            lastHurtDamage = damage;
+            lastHurtGuarded = guarded;
+            hurtEvents++;
             if (playerHp > damage)
             {
                 playerHp -= damage;
@@ -315,35 +378,39 @@ bool CombatState::strike()
         return false;
     }
     strikeReadyAt = now + STRIKE_COOLDOWN_MS;
-
-    enemyHp = enemyHp > damage ? enemyHp - damage : 0;
-    if (enemyHp == 0)
-    {
-        onEnemyKilled(now);
-    }
+    hitEnemy(damage, HIT_STRIKE, now);
     return true;
 }
 
-bool CombatState::smite()
+bool CombatState::castSpell()
 {
     unsigned long now = millis();
-    if (phase != FIGHTING || !isSmiteUnlocked() || !reached(now, smiteReadyAt))
+    const SpellDef *spell = getSpell();
+    if (phase != FIGHTING || spell == nullptr || !reached(now, spellReadyAt) || isSpellUseless())
     {
         return false;
     }
 
-    uint32_t damage = damageTo(getEnemy().defense, SMITE_MULTIPLIER);
-    if (damage == 0)
+    switch (spell->effect)
     {
-        return false;
+    case SpellEffect::HEAL:
+    {
+        uint32_t heal = cachedStats.maxHp * spell->power / 100;
+        playerHp = playerHp + heal < cachedStats.maxHp ? playerHp + heal : cachedStats.maxHp;
+        break;
     }
-    smiteReadyAt = now + SMITE_COOLDOWN_MS;
+    case SpellEffect::STUN:
+        enemyAttackAt += getEnemy().attackIntervalMs * spell->power;
+        break;
+    case SpellEffect::MIDAS:
+        midasArmed = true;
+        break;
+    case SpellEffect::WARD:
+        wardEndsAt = now + spell->power;
+        break;
+    }
 
-    enemyHp = enemyHp > damage ? enemyHp - damage : 0;
-    if (enemyHp == 0)
-    {
-        onEnemyKilled(now);
-    }
+    spellReadyAt = now + spell->cooldownMs;
     return true;
 }
 
@@ -389,9 +456,9 @@ unsigned long CombatState::getStrikeCooldownRemaining(unsigned long now) const
     return remainingUntil(now, strikeReadyAt);
 }
 
-unsigned long CombatState::getSmiteCooldownRemaining(unsigned long now) const
+unsigned long CombatState::getSpellCooldownRemaining(unsigned long now) const
 {
-    return remainingUntil(now, smiteReadyAt);
+    return remainingUntil(now, spellReadyAt);
 }
 
 unsigned long CombatState::getGuardCooldownRemaining(unsigned long now) const

@@ -163,7 +163,7 @@ void ScreenManager::handleDownPress()
 
 bool ScreenManager::handleBackPress()
 {
-    // The current screen gets first refusal (e.g. inventory sub-list or combat smite)
+    // The current screen gets first refusal (e.g. inventory sub-list)
     Screen *screen = getCurrentScreen();
     if (screen != nullptr && screen->onBackPress())
     {

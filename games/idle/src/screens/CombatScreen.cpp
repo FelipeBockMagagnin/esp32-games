@@ -1,287 +1,290 @@
 #include "CombatScreen.h"
 #include "../game/GameConfig.h"
 #include "../game/Inventory.h"
+#include "../game/Format.h"
 
 static const unsigned long REFRESH_MS = 100;
 
-// How long a drop notification keeps the message line before the fight status takes it back
-static const unsigned long DROP_MESSAGE_MS = 2500;
+// A new item holds the stage longer than a duplicate that only levelled one up
+static const unsigned long NEW_DROP_MS = 3000;
+static const unsigned long LEVEL_DROP_MS = 1800;
+static const unsigned long KILL_MESSAGE_MS = 1500;
 
-// Warm belongs to the enemy, cool to the player. Each bar gets a fill, a near-black tint
-// of the same hue for the empty part, and a mid tone for the border; the fills are kept
-// dark enough that the white label stays readable over them.
-static const uint16_t ENEMY_HP_COLOR = Theme::ENEMY_HP_BAR;   // Crimson
+// A hit's damage stays beside its health bar this long; the player's bar flashes red for
+// the first part of it, so a hit taken is noticed even when the eyes are elsewhere
+static const unsigned long HIT_TEXT_MS = 800;
+static const unsigned long HURT_FLASH_MS = 300;
+// The enemy's attack bar turns red this long before it hits: enough to see it and press
+// Down in time
+static const unsigned long WARN_MS = 600;
+
+// Warm belongs to the enemy, cool to the player
+static const uint16_t ENEMY_HP_COLOR = Theme::ENEMY_HP_BAR;
 static const uint16_t ENEMY_HP_BG = Theme::ENEMY_HP_TRACK;
 static const uint16_t ENEMY_HP_BORDER = Theme::ENEMY_HP_BORDER;
-static const uint16_t ENEMY_ATTACK_COLOR = Theme::ENEMY_ATK_BAR; // Burnt orange
+static const uint16_t ENEMY_ATTACK_COLOR = Theme::ENEMY_ATK_BAR;
 static const uint16_t ENEMY_ATTACK_BG = Theme::ENEMY_ATK_TRACK;
 static const uint16_t ENEMY_ATTACK_BORDER = Theme::ENEMY_ATK_BORDER;
-static const uint16_t PLAYER_ATTACK_COLOR = Theme::XP_BAR; // Teal
-static const uint16_t PLAYER_ATTACK_BG = Theme::XP_TRACK;
-static const uint16_t PLAYER_ATTACK_BORDER = Theme::XP_BORDER;
-static const uint16_t PLAYER_HP_COLOR = Theme::HP_BAR; // Leaf green
+static const uint16_t PLAYER_HP_COLOR = Theme::HP_BAR;
 static const uint16_t PLAYER_HP_BG = Theme::HP_TRACK;
 static const uint16_t PLAYER_HP_BORDER = Theme::HP_BORDER;
-// Dark gray so the white bar label stays readable over a full, static bar
+// A full, static bar for an enemy that cannot hurt the player
 static const uint16_t INERT_COLOR = Theme::INERT_BAR;
 
-static const uint16_t READY_COLOR = Theme::GOOD;
-static const uint16_t ACTIVE_COLOR = Theme::INFO; // Cyan while guarding
-static const uint16_t COOLING_COLOR = Theme::TEXT_DIM; // Gray while on cooldown
-static const uint16_t LOCKED_COLOR = Theme::FRAME;  // Dim gray when needs amulet
-static const uint16_t ACTION_NAME_COLOR = Theme::TEXT;
-static const uint16_t DETAIL_COLOR = Theme::TEXT_2;  // Mid gray: what the action does
-static const uint16_t NEW_ITEM_COLOR = Theme::GOOD;     // Green for a first-time drop
-static const uint16_t LEVEL_UP_COLOR = Theme::GOLD; // A duplicate levelling the item up
-static const uint16_t BLOCKED_COLOR = Theme::BAD;      // No attack can get through at all
-
-static const uint16_t STAT_BOX_BORDER = Theme::ENEMY_FRAME;   // Dark crimson border for enemy stat card
-static const uint16_t STAT_BAND_COLOR = Theme::ENEMY_BAND;   // Its title strip, a shade darker
-static const uint16_t SECTION_COLOR = Theme::TEXT_2;     // Card section titles
-static const uint16_t DIVIDER_COLOR = Theme::FRAME;
-static const uint16_t ENEMY_NAME_COLOR = Theme::ENEMY_NAME;  // Warm peach, the enemy's side
-static const uint16_t ENEMY_ATK_COLOR = Theme::ATTACK;   // Soft red
-static const uint16_t ENEMY_DEF_COLOR = Theme::DEFENSE;   // Steel blue
-static const uint16_t ACTION_BOX_BORDER = Theme::FRAME; // Dark slate border for action buttons
-static const uint16_t STATS_LINE_COLOR = Theme::PLAYER_LINE;  // Pale blue, the player's side
+static const uint16_t READY_COLOR = Theme::SELECT; // Ring and outline of a pressable action
+static const uint16_t ACTIVE_COLOR = Theme::INFO;  // Guard and ward while they are up
+static const uint16_t AUTO_COLOR = Theme::ATTACK;  // The automatic attack's ring
+static const uint16_t BLOCKED_COLOR = Theme::BAD;
 
 // Layout coordinates
 static const int16_t CENTER_X = 120;
 static const int16_t ENEMY_NAME_Y = 31;
 
-// Enemy area: sprite on the left, stats card on the right
-static const int16_t ENEMY_SPRITE_X = 10;
-static const int16_t ENEMY_SPRITE_Y = 49;
-static const int16_t ENEMY_SPRITE_SIZE = 128;
+// The enemy alone in the middle, and the drop card spanning the width over it
+static const int16_t ENEMY_SPRITE_X = (240 - EnemySprite::SIZE) / 2;
+static const int16_t ENEMY_SPRITE_Y = 50;
+static const int16_t BANNER_X = 6;
+static const int16_t BANNER_W = 228;
 
-static const int16_t ENEMY_BOX_X = 142;
-static const int16_t ENEMY_BOX_Y = 49;
-static const int16_t ENEMY_BOX_W = 88;
-static const int16_t ENEMY_BOX_H = 126;
-static const int16_t ENEMY_BAND_H = 13;
+// Enemy stats in the column left of the sprite, centred in it
+static const int16_t STATS_CENTER_X = ENEMY_SPRITE_X / 2 + 1;
+static const int16_t ENEMY_ATK_LABEL_Y = ENEMY_SPRITE_Y + 2;
+static const int16_t ENEMY_ATK_VALUE_Y = ENEMY_ATK_LABEL_Y + 11;
+static const int16_t ENEMY_DEF_LABEL_Y = ENEMY_ATK_LABEL_Y + 36;
+static const int16_t ENEMY_DEF_VALUE_Y = ENEMY_DEF_LABEL_Y + 11;
 
-// Drop grid inside the card: two columns of 16px icon + chance, three rows
-static const int16_t DROP_GRID_Y = ENEMY_BOX_Y + 68;
-static const int16_t DROP_CELL_W = 41;
-static const int16_t DROP_CELL_H = 18;
+// Drop list in the column right of the sprite: icon and chance per row
+static const int16_t DROPS_X = ENEMY_SPRITE_X + EnemySprite::SIZE + 4;
+static const int16_t DROPS_CENTER_X = (DROPS_X + 234) / 2;
+static const int16_t DROPS_Y = ENEMY_SPRITE_Y + 2;
+static const int16_t DROP_ROW_Y = DROPS_Y + 12;
+static const int16_t DROP_PITCH = 19;
 static const int16_t DROP_ICON_SIZE = 16;
-static const uint8_t DROP_COLUMNS = 2;
+static const int16_t DROP_PCT_DX = DROP_ICON_SIZE + 3;
 
-// Bars share one width so they stack as a single column
-static const int16_t BAR_X = 15;
-static const int16_t BAR_W = 210;
-static const int16_t ENEMY_HP_Y = 180;
+// Bars leave room on their right for the damage of the last hit
+static const int16_t BAR_X = 6;
+static const int16_t HP_BAR_W = 196;
+static const int16_t HIT_TEXT_X = 234;
+static const int16_t ENEMY_HP_Y = 182;
 static const int16_t ENEMY_HP_H = 14;
-static const int16_t ENEMY_ATK_BAR_Y = 196;
-static const int16_t ENEMY_ATK_BAR_H = 12;
+static const int16_t ENEMY_ATK_BAR_Y = 199;
+static const int16_t ENEMY_ATK_BAR_W = 228;
+static const int16_t ENEMY_ATK_BAR_H = 13;
 
-// Drop and fight status notifications
-static const int16_t MESSAGE_Y = 211;
+static const int16_t MESSAGE_Y = 215;
 
-// Actions panel with button badges
-static const int16_t ACTION_BOX_X = 15;
-static const int16_t ACTION_BOX_Y = 228;
-static const int16_t ACTION_BOX_W = 210;
-static const int16_t ACTION_BOX_H = 38;
+// Actions: a column of buttons on the left, stacked like the device's Up / Confirm / Down
+static const int16_t RING_CX = 18;
+static const int16_t RING_R = 11;
+static const int16_t ACTION_NAME_X = 35;
+static const int16_t SPELL_CY = 237;
+static const int16_t STRIKE_CY = 260;
+static const int16_t GUARD_CY = 283;
+static const int16_t NAME_DY = -8; // Name above the centre line, detail below
+static const int16_t DETAIL_DY = 1;
 
-// Rows are 12px apart; text (8px) and badge (11px) are both centred on the row's middle
-static const int16_t ACTION_BADGE_X = 20;
-static const int16_t ACTION_LABEL_X = 35;
-static const int16_t ACTION_DETAIL_X = 74;
-static const int16_t ACTION_STATE_X = 220;
-static const int16_t SMITE_ROW_Y = 231;
-static const int16_t STRIKE_ROW_Y = 243;
-static const int16_t GUARD_ROW_Y = 255;
-static const int16_t BADGE_OFFSET_Y = (8 - ButtonBadge::SIZE) / 2; // Relative to the text top
+// Automatic attack card on the right of the actions
+static const int16_t AUTO_X = 128;
+static const int16_t AUTO_Y = 225;
+static const int16_t AUTO_W = 106;
+static const int16_t AUTO_H = 70;
+static const int16_t AUTO_CX = AUTO_X + AUTO_W / 2;
+static const int16_t AUTO_RING_CY = AUTO_Y + 30;
+static const int16_t AUTO_RING_R = 14;
 
-// Player area
-static const int16_t PLAYER_ATK_BAR_Y = 268;
-static const int16_t PLAYER_ATK_BAR_H = 12;
-static const int16_t PLAYER_HP_Y = 283;
-static const int16_t PLAYER_HP_H = 14;
-static const int16_t PLAYER_STATS_Y = 301;
+// Player strip
+static const int16_t STATS_Y = 298;
+static const int16_t PLAYER_HP_Y = 308;
+static const int16_t PLAYER_HP_H = 11;
+
+#define ACTION_ROW(cy, kind, label)                                               \
+    {                                                                             \
+        CooldownRing(RING_CX, cy, RING_R, kind),                                  \
+            Text(ACTION_NAME_X, (cy) + NAME_DY, label, Theme::TEXT_2, 1),         \
+            Text(ACTION_NAME_X, (cy) + DETAIL_DY, "", Theme::TEXT_DIM, 1)         \
+    }
 
 CombatScreen::CombatScreen(CombatState &combat, SoundManager &sound)
     : header("Combat"),
 
       // Enemy block
-      enemyName(CENTER_X, ENEMY_NAME_Y, "", ENEMY_NAME_COLOR, 2, TC_DATUM),
+      enemyName(CENTER_X, ENEMY_NAME_Y, "", Theme::ENEMY_NAME, 2, TC_DATUM),
       enemySprite(ENEMY_SPRITE_X, ENEMY_SPRITE_Y),
-      enemyStatsBox(ENEMY_BOX_X, ENEMY_BOX_Y, ENEMY_BOX_W, ENEMY_BOX_H, STAT_BOX_BORDER, true, Theme::CARD, true, 3),
-      enemyStatsBand(ENEMY_BOX_X, ENEMY_BOX_Y, ENEMY_BOX_W, ENEMY_BAND_H, STAT_BOX_BORDER, true, STAT_BAND_COLOR, true, 3),
-      enemyStatsHeader(ENEMY_BOX_X + ENEMY_BOX_W / 2, ENEMY_BOX_Y + 3, "STATS", Theme::TEXT, 1, TC_DATUM),
-      enemyAtkIcon(ENEMY_BOX_X + 6, ENEMY_BOX_Y + 18, 16, 16, image_sword_02b_pixels, true, 0x0000),
-      enemyAtkText(ENEMY_BOX_X + 28, ENEMY_BOX_Y + 18, "", ENEMY_ATK_COLOR, 2),
-      enemyDefIcon(ENEMY_BOX_X + 6, ENEMY_BOX_Y + 37, 16, 16, image_armor_01b_pixels, true, 0x0000),
-      enemyDefText(ENEMY_BOX_X + 28, ENEMY_BOX_Y + 37, "", ENEMY_DEF_COLOR, 2),
-      enemyDropsDivider(ENEMY_BOX_X + 4, ENEMY_BOX_Y + 56, ENEMY_BOX_W - 8, 1, DIVIDER_COLOR, true, DIVIDER_COLOR),
-      enemyDropsLabel(ENEMY_BOX_X + ENEMY_BOX_W / 2, ENEMY_BOX_Y + 59, "DROPS", SECTION_COLOR, 1, TC_DATUM),
+      dropBanner(BANNER_X, ENEMY_SPRITE_Y, BANNER_W, EnemySprite::SIZE,
+                 ENEMY_SPRITE_X, ENEMY_SPRITE_Y, EnemySprite::SIZE, EnemySprite::SIZE),
+      enemyAtkLabel(STATS_CENTER_X, ENEMY_ATK_LABEL_Y, "ATK", Theme::TEXT_DIM, 1, TC_DATUM),
+      enemyAtkValue(STATS_CENTER_X, ENEMY_ATK_VALUE_Y, "", Theme::ATTACK, 2, TC_DATUM),
+      enemyDefLabel(STATS_CENTER_X, ENEMY_DEF_LABEL_Y, "DEF", Theme::TEXT_DIM, 1, TC_DATUM),
+      enemyDefValue(STATS_CENTER_X, ENEMY_DEF_VALUE_Y, "", Theme::DEFENSE, 2, TC_DATUM),
+      dropsCaption(DROPS_CENTER_X, DROPS_Y, "DROPS", Theme::TEXT_DIM, 1, TC_DATUM),
 
-      enemyHpBar(BAR_X, ENEMY_HP_Y, BAR_W, ENEMY_HP_H, 0, 1, ENEMY_HP_COLOR, ENEMY_HP_BG, ENEMY_HP_BORDER),
-      enemyAttackBar(BAR_X, ENEMY_ATK_BAR_Y, BAR_W, ENEMY_ATK_BAR_H, 0, 1, ENEMY_ATTACK_COLOR,
+      enemyHpBar(BAR_X, ENEMY_HP_Y, HP_BAR_W, ENEMY_HP_H, 0, 1, ENEMY_HP_COLOR, ENEMY_HP_BG, ENEMY_HP_BORDER),
+      enemyHitText(HIT_TEXT_X, ENEMY_HP_Y + 3, "", Theme::GOLD, 1, TR_DATUM),
+      enemyAttackBar(BAR_X, ENEMY_ATK_BAR_Y, ENEMY_ATK_BAR_W, ENEMY_ATK_BAR_H, 0, 1, ENEMY_ATTACK_COLOR,
                      ENEMY_ATTACK_BG, ENEMY_ATTACK_BORDER),
 
-      messageText(CENTER_X, MESSAGE_Y, "", Theme::TEXT, 2, TC_DATUM),
+      messageText(CENTER_X, MESSAGE_Y, "", Theme::TEXT, 1, TC_DATUM),
 
-      // Actions panel: Up smites (amulet), Confirm strikes, Down guards
-      actionBox(ACTION_BOX_X, ACTION_BOX_Y, ACTION_BOX_W, ACTION_BOX_H, ACTION_BOX_BORDER, true, Theme::CARD, true, 3),
-      smiteBadge(ACTION_BADGE_X, SMITE_ROW_Y + BADGE_OFFSET_Y, ButtonBadge::UP),
-      smiteLabel(ACTION_LABEL_X, SMITE_ROW_Y, "Smite", ACTION_NAME_COLOR, 1),
-      smiteDetail(ACTION_DETAIL_X, SMITE_ROW_Y, "", DETAIL_COLOR, 1),
-      smiteState(ACTION_STATE_X, SMITE_ROW_Y, "", READY_COLOR, 1, TR_DATUM),
-      strikeBadge(ACTION_BADGE_X, STRIKE_ROW_Y + BADGE_OFFSET_Y, ButtonBadge::CONFIRM),
-      strikeLabel(ACTION_LABEL_X, STRIKE_ROW_Y, "Strike", ACTION_NAME_COLOR, 1),
-      strikeDetail(ACTION_DETAIL_X, STRIKE_ROW_Y, "", DETAIL_COLOR, 1),
-      strikeState(ACTION_STATE_X, STRIKE_ROW_Y, "", READY_COLOR, 1, TR_DATUM),
-      guardBadge(ACTION_BADGE_X, GUARD_ROW_Y + BADGE_OFFSET_Y, ButtonBadge::DOWN),
-      guardLabel(ACTION_LABEL_X, GUARD_ROW_Y, "Guard", ACTION_NAME_COLOR, 1),
-      guardDetail(ACTION_DETAIL_X, GUARD_ROW_Y, "", DETAIL_COLOR, 1),
-      guardState(ACTION_STATE_X, GUARD_ROW_Y, "", READY_COLOR, 1, TR_DATUM),
+      // Up casts the amulet's spell, Confirm strikes, Down guards
+      actions{ACTION_ROW(SPELL_CY, ButtonBadge::UP, "SPELL"),
+              ACTION_ROW(STRIKE_CY, ButtonBadge::CONFIRM, "STRIKE"),
+              ACTION_ROW(GUARD_CY, ButtonBadge::DOWN, "GUARD")},
+
+      autoCard(AUTO_X, AUTO_Y, AUTO_W, AUTO_H, Theme::FRAME, true, Theme::CARD, true, 4),
+      autoTitle(AUTO_CX, AUTO_Y + 5, "AUTO", Theme::TEXT_2, 1, TC_DATUM),
+      autoRing(AUTO_CX, AUTO_RING_CY, AUTO_RING_R),
+      autoIcon(AUTO_CX - 8, AUTO_RING_CY - 8, 16, 16, image_sword_02b_pixels, true, 0x0000),
+      autoHit(AUTO_CX, AUTO_Y + 50, "", Theme::TEXT, 1, TC_DATUM),
+      autoNote(AUTO_CX, AUTO_Y + 60, "", Theme::TEXT_2, 1, TC_DATUM),
 
       // Player block
-      playerAttackBar(BAR_X, PLAYER_ATK_BAR_Y, BAR_W, PLAYER_ATK_BAR_H, 0, 1, PLAYER_ATTACK_COLOR,
-                      PLAYER_ATTACK_BG, PLAYER_ATTACK_BORDER),
-      playerHpBar(BAR_X, PLAYER_HP_Y, BAR_W, PLAYER_HP_H, 0, 1, PLAYER_HP_COLOR, PLAYER_HP_BG, PLAYER_HP_BORDER),
-      statsLine(CENTER_X, PLAYER_STATS_Y, "", STATS_LINE_COLOR, 1, TC_DATUM),
+      atkLabel(8, STATS_Y, "ATK", Theme::TEXT_2, 1),
+      atkValue(28, STATS_Y, "", Theme::ATTACK, 1),
+      defLabel(60, STATS_Y, "DEF", Theme::TEXT_2, 1),
+      defValue(80, STATS_Y, "", Theme::DEFENSE, 1),
+      playerHpBar(BAR_X, PLAYER_HP_Y, HP_BAR_W, PLAYER_HP_H, 0, 1, PLAYER_HP_COLOR, PLAYER_HP_BG, PLAYER_HP_BORDER),
+      playerHitText(HIT_TEXT_X, PLAYER_HP_Y + 2, "", BLOCKED_COLOR, 1, TR_DATUM),
 
       combat(combat),
       sound(sound),
       lastRefresh(0),
       seenKills(0),
       seenDrops(0),
-      messageUntil(0)
+      seenHits(0),
+      seenHurts(0),
+      messageUntil(0),
+      dropUntil(0),
+      enemyHitUntil(0),
+      playerHitUntil(0),
+      playerFlashUntil(0)
 {
     addElement(&header);
     setHeader(&header);
 
-    // Enemy card elements
-    // The band is registered after the card so its fill covers the card's top corners,
-    // and before the header text so the text lands on top of it
-    addElement(&enemyStatsBox);
-    addElement(&enemyStatsBand);
-    addElement(&enemyStatsHeader, Theme::ENEMY_BAND);
-    addElement(&enemyAtkIcon, Theme::CARD);
-    addElement(&enemyAtkText, Theme::CARD);
-    addElement(&enemyDefIcon, Theme::CARD);
-    addElement(&enemyDefText, Theme::CARD);
-    addElement(&enemyDropsDivider, Theme::CARD);
-    addElement(&enemyDropsLabel, Theme::CARD);
-    // Drop grid cells, row-major; hidden until update() fills them from the current enemy
-    for (uint8_t i = 0; i < MAX_DROPS; i++)
-    {
-        int16_t cellX = (int16_t)(ENEMY_BOX_X + 3 + (int16_t)(i % DROP_COLUMNS) * DROP_CELL_W);
-        int16_t cellY = (int16_t)(DROP_GRID_Y + (int16_t)(i / DROP_COLUMNS) * DROP_CELL_H);
-        dropIcon[i].setPosition(cellX, cellY);
-        dropIcon[i].setVisible(false);
-        addElement(&dropIcon[i], Theme::CARD);
-
-        // Vertically centred on the icon: 8px text beside a 16px icon
-        dropPct[i].setPosition(cellX + DROP_ICON_SIZE + 2, cellY + 4);
-        dropPct[i].setVisible(false);
-        addElement(&dropPct[i], Theme::CARD);
-    }
-
+    // The banner comes after the sprite so it lands on top of it, and the side columns
+    // after the banner so they are redrawn on top of the area it clears when it goes
     addElement(&enemyName);
     addElement(&enemySprite);
+    addElement(&dropBanner);
+    addElement(&enemyAtkLabel);
+    addElement(&enemyAtkValue);
+    addElement(&enemyDefLabel);
+    addElement(&enemyDefValue);
+    addElement(&dropsCaption);
+    for (uint8_t i = 0; i < MAX_DROPS; i++)
+    {
+        int16_t rowY = DROP_ROW_Y + i * DROP_PITCH;
+        dropIcon[i].setPosition(DROPS_X, rowY);
+        dropIcon[i].setVisible(false);
+        addElement(&dropIcon[i]);
+        // Vertically centred on the icon: 8px text beside a 16px icon
+        dropPct[i].setPosition(DROPS_X + DROP_PCT_DX, rowY + 4);
+        dropPct[i].setVisible(false);
+        addElement(&dropPct[i]);
+    }
     addElement(&enemyHpBar);
+    addElement(&enemyHitText);
     addElement(&enemyAttackBar);
 
     addElement(&messageText);
 
-    // Action panel elements
-    addElement(&actionBox);
-    addElement(&smiteBadge, Theme::CARD);
-    addElement(&smiteLabel, Theme::CARD);
-    addElement(&smiteDetail, Theme::CARD);
-    addElement(&smiteState, Theme::CARD);
-    addElement(&strikeBadge, Theme::CARD);
-    addElement(&strikeLabel, Theme::CARD);
-    addElement(&strikeDetail, Theme::CARD);
-    addElement(&strikeState, Theme::CARD);
-    addElement(&guardBadge, Theme::CARD);
-    addElement(&guardLabel, Theme::CARD);
-    addElement(&guardDetail, Theme::CARD);
-    addElement(&guardState, Theme::CARD);
+    for (uint8_t i = 0; i < ACTION_COUNT; i++)
+    {
+        addElement(&actions[i].ring);
+        addElement(&actions[i].name);
+        addElement(&actions[i].detail);
+    }
 
-    // Player elements
-    addElement(&playerAttackBar);
+    // The icon is registered after the ring so it lands inside it
+    addElement(&autoCard);
+    addElement(&autoTitle, Theme::CARD);
+    addElement(&autoRing, Theme::CARD);
+    addElement(&autoIcon, Theme::CARD);
+    addElement(&autoHit, Theme::CARD);
+    addElement(&autoNote, Theme::CARD);
+
+    addElement(&atkLabel);
+    addElement(&atkValue);
+    addElement(&defLabel);
+    addElement(&defValue);
     addElement(&playerHpBar);
-    addElement(&statsLine);
-
-    // Details are fixed by config, so they are written once: the hits show only their
-    // multiplier and the guard only its reduction (its duration is a countdown in the
-    // state column while it runs)
-    char buf[24];
-    snprintf(buf, sizeof(buf), "-%u%%", (unsigned)(100 - GUARD_DAMAGE_PERCENT));
-    guardDetail.setText(buf);
-    snprintf(buf, sizeof(buf), "x%u", (unsigned)STRIKE_MULTIPLIER);
-    strikeDetail.setText(buf);
-    snprintf(buf, sizeof(buf), "x%u", (unsigned)SMITE_MULTIPLIER);
-    smiteDetail.setText(buf);
+    addElement(&playerHitText);
 }
+
+#undef ACTION_ROW
 
 void CombatScreen::onEnter(TFT_eSPI &tft)
 {
-    // Kills and drops that happened while the player was elsewhere are already banked;
-    // resync here so the screen does not replay their sounds or notifications on arrival
+    // Events that happened while the player was elsewhere are already banked; resync here
+    // so the screen does not replay their sounds or banners on arrival
     seenKills = combat.getKillEvents();
     seenDrops = combat.getDropEvents();
+    seenHits = combat.getHitEvents();
+    seenHurts = combat.getHurtEvents();
     messageUntil = 0;
+    dropUntil = 0;
+    enemyHitUntil = 0;
+    playerHitUntil = 0;
+    playerFlashUntil = 0;
     lastRefresh = 0;
+    dropBanner.setVisible(false);
     Screen::onEnter(tft);
 }
 
+// Everything but the elements whose visibility their own refresh decides (the hit
+// numbers, the drop card and list, and the auto attack ring), which would otherwise be
+// toggled twice per refresh and flicker. The drop list is only hidden here.
 void CombatScreen::showFightElements(bool visible)
 {
     enemyName.setVisible(visible);
     enemySprite.setVisible(visible);
-    enemyStatsBox.setVisible(visible);
-    enemyStatsBand.setVisible(visible);
-    enemyStatsHeader.setVisible(visible);
-    enemyAtkIcon.setVisible(visible);
-    enemyAtkText.setVisible(visible);
-    enemyDefIcon.setVisible(visible);
-    enemyDefText.setVisible(visible);
-    enemyDropsDivider.setVisible(visible);
-    enemyDropsLabel.setVisible(visible);
+    enemyAtkLabel.setVisible(visible);
+    enemyAtkValue.setVisible(visible);
+    enemyDefLabel.setVisible(visible);
+    enemyDefValue.setVisible(visible);
+    dropsCaption.setVisible(visible);
     if (!visible)
     {
-        hideDrops();
+        for (uint8_t i = 0; i < MAX_DROPS; i++)
+        {
+            dropIcon[i].setVisible(false);
+            dropPct[i].setVisible(false);
+        }
     }
     enemyHpBar.setVisible(visible);
+    enemyAttackBar.setVisible(visible);
 
-    actionBox.setVisible(visible);
-    smiteBadge.setVisible(visible);
-    smiteLabel.setVisible(visible);
-    smiteDetail.setVisible(visible);
-    smiteState.setVisible(visible);
-    strikeBadge.setVisible(visible);
-    strikeLabel.setVisible(visible);
-    strikeDetail.setVisible(visible);
-    strikeState.setVisible(visible);
-    guardBadge.setVisible(visible);
-    guardLabel.setVisible(visible);
-    guardDetail.setVisible(visible);
-    guardState.setVisible(visible);
-
-    playerHpBar.setVisible(visible);
-    statsLine.setVisible(visible);
-}
-
-void CombatScreen::hideDrops()
-{
-    for (uint8_t i = 0; i < MAX_DROPS; i++)
+    for (uint8_t i = 0; i < ACTION_COUNT; i++)
     {
-        dropIcon[i].setVisible(false);
-        dropPct[i].setVisible(false);
+        actions[i].ring.setVisible(visible);
+        actions[i].name.setVisible(visible);
+        actions[i].detail.setVisible(visible);
     }
+
+    autoCard.setVisible(visible);
+    autoTitle.setVisible(visible);
+    autoHit.setVisible(visible);
+    autoNote.setVisible(visible);
+
+    atkLabel.setVisible(visible);
+    atkValue.setVisible(visible);
+    defLabel.setVisible(visible);
+    defValue.setVisible(visible);
+    playerHpBar.setVisible(visible);
 }
 
+// The side columns: the enemy's stats on the left and its drops on the right
 void CombatScreen::refreshDrops(const EnemyDef &enemy)
 {
     const Inventory &inventory = combat.getInventory();
-    uint8_t count = (enemy.dropCount < MAX_DROPS) ? enemy.dropCount : MAX_DROPS;
+    uint8_t count = enemy.dropCount < MAX_DROPS ? enemy.dropCount : MAX_DROPS;
     char buf[8];
+
+    snprintf(buf, sizeof(buf), "%u", (unsigned)enemy.attack);
+    enemyAtkValue.setText(buf);
+    snprintf(buf, sizeof(buf), "%u", (unsigned)enemy.defense);
+    enemyDefValue.setText(buf);
 
     for (uint8_t i = 0; i < MAX_DROPS; i++)
     {
@@ -294,24 +297,9 @@ void CombatScreen::refreshDrops(const EnemyDef &enemy)
         }
 
         const DropDef &drop = enemy.drops[i];
-        const ItemDef &def = ITEMS[drop.itemId];
+        dropIcon[i].setPixels(ITEMS[drop.itemId].iconPixels, DROP_ICON_SIZE, DROP_ICON_SIZE, true, 0x0000);
 
-        // Narrow icons are centred in the 16px cell. A 1-bit icon is drawn on an opaque
-        // background so swapping enemies paints over the previous icon instead of
-        // leaving its pixels behind (Image only erases when it moves or resizes)
-        int16_t cellX = (int16_t)(ENEMY_BOX_X + 3 + (int16_t)(i % DROP_COLUMNS) * DROP_CELL_W);
-        int16_t cellY = (int16_t)(DROP_GRID_Y + (int16_t)(i / DROP_COLUMNS) * DROP_CELL_H);
-        dropIcon[i].setPosition(cellX + (DROP_ICON_SIZE - def.iconW) / 2, cellY + (DROP_ICON_SIZE - def.iconH) / 2);
-        if (def.iconPixels != nullptr)
-        {
-            dropIcon[i].setPixels(def.iconPixels, def.iconW, def.iconH, true, 0x0000);
-        }
-        else
-        {
-            dropIcon[i].setBitmap(def.iconBitmap, def.iconW, def.iconH, Theme::TEXT, false, Theme::CARD);
-        }
-
-        // Basis points: whole percents print plain, rare drops keep their tenth (1.2%, 0.6%)
+        // Basis points: whole percents print plain, rare drops keep their tenth (5.5%)
         unsigned whole = drop.chanceBp / 100;
         unsigned tenth = (drop.chanceBp % 100) / 10;
         if (tenth == 0)
@@ -323,160 +311,383 @@ void CombatScreen::refreshDrops(const EnemyDef &enemy)
             snprintf(buf, sizeof(buf), "%u.%u%%", whole, tenth);
         }
         dropPct[i].setText(buf);
-        dropPct[i].setColor(inventory.isOwned(drop.itemId) ? LEVEL_UP_COLOR : NEW_ITEM_COLOR);
+        dropPct[i].setColor(inventory.isOwned(drop.itemId) ? Theme::GOLD : Theme::GOOD);
     }
 }
 
-void CombatScreen::showDropMessage(unsigned long now)
+// The banner cleared both side columns when it went, so everything in them draws again
+void CombatScreen::redrawSideColumns()
 {
-    int8_t itemId = combat.getLastDrop();
-    if (itemId == NO_ITEM)
+    enemyAtkLabel.resetDrawn();
+    enemyAtkValue.resetDrawn();
+    enemyDefLabel.resetDrawn();
+    enemyDefValue.resetDrawn();
+    dropsCaption.resetDrawn();
+    for (uint8_t i = 0; i < MAX_DROPS; i++)
     {
-        return;
+        dropIcon[i].resetDrawn();
+        dropPct[i].resetDrawn();
     }
-
-    char buf[32];
-    if (combat.wasLastDropNew())
-    {
-        snprintf(buf, sizeof(buf), "Got %s!", ITEMS[itemId].name);
-        messageText.setColor(NEW_ITEM_COLOR);
-    }
-    else
-    {
-        // A duplicate is not a new item, so say what it did instead
-        snprintf(buf, sizeof(buf), "%s Lv %u", ITEMS[itemId].name, (unsigned)combat.getLastDropLevel());
-        messageText.setColor(LEVEL_UP_COLOR);
-    }
-
-    messageText.setText(buf);
-    messageUntil = now + DROP_MESSAGE_MS;
 }
 
-void CombatScreen::refreshTimerBars(unsigned long now, bool fighting)
+void CombatScreen::showMessage(unsigned long now, const char *text, uint16_t color, unsigned long durationMs)
+{
+    messageText.setText(text);
+    messageText.setColor(color);
+    messageUntil = now + durationMs;
+}
+
+// Diffs the engine's monotonic counters against the last values this screen saw
+void CombatScreen::handleEvents(unsigned long now)
 {
     char buf[40];
 
-    // Each bar says who hits whom, for how much, and how long until it lands
-    enemyAttackBar.setVisible(fighting);
-    if (fighting)
+    if (combat.getHitEvents() != seenHits)
     {
-        uint32_t enemyDamage = combat.getEnemyAttackDamage();
-        if (enemyDamage == 0)
-        {
-            // A full static bar rather than an empty one: counting down to nothing read
-            // as a bug, and an empty bar reads as a countdown about to fire
-            enemyAttackBar.setProgress(1, 1);
-            enemyAttackBar.setFillColor(INERT_COLOR);
-            enemyAttackBar.setLabel("enemy cannot hurt you");
-        }
-        else
-        {
-            unsigned long left = combat.getEnemyAttackRemaining(now);
-            enemyAttackBar.setProgress((int32_t)left, (int32_t)combat.getEnemy().attackIntervalMs);
-            enemyAttackBar.setFillColor(ENEMY_ATTACK_COLOR);
-            snprintf(buf, sizeof(buf), "enemy hits %u in %lu.%lus",
-                     (unsigned)enemyDamage, left / 1000, (left % 1000) / 100);
-            enemyAttackBar.setLabel(buf);
-        }
+        seenHits = combat.getHitEvents();
+        snprintf(buf, sizeof(buf), "-%u", (unsigned)combat.getLastHitDamage());
+        enemyHitText.setText(buf);
+        enemyHitUntil = now + HIT_TEXT_MS;
     }
 
-    // The automatic attack gets no bar at all when it cannot damage the enemy: there is
-    // no countdown worth showing, and the action rows are what matter then
-    uint32_t autoDamage = combat.getAutoAttackDamage();
-    bool showPlayerBar = fighting && autoDamage > 0;
-    playerAttackBar.setVisible(showPlayerBar);
-    if (showPlayerBar)
+    if (combat.getHurtEvents() != seenHurts)
     {
-        unsigned long left = combat.getAutoAttackRemaining(now);
-        playerAttackBar.setProgress((int32_t)left, (int32_t)AUTO_ATTACK_MS);
-        snprintf(buf, sizeof(buf), "you hit %u in %lu.%lus",
-                 (unsigned)autoDamage, left / 1000, (left % 1000) / 100);
-        playerAttackBar.setLabel(buf);
+        seenHurts = combat.getHurtEvents();
+        snprintf(buf, sizeof(buf), "-%u", (unsigned)combat.getLastHurtDamage());
+        playerHitText.setText(buf);
+        playerHitUntil = now + HIT_TEXT_MS;
+        playerFlashUntil = now + HURT_FLASH_MS;
+        sound.playHurt();
+    }
+
+    bool killed = combat.getKillEvents() != seenKills;
+    if (killed)
+    {
+        seenKills = combat.getKillEvents();
+        bool midas = combat.wasLastKillMidas();
+        snprintf(buf, sizeof(buf), midas ? "MIDAS! +%s gold" : "Defeated! +%s gold",
+                 formatAmount(combat.getLastKillGold()).c_str());
+        showMessage(now, buf, midas ? Theme::GOLD : Theme::GOOD, KILL_MESSAGE_MS);
+    }
+
+    // A drop outranks the kill sound: it gets its own fanfare and the big card
+    bool dropped = combat.getDropEvents() != seenDrops;
+    if (dropped)
+    {
+        seenDrops = combat.getDropEvents();
+        int8_t itemId = combat.getLastDrop();
+        if (itemId != NO_ITEM)
+        {
+            bool isNew = combat.wasLastDropNew();
+            dropBanner.show((uint8_t)itemId, isNew, combat.getLastDropLevel());
+            dropUntil = now + (isNew ? NEW_DROP_MS : LEVEL_DROP_MS);
+            if (isNew)
+            {
+                sound.playDrop();
+            }
+            else
+            {
+                sound.playBuy();
+            }
+        }
+    }
+    else if (killed)
+    {
+        sound.playLevelUp();
     }
 }
 
-void CombatScreen::refreshActionStates(unsigned long now, bool fighting)
+// The enemy, its stats and its drops, unless the drop card is covering them. When the card
+// goes away the sprite and both side columns are redrawn whole, since the card only clears its own
+// area outside the sprite.
+void CombatScreen::refreshEnemy(unsigned long now)
 {
-    char buf[16];
+    const EnemyDef &enemy = combat.getEnemy();
+    enemyName.setText(enemy.name);
 
-    // A multiplier turns red when that hit cannot get through the enemy's defense
-    strikeDetail.setColor(combat.getStrikeDamage() == 0 ? BLOCKED_COLOR : DETAIL_COLOR);
-
-    unsigned long strikeLeft = combat.getStrikeCooldownRemaining(now);
-    if (!fighting)
+    if (dropBanner.isVisible())
     {
-        strikeState.setText("-");
-        strikeState.setColor(COOLING_COLOR);
-    }
-    else if (strikeLeft == 0)
-    {
-        strikeState.setText("ready");
-        strikeState.setColor(READY_COLOR);
-    }
-    else
-    {
-        snprintf(buf, sizeof(buf), "%lu.%lus", strikeLeft / 1000, (strikeLeft % 1000) / 100);
-        strikeState.setText(buf);
-        strikeState.setColor(COOLING_COLOR);
-    }
-
-    unsigned long guardLeft = combat.getGuardCooldownRemaining(now);
-    if (combat.isGuarding(now))
-    {
-        // Counts down the time left on the guard, in the active color
-        unsigned long left = combat.getGuardRemaining(now);
-        snprintf(buf, sizeof(buf), "%lu.%lus", left / 1000, (left % 1000) / 100);
-        guardState.setText(buf);
-        guardState.setColor(ACTIVE_COLOR);
-    }
-    else if (!fighting)
-    {
-        guardState.setText("-");
-        guardState.setColor(COOLING_COLOR);
-    }
-    else if (guardLeft == 0)
-    {
-        guardState.setText("ready");
-        guardState.setColor(READY_COLOR);
-    }
-    else
-    {
-        snprintf(buf, sizeof(buf), "%lu.%lus", guardLeft / 1000, (guardLeft % 1000) / 100);
-        guardState.setText(buf);
-        guardState.setColor(COOLING_COLOR);
-    }
-
-    // Shown even while locked, so the amulet reward is discoverable
-    if (!combat.isSmiteUnlocked())
-    {
-        smiteBadge.setDimmed(true);
-        smiteLabel.setColor(LOCKED_COLOR);
-        smiteDetail.setColor(LOCKED_COLOR);
-        smiteState.setText("need amulet");
-        smiteState.setColor(LOCKED_COLOR);
+        if ((long)(now - dropUntil) < 0)
+        {
+            return;
+        }
+        dropBanner.setVisible(false);
+        enemySprite.setSprite(enemy.sprite);
+        enemySprite.setBackground(combat.getZone().background);
+        enemySprite.resetDrawn();
+        refreshDrops(enemy);
+        redrawSideColumns();
         return;
     }
 
-    smiteBadge.setDimmed(false);
-    smiteLabel.setColor(ACTION_NAME_COLOR);
-    smiteDetail.setColor(combat.getSmiteDamage() == 0 ? BLOCKED_COLOR : DETAIL_COLOR);
-    unsigned long smiteLeft = combat.getSmiteCooldownRemaining(now);
+    enemySprite.setSprite(enemy.sprite);
+    enemySprite.setBackground(combat.getZone().background);
+    refreshDrops(enemy);
+}
+
+// The enemy's next hit charges up rather than counting down, so the bar filling reads as
+// "something is coming"; it turns red just before it lands
+void CombatScreen::refreshEnemyAttack(unsigned long now, bool fighting)
+{
+    char buf[32];
+    bool warn = false;
+
     if (!fighting)
     {
-        smiteState.setText("-");
-        smiteState.setColor(COOLING_COLOR);
+        enemyAttackBar.setProgress(0, 1);
+        enemyAttackBar.setFillColor(ENEMY_ATTACK_COLOR);
+        enemyAttackBar.setBorderColor(ENEMY_ATTACK_BORDER);
+        enemyAttackBar.setLabel("");
     }
-    else if (smiteLeft == 0)
+    else if (combat.getEnemyAttackDamage() == 0)
     {
-        smiteState.setText("ready");
-        smiteState.setColor(READY_COLOR);
+        // A full static bar rather than an empty one: counting up to nothing read as a bug
+        enemyAttackBar.setProgress(1, 1);
+        enemyAttackBar.setFillColor(INERT_COLOR);
+        enemyAttackBar.setBorderColor(ENEMY_ATTACK_BORDER);
+        enemyAttackBar.setLabel("can't hurt you");
     }
     else
     {
-        snprintf(buf, sizeof(buf), "%lu.%lus", smiteLeft / 1000, (smiteLeft % 1000) / 100);
-        smiteState.setText(buf);
-        smiteState.setColor(COOLING_COLOR);
+        unsigned long interval = combat.getEnemy().attackIntervalMs;
+        unsigned long left = combat.getEnemyAttackRemaining(now);
+        uint32_t damage = combat.getEnemyAttackDamage();
+        if (combat.isGuarding(now))
+        {
+            damage = damage * GUARD_DAMAGE_PERCENT / 100;
+        }
+        // A stun pushed the hit more than one interval away: the bar waits empty until the
+        // enemy starts winding up again. A ward makes the hit harmless, so no red warning.
+        bool stunned = left > interval;
+        bool warded = combat.isWarded(now);
+        warn = !stunned && !warded && left < WARN_MS;
+
+        enemyAttackBar.setProgress(stunned ? 0 : (int32_t)(interval - left), (int32_t)interval);
+        enemyAttackBar.setFillColor(warn ? BLOCKED_COLOR : warded ? ACTIVE_COLOR : ENEMY_ATTACK_COLOR);
+        enemyAttackBar.setBorderColor(warn ? BLOCKED_COLOR : warded ? ACTIVE_COLOR : ENEMY_ATTACK_BORDER);
+        if (stunned)
+        {
+            enemyAttackBar.setLabel("stunned");
+        }
+        else if (warded)
+        {
+            enemyAttackBar.setLabel("warded - no damage");
+        }
+        else
+        {
+            snprintf(buf, sizeof(buf), "hits you for %u", (unsigned)damage);
+            enemyAttackBar.setLabel(buf);
+        }
     }
+}
+
+// One cooldown ring and the line under its name. Ready: gold ring and outline, and the
+// hit it would deal. Recharging: a gray ring filling up and the time left. A hit that
+// cannot beat the enemy's defense says so instead of inviting a useless press.
+void CombatScreen::refreshCooldown(ActionRow &row, unsigned long left, unsigned long total, uint32_t damage,
+                                   bool fighting)
+{
+    char buf[20];
+    bool blocked = fighting && damage == 0;
+    bool ready = fighting && !blocked && left == 0;
+
+    // Cooldowns keep running between enemies, so the ring shows them even then
+    row.ring.setProgress(left == 0 ? 1000 : (uint16_t)(1000 - left * 1000 / total));
+    row.ring.setRingColor(ready ? READY_COLOR : Theme::TEXT_DIM);
+    row.ring.setOutline(ready);
+    row.ring.setCapDimmed(!fighting || blocked);
+    row.name.setColor(ready ? Theme::TEXT : Theme::TEXT_2);
+
+    if (blocked)
+    {
+        row.detail.setText("blocked");
+        row.detail.setColor(BLOCKED_COLOR);
+    }
+    else if (left > 0)
+    {
+        snprintf(buf, sizeof(buf), "%lu.%lus", left / 1000, (left % 1000) / 100);
+        row.detail.setText(buf);
+        row.detail.setColor(Theme::TEXT_DIM);
+    }
+    else
+    {
+        snprintf(buf, sizeof(buf), "hits %u", (unsigned)damage);
+        row.detail.setText(fighting ? buf : "");
+        row.detail.setColor(READY_COLOR);
+    }
+}
+
+void CombatScreen::refreshActions(unsigned long now, bool fighting)
+{
+    refreshCooldown(actions[STRIKE], combat.getStrikeCooldownRemaining(now), STRIKE_COOLDOWN_MS,
+                    combat.getStrikeDamage(), fighting);
+
+    refreshSpell(now, fighting);
+
+    // The guard deals no damage; while it is up its ring and line turn cyan and count the
+    // time it has left
+    ActionRow &guard = actions[GUARD];
+    char buf[20];
+    unsigned long left = combat.getGuardCooldownRemaining(now);
+    bool guarding = combat.isGuarding(now);
+    bool ready = fighting && left == 0;
+    guard.ring.setProgress(left == 0 ? 1000 : (uint16_t)(1000 - left * 1000 / GUARD_COOLDOWN_MS));
+    guard.ring.setRingColor(guarding ? ACTIVE_COLOR : ready ? READY_COLOR : Theme::TEXT_DIM);
+    guard.ring.setOutline(ready);
+    guard.ring.setCapDimmed(!fighting);
+    guard.name.setColor(ready || guarding ? Theme::TEXT : Theme::TEXT_2);
+    if (guarding)
+    {
+        unsigned long up = combat.getGuardRemaining(now);
+        snprintf(buf, sizeof(buf), "on %lu.%lus", up / 1000, (up % 1000) / 100);
+        guard.detail.setText(buf);
+        guard.detail.setColor(ACTIVE_COLOR);
+    }
+    else if (left > 0)
+    {
+        snprintf(buf, sizeof(buf), "%lu.%lus", left / 1000, (left % 1000) / 100);
+        guard.detail.setText(buf);
+        guard.detail.setColor(Theme::TEXT_DIM);
+    }
+    else
+    {
+        snprintf(buf, sizeof(buf), "-%u%% dmg", (unsigned)(100 - GUARD_DAMAGE_PERCENT));
+        guard.detail.setText(fighting ? buf : "");
+        guard.detail.setColor(READY_COLOR);
+    }
+}
+
+// The Up button casts whatever the equipped amulet grants, so the row takes the spell's
+// name. Under it: what the spell does when ready, the time left while recharging, or why
+// it would do nothing now (full health for a heal, a Midas already armed). Without an
+// amulet the row stays, dimmed, so the reward is discoverable.
+void CombatScreen::refreshSpell(unsigned long now, bool fighting)
+{
+    ActionRow &row = actions[SPELL];
+    const SpellDef *spell = combat.getSpell();
+    char buf[20];
+
+    if (spell == nullptr)
+    {
+        row.name.setText("SPELL");
+        row.name.setColor(Theme::TEXT_DIM);
+        row.ring.setProgress(0);
+        row.ring.setRingColor(Theme::TEXT_DIM);
+        row.ring.setOutline(false);
+        row.ring.setCapDimmed(true);
+        row.detail.setText("equip amulet");
+        row.detail.setColor(Theme::TEXT_DIM);
+        return;
+    }
+
+    unsigned long left = combat.getSpellCooldownRemaining(now);
+    bool warded = combat.isWarded(now);
+    bool useless = combat.isSpellUseless();
+    bool ready = fighting && left == 0 && !useless;
+
+    row.name.setText(spell->name);
+    row.name.setColor(ready || warded ? Theme::TEXT : Theme::TEXT_2);
+    row.ring.setProgress(left == 0 ? 1000 : (uint16_t)(1000 - left * 1000 / spell->cooldownMs));
+    row.ring.setRingColor(warded ? ACTIVE_COLOR : ready ? READY_COLOR : Theme::TEXT_DIM);
+    row.ring.setOutline(ready);
+    row.ring.setCapDimmed(!fighting);
+
+    if (warded)
+    {
+        unsigned long up = combat.getWardRemaining(now);
+        snprintf(buf, sizeof(buf), "on %lu.%lus", up / 1000, (up % 1000) / 100);
+        row.detail.setText(buf);
+        row.detail.setColor(ACTIVE_COLOR);
+        return;
+    }
+    if (combat.isMidasArmed())
+    {
+        snprintf(buf, sizeof(buf), "next kill x%u", (unsigned)spell->power);
+        row.detail.setText(buf);
+        row.detail.setColor(Theme::GOLD);
+        return;
+    }
+    if (left > 0)
+    {
+        snprintf(buf, sizeof(buf), "%lu.%lus", left / 1000, (left % 1000) / 100);
+        row.detail.setText(buf);
+        row.detail.setColor(Theme::TEXT_DIM);
+        return;
+    }
+    if (useless)
+    {
+        row.detail.setText("full HP");
+        row.detail.setColor(Theme::TEXT_DIM);
+        return;
+    }
+
+    switch (spell->effect)
+    {
+    case SpellEffect::HEAL:
+        snprintf(buf, sizeof(buf), "heal %u",
+                 (unsigned)(combat.getPlayerStats().maxHp * spell->power / 100));
+        break;
+    case SpellEffect::STUN:
+        snprintf(buf, sizeof(buf), "skip a hit");
+        break;
+    case SpellEffect::MIDAS:
+        snprintf(buf, sizeof(buf), "x%u gold", (unsigned)spell->power);
+        break;
+    case SpellEffect::WARD:
+        snprintf(buf, sizeof(buf), "block %us", (unsigned)(spell->power / 1000));
+        break;
+    }
+    row.detail.setText(fighting ? buf : "");
+    row.detail.setColor(READY_COLOR);
+}
+
+// The automatic attack fills its own ring every AUTO_ATTACK_MS. When the enemy's defense
+// blocks it, the ring goes away and the card points at the strike instead.
+void CombatScreen::refreshAutoAttack(unsigned long now, bool fighting)
+{
+    char buf[20];
+    uint32_t damage = combat.getAutoAttackDamage();
+    bool working = damage > 0;
+
+    autoRing.setVisible(working);
+    autoIcon.setVisible(working);
+    if (working)
+    {
+        unsigned long left = combat.getAutoAttackRemaining(now);
+        autoRing.setProgress(fighting ? (uint16_t)(1000 - left * 1000 / AUTO_ATTACK_MS) : 0);
+        autoRing.setRingColor(AUTO_COLOR);
+        snprintf(buf, sizeof(buf), "hits %u", (unsigned)damage);
+        autoHit.setText(buf);
+        autoHit.setColor(Theme::TEXT);
+        autoNote.setText("");
+    }
+    else
+    {
+        autoHit.setText("blocked");
+        autoHit.setColor(BLOCKED_COLOR);
+        autoNote.setText("use STRIKE");
+    }
+}
+
+void CombatScreen::refreshPlayer(unsigned long now)
+{
+    char buf[24];
+    const Stats &player = combat.getPlayerStats();
+
+    snprintf(buf, sizeof(buf), "%u", (unsigned)player.attack);
+    atkValue.setText(buf);
+    snprintf(buf, sizeof(buf), "%u", (unsigned)player.defense);
+    defValue.setText(buf);
+
+    bool flash = (long)(now - playerFlashUntil) < 0;
+    playerHpBar.setProgress((int32_t)combat.getPlayerHp(), (int32_t)player.maxHp);
+    playerHpBar.setFillColor(flash ? BLOCKED_COLOR : PLAYER_HP_COLOR);
+    playerHpBar.setBorderColor(flash ? BLOCKED_COLOR : PLAYER_HP_BORDER);
+    snprintf(buf, sizeof(buf), "%u/%u", (unsigned)combat.getPlayerHp(), (unsigned)player.maxHp);
+    playerHpBar.setLabel(buf);
+
+    playerHitText.setVisible((long)(now - playerHitUntil) < 0);
+    enemyHitText.setVisible((long)(now - enemyHitUntil) < 0);
 }
 
 void CombatScreen::update(unsigned long now)
@@ -493,93 +704,56 @@ void CombatScreen::update(unsigned long now)
     {
         header.setTitle("Combat");
         showFightElements(false);
-        enemyAttackBar.setVisible(false);
-        playerAttackBar.setVisible(false);
-        messageText.setVisible(true);
+        dropBanner.setVisible(false);
+        enemyHitText.setVisible(false);
+        playerHitText.setVisible(false);
+        autoRing.setVisible(false);
+        autoIcon.setVisible(false);
         messageText.setColor(Theme::TEXT);
-        messageText.setText("Pick a zone");
+        messageText.setText("Pick a zone on the Zones screen");
         return;
     }
 
-    if (combat.getKillEvents() != seenKills)
-    {
-        seenKills = combat.getKillEvents();
-        sound.playLevelUp();
-    }
-    if (combat.getDropEvents() != seenDrops)
-    {
-        seenDrops = combat.getDropEvents();
-        sound.playBuy();
-        showDropMessage(now);
-    }
+    handleEvents(now);
 
     const EnemyDef &enemy = combat.getEnemy();
-    const Stats &player = combat.getPlayerStats();
     bool fighting = combat.getPhase() == CombatState::FIGHTING;
 
     header.setTitle(combat.getZone().name);
     showFightElements(true);
-    messageText.setVisible(true);
-
-    enemyName.setText(enemy.name);
-    enemySprite.setSprite(enemy.sprite);
-    enemySprite.setBackground(combat.getZone().background);
-
-    // Enemy stat card: ATK, DEF then drop pool
-    snprintf(buf, sizeof(buf), "%u", (unsigned)enemy.attack);
-    enemyAtkText.setText(buf);
-    snprintf(buf, sizeof(buf), "%u", (unsigned)enemy.defense);
-    enemyDefText.setText(buf);
-
-    refreshDrops(enemy);
+    refreshEnemy(now);
 
     enemyHpBar.setProgress((int32_t)combat.getEnemyHp(), (int32_t)enemy.maxHp);
     snprintf(buf, sizeof(buf), "%u/%u", (unsigned)combat.getEnemyHp(), (unsigned)enemy.maxHp);
     enemyHpBar.setLabel(buf);
 
-    playerHpBar.setProgress((int32_t)combat.getPlayerHp(), (int32_t)player.maxHp);
-    snprintf(buf, sizeof(buf), "%u/%u", (unsigned)combat.getPlayerHp(), (unsigned)player.maxHp);
-    playerHpBar.setLabel(buf);
+    refreshEnemyAttack(now, fighting);
+    refreshActions(now, fighting);
+    refreshAutoAttack(now, fighting);
+    refreshPlayer(now);
 
-    // Footer: only player stats
-    snprintf(buf, sizeof(buf), "ATK %u  DEF %u  HP %u",
-             (unsigned)player.attack, (unsigned)player.defense, (unsigned)player.maxHp);
-    statsLine.setText(buf);
-
-    refreshTimerBars(now, fighting);
-
-    // A fresh drop notification outranks the fight status for a couple of seconds
+    // With no news to show, the status line carries the fight's standing state
     if (messageUntil == 0 || (long)(now - messageUntil) >= 0)
     {
         messageUntil = 0;
-        messageText.setColor(Theme::TEXT);
         if (combat.getPhase() == CombatState::DEAD)
         {
             unsigned long remaining = combat.getReviveRemaining(now);
-            snprintf(buf, sizeof(buf), "Revive %lu.%lus", remaining / 1000, (remaining % 1000) / 100);
+            snprintf(buf, sizeof(buf), "Knocked out - back in %lu.%lus", remaining / 1000, (remaining % 1000) / 100);
+            messageText.setColor(Theme::TEXT_2);
             messageText.setText(buf);
         }
-        else if (fighting)
+        else if (fighting && combat.getBestAttackDamage() == 0)
         {
-            // The attack bars cover a blocked automatic hit; this is the harder case
-            // where no action gets through, so the zone itself is out of reach
-            if (combat.getBestAttackDamage() == 0)
-            {
-                messageText.setColor(BLOCKED_COLOR);
-                messageText.setText("Attack too low");
-            }
-            else
-            {
-                messageText.setText("");
-            }
+            // No action gets through at all, so the zone itself is out of reach
+            messageText.setColor(BLOCKED_COLOR);
+            messageText.setText("Too strong - improve your ATK");
         }
         else
         {
-            messageText.setText("Next enemy");
+            messageText.setText("");
         }
     }
-
-    refreshActionStates(now, fighting);
 }
 
 void CombatScreen::onConfirmPress()
@@ -595,20 +769,38 @@ void CombatScreen::onConfirmPress()
     lastRefresh = 0;
 }
 
+// Casting says what it did in the status line, since a heal or a ward is easy to miss
 void CombatScreen::onUpPress()
 {
-    if (!combat.isSmiteUnlocked())
+    const SpellDef *spell = combat.getSpell();
+    uint32_t hpBefore = combat.getPlayerHp();
+    if (spell == nullptr || !combat.castSpell())
     {
+        sound.playError();
+        lastRefresh = 0;
         return;
     }
 
-    if (combat.smite())
+    sound.playLevelUp();
+    unsigned long now = millis();
+    char buf[32];
+    switch (spell->effect)
     {
-        sound.playLevelUp();
-    }
-    else
-    {
-        sound.playError();
+    case SpellEffect::HEAL:
+        snprintf(buf, sizeof(buf), "Healed %u HP", (unsigned)(combat.getPlayerHp() - hpBefore));
+        showMessage(now, buf, Theme::GOOD, KILL_MESSAGE_MS);
+        break;
+    case SpellEffect::STUN:
+        showMessage(now, "Enemy stunned!", ACTIVE_COLOR, KILL_MESSAGE_MS);
+        break;
+    case SpellEffect::MIDAS:
+        snprintf(buf, sizeof(buf), "Next kill pays x%u gold", (unsigned)spell->power);
+        showMessage(now, buf, Theme::GOLD, KILL_MESSAGE_MS);
+        break;
+    case SpellEffect::WARD:
+        snprintf(buf, sizeof(buf), "Warded for %us", (unsigned)(spell->power / 1000));
+        showMessage(now, buf, ACTIVE_COLOR, KILL_MESSAGE_MS);
+        break;
     }
     lastRefresh = 0;
 }

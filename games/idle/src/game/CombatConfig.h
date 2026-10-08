@@ -11,17 +11,54 @@
 static const unsigned long AUTO_ATTACK_MS = 2000;
 static const unsigned long STRIKE_COOLDOWN_MS = 3000;
 static const uint8_t STRIKE_MULTIPLIER = 2; // Manual strike hits this many times as hard
-// Smite is the heavy hit an equipped amulet grants. The multiplier is what lets it reach
-// defenses the ordinary strike cannot, and the long cooldown is what keeps it from
-// out-damaging the strike over time.
-static const uint8_t SMITE_MULTIPLIER = 4;
-static const unsigned long SMITE_COOLDOWN_MS = 12000;
 
 static const unsigned long GUARD_COOLDOWN_MS = 9000;
 static const unsigned long GUARD_DURATION_MS = 3000;
 static const uint8_t GUARD_DAMAGE_PERCENT = 50; // Incoming damage while guarding
-static const unsigned long RESPAWN_MS = 1500;
+static const unsigned long RESPAWN_MS = 3000; // Long enough to take in a kill and its drop
 static const unsigned long REVIVE_MS = 8000; // Health refills over this long after a death
+
+// The equipped amulet decides what the Up button casts. No spell deals damage, so the
+// strike stays the only way past a defense the auto-attack cannot beat; each one changes
+// the fight in its own way instead. A row per amulet: an amulet with no row grants nothing.
+enum class SpellEffect : uint8_t
+{
+    HEAL,  // Restores `power` percent of max HP; refused at full health
+    STUN,  // Pushes the enemy's next attack back by `power` full intervals
+    MIDAS, // The next kill pays `power` times its gold; refused while one is already armed
+    WARD   // No damage taken for `power` milliseconds
+};
+
+struct SpellDef
+{
+    uint8_t itemId;   // The amulet that grants it
+    const char *name; // Up to 6 chars, shown beside the Up button
+    SpellEffect effect;
+    uint16_t power;   // Meaning depends on the effect, see above
+    unsigned long cooldownMs;
+};
+
+static constexpr SpellDef SPELLS[] = {
+    //  amulet              name     effect               power  cooldown
+    {ITEM_WILSON,        "MEND",  SpellEffect::HEAL,   30,    15000},
+    {ITEM_JADE_AMULET,   "STUN",  SpellEffect::STUN,   1,     12000},
+    {ITEM_GOLD_AMULET,   "MIDAS", SpellEffect::MIDAS,  3,     20000},
+    {ITEM_CORE_SIGIL,    "WARD",  SpellEffect::WARD,   4000,  18000},
+};
+static constexpr uint8_t SPELL_COUNT = sizeof(SPELLS) / sizeof(SPELLS[0]);
+
+// The spell an item grants when worn, or nullptr
+inline const SpellDef *spellForItem(int8_t itemId)
+{
+    for (uint8_t i = 0; i < SPELL_COUNT; i++)
+    {
+        if (SPELLS[i].itemId == itemId)
+        {
+            return &SPELLS[i];
+        }
+    }
+    return nullptr;
+}
 
 // Chance is in basis points, so 10000 is a guaranteed drop
 struct DropDef

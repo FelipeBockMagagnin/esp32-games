@@ -1,4 +1,5 @@
 #include "InventoryScreen.h"
+#include "../game/CombatConfig.h" // spellForItem
 
 static const unsigned long REFRESH_MS = 100;
 
@@ -412,10 +413,12 @@ void InventoryScreen::refreshPanel()
         actionLabel.setColor(found == 0 ? HINT_COLOR : Theme::TEXT);
         snprintf(buf, sizeof(buf), "%u/%u items", (unsigned)inventory.countOwnedItems(), (unsigned)ITEM_COUNT);
         hintText.setText(buf);
+        hintText.setColor(HINT_COLOR);
         return;
     }
 
     hintText.setText("Back: slots");
+    hintText.setColor(HINT_COLOR);
 
     uint16_t selected = list.getSelected();
     int8_t itemId = selected == 0 ? NO_ITEM : inventory.itemForSlotAt(inspecting, (uint8_t)(selected - 1));
@@ -443,6 +446,15 @@ void InventoryScreen::refreshPanel()
     // Against the worn item (or against nothing, which shows the full gain), so a
     // sidegrade's trade-off is visible before committing to it
     showStats(itemId, isEquipped ? NO_ITEM : equipped, !isEquipped);
+
+    // An amulet's real worth is the spell it puts on the Up button in combat
+    const SpellDef *spell = spellForItem(itemId);
+    if (spell != nullptr)
+    {
+        snprintf(buf, sizeof(buf), "Spell: %s", spell->name);
+        hintText.setText(buf);
+        hintText.setColor(Theme::EPIC);
+    }
 
     actionBadge.setDimmed(isEquipped);
     actionLabel.setText(isEquipped ? "Already worn" : "Equip");
