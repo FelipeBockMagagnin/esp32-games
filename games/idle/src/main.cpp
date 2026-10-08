@@ -173,7 +173,7 @@ void setup()
     seenAchievements = achievements.getUnlockedCount();
     savedMilestones = milestoneSignature();
     nextSaveAt = millis() + SAVE_INTERVAL_MS;
-    
+
     tft.init();
     tft.setRotation(2);
     tft.fillScreen(Theme::BG);
@@ -184,9 +184,9 @@ void setup()
     screenManager.addScreen(&buildingScreen, "Buildings", true);
     screenManager.addScreen(&upgradeScreen, "Upgrade", true);
     screenManager.addScreen(&achievementScreen, "Awards", true);
-    screenManager.addScreen(&inventoryScreen, "Inventory", true);
     screenManager.addScreen(&zoneScreen, "Zones", true);
     screenManager.addScreen(&combatScreen, "Combat", true);
+    screenManager.addScreen(&inventoryScreen, "Inventory", true);
     applyUnlocks();
     seenUnlocks = unlocks.getRevision();
 }

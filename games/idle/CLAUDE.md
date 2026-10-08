@@ -42,7 +42,7 @@ Elapsed-time math uses unsigned subtraction (`now - lastUpdate`), and deadlines 
 `ScreenManager` holds `Screen*` in the order they were added in `setup()`; the right button cycles forward through them and the left button steps backward. The current order is:
 
 ```
-Mining → Buildings → Upgrade → Awards → Inventory → Zones → Combat → (wraps to Mining)
+Mining → Buildings → Upgrade → Awards → Zones → Combat → Inventory → (wraps to Mining)
 ```
 
 **Screens unlock progressively.** A fresh game shows only Mining; the others are added with `startLocked = true` and `src/game/Unlocks.h` opens them one at a time: Buildings (gold for the first building), Upgrade (3 buildings owned and an upgrade affordable), Awards (first achievement), Zones + Combat together (a Drill owned — `ZoneScreen` jumps to the next screen on entering a zone, so the two must open at once), Inventory (first drop beyond the starting kit). Each feature also waits for the previous one and for the last unlock notice to finish, so they never arrive in a burst. `main.cpp`'s `applyUnlocks()` maps features to screens via `ScreenManager::setLocked()`; locked screens are skipped by both navigation directions.
