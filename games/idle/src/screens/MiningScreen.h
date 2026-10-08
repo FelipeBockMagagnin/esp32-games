@@ -11,6 +11,7 @@
 #include "../ui/ButtonBadge.h"
 #include "../assets/Assets.h"
 #include "../game/GameState.h"
+#include "../game/Unlocks.h"
 #include "../managers/SoundManager.h"
 
 class MiningScreen : public Screen
@@ -39,15 +40,20 @@ private:
     Text mineLabel;
     Text mineValue;
 
+    // What opens the next screen, so a new player always knows what to aim for
+    ProgressBar goalBar;
+
     GameState &game;
+    const Unlocks &unlocks;
     SoundManager &sound;
     unsigned long lastRefresh;
     uint8_t shownTier; // Ore tier the tier-dependent elements were last set for
+    bool prompting;    // The next-ore line is showing the first-click prompt instead
 
     void applyOreTier(uint8_t tier);
 
 public:
-    MiningScreen(GameState &game, SoundManager &sound);
+    MiningScreen(GameState &game, const Unlocks &unlocks, SoundManager &sound);
 
     void update(unsigned long now) override;
 

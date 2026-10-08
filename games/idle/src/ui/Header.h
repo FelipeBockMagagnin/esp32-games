@@ -8,7 +8,11 @@
 //
 // It doubles as the notification area: while a notice is set it takes over the whole bar,
 // which is how an achievement or a newly unlocked screen gets shown on any screen without
-// each one reserving space for it. The caption (size 1) names the kind of notice.
+// each one reserving space for it. The caption (size 1) names the kind of notice, and the
+// accent color tints it and the bar's bottom rule so each kind is recognisable at a glance.
+//
+// The bar is painted in its own band color rather than the screen background, so it reads
+// as a title bar on every screen.
 class Header : public UI
 {
 public:
@@ -25,6 +29,7 @@ public:
           nextLabel(nextLabel),
           notice(""),
           noticeCaption(nullptr),
+          noticeAccent(0xFFFF),
           hasNotice(false)
     {
     }
@@ -58,16 +63,18 @@ public:
 
     // nullptr or an empty name gives the bar back to the title and nav labels.
     // The caption is compared by pointer, so pass a string literal or other fixed storage.
-    void setNotice(const char *caption, const char *name)
+    void setNotice(const char *caption, const char *name, uint16_t accent)
     {
         bool wanted = name != nullptr && name[0] != '\0';
-        if (wanted == hasNotice && (!wanted || (notice == name && noticeCaption == caption)))
+        if (wanted == hasNotice &&
+            (!wanted || (notice == name && noticeCaption == caption && noticeAccent == accent)))
         {
             return;
         }
         hasNotice = wanted;
         notice = wanted ? name : "";
         noticeCaption = wanted ? caption : nullptr;
+        noticeAccent = accent;
         markDirty();
     }
 
@@ -76,6 +83,7 @@ public:
 private:
     String notice;
     const char *noticeCaption;
+    uint16_t noticeAccent;
     bool hasNotice;
 };
 

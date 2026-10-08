@@ -14,6 +14,10 @@ static const uint16_t HINT_COLOR = 0x94B2;  // Mid gray for secondary lines
 static const uint16_t XP_BAR_COLOR = 0x04B5; // Teal fill, with a near-black tint and a mid tone
 static const uint16_t XP_BAR_BG = 0x00C4;    // of the same hue, like the combat bars
 static const uint16_t XP_BAR_BORDER = 0x02CD;
+static const uint16_t PROMPT_COLOR = 0xE8E4; // The Confirm cap's red, so the prompt points at it
+static const uint16_t GOAL_COLOR = 0x9B00;   // Amber fill, dark enough for the white label,
+static const uint16_t GOAL_BG = 0x2080;      // the same progress style as the Awards screen
+static const uint16_t GOAL_BORDER = 0x7AE2;
 
 // Layout coordinates
 static const int16_t CENTER_X = 120;
@@ -52,7 +56,15 @@ static const int16_t MINE_ROW_Y = 288;
 static const int16_t MINE_LABEL_X = MARGIN_X + ButtonBadge::SIZE + 4;
 static const int16_t BADGE_OFFSET_Y = (8 - ButtonBadge::SIZE) / 2;
 
-MiningScreen::MiningScreen(GameState &game, SoundManager &sound)
+// Goal bar along the bottom edge
+static const int16_t GOAL_Y = 302;
+static const int16_t GOAL_H = 15;
+
+// First-click prompt: shown until the player has mined this many times, blinking
+static const uint32_t PROMPT_CLICKS = 3;
+static const unsigned long PROMPT_BLINK_MS = 500;
+
+MiningScreen::MiningScreen(GameState &game, const Unlocks &unlocks, SoundManager &sound)
     : header("Mining"),
 
       // Gold card
@@ -78,11 +90,14 @@ MiningScreen::MiningScreen(GameState &game, SoundManager &sound)
       mineLabel(MINE_LABEL_X, MINE_ROW_Y, "Mine", 0xFFFF, 1),
       mineValue(RIGHT_X, MINE_ROW_Y, "", GOLD_COLOR, 1, TR_DATUM),
 
+      goalBar(MARGIN_X, GOAL_Y, RIGHT_X - MARGIN_X, GOAL_H, 0, 1, GOAL_COLOR, GOAL_BG, GOAL_BORDER),
 
       game(game),
+      unlocks(unlocks),
       sound(sound),
       lastRefresh(0),
-      shownTier(0)
+      shownTier(0),
+      prompting(false)
 {
     addElement(&header);
     setHeader(&header);
@@ -107,6 +122,8 @@ MiningScreen::MiningScreen(GameState &game, SoundManager &sound)
     addElement(&mineBadge);
     addElement(&mineLabel);
     addElement(&mineValue);
+
+    addElement(&goalBar);
 
     applyOreTier(0);
 }
@@ -151,10 +168,29 @@ void MiningScreen::update(unsigned long now)
     goldLabel.setText(formatAmount(game.getGold()));
     goldRate.setText(formatRate(game.getProductionPerSecond()));
 
+    // A brand-new player gets told which button mines, in its color, until they have
+    // tried it; the line then goes back to pointing at the next ore
     uint8_t tier = game.getOreTier();
-    if (tier != shownTier)
+    bool prompt = game.getTotalClicks() < PROMPT_CLICKS;
+    if (prompt)
     {
+        prompting = true;
+        nextOreText.setText("Press the red button to mine!");
+        nextOreText.setColor((now / PROMPT_BLINK_MS) % 2 == 0 ? PROMPT_COLOR : 0xFFFF);
+    }
+    else if (prompting || tier != shownTier)
+    {
+        prompting = false;
+        nextOreText.setColor(HINT_COLOR);
         applyOreTier(tier);
+    }
+
+    const Unlocks::Goal *goal = unlocks.getGoal();
+    goalBar.setVisible(goal != nullptr);
+    if (goal != nullptr)
+    {
+        goalBar.setLabel(goal->label);
+        goalBar.setProgress((int32_t)min(goal->done, goal->target), (int32_t)max(goal->target, (uint32_t)1));
     }
 
     char buf[32];

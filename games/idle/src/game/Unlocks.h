@@ -47,10 +47,23 @@ public:
     // Name of the newly opened screen while its notice is up, or nullptr
     const char *getNotice(unsigned long now) const;
 
+    // What the player should do to open the next screen, and how close they are, so a new
+    // player always has a goal on screen. Refreshed by evaluate(); runtime only, not saved.
+    struct Goal
+    {
+        char label[40]; // Fits a full-width bar at text size 1
+        uint32_t done;
+        uint32_t target; // 0 when there is nothing to measure, which leaves the bar empty
+    };
+    // nullptr once everything is open
+    const Goal *getGoal() const { return hasGoal ? &goal : nullptr; }
+
     void save(Snapshot &out) const;
     void load(const Snapshot &in);
 
 private:
+    void refreshGoal(const GameState &game, const Inventory &inventory, const CombatState &combat,
+                     const Achievements &achievements);
     bool isConditionMet(Feature feature, const GameState &game, const Inventory &inventory,
                         const CombatState &combat, const Achievements &achievements) const;
 
@@ -61,6 +74,9 @@ private:
     int8_t pendingNotice; // Feature whose notice is waiting for the header, or -1
     const char *noticeName;
     unsigned long noticeUntil;
+
+    Goal goal;
+    bool hasGoal;
 };
 
 #endif // UNLOCKS_H

@@ -25,7 +25,7 @@ public:
     // screen is currently visible, without each one knowing about achievements, and so
     // ScreenManager can label it with whichever neighbours are unlocked
     void setHeader(Header *header);
-    void applyNotice(const char *caption, const char *name);
+    void applyNotice(const char *caption, const char *name, uint16_t accent);
     void setNavLabels(const char *back, const char *next);
 
     virtual void onEnter(TFT_eSPI &tft);

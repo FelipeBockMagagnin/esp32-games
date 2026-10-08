@@ -10,11 +10,11 @@ void Screen::setHeader(Header *header)
     headerElement = header;
 }
 
-void Screen::applyNotice(const char *caption, const char *name)
+void Screen::applyNotice(const char *caption, const char *name, uint16_t accent)
 {
     if (headerElement != nullptr)
     {
-        headerElement->setNotice(caption, name);
+        headerElement->setNotice(caption, name, accent);
     }
 }
 

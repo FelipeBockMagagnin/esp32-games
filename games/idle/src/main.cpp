@@ -22,19 +22,21 @@
 #define SCREEN_WIDTH 240
 #define SCREEN_HEIGHT 320
 
-const int MENU_BUTTON_PIN = 23;    // Switches to the next screen
+// The buttons form a D-pad: Confirm in the middle, Up/Down for in-screen actions,
+// Right/Left to step forward/backward through the screens
+const int RIGHT_BUTTON_PIN = 23;   // Next screen
 const int CONFIRM_BUTTON_PIN = 27; // Confirms on the current screen: mines / buys
 const int UP_BUTTON_PIN = 19;      // Navigates up inside the current screen
-const int DOWN_BUTTON_PIN = 22;    // Renamed from SELECT: navigates down inside current screen
-const int BACK_BUTTON_PIN = 26;    // Steps back through the screens
+const int DOWN_BUTTON_PIN = 22;    // Navigates down inside the current screen
+const int LEFT_BUTTON_PIN = 26;    // Previous screen, or out of a sub-list
 const int BUZZER_PIN = 32;
 
 TFT_eSPI tft = TFT_eSPI();
-Button menuButton = Button(MENU_BUTTON_PIN);
+Button rightButton = Button(RIGHT_BUTTON_PIN);
 Button confirmButton = Button(CONFIRM_BUTTON_PIN);
 Button upButton = Button(UP_BUTTON_PIN);
 Button downButton = Button(DOWN_BUTTON_PIN);
-Button backButton = Button(BACK_BUTTON_PIN);
+Button leftButton = Button(LEFT_BUTTON_PIN);
 
 // Declared before GameState, which reads both for its gold bonuses. Globals in one
 // translation unit initialize in declaration order, so the order here matters.
@@ -47,12 +49,14 @@ SoundManager sound(BUZZER_PIN);
 ScreenManager screenManager(tft);
 
 InventoryScreen inventoryScreen(game, inventory, sound);
-MiningScreen miningScreen(game, sound);
+MiningScreen miningScreen(game, unlocks, sound);
 CombatScreen combatScreen(combat, sound);
 BuildingScreen buildingScreen(game, sound);
 UpgradeScreen upgradeScreen(game, sound);
 ZoneScreen zoneScreen(game, inventory, combat, sound, screenManager);
 AchievementScreen achievementScreen(achievements, game, inventory, combat, sound);
+
+static const uint16_t UNLOCK_ACCENT = 0x07FF; // Cyan, so a new screen never reads as an achievement
 
 // Last achievement count the loop played a sound for
 uint8_t seenAchievements = 0;
@@ -81,11 +85,11 @@ void setup()
     // would roll the same sequence
     randomSeed(esp_random());
 
-    menuButton.setup();
+    rightButton.setup();
     confirmButton.setup();
     upButton.setup();
     downButton.setup();
-    backButton.setup();
+    leftButton.setup();
     delay(100);
     
     tft.init();
@@ -109,13 +113,13 @@ void loop()
 {
     unsigned long now = millis();
 
-    menuButton.loop();
+    rightButton.loop();
     confirmButton.loop();
     upButton.loop();
     downButton.loop();
-    backButton.loop();
+    leftButton.loop();
 
-    if (menuButton.wasPressed())
+    if (rightButton.wasPressed())
     {
         sound.playMenu();
         screenManager.nextScreen();
@@ -136,7 +140,7 @@ void loop()
         screenManager.handleDownPress();
     }
 
-    if (backButton.wasPressed())
+    if (leftButton.wasPressed())
     {
         if (!screenManager.handleBackPress())
         {
@@ -179,11 +183,11 @@ void loop()
     {
         if (unlockNotice != nullptr)
         {
-            current->applyNotice("NEW SCREEN - PRESS MENU", unlockNotice);
+            current->applyNotice("NEW SCREEN - PRESS RIGHT >", unlockNotice, UNLOCK_ACCENT);
         }
         else
         {
-            current->applyNotice("ACHIEVEMENT", achievementNotice);
+            current->applyNotice("ACHIEVEMENT", achievementNotice, GOLD_COLOR);
         }
     }
 
