@@ -51,8 +51,8 @@ ESP_NETS = {
     "GND": "GND", "VIN": "+5V", "EN": "EN",
     "D15": "TFT_CS", "D2": "TFT_DC", "D13": "TFT_MOSI", "D14": "TFT_SCK",
     "D21": "TFT_LED", "D12": "TFT_MISO",
-    "D23": "BTN_MENU", "D22": "BTN_DOWN", "D19": "BTN_UP", "D27": "BTN_CONFIRM",
-    "D26": "BTN_BACK", "D32": "BUZZER",
+    "D23": "BTN_RIGHT", "D22": "BTN_DOWN", "D19": "BTN_UP", "D27": "BTN_CONFIRM",
+    "D26": "BTN_LEFT", "D32": "BUZZER",
 }
 DISPLAY_NETS = {
     "VCC": "+5V", "GND": "GND", "CS": "TFT_CS", "RESET": "EN", "DC": "TFT_DC",
@@ -297,15 +297,15 @@ def place(b, v):
     b.text("DISPLAY 2.8\" ILI9341", cx, v["display_text_y"], 1.2)
     b.text("face up, header at the bottom - check VCC/GND", cx, v["display_text_y"] + 2.3, 1.0)
 
-    # D-pad: confirm in the middle, the four directions around it. Right is MENU (next
-    # screen) and left is BACK (previous screen).
+    # D-pad: confirm in the middle, the four directions around it. Right steps to the
+    # next screen and left to the previous one.
     dpad_y, step = v["dpad"]
     buttons = [
         ("SW1", "UP", "BTN_UP", (cx, dpad_y - step)),
         ("SW2", "DOWN", "BTN_DOWN", (cx, dpad_y + step)),
         ("SW3", "OK", "BTN_CONFIRM", (cx, dpad_y)),
-        ("SW4", "BACK", "BTN_BACK", (cx - step, dpad_y)),
-        ("SW5", "MENU", "BTN_MENU", (cx + step, dpad_y)),
+        ("SW4", "LEFT", "BTN_LEFT", (cx - step, dpad_y)),
+        ("SW5", "RIGHT", "BTN_RIGHT", (cx + step, dpad_y)),
     ]
     for ref, label, net, (bx, by) in buttons:
         # Footprint origin is pad 1; its body is centred 3.25/2.25 mm from there

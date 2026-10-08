@@ -2,7 +2,7 @@
 
 Placa portátil de **62×100 mm**, 2 camadas, só com componentes PTH (fáceis de soldar à mão). Cabe na faixa mais barata da JLCPCB (US$ 2 por 5 placas).
 
-- **Frente:** display de 2.8" no alto e a cruz de botões embaixo. OK fica no meio, UP em cima, DOWN embaixo, BACK à esquerda e MENU (próxima tela) à direita.
+- **Frente:** display de 2.8" no alto e a cruz de botões embaixo. OK fica no meio, UP em cima, DOWN embaixo, LEFT (tela anterior) à esquerda e RIGHT (próxima tela) à direita.
 - **Verso:** a ESP32 deitada atrás do display, com o USB saindo pela lateral esquerda (vista de frente). Logo abaixo dela ficam o buzzer, R1, Q1, D1 e C1.
 
 **O display de 2.8" não cabe inteiro numa placa de 100 mm** acima dos botões. Por isso o conector dele fica na borda de baixo do módulo, logo acima da cruz, e os ~17 mm de cima passam da borda da placa, apoiados em trilhos da case. Assim a PCB continua na faixa de US$ 2.
@@ -150,7 +150,7 @@ O display fica a só 2,5 mm da frente da placa, e a ESP32 a 2,5 mm do verso. Por
 
 ## 5. Primeiro teste
 
-Ligue o USB. O LED vermelho da ESP32 deve acender, o display deve mostrar o jogo e o buzzer deve tocar ao apertar MENU.
+Ligue o USB. O LED vermelho da ESP32 deve acender, o display deve mostrar o jogo e o buzzer deve tocar ao apertar RIGHT.
 
 Se a tela ficar branca, confira as soldas do display. Se nada acender, desligue e refaça o teste de VIN e GND.
 
@@ -203,7 +203,7 @@ openscad -D 'part="bottom"' -o case_bottom.stl case.scad   # também: top, caps
 | EN | Display RESET (por isso `TFT_RST=-1`) |
 | GPIO 15 / 2 / 13 / 14 / 12 | Display CS / DC / MOSI / SCK / MISO |
 | GPIO 21 | Display LED (backlight) |
-| GPIO 19 / 22 / 27 / 26 / 23 | Botões UP / DOWN / OK / BACK / MENU (pull-up interno, fecham para GND) |
+| GPIO 19 / 22 / 27 / 26 / 23 | Botões UP / DOWN / OK / LEFT / RIGHT (pull-up interno, fecham para GND) |
 | GPIO 32 | R1 1k → base do Q1. Q1 aciona o buzzer em 5 V, com D1 de roda-livre |
 
 Se mudar um pino no código, mude também em `ESP_NETS` no `generate_pcb.py` e gere a placa de novo.
