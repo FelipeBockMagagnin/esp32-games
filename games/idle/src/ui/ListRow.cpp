@@ -1,11 +1,11 @@
 #include "ListRow.h"
-#include "../game/GameConfig.h"
 #include "IconUtil.h"
+#include "Theme.h"
 
-static const uint16_t SELECTED_COLOR = 0xFFE0; // Yellow
-static const uint16_t OWNED_COLOR = 0x07E0;    // Green
-static const uint16_t DIMMED_COLOR = 0x7BEF;   // Gray
-static const uint16_t SUBTITLE_COLOR = 0xAD55; // Light gray, secondary to the title
+static const uint16_t SELECTED_COLOR = Theme::SELECT;
+static const uint16_t OWNED_COLOR = Theme::GOOD;
+static const uint16_t DIMMED_COLOR = Theme::TEXT_DIM;
+static const uint16_t SUBTITLE_COLOR = Theme::TEXT_2; // Secondary to the title
 
 // Icon cell on the left, then the text column; values are right-aligned
 static const int16_t ICON_CELL_W = 26;
@@ -62,10 +62,10 @@ void ListRow::draw(TFT_eSPI &tft)
     }
 
     bool highlighted = state == SELECTED && hasSelectedFill;
-    tft.fillRect(x, y, w, h, highlighted ? selectedFill : eraseColor);
+    tft.fillRect(x, y, w, h, highlighted ? selectedFill : fillColor);
 
     uint16_t frame = frameColor;
-    uint16_t titleColor = 0xFFFF;
+    uint16_t titleColor = Theme::TEXT;
     uint16_t subColor = SUBTITLE_COLOR;
 
     switch (state)
@@ -141,7 +141,7 @@ void ListRow::draw(TFT_eSPI &tft)
         if (showCoin)
         {
             int16_t coinX = valueRight - tft.textWidth(value) - COIN_RADIUS - 3;
-            tft.drawEllipse(coinX, y + 6, COIN_RADIUS, COIN_RADIUS, GOLD_COLOR);
+            tft.drawEllipse(coinX, y + 6, COIN_RADIUS, COIN_RADIUS, Theme::GOLD);
         }
     }
 

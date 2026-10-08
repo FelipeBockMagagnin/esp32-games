@@ -8,16 +8,16 @@ static const unsigned long REFRESH_MS = 100;
 static const uint16_t ORE_SPRITE_PALETTE[3] = {0xFC08, 0xD163, 0x806A};
 static const uint8_t ORE_PALETTE_SIZE = 3;
 
-static const uint16_t CARD_BORDER = 0x7AE2; // Dark amber, the gold card's frame
-static const uint16_t RATE_COLOR = 0x7EEF;  // Soft green: income that grows on its own
-static const uint16_t HINT_COLOR = 0x94B2;  // Mid gray for secondary lines
-static const uint16_t XP_BAR_COLOR = 0x04B5; // Teal fill, with a near-black tint and a mid tone
-static const uint16_t XP_BAR_BG = 0x00C4;    // of the same hue, like the combat bars
-static const uint16_t XP_BAR_BORDER = 0x02CD;
-static const uint16_t PROMPT_COLOR = 0xE8E4; // The Confirm cap's red, so the prompt points at it
-static const uint16_t GOAL_COLOR = 0x9B00;   // Amber fill, dark enough for the white label,
-static const uint16_t GOAL_BG = 0x2080;      // the same progress style as the Awards screen
-static const uint16_t GOAL_BORDER = 0x7AE2;
+static const uint16_t CARD_BORDER = Theme::GOLD_FRAME; // Dark amber, the gold card's frame
+static const uint16_t RATE_COLOR = Theme::GOOD;  // Soft green: income that grows on its own
+static const uint16_t HINT_COLOR = Theme::TEXT_2;  // Mid gray for secondary lines
+static const uint16_t XP_BAR_COLOR = Theme::XP_BAR; // Teal fill, with a near-black tint and a mid tone
+static const uint16_t XP_BAR_BG = Theme::XP_TRACK;    // of the same hue, like the combat bars
+static const uint16_t XP_BAR_BORDER = Theme::XP_BORDER;
+static const uint16_t PROMPT_COLOR = Theme::CONFIRM; // The Confirm cap's red, so the prompt points at it
+static const uint16_t GOAL_COLOR = Theme::GOLD_BAR;   // Amber fill, dark enough for the white label,
+static const uint16_t GOAL_BG = Theme::GOLD_TRACK;      // the same progress style as the Awards screen
+static const uint16_t GOAL_BORDER = Theme::GOLD_BORDER;
 
 // Layout coordinates
 static const int16_t CENTER_X = 120;
@@ -68,27 +68,27 @@ MiningScreen::MiningScreen(GameState &game, const Unlocks &unlocks, SoundManager
     : header("Mining"),
 
       // Gold card
-      goldCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, false, 0x0000, true, 4),
-      goldCoin(COIN_X, COIN_Y, COIN_RADIUS, COIN_RADIUS, GOLD_COLOR, true),
-      goldLabel(GOLD_TEXT_X, GOLD_AMOUNT_Y, "0", GOLD_COLOR, 3),
+      goldCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, true, Theme::CARD, true, 4),
+      goldCoin(COIN_X, COIN_Y, COIN_RADIUS, COIN_RADIUS, Theme::GOLD, true),
+      goldLabel(GOLD_TEXT_X, GOLD_AMOUNT_Y, "0", Theme::GOLD, 3),
       goldRate(GOLD_TEXT_X, GOLD_RATE_Y, "+0 gold/s", RATE_COLOR, 1),
 
       // Center ore display; popups are gold to match the balance they add to
       oreDisplay(ORE_AREA_X, ORE_AREA_Y, ORE_AREA_W, ORE_AREA_H, image_Icon31_33_pixels,
-                 (ORE_AREA_W - ORE_SIZE) / 2, 14, ORE_SIZE, ORE_SIZE, GOLD_COLOR),
+                 (ORE_AREA_W - ORE_SIZE) / 2, 14, ORE_SIZE, ORE_SIZE, Theme::GOLD),
       // Centered: the ore name's length changes with the tier ("Gold Ore" vs "Mythril Ore")
-      currentOreText(CENTER_X, ORE_NAME_Y, "", 0xFFFF, 2, TC_DATUM),
+      currentOreText(CENTER_X, ORE_NAME_Y, "", Theme::TEXT, 2, TC_DATUM),
       nextOreText(CENTER_X, NEXT_ORE_Y, "", HINT_COLOR, 1, TC_DATUM),
 
       // Level row
-      levelText(MARGIN_X, LEVEL_Y, "Level 1", 0xFFFF, 2),
+      levelText(MARGIN_X, LEVEL_Y, "Level 1", Theme::TEXT, 2),
       xpText(RIGHT_X, XP_TEXT_Y, "", HINT_COLOR, 1, TR_DATUM),
       expBar(MARGIN_X, XP_BAR_Y, RIGHT_X - MARGIN_X, XP_BAR_H, 0, XP_PER_LEVEL, XP_BAR_COLOR, XP_BAR_BG, XP_BAR_BORDER),
 
       // Confirm hint
       mineBadge(MARGIN_X, MINE_ROW_Y + BADGE_OFFSET_Y, ButtonBadge::CONFIRM),
-      mineLabel(MINE_LABEL_X, MINE_ROW_Y, "Mine", 0xFFFF, 1),
-      mineValue(RIGHT_X, MINE_ROW_Y, "", GOLD_COLOR, 1, TR_DATUM),
+      mineLabel(MINE_LABEL_X, MINE_ROW_Y, "Mine", Theme::TEXT, 1),
+      mineValue(RIGHT_X, MINE_ROW_Y, "", Theme::GOLD, 1, TR_DATUM),
 
       goalBar(MARGIN_X, GOAL_Y, RIGHT_X - MARGIN_X, GOAL_H, 0, 1, GOAL_COLOR, GOAL_BG, GOAL_BORDER),
 
@@ -104,9 +104,9 @@ MiningScreen::MiningScreen(GameState &game, const Unlocks &unlocks, SoundManager
 
     // Gold card
     addElement(&goldCard);
-    addElement(&goldCoin);
-    addElement(&goldLabel);
-    addElement(&goldRate);
+    addElement(&goldCoin, Theme::CARD);
+    addElement(&goldLabel, Theme::CARD);
+    addElement(&goldRate, Theme::CARD);
 
     // Center ore display
     addElement(&oreDisplay);
@@ -176,7 +176,7 @@ void MiningScreen::update(unsigned long now)
     {
         prompting = true;
         nextOreText.setText("Press the red button to mine!");
-        nextOreText.setColor((now / PROMPT_BLINK_MS) % 2 == 0 ? PROMPT_COLOR : 0xFFFF);
+        nextOreText.setColor((now / PROMPT_BLINK_MS) % 2 == 0 ? PROMPT_COLOR : Theme::TEXT);
     }
     else if (prompting || tier != shownTier)
     {

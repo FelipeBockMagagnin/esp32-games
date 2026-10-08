@@ -12,11 +12,11 @@ public:
     bool filled;
 
     Ellipse()
-        : UI(0, 0, 0, 0), rx(0), ry(0), color(0xFFFF), filled(false)
+        : UI(0, 0, 0, 0), rx(0), ry(0), color(Theme::TEXT), filled(false)
     {
     }
 
-    Ellipse(int16_t centerX, int16_t centerY, int16_t rx, int16_t ry, uint16_t color = 0xFFFF, bool filled = false)
+    Ellipse(int16_t centerX, int16_t centerY, int16_t rx, int16_t ry, uint16_t color = Theme::TEXT, bool filled = false)
         : UI(centerX - rx, centerY - ry, rx * 2 + 1, ry * 2 + 1),
           rx(rx),
           ry(ry),

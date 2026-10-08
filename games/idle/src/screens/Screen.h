@@ -6,6 +6,7 @@
 #include <vector>
 #include "../ui/UI.h"
 #include "../ui/Header.h"
+#include "../ui/Theme.h"
 
 class Screen
 {
@@ -15,10 +16,13 @@ protected:
     Header *headerElement;
 
 public:
-    Screen(uint16_t bgColor = 0x0000);
+    Screen(uint16_t bgColor = Theme::BG);
     virtual ~Screen() = default;
 
     void addElement(UI *element);
+    // For an element drawn on a filled card or panel rather than the screen background:
+    // it erases with the card's colour, so updating it does not punch a hole in the card
+    void addElement(UI *element, uint16_t surface);
     void markAllDirty();
 
     // Screens register their header so the main loop can push a notification to whichever

@@ -4,17 +4,15 @@
 // Values change every frame while producing, so only rebuild the texts a few times per second
 static const unsigned long REFRESH_MS = 100;
 
-static const uint16_t CARD_BORDER = 0x7AE2;    // Dark amber, same frame as the Mining gold card
-static const uint16_t RATE_COLOR = 0x7EEF;     // Soft green: income that grows on its own
-static const uint16_t AFFORD_COLOR = 0x07E0;   // Green price when the player can buy
-static const uint16_t TOO_DEAR_COLOR = 0x7BEF; // Gray price when they cannot
-static const uint16_t ROW_FRAME = 0x31A6;      // Dark slate, so only the selection stands out
-static const uint16_t SELECTED_FILL = 0x2124;  // Faint highlight behind the selected row
-static const uint16_t PANEL_BORDER = 0x31A6;
-static const uint16_t HINT_COLOR = 0x94B2;
-static const uint16_t SHARE_COLOR = 0x9B00;    // Amber fill, dark enough for the white label
-static const uint16_t SHARE_BG = 0x2080;
-static const uint16_t SHARE_BORDER = 0x7AE2;
+static const uint16_t CARD_BORDER = Theme::GOLD_FRAME;    // Dark amber, same frame as the Mining gold card
+static const uint16_t RATE_COLOR = Theme::GOOD;     // Soft green: income that grows on its own
+static const uint16_t AFFORD_COLOR = Theme::GOOD;   // Green price when the player can buy
+static const uint16_t TOO_DEAR_COLOR = Theme::TEXT_DIM; // Gray price when they cannot
+static const uint16_t PANEL_BORDER = Theme::FRAME;
+static const uint16_t HINT_COLOR = Theme::TEXT_2;
+static const uint16_t SHARE_COLOR = Theme::GOLD_BAR;    // Amber fill, dark enough for the white label
+static const uint16_t SHARE_BG = Theme::GOLD_TRACK;
+static const uint16_t SHARE_BORDER = Theme::GOLD_BORDER;
 
 // Gold card
 static const int16_t CARD_X = 5;
@@ -41,16 +39,16 @@ static const int16_t SHARE_H = 13;
 BuildingScreen::BuildingScreen(GameState &game, SoundManager &sound)
     : header("Buildings"),
 
-      goldCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, false, 0x0000, true, 4),
-      goldCoin(CARD_X + 12, CARD_Y + CARD_H / 2, COIN_RADIUS, COIN_RADIUS, GOLD_COLOR, true),
-      goldText(CARD_X + 23, CARD_Y + 4, "0", GOLD_COLOR, 2),
+      goldCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, true, Theme::CARD, true, 4),
+      goldCoin(CARD_X + 12, CARD_Y + CARD_H / 2, COIN_RADIUS, COIN_RADIUS, Theme::GOLD, true),
+      goldText(CARD_X + 23, CARD_Y + 4, "0", Theme::GOLD, 2),
       goldRate(CARD_X + CARD_W - 6, CARD_Y + 8, "+0 gold/s", RATE_COLOR, 1, TR_DATUM),
 
       list(ROWS),
 
-      detailPanel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, PANEL_BORDER, false, 0x0000, true, 3),
+      detailPanel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, PANEL_BORDER, true, Theme::CARD, true, 3),
       buyBadge(PANEL_X + 5, BUY_ROW_Y + BADGE_OFFSET_Y, ButtonBadge::CONFIRM),
-      buyLabel(PANEL_X + 20, BUY_ROW_Y, "Buy", 0xFFFF, 1),
+      buyLabel(PANEL_X + 20, BUY_ROW_Y, "Buy", Theme::TEXT, 1),
       buyDetail(PANEL_X + PANEL_W - 5, BUY_ROW_Y, "", HINT_COLOR, 1, TR_DATUM),
       shareBar(PANEL_X + 5, SHARE_Y, PANEL_W - 10, SHARE_H, 0, 100, SHARE_COLOR, SHARE_BG, SHARE_BORDER),
 
@@ -62,26 +60,24 @@ BuildingScreen::BuildingScreen(GameState &game, SoundManager &sound)
     setHeader(&header);
 
     addElement(&goldCard);
-    addElement(&goldCoin);
-    addElement(&goldText);
-    addElement(&goldRate);
+    addElement(&goldCoin, Theme::CARD);
+    addElement(&goldText, Theme::CARD);
+    addElement(&goldRate, Theme::CARD);
 
     for (uint8_t i = 0; i < ROWS; i++)
     {
         rows[i].setPosition(ROW_X, LIST_TOP + i * ROW_PITCH);
         rows[i].setShowCoin(true);
-        rows[i].setFrameColor(ROW_FRAME);
-        rows[i].setSelectedFill(SELECTED_FILL);
         rowBuilding[i] = 0xFF;
         rowRevealed[i] = false;
         addElement(&rows[i]);
     }
 
     addElement(&detailPanel);
-    addElement(&buyBadge);
-    addElement(&buyLabel);
-    addElement(&buyDetail);
-    addElement(&shareBar);
+    addElement(&buyBadge, Theme::CARD);
+    addElement(&buyLabel, Theme::CARD);
+    addElement(&buyDetail, Theme::CARD);
+    addElement(&shareBar, Theme::CARD);
 
     list.setCount(BUILDING_COUNT);
 }

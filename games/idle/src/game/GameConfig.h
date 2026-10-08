@@ -6,7 +6,6 @@
 
 // Gold is stored in thousandths so fractional production (e.g. 0.1/s) stays exact
 static const uint32_t GOLD_SCALE = 1000;
-static const uint16_t GOLD_COLOR = 0xF685;
 
 // Manual mining
 static const uint32_t MINE_XP = 1;         // Mining XP gained per click

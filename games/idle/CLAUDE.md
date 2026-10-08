@@ -72,11 +72,14 @@ Only the visible screen's `update()` runs, so a screen that reacts to background
 `src/ui/UI.h` is the base class and the core of the render strategy. The screen is never cleared per frame; instead each element tracks a `dirty` flag and the bounds of its **last** draw (`drawnX/Y/W/H`). `redraw()` erases the old area only when the element became hidden, moved, or resized, then redraws. Consequences to respect when adding UI:
 
 - **Every mutator must be a no-op when the value is unchanged** and call `markDirty()` only on a real change. Writing fields directly bypasses this and leaves stale pixels; marking dirty unconditionally costs a full repaint (for `Image::setPixels` with a 128x128 sprite, a whole SPI blit).
-- `eraseColor` is assigned by `Screen::addElement()` from the screen's background — don't set it by hand.
+- `eraseColor` is assigned by `Screen::addElement()` from the screen's background — don't set it by hand. An element drawn **inside a filled card or panel** is registered with `addElement(&elem, Theme::CARD)` instead, so it erases with the card's colour rather than punching a background-coloured hole in it. Transparent `Text` clears with `eraseColor` too; its own `bgColor` only applies to opaque text.
 - An element whose painted area differs from `x/y/w/h` (e.g. `Text`, which is positioned by a TFT datum) overrides `erase()`.
 - **Overlapping elements cannot erase independently, and `addElement` order cannot rescue them.** Render order is registration order, so whichever element is registered later erases *after* the earlier one drew: putting A first fixes the A-appears/B-hides transition and breaks B-appears/A-hides. Two elements that swap places in the same strip will black out part of each other in one direction whatever the order. Either give each element its own space, or composite the whole region into a `TFT_eSprite` and push it in one go (`OreDisplay`).
 
 `Screen::onEnter()` fills the background and calls `resetDrawn()` on everything, so the first draw after a screen switch skips erasing.
+
+### Colours
+**Every UI colour comes from `src/ui/Theme.h`**, a warm "cave" palette (charcoal, cream, gold and copper): a `BG`/`CARD`/`ROW_SELECTED` surface ladder, `FRAME`/`FRAME_DIM` borders, `TEXT`/`TEXT_2`/`TEXT_DIM`, semantic accents (`SELECT`, `GOLD`, `GOOD`, `BAD`, `INFO`, `EPIC`), the stat colours (`ATTACK`/`DEFENSE`/`HP`) and fill/track/border triples for each kind of bar. Screens may keep local names (`AFFORD_COLOR`, `HINT_COLOR`) but their values point at `Theme::`; don't add raw RGB565 literals. Cards and panels are `Box`es filled with `Theme::CARD` (gold-balance cards framed `GOLD_FRAME`, the rest `FRAME`). The exceptions are art: ore palettes in `GameConfig.h`, and `0x0000` as the transparent key of RGB565 icons, which every icon on a non-black surface must pass (`Image(..., true, 0x0000)`, `setPixels(..., true, 0x0000)`).
 
 ### Vertical lists
 Four screens navigate a vertical list with two buttons, via two pieces:
@@ -84,7 +87,7 @@ Four screens navigate a vertical list with two buttons, via two pieces:
 - **`src/ui/ListRow.h`** — one row: optional icon (1-bit or RGB565), title (size 2), subtitle (size 1), and two right-aligned value fields, plus `NORMAL`/`SELECTED`/`DIMMED`/`OWNED` states. Like `CoinDisplay`, it composes everything with direct `fillRect`/`drawRect`/`drawBitmap`/`drawString` calls inside `draw()` rather than child `UI` objects.
 - **`src/ui/ListView.h`** — selection and scroll arithmetic only, no drawing. `VISIBLE_ROWS = 9` is the default and the maximum; a screen that needs room for a panel passes a smaller count to the constructor (`BuildingScreen` uses 8 for its detail panel).
 
-`ListRow` frames are white and pixel icons treat black as transparent. `setFrameColor()` and `setSelectedFill()` are opt-in styling (a dark frame, plus a highlight bar on the selected row) that `BuildingScreen` uses and the other list screens do not yet.
+`ListRow` rows are filled `Theme::CARD` with a `FRAME_DIM` border, and the selected row gets a `ROW_SELECTED` highlight bar under its gold frame; `setFrameColor()`/`setSelectedFill()` override those defaults. Pixel icons treat black as transparent.
 
 The screen keeps a **fixed** `ListRow rows[ListView::VISIBLE_ROWS]` registered once in the constructor and fills row `i` from item `getFirstVisible() + i`, hiding the leftovers. Elements are never added or removed as the list scrolls — the dirty-flag system cannot cope with that.
 

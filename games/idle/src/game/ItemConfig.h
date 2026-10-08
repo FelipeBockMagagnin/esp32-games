@@ -30,7 +30,7 @@ static const char *const EQUIP_SLOT_NAMES[EQUIP_SLOT_COUNT] = {
 // rarity scheme, so a better drop stands out in a list before its stats are read.
 static const uint8_t ITEM_TIER_COUNT = 4;
 static const char *const ITEM_TIER_NAMES[ITEM_TIER_COUNT] = {"Common", "Uncommon", "Rare", "Epic"};
-static const uint16_t ITEM_TIER_COLORS[ITEM_TIER_COUNT] = {0xD69A, 0x7F0F, 0x655F, 0xD3DF};
+static const uint16_t ITEM_TIER_COLORS[ITEM_TIER_COUNT] = {0xBD52, 0x8E4D, 0x7D5A, 0xC45B}; // Theme TEXT_2, GOOD, DEFENSE, EPIC
 
 // A duplicate drop levels an item up instead of stacking, adding this much of its
 // base stats per level above 1. The cap keeps a maxed item (+135%) below the next

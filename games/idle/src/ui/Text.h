@@ -16,8 +16,8 @@ public:
     Text()
         : UI(0, 0, 0, 0),
           text(""),
-          color(0xFFFF),
-          bgColor(0x0000),
+          color(Theme::TEXT),
+          bgColor(Theme::BG),
           size(1),
           datum(TL_DATUM),
           transparentBg(true),
@@ -28,7 +28,7 @@ public:
     {
     }
 
-    Text(int16_t x, int16_t y, const String &text, uint16_t color = 0xFFFF, uint8_t size = 1, uint8_t datum = TL_DATUM, bool transparentBg = true, uint16_t bgColor = 0x0000)
+    Text(int16_t x, int16_t y, const String &text, uint16_t color = Theme::TEXT, uint8_t size = 1, uint8_t datum = TL_DATUM, bool transparentBg = true, uint16_t bgColor = Theme::BG)
         : UI(x, y, 0, 0),
           text(text),
           color(color),

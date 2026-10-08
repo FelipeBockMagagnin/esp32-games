@@ -1,12 +1,13 @@
 #include "ButtonBadge.h"
+#include "Theme.h"
 
 // Colors of the physical caps, plus dull versions for an unavailable action
-static const uint16_t CONFIRM_CAP = 0xE8E4; // Red
-static const uint16_t CONFIRM_CAP_DIM = 0x5000;
-static const uint16_t ARROW_CAP = 0xFFFF; // White
-static const uint16_t ARROW_CAP_DIM = 0x52AA;
-static const uint16_t ARROW_COLOR = 0x0000;
-static const uint16_t RIM_COLOR = 0x8410; // Gray outline so the cap reads as a button
+static const uint16_t CONFIRM_CAP = Theme::CONFIRM;
+static const uint16_t CONFIRM_CAP_DIM = Theme::CONFIRM_DIM;
+static const uint16_t ARROW_CAP = Theme::TEXT;
+static const uint16_t ARROW_CAP_DIM = Theme::TEXT_DIM;
+static const uint16_t ARROW_COLOR = Theme::BG;
+static const uint16_t RIM_COLOR = Theme::TEXT_2; // Outline so the cap reads as a button
 
 void ButtonBadge::draw(TFT_eSPI &tft)
 {

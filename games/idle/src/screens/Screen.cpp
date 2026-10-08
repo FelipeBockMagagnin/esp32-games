@@ -36,13 +36,26 @@ void Screen::addElement(UI *element)
     }
 }
 
+void Screen::addElement(UI *element, uint16_t surface)
+{
+    if (element != nullptr)
+    {
+        element->eraseColor = surface;
+        elements.push_back(element);
+    }
+}
+
 void Screen::setBgColor(uint16_t color)
 {
-    bgColor = color;
+    // Elements on a card keep the card's colour
     for (auto *elem : elements)
     {
-        elem->eraseColor = color;
+        if (elem->eraseColor == bgColor)
+        {
+            elem->eraseColor = color;
+        }
     }
+    bgColor = color;
 }
 
 void Screen::markAllDirty()

@@ -56,7 +56,7 @@ UpgradeScreen upgradeScreen(game, sound);
 ZoneScreen zoneScreen(game, inventory, combat, sound, screenManager);
 AchievementScreen achievementScreen(achievements, game, inventory, combat, sound);
 
-static const uint16_t UNLOCK_ACCENT = 0x07FF; // Cyan, so a new screen never reads as an achievement
+static const uint16_t UNLOCK_ACCENT = Theme::INFO; // Cyan, so a new screen never reads as an achievement
 
 // Last achievement count the loop played a sound for
 uint8_t seenAchievements = 0;
@@ -94,7 +94,7 @@ void setup()
     
     tft.init();
     tft.setRotation(2);
-    tft.fillScreen(0x0000);
+    tft.fillScreen(Theme::BG);
 
     // This order is the navigation order. Every screen but Mining starts locked and joins
     // the rotation as the player progresses (see Unlocks); the header labels follow.
@@ -187,7 +187,7 @@ void loop()
         }
         else
         {
-            current->applyNotice("ACHIEVEMENT", achievementNotice, GOLD_COLOR);
+            current->applyNotice("ACHIEVEMENT", achievementNotice, Theme::GOLD);
         }
     }
 

@@ -2,6 +2,7 @@
 #define UI_HEADER_H
 
 #include "UI.h"
+#include "Theme.h"
 
 // Screen header: centered title with optional navigation labels to the previous and next screens.
 // An empty label hides that side, arrow included.
@@ -29,7 +30,7 @@ public:
           nextLabel(nextLabel),
           notice(""),
           noticeCaption(nullptr),
-          noticeAccent(0xFFFF),
+          noticeAccent(Theme::TEXT),
           hasNotice(false)
     {
     }

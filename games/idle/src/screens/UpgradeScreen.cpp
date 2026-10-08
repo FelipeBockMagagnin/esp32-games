@@ -4,17 +4,17 @@
 
 static const unsigned long REFRESH_MS = 100;
 
-static const uint16_t CARD_BORDER = 0x7AE2; // Dark amber, same frame as the other gold cards
-static const uint16_t RATE_COLOR = 0x7EEF;  // Soft green: income that grows on its own
-static const uint16_t PANEL_BORDER = 0x31A6; // Dark slate
-static const uint16_t DIVIDER_COLOR = 0x3187;
-static const uint16_t LINE_COLOR = 0xCE59;  // Description, a step below the white title
-static const uint16_t HINT_COLOR = 0x94B2;
-static const uint16_t AFFORD_COLOR = 0x07E0;
-static const uint16_t SAVINGS_COLOR = 0x9B00; // Amber fill, dark enough for the white label
-static const uint16_t SAVINGS_BG = 0x2080;
-static const uint16_t SAVINGS_BORDER = 0x7AE2;
-static const uint16_t READY_FILL = 0x0400; // Dark green once the price is covered
+static const uint16_t CARD_BORDER = Theme::GOLD_FRAME; // Dark amber, same frame as the other gold cards
+static const uint16_t RATE_COLOR = Theme::GOOD;  // Soft green: income that grows on its own
+static const uint16_t PANEL_BORDER = Theme::FRAME; // Dark slate
+static const uint16_t DIVIDER_COLOR = Theme::FRAME;
+static const uint16_t LINE_COLOR = Theme::TEXT_2;  // Description, a step below the white title
+static const uint16_t HINT_COLOR = Theme::TEXT_2;
+static const uint16_t AFFORD_COLOR = Theme::GOOD;
+static const uint16_t SAVINGS_COLOR = Theme::GOLD_BAR; // Amber fill, dark enough for the white label
+static const uint16_t SAVINGS_BG = Theme::GOLD_TRACK;
+static const uint16_t SAVINGS_BORDER = Theme::GOLD_BORDER;
+static const uint16_t READY_FILL = Theme::DONE_BAR; // Dark green once the price is covered
 
 // How each upgrade category looks, indexed by UpgradeTarget. The colors echo where the
 // bonus lands: gold for production, the combat screen's red/blue/green for its stats.
@@ -26,13 +26,13 @@ struct CategoryStyle
 };
 
 static const CategoryStyle CATEGORY_STYLES[] = {
-    {"PRODUCTION", GOLD_COLOR, image_upgrade_production_pixels}, // PRODUCTION
-    {"MINING", 0xFC60, image_upgrade_click_pixels},               // CLICK
-    {"ATTACK", 0xFB2C, image_sword_02b_pixels},                   // ATTACK
-    {"DEFENSE", 0x6E7F, image_armor_01b_pixels},                  // DEFENSE
-    {"HEALTH", 0x2D45, image_upgrade_heart_pixels},               // MAX_HP
-    {"NEW ZONE", 0xB3DF, image_upgrade_map_pixels},               // UNLOCK_ZONE
-    {"MINING", 0xFC60, image_upgrade_click_pixels},               // CLICK_PRODUCTION
+    {"PRODUCTION", Theme::GOLD, image_upgrade_production_pixels}, // PRODUCTION
+    {"MINING", Theme::GOLD_BAR, image_upgrade_click_pixels},    // CLICK
+    {"ATTACK", Theme::ATTACK, image_sword_02b_pixels},          // ATTACK
+    {"DEFENSE", Theme::DEFENSE, image_armor_01b_pixels},        // DEFENSE
+    {"HEALTH", Theme::HP, image_upgrade_heart_pixels},          // MAX_HP
+    {"NEW ZONE", Theme::EPIC, image_upgrade_map_pixels},        // UNLOCK_ZONE
+    {"MINING", Theme::GOLD_BAR, image_upgrade_click_pixels},    // CLICK_PRODUCTION
 };
 
 static const CategoryStyle &styleFor(UpgradeTarget target)
@@ -80,23 +80,23 @@ static const uint8_t NO_UPGRADE = 0xFF;
 UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
     : header("Upgrade"),
 
-      goldCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, false, 0x0000, true, 4),
-      goldCoin(CARD_X + 12, CARD_Y + CARD_H / 2, COIN_RADIUS, COIN_RADIUS, GOLD_COLOR, true),
-      goldText(CARD_X + 23, CARD_Y + 4, "0", GOLD_COLOR, 2),
+      goldCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, true, Theme::CARD, true, 4),
+      goldCoin(CARD_X + 12, CARD_Y + CARD_H / 2, COIN_RADIUS, COIN_RADIUS, Theme::GOLD, true),
+      goldText(CARD_X + 23, CARD_Y + 4, "0", Theme::GOLD, 2),
       goldRate(CARD_X + CARD_W - 6, CARD_Y + 8, "+0 gold/s", RATE_COLOR, 1, TR_DATUM),
 
-      detailPanel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, PANEL_BORDER, false, 0x0000, true, 4),
-      categoryText(TEXT_X, CATEGORY_Y, "", 0xFFFF, 1),
+      detailPanel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, PANEL_BORDER, true, Theme::CARD, true, 4),
+      categoryText(TEXT_X, CATEGORY_Y, "", Theme::TEXT, 1),
       countText(TEXT_RIGHT, CATEGORY_Y, "", HINT_COLOR, 1, TR_DATUM),
-      detailTitle(TEXT_X, TITLE_Y, "", 0xFFFF, 2),
+      detailTitle(TEXT_X, TITLE_Y, "", Theme::TEXT, 2),
       detailLine1(TEXT_X, LINE1_Y, "", LINE_COLOR, 1),
       detailLine2(TEXT_X, LINE2_Y, "", LINE_COLOR, 1),
       detailDivider(TEXT_X, DIVIDER_Y, TEXT_RIGHT - TEXT_X, 1, DIVIDER_COLOR, true, DIVIDER_COLOR),
-      effectText(TEXT_X, EFFECT_Y, "", 0xFFFF, 1),
+      effectText(TEXT_X, EFFECT_Y, "", Theme::TEXT, 1),
       savingsBar(TEXT_X, SAVINGS_Y, TEXT_RIGHT - TEXT_X, SAVINGS_H, 0, 100, SAVINGS_COLOR, SAVINGS_BG, SAVINGS_BORDER),
       buyBadge(TEXT_X, BUY_ROW_Y + BADGE_OFFSET_Y, ButtonBadge::CONFIRM),
-      buyLabel(TEXT_X + ButtonBadge::SIZE + 4, BUY_ROW_Y, "Buy", 0xFFFF, 1),
-      priceText(TEXT_RIGHT, BUY_ROW_Y, "", GOLD_COLOR, 1, TR_DATUM),
+      buyLabel(TEXT_X + ButtonBadge::SIZE + 4, BUY_ROW_Y, "Buy", Theme::TEXT, 1),
+      priceText(TEXT_RIGHT, BUY_ROW_Y, "", Theme::GOLD, 1, TR_DATUM),
 
       game(game),
       sound(sound),
@@ -110,9 +110,9 @@ UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
     setHeader(&header);
 
     addElement(&goldCard);
-    addElement(&goldCoin);
-    addElement(&goldText);
-    addElement(&goldRate);
+    addElement(&goldCoin, Theme::CARD);
+    addElement(&goldText, Theme::CARD);
+    addElement(&goldRate, Theme::CARD);
 
     for (uint8_t i = 0; i < MAX_VISIBLE_SLOTS; i++)
     {
@@ -123,17 +123,17 @@ UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
     }
 
     addElement(&detailPanel);
-    addElement(&categoryText);
-    addElement(&countText);
-    addElement(&detailTitle);
-    addElement(&detailLine1);
-    addElement(&detailLine2);
-    addElement(&detailDivider);
-    addElement(&effectText);
-    addElement(&savingsBar);
-    addElement(&buyBadge);
-    addElement(&buyLabel);
-    addElement(&priceText);
+    addElement(&categoryText, Theme::CARD);
+    addElement(&countText, Theme::CARD);
+    addElement(&detailTitle, Theme::CARD);
+    addElement(&detailLine1, Theme::CARD);
+    addElement(&detailLine2, Theme::CARD);
+    addElement(&detailDivider, Theme::CARD);
+    addElement(&effectText, Theme::CARD);
+    addElement(&savingsBar, Theme::CARD);
+    addElement(&buyBadge, Theme::CARD);
+    addElement(&buyLabel, Theme::CARD);
+    addElement(&priceText, Theme::CARD);
 
     rebuildVisible();
     refreshDetails();

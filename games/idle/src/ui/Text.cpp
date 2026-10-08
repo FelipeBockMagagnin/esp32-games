@@ -46,7 +46,8 @@ void Text::erase(TFT_eSPI &tft)
     {
         int16_t clearX = getTextOriginX(drawnX, prevW, prevDatum);
         int16_t clearY = getTextOriginY(drawnY, prevH, prevDatum);
-        tft.fillRect(clearX, clearY, prevW, prevH, bgColor);
+        // Transparent text sits on whatever surface it was registered on
+        tft.fillRect(clearX, clearY, prevW, prevH, transparentBg ? eraseColor : bgColor);
     }
     prevW = 0;
     prevH = 0;
@@ -96,7 +97,7 @@ void Text::draw(TFT_eSPI &tft)
             int16_t clearH = (prevH > curH) ? prevH : curH;
             int16_t clearX = getTextOriginX(x, clearW, datum);
             int16_t clearY = getTextOriginY(y, clearH, datum);
-            tft.fillRect(clearX, clearY, clearW, clearH, bgColor);
+            tft.fillRect(clearX, clearY, clearW, clearH, eraseColor);
         }
         tft.setTextColor(color);
         tft.drawString(text, x, y);

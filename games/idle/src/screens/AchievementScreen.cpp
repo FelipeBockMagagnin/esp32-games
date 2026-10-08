@@ -1,19 +1,18 @@
 #include "AchievementScreen.h"
-#include "../game/GameConfig.h" // GOLD_COLOR
+#include "../game/GameConfig.h"
 #include "../game/Format.h"
 
 static const unsigned long REFRESH_MS = 200; // Nothing here moves fast
 
-static const uint16_t CARD_BORDER = 0x7AE2;   // Dark amber, same frame as the gold cards
-static const uint16_t PANEL_BORDER = 0x31A6;  // Dark slate
-static const uint16_t SELECTED_FILL = 0x2124; // Faint highlight behind the selected row
-static const uint16_t UNLOCKED_COLOR = 0x07E0; // Green, same as a taken upgrade
-static const uint16_t LOCKED_COLOR = 0x7BEF;
-static const uint16_t HINT_COLOR = 0x94B2;
-static const uint16_t BAR_COLOR = 0x9B00;     // Amber fill, dark enough for the white label
-static const uint16_t BAR_BG = 0x2080;
-static const uint16_t BAR_BORDER = 0x7AE2;
-static const uint16_t DONE_FILL = 0x0400;     // Dark green once complete
+static const uint16_t CARD_BORDER = Theme::GOLD_FRAME;   // Dark amber, same frame as the gold cards
+static const uint16_t PANEL_BORDER = Theme::FRAME;  // Dark slate
+static const uint16_t UNLOCKED_COLOR = Theme::GOOD; // Green, same as a taken upgrade
+static const uint16_t LOCKED_COLOR = Theme::TEXT_DIM;
+static const uint16_t HINT_COLOR = Theme::TEXT_2;
+static const uint16_t BAR_COLOR = Theme::GOLD_BAR;     // Amber fill, dark enough for the white label
+static const uint16_t BAR_BG = Theme::GOLD_TRACK;
+static const uint16_t BAR_BORDER = Theme::GOLD_BORDER;
+static const uint16_t DONE_FILL = Theme::DONE_BAR;     // Dark green once complete
 
 // Summary card
 static const int16_t CARD_X = 5;
@@ -80,16 +79,16 @@ AchievementScreen::AchievementScreen(Achievements &achievements, GameState &game
                                      CombatState &combat, SoundManager &sound)
     : header("Awards"),
 
-      summaryCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, false, 0x0000, true, 4),
+      summaryCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, true, Theme::CARD, true, 4),
       trophyIcon(CARD_X + 6, CARD_Y + 7, 16, 16, image_award_trophy_pixels, true, 0x0000),
-      countText(CARD_X + 28, CARD_Y + 8, "0/0", 0xFFFF, 2),
-      bonusText(CARD_RIGHT, CARD_Y + 5, "+0% gold/s", GOLD_COLOR, 1, TR_DATUM),
+      countText(CARD_X + 28, CARD_Y + 8, "0/0", Theme::TEXT, 2),
+      bonusText(CARD_RIGHT, CARD_Y + 5, "+0% gold/s", Theme::GOLD, 1, TR_DATUM),
       completionBar(COMPLETION_X, CARD_Y + 17, CARD_RIGHT - COMPLETION_X, 8, 0, 1, BAR_COLOR, BAR_BG, BAR_BORDER),
 
       list(ROWS),
 
-      detailPanel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, PANEL_BORDER, false, 0x0000, true, 4),
-      rewardText(TEXT_X, REWARD_Y, "", GOLD_COLOR, 1),
+      detailPanel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, PANEL_BORDER, true, Theme::CARD, true, 4),
+      rewardText(TEXT_X, REWARD_Y, "", Theme::GOLD, 1),
       statusText(TEXT_RIGHT, REWARD_Y, "", LOCKED_COLOR, 1, TR_DATUM),
       progressBar(TEXT_X, PROGRESS_Y, TEXT_RIGHT - TEXT_X, PROGRESS_H, 0, 100, BAR_COLOR, BAR_BG, BAR_BORDER),
       nextBadge(TEXT_X, HINT_ROW_Y + BADGE_OFFSET_Y, ButtonBadge::CONFIRM),
@@ -110,28 +109,27 @@ AchievementScreen::AchievementScreen(Achievements &achievements, GameState &game
     setHeader(&header);
 
     addElement(&summaryCard);
-    addElement(&trophyIcon);
-    addElement(&countText);
-    addElement(&bonusText);
-    addElement(&completionBar);
+    addElement(&trophyIcon, Theme::CARD);
+    addElement(&countText, Theme::CARD);
+    addElement(&bonusText, Theme::CARD);
+    addElement(&completionBar, Theme::CARD);
 
     for (uint8_t i = 0; i < ROWS; i++)
     {
         rows[i].setPosition(ROW_X, LIST_TOP + i * ROW_PITCH);
-        rows[i].setSelectedFill(SELECTED_FILL);
         rowAchievement[i] = NO_ACHIEVEMENT;
         addElement(&rows[i]);
     }
 
     addElement(&detailPanel);
-    addElement(&rewardText);
-    addElement(&statusText);
-    addElement(&progressBar);
-    addElement(&nextBadge);
-    addElement(&nextLabel);
-    addElement(&upBadge);
-    addElement(&downBadge);
-    addElement(&browseLabel);
+    addElement(&rewardText, Theme::CARD);
+    addElement(&statusText, Theme::CARD);
+    addElement(&progressBar, Theme::CARD);
+    addElement(&nextBadge, Theme::CARD);
+    addElement(&nextLabel, Theme::CARD);
+    addElement(&upBadge, Theme::CARD);
+    addElement(&downBadge, Theme::CARD);
+    addElement(&browseLabel, Theme::CARD);
 
     list.setCount(ACHIEVEMENT_COUNT);
 }
@@ -177,7 +175,7 @@ void AchievementScreen::update(unsigned long now)
             snprintf(buf, sizeof(buf), "+%u%%", (unsigned)def.bonusPercent);
             row.setValue(buf);
         }
-        row.setValueColor(unlocked ? UNLOCKED_COLOR : GOLD_COLOR);
+        row.setValueColor(unlocked ? UNLOCKED_COLOR : Theme::GOLD);
 
         // A locked one shows how far along it is, so the list doubles as a to-do list. Only
         // a percentage fits beside the subtitle; the panel below has the full count. Capped

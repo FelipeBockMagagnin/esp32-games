@@ -22,16 +22,16 @@ public:
         : UI(0, 0, 0, 0),
           current(0),
           maxVal(100),
-          fillColor(0x15D0),
-          bgColor(0x0000),
-          borderColor(0xFFFF),
+          fillColor(Theme::XP_BAR),
+          bgColor(Theme::XP_TRACK),
+          borderColor(Theme::XP_BORDER),
           showBorder(true),
           label(""),
-          labelColor(0xFFFF)
+          labelColor(Theme::TEXT)
     {
     }
 
-    ProgressBar(int16_t x, int16_t y, int16_t w, int16_t h, int32_t current, int32_t maxVal, uint16_t fillColor, uint16_t bgColor = 0x0000, uint16_t borderColor = 0xFFFF)
+    ProgressBar(int16_t x, int16_t y, int16_t w, int16_t h, int32_t current, int32_t maxVal, uint16_t fillColor, uint16_t bgColor = Theme::XP_TRACK, uint16_t borderColor = Theme::XP_BORDER)
         : UI(x, y, w, h),
           current(current),
           maxVal(maxVal),
@@ -40,7 +40,7 @@ public:
           borderColor(borderColor),
           showBorder(true),
           label(""),
-          labelColor(0xFFFF)
+          labelColor(Theme::TEXT)
     {
     }
 

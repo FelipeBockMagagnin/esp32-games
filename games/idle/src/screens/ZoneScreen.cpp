@@ -3,17 +3,15 @@
 
 static const unsigned long REFRESH_MS = 100;
 
-static const uint16_t CARD_BORDER = 0x31A6; // Dark slate, as on the Inventory stats card
-static const uint16_t PANEL_BORDER = 0x31A6;
-static const uint16_t ROW_FRAME = 0x31A6;
-static const uint16_t SELECTED_FILL = 0x2124;
-static const uint16_t ATTACK_COLOR = 0xFB2C;  // Soft red, as on the combat screen
-static const uint16_t DEFENSE_COLOR = 0x6E7F; // Steel blue
-static const uint16_t HP_COLOR = 0x2D45;      // Leaf green
-static const uint16_t HINT_COLOR = 0x94B2;
-static const uint16_t STATS_COLOR = 0xCE59;
-static const uint16_t ENEMY_NAME_COLOR = 0xFD4F; // Warm peach, the enemy's side on the combat screen
-static const uint16_t ACTIVE_COLOR = 0x07E0;
+static const uint16_t CARD_BORDER = Theme::FRAME; // Dark slate, as on the Inventory stats card
+static const uint16_t PANEL_BORDER = Theme::FRAME;
+static const uint16_t ATTACK_COLOR = Theme::ATTACK;  // Soft red, as on the combat screen
+static const uint16_t DEFENSE_COLOR = Theme::DEFENSE; // Steel blue
+static const uint16_t HP_COLOR = Theme::HP;      // Leaf green
+static const uint16_t HINT_COLOR = Theme::TEXT_2;
+static const uint16_t STATS_COLOR = Theme::TEXT;
+static const uint16_t ENEMY_NAME_COLOR = Theme::ENEMY_NAME; // Warm peach, the enemy's side on the combat screen
+static const uint16_t ACTIVE_COLOR = Theme::GOOD;
 
 // How far the player's gear reaches into a zone, best to worst
 enum Reach : uint8_t
@@ -25,7 +23,7 @@ enum Reach : uint8_t
 };
 
 static const char *const REACH_LABELS[] = {"IDLE", "STRIKE", "SMITE", "TOO HARD"};
-static const uint16_t REACH_COLORS[] = {0x07E0, 0xFE60, 0xD3DF, 0xF8A6}; // Green, amber, purple, red
+static const uint16_t REACH_COLORS[] = {Theme::GOOD, Theme::GOLD, Theme::EPIC, Theme::BAD};
 
 // Stats card
 static const int16_t CARD_X = 5;
@@ -114,7 +112,7 @@ ZoneScreen::ZoneScreen(GameState &game, Inventory &inventory, CombatState &comba
                        SoundManager &sound, ScreenManager &screens)
     : header("Zones"),
 
-      statsCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, false, 0x0000, true, 4),
+      statsCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, true, Theme::CARD, true, 4),
       attackIcon(CARD_X + 8, STAT_ICON_Y, 16, 16, image_sword_02b_pixels, true, 0x0000),
       attackText(CARD_X + 28, STAT_TEXT_Y, "0", ATTACK_COLOR, 2),
       defenseIcon(CARD_X + 84, STAT_ICON_Y, 16, 16, image_armor_01b_pixels, true, 0x0000),
@@ -124,15 +122,15 @@ ZoneScreen::ZoneScreen(GameState &game, Inventory &inventory, CombatState &comba
 
       list(ROWS),
 
-      detailPanel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, PANEL_BORDER, false, 0x0000, true, 4),
+      detailPanel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, PANEL_BORDER, true, Theme::CARD, true, 4),
       enemiesCaption(TEXT_X, CAPTION_Y, "ENEMIES", HINT_COLOR, 1),
       statusText(TEXT_RIGHT, CAPTION_Y, "", HINT_COLOR, 1, TR_DATUM),
       dropsCaption(TEXT_X, DROPS_CAPTION_Y, "DROPS", HINT_COLOR, 1),
       dropsFound(TEXT_RIGHT, DROPS_CAPTION_Y, "", HINT_COLOR, 1, TR_DATUM),
       dropIcons(TEXT_X, DROPS_Y),
       fightBadge(TEXT_X, FIGHT_ROW_Y + BADGE_OFFSET_Y, ButtonBadge::CONFIRM),
-      fightLabel(TEXT_X + ButtonBadge::SIZE + 4, FIGHT_ROW_Y, "", 0xFFFF, 1),
-      rewardText(TEXT_RIGHT, FIGHT_ROW_Y, "", GOLD_COLOR, 1, TR_DATUM),
+      fightLabel(TEXT_X + ButtonBadge::SIZE + 4, FIGHT_ROW_Y, "", Theme::TEXT, 1),
+      rewardText(TEXT_RIGHT, FIGHT_ROW_Y, "", Theme::GOLD, 1, TR_DATUM),
 
       game(game),
       inventory(inventory),
@@ -145,40 +143,38 @@ ZoneScreen::ZoneScreen(GameState &game, Inventory &inventory, CombatState &comba
     setHeader(&header);
 
     addElement(&statsCard);
-    addElement(&attackIcon);
-    addElement(&attackText);
-    addElement(&defenseIcon);
-    addElement(&defenseText);
-    addElement(&hpIcon);
-    addElement(&hpText);
+    addElement(&attackIcon, Theme::CARD);
+    addElement(&attackText, Theme::CARD);
+    addElement(&defenseIcon, Theme::CARD);
+    addElement(&defenseText, Theme::CARD);
+    addElement(&hpIcon, Theme::CARD);
+    addElement(&hpText, Theme::CARD);
 
     for (uint8_t i = 0; i < ROWS; i++)
     {
         rows[i].setPosition(ROW_X, LIST_TOP + i * ROW_PITCH);
-        rows[i].setFrameColor(ROW_FRAME);
-        rows[i].setSelectedFill(SELECTED_FILL);
         addElement(&rows[i]);
     }
 
     addElement(&detailPanel);
-    addElement(&enemiesCaption);
-    addElement(&statusText);
+    addElement(&enemiesCaption, Theme::CARD);
+    addElement(&statusText, Theme::CARD);
     for (uint8_t i = 0; i < ENEMY_LINES; i++)
     {
         int16_t lineY = ENEMY_Y + i * ENEMY_PITCH;
         enemyName[i] = Text(TEXT_X, lineY, "", ENEMY_NAME_COLOR, 1);
         enemyStats[i] = Text(TEXT_RIGHT, lineY, "", STATS_COLOR, 1, TR_DATUM);
-        enemyDeal[i] = Text(TEXT_X, lineY + ENEMY_LINE2_DY, "", 0xFFFF, 1);
-        addElement(&enemyName[i]);
-        addElement(&enemyStats[i]);
-        addElement(&enemyDeal[i]);
+        enemyDeal[i] = Text(TEXT_X, lineY + ENEMY_LINE2_DY, "", Theme::TEXT, 1);
+        addElement(&enemyName[i], Theme::CARD);
+        addElement(&enemyStats[i], Theme::CARD);
+        addElement(&enemyDeal[i], Theme::CARD);
     }
-    addElement(&dropsCaption);
-    addElement(&dropsFound);
-    addElement(&dropIcons);
-    addElement(&fightBadge);
-    addElement(&fightLabel);
-    addElement(&rewardText);
+    addElement(&dropsCaption, Theme::CARD);
+    addElement(&dropsFound, Theme::CARD);
+    addElement(&dropIcons, Theme::CARD);
+    addElement(&fightBadge, Theme::CARD);
+    addElement(&fightLabel, Theme::CARD);
+    addElement(&rewardText, Theme::CARD);
 
     list.setCount(ZONE_COUNT);
 }
@@ -333,7 +329,7 @@ void ZoneScreen::refreshPanel(const Stats &stats)
 
     fightBadge.setDimmed(!unlocked);
     fightLabel.setText(isActive ? "Resume fight" : unlocked ? "Fight here" : "Locked");
-    fightLabel.setColor(unlocked ? 0xFFFF : HINT_COLOR);
+    fightLabel.setColor(unlocked ? Theme::TEXT : HINT_COLOR);
 
     if (minGold == maxGold)
     {

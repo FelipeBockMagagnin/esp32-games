@@ -1,10 +1,11 @@
 #include "Header.h"
 #include "../assets/Assets.h"
+#include "Theme.h"
 
-static const uint16_t COLOR = 0xFFFF;
-static const uint16_t NAV_COLOR = 0xAD55;  // Light gray: the neighbours are secondary to the title
-static const uint16_t BAND_COLOR = 0x10A2; // Near-black slate, a step off the screen background
-static const uint16_t RULE_COLOR = 0x31A6; // Same dark slate as the card and row frames
+static const uint16_t COLOR = Theme::TEXT;
+static const uint16_t NAV_COLOR = Theme::TEXT_2; // The neighbours are secondary to the title
+static const uint16_t BAND_COLOR = Theme::HEADER; // A step below the screen background
+static const uint16_t RULE_COLOR = Theme::FRAME;  // Same frame as the cards
 
 static const int16_t NAV_Y = 5;
 static const int16_t ARROW_Y = 7;

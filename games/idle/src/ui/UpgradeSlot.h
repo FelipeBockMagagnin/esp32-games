@@ -2,6 +2,7 @@
 #define UI_UPGRADE_SLOT_H
 
 #include "UI.h"
+#include "Theme.h"
 
 // One cell of the upgrade grid: a rounded tile tinted with its category's accent color
 // and a 16x16 icon centred on it. Frame, tint and icon are one element so a state change
@@ -21,7 +22,7 @@ public:
     UpgradeSlot(int16_t x = 0, int16_t y = 0, int16_t w = 34, int16_t h = 34)
         : UI(x, y, w, h),
           icon(nullptr),
-          accent(0xFFFF),
+          accent(Theme::TEXT),
           state(AFFORDABLE)
     {
     }

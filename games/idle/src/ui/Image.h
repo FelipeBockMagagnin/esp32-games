@@ -24,8 +24,8 @@ public:
           type(IMAGE_RGB565),
           pixels(nullptr),
           bitmap(nullptr),
-          color(0xFFFF),
-          bgColor(0x0000),
+          color(Theme::TEXT),
+          bgColor(Theme::BG),
           useTransparent(false)
     {
     }
@@ -43,7 +43,7 @@ public:
     }
 
     // 1-bit Monochrome Bitmap constructor
-    Image(int16_t x, int16_t y, int16_t w, int16_t h, const uint8_t *bitmap, uint16_t color = 0xFFFF, bool transparentBg = true, uint16_t bgColor = 0x0000)
+    Image(int16_t x, int16_t y, int16_t w, int16_t h, const uint8_t *bitmap, uint16_t color = Theme::TEXT, bool transparentBg = true, uint16_t bgColor = Theme::BG)
         : UI(x, y, w, h),
           type(IMAGE_BITMAP_1BIT),
           pixels(nullptr),
@@ -72,7 +72,7 @@ public:
         markDirty();
     }
 
-    void setBitmap(const uint8_t *newBitmap, int16_t newW, int16_t newH, uint16_t newColor = 0xFFFF, bool transBg = true, uint16_t newBg = 0x0000)
+    void setBitmap(const uint8_t *newBitmap, int16_t newW, int16_t newH, uint16_t newColor = Theme::TEXT, bool transBg = true, uint16_t newBg = Theme::BG)
     {
         if (type == IMAGE_BITMAP_1BIT && bitmap == newBitmap && w == newW && h == newH &&
             color == newColor && useTransparent == transBg && bgColor == newBg)

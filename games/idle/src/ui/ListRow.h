@@ -2,6 +2,7 @@
 #define UI_LIST_ROW_H
 
 #include "UI.h"
+#include "Theme.h"
 
 // One row of a vertical list: optional icon, a title with a subtitle under it, and
 // two right-aligned value fields. Screens keep a fixed array of these and rewrite
@@ -12,14 +13,14 @@ public:
     enum State : uint8_t
     {
         NORMAL,
-        SELECTED, // Yellow frame; the row the buttons act on
+        SELECTED, // Highlighted, with a gold frame; the row the buttons act on
         DIMMED,   // Gray; locked or unavailable
         OWNED     // Green frame; already taken or currently active
     };
 
     static const int16_t DEFAULT_W = 230;
     static const int16_t DEFAULT_H = 26;
-    static const uint16_t DEFAULT_FRAME_COLOR = 0xFFFF;
+    static const uint16_t DEFAULT_FRAME_COLOR = Theme::FRAME_DIM;
 
     ListRow(int16_t x = 0, int16_t y = 0, int16_t w = DEFAULT_W, int16_t h = DEFAULT_H)
         : UI(x, y, w, h),
@@ -28,17 +29,18 @@ public:
           value(""),
           valueSub(""),
           state(NORMAL),
-          valueColor(0xFFFF),
+          valueColor(Theme::TEXT),
           showCoin(false),
           iconBitmap(nullptr),
           iconPixels(nullptr),
           iconW(0),
           iconH(0),
-          iconColor(0xFFFF),
+          iconColor(Theme::TEXT),
           frameColor(DEFAULT_FRAME_COLOR),
-          selectedFill(0x0000),
-          hasSelectedFill(false),
-          titleColorOverride(0xFFFF),
+          fillColor(Theme::CARD),
+          selectedFill(Theme::ROW_SELECTED),
+          hasSelectedFill(true),
+          titleColorOverride(Theme::TEXT),
           hasTitleColor(false)
     {
     }
@@ -97,8 +99,8 @@ public:
         }
     }
 
-    // Fills a SELECTED row's background, so the selection reads as a highlight bar
-    // rather than only a frame. Text and icons are drawn over it.
+    // Background of a SELECTED row (Theme::ROW_SELECTED by default), so the selection
+    // reads as a highlight bar rather than only a frame. Other rows fill with Theme::CARD.
     void setSelectedFill(uint16_t v)
     {
         if (!hasSelectedFill || selectedFill != v)
@@ -109,7 +111,7 @@ public:
         }
     }
 
-    void setIconBitmap(const unsigned char *bitmap, int16_t bw, int16_t bh, uint16_t color = 0xFFFF);
+    void setIconBitmap(const unsigned char *bitmap, int16_t bw, int16_t bh, uint16_t color = Theme::TEXT);
     void setIconPixels(const uint16_t *pixels, int16_t pw, int16_t ph);
     void clearIcon();
 
@@ -141,6 +143,7 @@ private:
     uint16_t iconColor;
 
     uint16_t frameColor;
+    uint16_t fillColor;
     uint16_t selectedFill;
     bool hasSelectedFill;
     uint16_t titleColorOverride;

@@ -1,5 +1,5 @@
 #include "CombatScreen.h"
-#include "../game/GameConfig.h" // GOLD_COLOR
+#include "../game/GameConfig.h"
 #include "../game/Inventory.h"
 
 static const unsigned long REFRESH_MS = 100;
@@ -10,40 +10,40 @@ static const unsigned long DROP_MESSAGE_MS = 2500;
 // Warm belongs to the enemy, cool to the player. Each bar gets a fill, a near-black tint
 // of the same hue for the empty part, and a mid tone for the border; the fills are kept
 // dark enough that the white label stays readable over them.
-static const uint16_t ENEMY_HP_COLOR = 0xC8E3;   // Crimson
-static const uint16_t ENEMY_HP_BG = 0x2800;
-static const uint16_t ENEMY_HP_BORDER = 0x7800;
-static const uint16_t ENEMY_ATTACK_COLOR = 0xCB20; // Burnt orange
-static const uint16_t ENEMY_ATTACK_BG = 0x28A0;
-static const uint16_t ENEMY_ATTACK_BORDER = 0x79E0;
-static const uint16_t PLAYER_ATTACK_COLOR = 0x04B5; // Teal
-static const uint16_t PLAYER_ATTACK_BG = 0x00E4;
-static const uint16_t PLAYER_ATTACK_BORDER = 0x02CC;
-static const uint16_t PLAYER_HP_COLOR = 0x2D45; // Leaf green
-static const uint16_t PLAYER_HP_BG = 0x0100;
-static const uint16_t PLAYER_HP_BORDER = 0x0320;
+static const uint16_t ENEMY_HP_COLOR = Theme::ENEMY_HP_BAR;   // Crimson
+static const uint16_t ENEMY_HP_BG = Theme::ENEMY_HP_TRACK;
+static const uint16_t ENEMY_HP_BORDER = Theme::ENEMY_HP_BORDER;
+static const uint16_t ENEMY_ATTACK_COLOR = Theme::ENEMY_ATK_BAR; // Burnt orange
+static const uint16_t ENEMY_ATTACK_BG = Theme::ENEMY_ATK_TRACK;
+static const uint16_t ENEMY_ATTACK_BORDER = Theme::ENEMY_ATK_BORDER;
+static const uint16_t PLAYER_ATTACK_COLOR = Theme::XP_BAR; // Teal
+static const uint16_t PLAYER_ATTACK_BG = Theme::XP_TRACK;
+static const uint16_t PLAYER_ATTACK_BORDER = Theme::XP_BORDER;
+static const uint16_t PLAYER_HP_COLOR = Theme::HP_BAR; // Leaf green
+static const uint16_t PLAYER_HP_BG = Theme::HP_TRACK;
+static const uint16_t PLAYER_HP_BORDER = Theme::HP_BORDER;
 // Dark gray so the white bar label stays readable over a full, static bar
-static const uint16_t INERT_COLOR = 0x39E7;
+static const uint16_t INERT_COLOR = Theme::INERT_BAR;
 
-static const uint16_t READY_COLOR = 0x07E0;
-static const uint16_t ACTIVE_COLOR = 0x07FF; // Cyan while guarding
-static const uint16_t COOLING_COLOR = 0x7BEF; // Gray while on cooldown
-static const uint16_t LOCKED_COLOR = 0x52AA;  // Dim gray when needs amulet
-static const uint16_t ACTION_NAME_COLOR = 0xFFFF;
-static const uint16_t DETAIL_COLOR = 0x9CF3;  // Mid gray: what the action does
-static const uint16_t NEW_ITEM_COLOR = 0x07E0;     // Green for a first-time drop
-static const uint16_t LEVEL_UP_COLOR = GOLD_COLOR; // A duplicate levelling the item up
-static const uint16_t BLOCKED_COLOR = 0xF800;      // No attack can get through at all
+static const uint16_t READY_COLOR = Theme::GOOD;
+static const uint16_t ACTIVE_COLOR = Theme::INFO; // Cyan while guarding
+static const uint16_t COOLING_COLOR = Theme::TEXT_DIM; // Gray while on cooldown
+static const uint16_t LOCKED_COLOR = Theme::FRAME;  // Dim gray when needs amulet
+static const uint16_t ACTION_NAME_COLOR = Theme::TEXT;
+static const uint16_t DETAIL_COLOR = Theme::TEXT_2;  // Mid gray: what the action does
+static const uint16_t NEW_ITEM_COLOR = Theme::GOOD;     // Green for a first-time drop
+static const uint16_t LEVEL_UP_COLOR = Theme::GOLD; // A duplicate levelling the item up
+static const uint16_t BLOCKED_COLOR = Theme::BAD;      // No attack can get through at all
 
-static const uint16_t STAT_BOX_BORDER = 0x7800;   // Dark crimson border for enemy stat card
-static const uint16_t STAT_BAND_COLOR = 0x5000;   // Its title strip, a shade darker
-static const uint16_t SECTION_COLOR = 0xAD55;     // Card section titles
-static const uint16_t DIVIDER_COLOR = 0x4000;
-static const uint16_t ENEMY_NAME_COLOR = 0xFD4F;  // Warm peach, the enemy's side
-static const uint16_t ENEMY_ATK_COLOR = 0xFB2C;   // Soft red
-static const uint16_t ENEMY_DEF_COLOR = 0x6E7F;   // Steel blue
-static const uint16_t ACTION_BOX_BORDER = 0x31A6; // Dark slate border for action buttons
-static const uint16_t STATS_LINE_COLOR = 0x9E7F;  // Pale blue, the player's side
+static const uint16_t STAT_BOX_BORDER = Theme::ENEMY_FRAME;   // Dark crimson border for enemy stat card
+static const uint16_t STAT_BAND_COLOR = Theme::ENEMY_BAND;   // Its title strip, a shade darker
+static const uint16_t SECTION_COLOR = Theme::TEXT_2;     // Card section titles
+static const uint16_t DIVIDER_COLOR = Theme::FRAME;
+static const uint16_t ENEMY_NAME_COLOR = Theme::ENEMY_NAME;  // Warm peach, the enemy's side
+static const uint16_t ENEMY_ATK_COLOR = Theme::ATTACK;   // Soft red
+static const uint16_t ENEMY_DEF_COLOR = Theme::DEFENSE;   // Steel blue
+static const uint16_t ACTION_BOX_BORDER = Theme::FRAME; // Dark slate border for action buttons
+static const uint16_t STATS_LINE_COLOR = Theme::PLAYER_LINE;  // Pale blue, the player's side
 
 // Layout coordinates
 static const int16_t CENTER_X = 120;
@@ -106,13 +106,13 @@ CombatScreen::CombatScreen(CombatState &combat, SoundManager &sound)
 
       // Enemy block
       enemyName(CENTER_X, ENEMY_NAME_Y, "", ENEMY_NAME_COLOR, 2, TC_DATUM),
-      enemySprite(ENEMY_SPRITE_X, ENEMY_SPRITE_Y, ENEMY_SPRITE_SIZE, ENEMY_SPRITE_SIZE, image_rato_pixels),
-      enemyStatsBox(ENEMY_BOX_X, ENEMY_BOX_Y, ENEMY_BOX_W, ENEMY_BOX_H, STAT_BOX_BORDER, false, 0x0000, true, 3),
+      enemySprite(ENEMY_SPRITE_X, ENEMY_SPRITE_Y, ENEMY_SPRITE_SIZE, ENEMY_SPRITE_SIZE, image_rato_pixels, true, 0x0000),
+      enemyStatsBox(ENEMY_BOX_X, ENEMY_BOX_Y, ENEMY_BOX_W, ENEMY_BOX_H, STAT_BOX_BORDER, true, Theme::CARD, true, 3),
       enemyStatsBand(ENEMY_BOX_X, ENEMY_BOX_Y, ENEMY_BOX_W, ENEMY_BAND_H, STAT_BOX_BORDER, true, STAT_BAND_COLOR, true, 3),
-      enemyStatsHeader(ENEMY_BOX_X + ENEMY_BOX_W / 2, ENEMY_BOX_Y + 3, "STATS", 0xFFFF, 1, TC_DATUM),
-      enemyAtkIcon(ENEMY_BOX_X + 6, ENEMY_BOX_Y + 18, 16, 16, image_sword_02b_pixels),
+      enemyStatsHeader(ENEMY_BOX_X + ENEMY_BOX_W / 2, ENEMY_BOX_Y + 3, "STATS", Theme::TEXT, 1, TC_DATUM),
+      enemyAtkIcon(ENEMY_BOX_X + 6, ENEMY_BOX_Y + 18, 16, 16, image_sword_02b_pixels, true, 0x0000),
       enemyAtkText(ENEMY_BOX_X + 28, ENEMY_BOX_Y + 18, "", ENEMY_ATK_COLOR, 2),
-      enemyDefIcon(ENEMY_BOX_X + 6, ENEMY_BOX_Y + 37, 16, 16, image_armor_01b_pixels),
+      enemyDefIcon(ENEMY_BOX_X + 6, ENEMY_BOX_Y + 37, 16, 16, image_armor_01b_pixels, true, 0x0000),
       enemyDefText(ENEMY_BOX_X + 28, ENEMY_BOX_Y + 37, "", ENEMY_DEF_COLOR, 2),
       enemyDropsDivider(ENEMY_BOX_X + 4, ENEMY_BOX_Y + 56, ENEMY_BOX_W - 8, 1, DIVIDER_COLOR, true, DIVIDER_COLOR),
       enemyDropsLabel(ENEMY_BOX_X + ENEMY_BOX_W / 2, ENEMY_BOX_Y + 59, "DROPS", SECTION_COLOR, 1, TC_DATUM),
@@ -121,10 +121,10 @@ CombatScreen::CombatScreen(CombatState &combat, SoundManager &sound)
       enemyAttackBar(BAR_X, ENEMY_ATK_BAR_Y, BAR_W, ENEMY_ATK_BAR_H, 0, 1, ENEMY_ATTACK_COLOR,
                      ENEMY_ATTACK_BG, ENEMY_ATTACK_BORDER),
 
-      messageText(CENTER_X, MESSAGE_Y, "", 0xFFFF, 2, TC_DATUM),
+      messageText(CENTER_X, MESSAGE_Y, "", Theme::TEXT, 2, TC_DATUM),
 
       // Actions panel: Up smites (amulet), Confirm strikes, Down guards
-      actionBox(ACTION_BOX_X, ACTION_BOX_Y, ACTION_BOX_W, ACTION_BOX_H, ACTION_BOX_BORDER, false, 0x0000, true, 3),
+      actionBox(ACTION_BOX_X, ACTION_BOX_Y, ACTION_BOX_W, ACTION_BOX_H, ACTION_BOX_BORDER, true, Theme::CARD, true, 3),
       smiteBadge(ACTION_BADGE_X, SMITE_ROW_Y + BADGE_OFFSET_Y, ButtonBadge::UP),
       smiteLabel(ACTION_LABEL_X, SMITE_ROW_Y, "Smite", ACTION_NAME_COLOR, 1),
       smiteDetail(ACTION_DETAIL_X, SMITE_ROW_Y, "", DETAIL_COLOR, 1),
@@ -159,13 +159,13 @@ CombatScreen::CombatScreen(CombatState &combat, SoundManager &sound)
     // and before the header text so the text lands on top of it
     addElement(&enemyStatsBox);
     addElement(&enemyStatsBand);
-    addElement(&enemyStatsHeader);
-    addElement(&enemyAtkIcon);
-    addElement(&enemyAtkText);
-    addElement(&enemyDefIcon);
-    addElement(&enemyDefText);
-    addElement(&enemyDropsDivider);
-    addElement(&enemyDropsLabel);
+    addElement(&enemyStatsHeader, Theme::ENEMY_BAND);
+    addElement(&enemyAtkIcon, Theme::CARD);
+    addElement(&enemyAtkText, Theme::CARD);
+    addElement(&enemyDefIcon, Theme::CARD);
+    addElement(&enemyDefText, Theme::CARD);
+    addElement(&enemyDropsDivider, Theme::CARD);
+    addElement(&enemyDropsLabel, Theme::CARD);
     // Drop grid cells, row-major; hidden until update() fills them from the current enemy
     for (uint8_t i = 0; i < MAX_DROPS; i++)
     {
@@ -173,12 +173,12 @@ CombatScreen::CombatScreen(CombatState &combat, SoundManager &sound)
         int16_t cellY = (int16_t)(DROP_GRID_Y + (int16_t)(i / DROP_COLUMNS) * DROP_CELL_H);
         dropIcon[i].setPosition(cellX, cellY);
         dropIcon[i].setVisible(false);
-        addElement(&dropIcon[i]);
+        addElement(&dropIcon[i], Theme::CARD);
 
         // Vertically centred on the icon: 8px text beside a 16px icon
         dropPct[i].setPosition(cellX + DROP_ICON_SIZE + 2, cellY + 4);
         dropPct[i].setVisible(false);
-        addElement(&dropPct[i]);
+        addElement(&dropPct[i], Theme::CARD);
     }
 
     addElement(&enemyName);
@@ -190,18 +190,18 @@ CombatScreen::CombatScreen(CombatState &combat, SoundManager &sound)
 
     // Action panel elements
     addElement(&actionBox);
-    addElement(&smiteBadge);
-    addElement(&smiteLabel);
-    addElement(&smiteDetail);
-    addElement(&smiteState);
-    addElement(&strikeBadge);
-    addElement(&strikeLabel);
-    addElement(&strikeDetail);
-    addElement(&strikeState);
-    addElement(&guardBadge);
-    addElement(&guardLabel);
-    addElement(&guardDetail);
-    addElement(&guardState);
+    addElement(&smiteBadge, Theme::CARD);
+    addElement(&smiteLabel, Theme::CARD);
+    addElement(&smiteDetail, Theme::CARD);
+    addElement(&smiteState, Theme::CARD);
+    addElement(&strikeBadge, Theme::CARD);
+    addElement(&strikeLabel, Theme::CARD);
+    addElement(&strikeDetail, Theme::CARD);
+    addElement(&strikeState, Theme::CARD);
+    addElement(&guardBadge, Theme::CARD);
+    addElement(&guardLabel, Theme::CARD);
+    addElement(&guardDetail, Theme::CARD);
+    addElement(&guardState, Theme::CARD);
 
     // Player elements
     addElement(&playerAttackBar);
@@ -304,11 +304,11 @@ void CombatScreen::refreshDrops(const EnemyDef &enemy)
         dropIcon[i].setPosition(cellX + (DROP_ICON_SIZE - def.iconW) / 2, cellY + (DROP_ICON_SIZE - def.iconH) / 2);
         if (def.iconPixels != nullptr)
         {
-            dropIcon[i].setPixels(def.iconPixels, def.iconW, def.iconH);
+            dropIcon[i].setPixels(def.iconPixels, def.iconW, def.iconH, true, 0x0000);
         }
         else
         {
-            dropIcon[i].setBitmap(def.iconBitmap, def.iconW, def.iconH, 0xFFFF, false, 0x0000);
+            dropIcon[i].setBitmap(def.iconBitmap, def.iconW, def.iconH, Theme::TEXT, false, Theme::CARD);
         }
 
         // Basis points: whole percents print plain, rare drops keep their tenth (1.2%, 0.6%)
@@ -496,7 +496,7 @@ void CombatScreen::update(unsigned long now)
         enemyAttackBar.setVisible(false);
         playerAttackBar.setVisible(false);
         messageText.setVisible(true);
-        messageText.setColor(0xFFFF);
+        messageText.setColor(Theme::TEXT);
         messageText.setText("Pick a zone");
         return;
     }
@@ -522,7 +522,7 @@ void CombatScreen::update(unsigned long now)
     messageText.setVisible(true);
 
     enemyName.setText(enemy.name);
-    enemySprite.setPixels(enemy.sprite, enemy.spriteW, enemy.spriteH);
+    enemySprite.setPixels(enemy.sprite, enemy.spriteW, enemy.spriteH, true, 0x0000);
 
     // Enemy stat card: ATK, DEF then drop pool
     snprintf(buf, sizeof(buf), "%u", (unsigned)enemy.attack);
@@ -551,7 +551,7 @@ void CombatScreen::update(unsigned long now)
     if (messageUntil == 0 || (long)(now - messageUntil) >= 0)
     {
         messageUntil = 0;
-        messageText.setColor(0xFFFF);
+        messageText.setColor(Theme::TEXT);
         if (combat.getPhase() == CombatState::DEAD)
         {
             unsigned long remaining = combat.getReviveRemaining(now);

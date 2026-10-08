@@ -2,18 +2,16 @@
 
 static const unsigned long REFRESH_MS = 100;
 
-static const uint16_t CARD_BORDER = 0x31A6;   // Dark slate: the player's side, not the gold cards
-static const uint16_t PANEL_BORDER = 0x31A6;
-static const uint16_t ROW_FRAME = 0x31A6;
-static const uint16_t SELECTED_FILL = 0x2124; // Faint highlight behind the selected row
-static const uint16_t ATTACK_COLOR = 0xFB2C;  // Soft red, as on the combat screen
-static const uint16_t DEFENSE_COLOR = 0x6E7F; // Steel blue
-static const uint16_t HP_COLOR = 0x2D45;      // Leaf green
-static const uint16_t HINT_COLOR = 0x94B2;
-static const uint16_t VALUE_COLOR = 0xCE59;   // An item's own stats, neither better nor worse
-static const uint16_t BETTER_COLOR = 0x07E0;
-static const uint16_t WORSE_COLOR = 0xF8A6;
-static const uint16_t SAME_COLOR = 0x7BEF;
+static const uint16_t CARD_BORDER = Theme::FRAME;   // Dark slate: the player's side, not the gold cards
+static const uint16_t PANEL_BORDER = Theme::FRAME;
+static const uint16_t ATTACK_COLOR = Theme::ATTACK;  // Soft red, as on the combat screen
+static const uint16_t DEFENSE_COLOR = Theme::DEFENSE; // Steel blue
+static const uint16_t HP_COLOR = Theme::HP;      // Leaf green
+static const uint16_t HINT_COLOR = Theme::TEXT_2;
+static const uint16_t VALUE_COLOR = Theme::TEXT;   // An item's own stats, neither better nor worse
+static const uint16_t BETTER_COLOR = Theme::GOOD;
+static const uint16_t WORSE_COLOR = Theme::BAD;
+static const uint16_t SAME_COLOR = Theme::TEXT_DIM;
 
 // Stats card
 static const int16_t CARD_X = 5;
@@ -119,7 +117,7 @@ static void setRowIcon(ListRow &row, const ItemDef &def)
 InventoryScreen::InventoryScreen(GameState &game, Inventory &inventory, SoundManager &sound)
     : header("Inventory"),
 
-      statsCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, false, 0x0000, true, 4),
+      statsCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, true, Theme::CARD, true, 4),
       attackIcon(CARD_X + 8, STAT_ICON_Y, 16, 16, image_sword_02b_pixels, true, 0x0000),
       attackText(CARD_X + 28, STAT_TEXT_Y, "0", ATTACK_COLOR, 2),
       defenseIcon(CARD_X + 84, STAT_ICON_Y, 16, 16, image_armor_01b_pixels, true, 0x0000),
@@ -129,11 +127,11 @@ InventoryScreen::InventoryScreen(GameState &game, Inventory &inventory, SoundMan
 
       list(ROWS),
 
-      detailPanel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, PANEL_BORDER, false, 0x0000, true, 4),
-      panelTitle(TEXT_X, TITLE_Y, "", 0xFFFF, 1),
+      detailPanel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, PANEL_BORDER, true, Theme::CARD, true, 4),
+      panelTitle(TEXT_X, TITLE_Y, "", Theme::TEXT, 1),
       panelRight(TEXT_RIGHT, TITLE_Y, "", HINT_COLOR, 1, TR_DATUM),
       actionBadge(TEXT_X, HINT_ROW_Y + BADGE_OFFSET_Y, ButtonBadge::CONFIRM),
-      actionLabel(TEXT_X + ButtonBadge::SIZE + 4, HINT_ROW_Y, "", 0xFFFF, 1),
+      actionLabel(TEXT_X + ButtonBadge::SIZE + 4, HINT_ROW_Y, "", Theme::TEXT, 1),
       hintText(TEXT_RIGHT, HINT_ROW_Y, "", HINT_COLOR, 1, TR_DATUM),
 
       game(game),
@@ -149,32 +147,30 @@ InventoryScreen::InventoryScreen(GameState &game, Inventory &inventory, SoundMan
     setHeader(&header);
 
     addElement(&statsCard);
-    addElement(&attackIcon);
-    addElement(&attackText);
-    addElement(&defenseIcon);
-    addElement(&defenseText);
-    addElement(&hpIcon);
-    addElement(&hpText);
+    addElement(&attackIcon, Theme::CARD);
+    addElement(&attackText, Theme::CARD);
+    addElement(&defenseIcon, Theme::CARD);
+    addElement(&defenseText, Theme::CARD);
+    addElement(&hpIcon, Theme::CARD);
+    addElement(&hpText, Theme::CARD);
 
     for (uint8_t i = 0; i < ROWS; i++)
     {
         rows[i].setPosition(ROW_X, LIST_TOP + i * ROW_PITCH);
-        rows[i].setFrameColor(ROW_FRAME);
-        rows[i].setSelectedFill(SELECTED_FILL);
         addElement(&rows[i]);
     }
 
     addElement(&detailPanel);
-    addElement(&panelTitle);
-    addElement(&panelRight);
+    addElement(&panelTitle, Theme::CARD);
+    addElement(&panelRight, Theme::CARD);
     for (uint8_t i = 0; i < STAT_COLUMNS; i++)
     {
         statColumns[i] = Text(STAT_COLUMN_X[i], STATS_Y, "", VALUE_COLOR, 1);
-        addElement(&statColumns[i]);
+        addElement(&statColumns[i], Theme::CARD);
     }
-    addElement(&actionBadge);
-    addElement(&actionLabel);
-    addElement(&hintText);
+    addElement(&actionBadge, Theme::CARD);
+    addElement(&actionLabel, Theme::CARD);
+    addElement(&hintText, Theme::CARD);
 
     enterSlotList();
 }
@@ -242,7 +238,7 @@ void InventoryScreen::refreshRows()
                 {
                     setRowIcon(row, *placeholder);
                 }
-                row.setTitleColor(0xFFFF);
+                row.setTitleColor(Theme::TEXT);
                 row.setState(isSelected ? ListRow::SELECTED : ListRow::DIMMED);
             }
             else
@@ -264,7 +260,7 @@ void InventoryScreen::refreshRows()
         if (index == 0)
         {
             row.setTitle("< Back");
-            row.setTitleColor(0xFFFF);
+            row.setTitleColor(Theme::TEXT);
             row.setSubtitle("to all slots");
             row.setValue("");
             row.setValueSub("");
@@ -398,7 +394,7 @@ void InventoryScreen::refreshPanel()
         uint8_t found = inventory.countItemsForSlot(slot);
 
         panelTitle.setText(EQUIP_SLOT_NAMES[(uint8_t)slot]);
-        panelTitle.setColor(0xFFFF);
+        panelTitle.setColor(Theme::TEXT);
         snprintf(buf, sizeof(buf), "%u/%u found", (unsigned)found, (unsigned)itemsInSlot(slot));
         panelRight.setText(buf);
 
@@ -413,7 +409,7 @@ void InventoryScreen::refreshPanel()
 
         actionBadge.setDimmed(found == 0);
         actionLabel.setText(found == 0 ? "Nothing found yet" : "Choose item");
-        actionLabel.setColor(found == 0 ? HINT_COLOR : 0xFFFF);
+        actionLabel.setColor(found == 0 ? HINT_COLOR : Theme::TEXT);
         snprintf(buf, sizeof(buf), "%u/%u items", (unsigned)inventory.countOwnedItems(), (unsigned)ITEM_COUNT);
         hintText.setText(buf);
         return;
@@ -426,12 +422,12 @@ void InventoryScreen::refreshPanel()
     if (itemId == NO_ITEM)
     {
         panelTitle.setText("Back to slots");
-        panelTitle.setColor(0xFFFF);
+        panelTitle.setColor(Theme::TEXT);
         panelRight.setText("");
         hideStats();
         actionBadge.setDimmed(false);
         actionLabel.setText("Back");
-        actionLabel.setColor(0xFFFF);
+        actionLabel.setColor(Theme::TEXT);
         return;
     }
 
@@ -450,7 +446,7 @@ void InventoryScreen::refreshPanel()
 
     actionBadge.setDimmed(isEquipped);
     actionLabel.setText(isEquipped ? "Already worn" : "Equip");
-    actionLabel.setColor(isEquipped ? HINT_COLOR : 0xFFFF);
+    actionLabel.setColor(isEquipped ? HINT_COLOR : Theme::TEXT);
 }
 
 void InventoryScreen::update(unsigned long now)

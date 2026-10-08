@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <TFT_eSPI.h>
+#include "Theme.h"
 
 class UI
 {
@@ -17,7 +18,7 @@ public:
 
     UI() : UI(0, 0, 0, 0) {}
     UI(int16_t x, int16_t y, int16_t w = 0, int16_t h = 0)
-        : x(x), y(y), w(w), h(h), visible(true), dirty(true), eraseColor(0x0000),
+        : x(x), y(y), w(w), h(h), visible(true), dirty(true), eraseColor(Theme::BG),
           drawn(false), drawnX(0), drawnY(0), drawnW(0), drawnH(0) {}
 
     virtual ~UI() = default;

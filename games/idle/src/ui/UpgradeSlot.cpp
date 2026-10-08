@@ -1,9 +1,10 @@
 #include "UpgradeSlot.h"
+#include "Theme.h"
 
 static const int16_t RADIUS = 4;
-static const uint16_t SELECTED_COLOR = 0xFFE0; // Yellow, the same selection color as list rows
-static const uint16_t DEAR_FRAME = 0x4208;     // Dark gray
-static const uint16_t DEAR_FILL = 0x10A2;      // Near-black gray
+static const uint16_t SELECTED_COLOR = Theme::SELECT; // The same selection color as list rows
+static const uint16_t DEAR_FRAME = Theme::FRAME_DIM;
+static const uint16_t DEAR_FILL = Theme::CARD;
 static const uint8_t TINT_ALPHA = 48;          // Accent blended over the background for the fill
 static const uint8_t SELECTED_TINT_ALPHA = 80;
 static const uint8_t DEAR_ICON_ALPHA = 90;     // How much of the icon survives the fade
