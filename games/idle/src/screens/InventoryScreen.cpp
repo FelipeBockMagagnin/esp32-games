@@ -319,66 +319,100 @@ void InventoryScreen::hideStats()
     }
 }
 
+// What a stat column shows. Columns 2 and 3 change kind with the slot: rings and amulets
+// give no HP, so their respawn cut takes that column, and the last one holds whichever
+// extra the slot gives (clicks for rings, production for amulets, regen for armour).
+enum StatKind : uint8_t
+{
+    STAT_ATTACK,
+    STAT_DEFENSE,
+    STAT_HP,
+    STAT_RESPAWN,
+    STAT_CLICK,
+    STAT_GOLD,
+    STAT_REGEN
+};
+
+static int32_t statValue(const Inventory &inventory, uint8_t id, StatKind kind)
+{
+    Stats s = inventory.getItemStats(id);
+    uint8_t level = inventory.getItemLevel(id);
+    switch (kind)
+    {
+    case STAT_ATTACK:
+        return (int32_t)s.attack;
+    case STAT_DEFENSE:
+        return (int32_t)s.defense;
+    case STAT_HP:
+        return (int32_t)s.maxHp;
+    case STAT_RESPAWN:
+        return -(int32_t)ITEMS[id].respawnCutPercent;
+    case STAT_CLICK:
+        return (int32_t)scaleItemStat(ITEMS[id].clickBonusPercent, level);
+    case STAT_GOLD:
+        return (int32_t)scaleItemStat(ITEMS[id].goldProductionBonusPercent, level);
+    case STAT_REGEN:
+        return (int32_t)s.regen;
+    }
+    return 0;
+}
+
+// Both sides of a comparison share a slot, so either one having the stat picks the kind
+static bool eitherHas(int8_t a, int8_t b, uint16_t ItemDef::*field)
+{
+    return (a != NO_ITEM && ITEMS[a].*field > 0) || (b != NO_ITEM && ITEMS[b].*field > 0);
+}
+
 void InventoryScreen::showStats(int8_t itemId, int8_t against, bool compare)
 {
-    static const char *const LABELS[] = {"ATK", "DEF", "HP"};
-
-    // Values per column for both sides; the last column is whichever gold bonus the slot
-    // gives (rings boost clicks, amulets production), so both sides share its kind
-    int32_t mine[STAT_COLUMNS] = {0, 0, 0, 0};
-    int32_t theirs[STAT_COLUMNS] = {0, 0, 0, 0};
-    bool clickBonus = false;
-
-    int8_t ids[2] = {itemId, against};
-    int32_t *values[2] = {mine, theirs};
-    for (uint8_t side = 0; side < 2; side++)
+    StatKind kinds[STAT_COLUMNS] = {STAT_ATTACK, STAT_DEFENSE, STAT_HP, STAT_GOLD};
+    if ((itemId != NO_ITEM && ITEMS[itemId].respawnCutPercent > 0) ||
+        (against != NO_ITEM && ITEMS[against].respawnCutPercent > 0))
     {
-        if (ids[side] == NO_ITEM)
-        {
-            continue;
-        }
-        uint8_t id = (uint8_t)ids[side];
-        Stats s = inventory.getItemStats(id);
-        uint8_t level = inventory.getItemLevel(id);
-        values[side][0] = (int32_t)s.attack;
-        values[side][1] = (int32_t)s.defense;
-        values[side][2] = (int32_t)s.maxHp;
-        if (ITEMS[id].clickBonusPercent > 0)
-        {
-            clickBonus = true;
-            values[side][3] = (int32_t)scaleItemStat(ITEMS[id].clickBonusPercent, level);
-        }
-        else
-        {
-            values[side][3] = (int32_t)scaleItemStat(ITEMS[id].goldProductionBonusPercent, level);
-        }
+        kinds[2] = STAT_RESPAWN;
+    }
+    if (eitherHas(itemId, against, &ItemDef::clickBonusPercent))
+    {
+        kinds[3] = STAT_CLICK;
+    }
+    else if (eitherHas(itemId, against, &ItemDef::regen))
+    {
+        kinds[3] = STAT_REGEN;
     }
 
+    static const char *const LABELS[] = {"ATK", "DEF", "HP", "RSP", "CLK", "GLD", "RGN"};
     char buf[16];
     for (uint8_t i = 0; i < STAT_COLUMNS; i++)
     {
+        StatKind kind = kinds[i];
+        int32_t mine = itemId != NO_ITEM ? statValue(inventory, (uint8_t)itemId, kind) : 0;
+        int32_t theirs = against != NO_ITEM ? statValue(inventory, (uint8_t)against, kind) : 0;
+        int32_t value = compare ? mine - theirs : mine;
+
         Text &column = statColumns[i];
-        int32_t value = compare ? mine[i] - theirs[i] : mine[i];
-        bool shown = compare ? (mine[i] != 0 || theirs[i] != 0) : mine[i] != 0;
+        bool shown = compare ? (mine != 0 || theirs != 0) : mine != 0;
         column.setVisible(shown);
         if (!shown)
         {
             continue;
         }
 
-        const char *label = i < 3 ? LABELS[i] : (clickBonus ? "CLK" : "GLD");
-        const char *unit = i < 3 ? "" : "%";
-        if (compare)
+        bool percent = kind == STAT_RESPAWN || kind == STAT_CLICK || kind == STAT_GOLD;
+        const char *sign = value > 0 && (compare || percent || kind == STAT_REGEN) ? "+" : value < 0 ? "-" : "";
+        unsigned long magnitude = (unsigned long)(value < 0 ? -value : value);
+        if (kind == STAT_REGEN)
         {
-            snprintf(buf, sizeof(buf), "%s %s%ld%s", label, value > 0 ? "+" : "", (long)value, unit);
-            column.setColor(value > 0 ? BETTER_COLOR : value < 0 ? WORSE_COLOR : SAME_COLOR);
+            snprintf(buf, sizeof(buf), "%s %s%lu.%lu", LABELS[kind], sign, magnitude / 10, magnitude % 10);
         }
         else
         {
-            snprintf(buf, sizeof(buf), i < 3 ? "%s %ld%s" : "%s +%ld%s", label, (long)value, unit);
-            column.setColor(VALUE_COLOR);
+            snprintf(buf, sizeof(buf), "%s %s%lu%s", LABELS[kind], sign, magnitude, percent ? "%" : "");
         }
         column.setText(buf);
+
+        // A respawn cut is stored negative, so less is better there
+        int32_t gain = kind == STAT_RESPAWN ? -value : value;
+        column.setColor(!compare ? VALUE_COLOR : gain > 0 ? BETTER_COLOR : gain < 0 ? WORSE_COLOR : SAME_COLOR);
     }
 }
 

@@ -134,14 +134,24 @@ void ActionPanel::refreshGuard(unsigned long now, bool fighting)
     unsigned long left = combat.getGuardCooldownRemaining(now);
     bool guarding = combat.isGuarding(now);
     bool ready = fighting && left == 0;
-    guard.ring.setProgress(left == 0 ? 1000 : (uint16_t)(1000 - left * 1000 / GUARD_COOLDOWN_MS));
+    unsigned long up = combat.getGuardRemaining(now);
+    // The cooldown runs from the press, but the ring drains over the guard and only then
+    // fills over what is left of it
+    unsigned long recovery = GUARD_COOLDOWN_MS - GUARD_DURATION_MS;
+    if (guarding)
+    {
+        guard.ring.setProgress((uint16_t)(up * 1000 / GUARD_DURATION_MS));
+    }
+    else
+    {
+        guard.ring.setProgress(left >= recovery ? 0 : (uint16_t)(1000 - left * 1000 / recovery));
+    }
     guard.ring.setRingColor(guarding ? CombatStyle::ACTIVE : ready ? CombatStyle::READY : Theme::TEXT_DIM);
     guard.ring.setOutline(ready);
     guard.ring.setCapDimmed(!fighting);
     guard.name.setColor(ready || guarding ? Theme::TEXT : Theme::TEXT_2);
     if (guarding)
     {
-        unsigned long up = combat.getGuardRemaining(now);
         snprintf(buf, sizeof(buf), "on %lu.%lus", up / 1000, (up % 1000) / 100);
         guard.detail.setText(buf);
         guard.detail.setColor(CombatStyle::ACTIVE);

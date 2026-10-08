@@ -1,4 +1,8 @@
 #include "EnemySprite.h"
+#include "Theme.h"
+
+static const int16_t CARD_W = 76;
+static const int16_t CARD_H = 40;
 
 static uint16_t swapBytes(uint16_t color)
 {
@@ -40,6 +44,7 @@ void EnemySprite::draw(TFT_eSPI &tft)
     if (sprite == nullptr && background == nullptr)
     {
         tft.fillRect(x, y, w, h, eraseColor);
+        drawCountdown(tft);
         return;
     }
 
@@ -72,4 +77,28 @@ void EnemySprite::draw(TFT_eSPI &tft)
         }
     }
     tft.endWrite();
+    drawCountdown(tft);
+}
+
+void EnemySprite::drawCountdown(TFT_eSPI &tft)
+{
+    if (countdown == 0)
+    {
+        return;
+    }
+
+    int16_t cx = x + w / 2;
+    int16_t top = y + (h - CARD_H) / 2;
+    tft.fillRoundRect(cx - CARD_W / 2, top, CARD_W, CARD_H, 4, Theme::CARD);
+    tft.drawRoundRect(cx - CARD_W / 2, top, CARD_W, CARD_H, 4, Theme::FRAME);
+
+    char buf[6];
+    snprintf(buf, sizeof(buf), "%us", (unsigned)countdown);
+    tft.setTextDatum(TC_DATUM);
+    tft.setTextSize(1);
+    tft.setTextColor(Theme::TEXT_2);
+    tft.drawString("NEXT ENEMY", cx, top + 6);
+    tft.setTextSize(2);
+    tft.setTextColor(Theme::TEXT);
+    tft.drawString(buf, cx, top + 19);
 }

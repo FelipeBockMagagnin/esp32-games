@@ -222,8 +222,8 @@ static void shop()
     }
 }
 
-// Best owned item per slot, weighting attack above defense above health; amulets go by
-// tier since what they grant is a spell
+// Best owned item per slot, weighting attack above defense above health and regen;
+// amulets go by tier since what they grant is a spell
 static void equipBest()
 {
     for (uint8_t slot = 0; slot < EQUIP_SLOT_COUNT; slot++)
@@ -237,7 +237,7 @@ static void equipBest()
                 continue;
             }
             Stats s = inventory.getItemStats(i);
-            double score = s.attack * 3.0 + s.defense * 2.0 + s.maxHp * 0.5 + ITEMS[i].tier * 1000.0 * (slot == (uint8_t)EquipSlot::AMULET);
+            double score = s.attack * 3.0 + s.defense * 2.0 + s.maxHp * 0.5 + s.regen * 0.5 + ITEMS[i].tier * 1000.0 * (slot == (uint8_t)EquipSlot::AMULET);
             if (score > bestScore)
             {
                 bestScore = score, best = i;
@@ -283,7 +283,8 @@ static ZoneOutlook outlook(uint8_t z, const Stats &s, bool active)
         {
             hurt *= 0.7; // Timed guards
         }
-        deaths += fight * hurt / (en.attackIntervalMs / 1000.0) / s.maxHp;
+        double netHurt = hurt / (en.attackIntervalMs / 1000.0) - s.regen / 10.0;
+        deaths += netHurt > 0 ? fight * netHurt / s.maxHp : 0;
     }
     o.deathsPerKill = deaths / zone.enemyCount;
     return o;

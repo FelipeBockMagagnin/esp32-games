@@ -22,8 +22,9 @@ inline uint32_t damageThrough(uint32_t attack, uint32_t defense)
 static const unsigned long GUARD_COOLDOWN_MS = 9000;
 static const unsigned long GUARD_DURATION_MS = 3000;
 static const uint8_t GUARD_DAMAGE_PERCENT = 50; // Incoming damage while guarding
-static const unsigned long RESPAWN_MS = 3000; // Long enough to take in a kill and its drop
+static const unsigned long RESPAWN_MS = 4500; // Long enough to take in a kill and its drop
 static const unsigned long REVIVE_MS = 8000; // Health refills over this long after a death
+static const unsigned long REGEN_TICK_MS = 1000;
 
 // The equipped amulet decides what the Up button casts. No spell deals damage, so the
 // strike stays the only way past a defense the auto-attack cannot beat; each one changes

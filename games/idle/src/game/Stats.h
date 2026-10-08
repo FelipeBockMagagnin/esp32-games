@@ -8,6 +8,7 @@ struct Stats
     uint32_t attack;
     uint32_t defense;
     uint32_t maxHp;
+    uint32_t regen; // Tenths of HP per second
 };
 
 // What the player is worth with nothing equipped, so the first zone is fightable bare

@@ -175,7 +175,11 @@ void EnemyPanel::refresh(unsigned long now)
         bannerLeaving = true;
     }
 
-    sprite.setSprite(enemy.sprite);
+    // Whole seconds, rounded up, so the card repaints the sprite once a second and never shows 0
+    bool respawning = combat.getPhase() == CombatState::RESPAWNING;
+    unsigned long left = combat.getRespawnRemaining(now);
+    sprite.setSprite(respawning ? nullptr : enemy.sprite);
+    sprite.setCountdown(respawning ? (uint8_t)(left > 0 ? (left + 999) / 1000 : 1) : 0);
     sprite.setBackground(combat.getZone().background);
     refreshSideColumns(enemy);
     if (bannerLeaving)

@@ -31,6 +31,8 @@ private:
     Text atkValue;
     Text defLabel;
     Text defValue;
+    Text regenLabel;
+    Text regenValue;
     ProgressBar playerHpBar;
     Text playerHitText;
 

@@ -36,6 +36,8 @@ CombatState::CombatState(GameState &game, Inventory &inventory)
       respawnAt(0),
       reviveAt(0),
       deathAt(0),
+      regenAt(0),
+      regenCarry(0),
       killEvents(0),
       lastKillGold(0),
       lastKillMidas(false),
@@ -111,7 +113,7 @@ bool CombatState::enterZone(uint8_t zoneId)
     refreshStats();
     playerHp = cachedStats.maxHp;
     pickEnemy();
-    startFight(millis());
+    startRespawn(millis());
     return true;
 }
 
@@ -121,10 +123,36 @@ void CombatState::leaveZone()
     phase = IDLE;
 }
 
-void CombatState::pickEnemy()
+void CombatState::rerollEnemy(unsigned long now)
+{
+    if (!inZone || phase != FIGHTING)
+    {
+        return;
+    }
+    pickEnemy(currentEnemy);
+    startFight(now);
+}
+
+void CombatState::pickEnemy(uint8_t avoid)
 {
     const ZoneDef &zone = ZONES[currentZone];
-    currentEnemy = zone.enemyCount > 1 ? (uint8_t)random(zone.enemyCount) : 0;
+    if (zone.enemyCount < 2)
+    {
+        currentEnemy = 0;
+    }
+    else if (avoid < zone.enemyCount)
+    {
+        // One draw from the others, shifted past the one to avoid, keeps them equally likely
+        currentEnemy = (uint8_t)random(zone.enemyCount - 1);
+        if (currentEnemy >= avoid)
+        {
+            currentEnemy++;
+        }
+    }
+    else
+    {
+        currentEnemy = (uint8_t)random(zone.enemyCount);
+    }
     enemyHp = zone.enemies[currentEnemy].maxHp;
 }
 
@@ -133,6 +161,12 @@ void CombatState::startFight(unsigned long now)
     phase = FIGHTING;
     autoAttackAt = now + AUTO_ATTACK_MS;
     enemyAttackAt = now + getEnemy().attackIntervalMs;
+}
+
+void CombatState::startRespawn(unsigned long now)
+{
+    phase = RESPAWNING;
+    respawnAt = now + RESPAWN_MS * (100 - inventory.getRespawnCutPercent()) / 100;
 }
 
 uint32_t CombatState::damageTo(uint32_t defense, uint8_t multiplier) const
@@ -250,8 +284,21 @@ void CombatState::onEnemyKilled(unsigned long now)
         }
     }
 
-    phase = RESPAWNING;
-    respawnAt = now + RESPAWN_MS;
+    startRespawn(now);
+}
+
+void CombatState::regenerate(unsigned long now)
+{
+    if (!reached(now, regenAt))
+    {
+        return;
+    }
+    regenAt = now + REGEN_TICK_MS;
+
+    uint32_t tenths = regenCarry + cachedStats.regen;
+    uint32_t gained = tenths / 10;
+    regenCarry = (uint8_t)(tenths % 10);
+    playerHp = playerHp + gained < cachedStats.maxHp ? playerHp + gained : cachedStats.maxHp;
 }
 
 void CombatState::onPlayerDied(unsigned long now)
@@ -291,6 +338,7 @@ void CombatState::update(unsigned long now)
         return;
 
     case RESPAWNING:
+        regenerate(now);
         if (reached(now, respawnAt))
         {
             pickEnemy();
@@ -299,6 +347,7 @@ void CombatState::update(unsigned long now)
         return;
 
     case FIGHTING:
+        regenerate(now);
         break;
 
     default:
@@ -466,6 +515,11 @@ unsigned long CombatState::getGuardCooldownRemaining(unsigned long now) const
 unsigned long CombatState::getReviveRemaining(unsigned long now) const
 {
     return phase == DEAD ? remainingUntil(now, reviveAt) : 0;
+}
+
+unsigned long CombatState::getRespawnRemaining(unsigned long now) const
+{
+    return phase == RESPAWNING ? remainingUntil(now, respawnAt) : 0;
 }
 
 bool CombatState::isGuarding(unsigned long now) const

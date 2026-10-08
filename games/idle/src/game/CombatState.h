@@ -55,6 +55,9 @@ public:
 
     bool enterZone(uint8_t zoneId);
     void leaveZone();
+    // Swaps a fight in progress for a fresh, different enemy. A death or a respawn already
+    // under way is left to run, so this never skips the revive wait.
+    void rerollEnemy(unsigned long now);
     bool isZoneUnlocked(uint8_t zoneId) const;
 
     Phase getPhase() const { return phase; }
@@ -89,6 +92,7 @@ public:
     unsigned long getSpellCooldownRemaining(unsigned long now) const;
     unsigned long getGuardCooldownRemaining(unsigned long now) const;
     unsigned long getReviveRemaining(unsigned long now) const;
+    unsigned long getRespawnRemaining(unsigned long now) const;
     bool isGuarding(unsigned long now) const;
     unsigned long getGuardRemaining(unsigned long now) const; // 0 when not guarding
 
@@ -115,7 +119,9 @@ public:
 private:
     void refreshStats();
     void startFight(unsigned long now);
-    void pickEnemy();
+    void startRespawn(unsigned long now);
+    void regenerate(unsigned long now);
+    void pickEnemy(uint8_t avoid = 0xFF);
     uint32_t damageTo(uint32_t defense, uint8_t multiplier) const;
     void hitEnemy(uint32_t damage, HitKind kind, unsigned long now);
     void onEnemyKilled(unsigned long now);
@@ -146,6 +152,8 @@ private:
     unsigned long respawnAt;
     unsigned long reviveAt;
     unsigned long deathAt;
+    unsigned long regenAt;
+    uint8_t regenCarry; // Tenths of HP not yet credited
 
     uint32_t killEvents;
     uint32_t lastKillGold;

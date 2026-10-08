@@ -57,6 +57,8 @@ CombatScreen::CombatScreen(CombatState &combat, SoundManager &sound)
       atkValue(28, STATS_Y, "", Theme::ATTACK, 1),
       defLabel(60, STATS_Y, "DEF", Theme::TEXT_2, 1),
       defValue(80, STATS_Y, "", Theme::DEFENSE, 1),
+      regenLabel(112, STATS_Y, "RGN", Theme::TEXT_2, 1),
+      regenValue(132, STATS_Y, "", Theme::HP, 1),
       playerHpBar(BAR_X, PLAYER_HP_Y, HP_BAR_W, PLAYER_HP_H, 0, 1, PLAYER_HP_COLOR, PLAYER_HP_BG, PLAYER_HP_BORDER),
       playerHitText(HIT_TEXT_X, PLAYER_HP_Y + 2, "", CombatStyle::BLOCKED, 1, TR_DATUM),
       combat(combat),
@@ -83,12 +85,15 @@ CombatScreen::CombatScreen(CombatState &combat, SoundManager &sound)
     addElement(&atkValue);
     addElement(&defLabel);
     addElement(&defValue);
+    addElement(&regenLabel);
+    addElement(&regenValue);
     addElement(&playerHpBar);
     addElement(&playerHitText);
 }
 
 void CombatScreen::onEnter(TFT_eSPI &tft)
 {
+    combat.rerollEnemy(millis());
     // Events from while the player was elsewhere must not replay their sounds or banners
     seenKills = combat.getKillEvents();
     seenDrops = combat.getDropEvents();
@@ -115,6 +120,8 @@ void CombatScreen::showFightElements(bool visible)
     atkValue.setVisible(visible);
     defLabel.setVisible(visible);
     defValue.setVisible(visible);
+    regenLabel.setVisible(visible && combat.getPlayerStats().regen > 0);
+    regenValue.setVisible(visible && combat.getPlayerStats().regen > 0);
     playerHpBar.setVisible(visible);
 }
 
@@ -246,6 +253,8 @@ void CombatScreen::refreshPlayer(unsigned long now)
     atkValue.setText(buf);
     snprintf(buf, sizeof(buf), "%u", (unsigned)player.defense);
     defValue.setText(buf);
+    snprintf(buf, sizeof(buf), "%u.%u/s", (unsigned)(player.regen / 10), (unsigned)(player.regen % 10));
+    regenValue.setText(buf);
 
     bool flash = (long)(now - playerFlashUntil) < 0;
     playerHpBar.setProgress((int32_t)combat.getPlayerHp(), (int32_t)player.maxHp);

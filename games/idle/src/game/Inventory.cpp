@@ -162,7 +162,7 @@ int8_t Inventory::itemForSlotAt(EquipSlot slot, uint8_t index) const
 
 Stats Inventory::getItemStats(uint8_t itemId) const
 {
-    Stats out = {0, 0, 0};
+    Stats out = {0, 0, 0, 0};
     if (itemId >= ITEM_COUNT)
     {
         return out;
@@ -173,12 +173,13 @@ Stats Inventory::getItemStats(uint8_t itemId) const
     out.attack = scaleItemStat(def.attack, level);
     out.defense = scaleItemStat(def.defense, level);
     out.maxHp = scaleItemStat(def.maxHp, level);
+    out.regen = scaleItemStat(def.regen, level);
     return out;
 }
 
 Stats Inventory::getEquippedStats() const
 {
-    Stats total = {0, 0, 0};
+    Stats total = {0, 0, 0, 0};
     for (uint8_t slot = 0; slot < EQUIP_SLOT_COUNT; slot++)
     {
         if (equipped[slot] == NO_ITEM)
@@ -189,6 +190,7 @@ Stats Inventory::getEquippedStats() const
         total.attack += item.attack;
         total.defense += item.defense;
         total.maxHp += item.maxHp;
+        total.regen += item.regen;
     }
     return total;
 }
@@ -219,6 +221,19 @@ uint32_t Inventory::getClickBonusPercent() const
         }
     }
     return total;
+}
+
+uint8_t Inventory::getRespawnCutPercent() const
+{
+    uint32_t total = 0;
+    for (uint8_t slot = 0; slot < EQUIP_SLOT_COUNT; slot++)
+    {
+        if (equipped[slot] != NO_ITEM)
+        {
+            total += ITEMS[(uint8_t)equipped[slot]].respawnCutPercent;
+        }
+    }
+    return total < MAX_RESPAWN_CUT_PERCENT ? (uint8_t)total : MAX_RESPAWN_CUT_PERCENT;
 }
 
 void Inventory::save(Snapshot &out) const
