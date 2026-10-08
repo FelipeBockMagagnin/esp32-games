@@ -11,6 +11,9 @@ void Image::draw(TFT_eSPI &tft)
 
         if (useTransparent)
         {
+            // Transparent pixels would let a previous image show through when this one
+            // replaced it in the same spot, so the area is cleared first
+            tft.fillRect(x, y, w, h, eraseColor);
             tft.pushImage(x, y, w, h, (uint16_t *)pixels, color);
         }
         else
@@ -27,6 +30,7 @@ void Image::draw(TFT_eSPI &tft)
 
         if (useTransparent)
         {
+            tft.fillRect(x, y, w, h, eraseColor);
             tft.drawBitmap(x, y, bitmap, w, h, color);
         }
         else
