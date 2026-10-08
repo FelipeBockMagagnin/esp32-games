@@ -252,13 +252,37 @@ void ZoneScreen::refreshPanel(const Stats &stats)
     statusText.setText(isActive ? "Fighting here" : unlocked ? "" : "Locked");
     statusText.setColor(isActive ? ACTIVE_COLOR : HINT_COLOR);
 
-    // Each enemy: its stats, then what each of the player's actions would deal to it.
-    // Shown for locked zones too, as something to gear for.
-    uint32_t minGold = 0;
-    uint32_t maxGold = 0;
+    // A zone has more enemies than the panel has lines, so it lists the two ends of the
+    // range: the easiest (lowest defense) and the toughest, which is the one that sets the
+    // zone's label. Ties go to the earlier enemy for the easiest and the later (the boss)
+    // for the toughest. Shown for locked zones too, as something to gear for.
+    uint8_t easiest = 0;
+    uint8_t toughest = 0;
+    uint32_t minGold = zone.enemies[0].goldReward;
+    uint32_t maxGold = minGold;
+    for (uint8_t i = 1; i < zone.enemyCount; i++)
+    {
+        const EnemyDef &enemy = zone.enemies[i];
+        if (enemy.defense < zone.enemies[easiest].defense)
+        {
+            easiest = i;
+        }
+        if (enemy.defense >= zone.enemies[toughest].defense)
+        {
+            toughest = i;
+        }
+        minGold = enemy.goldReward < minGold ? enemy.goldReward : minGold;
+        maxGold = enemy.goldReward > maxGold ? enemy.goldReward : maxGold;
+    }
+    const uint8_t listed[ENEMY_LINES] = {easiest, toughest};
+    uint8_t listedCount = zone.enemyCount > 1 ? ENEMY_LINES : 1;
+
+    snprintf(buf, sizeof(buf), "%u ENEMIES", (unsigned)zone.enemyCount);
+    enemiesCaption.setText(zone.enemyCount > 1 ? buf : "ENEMY");
+
     for (uint8_t i = 0; i < ENEMY_LINES; i++)
     {
-        bool shown = i < zone.enemyCount;
+        bool shown = i < listedCount;
         enemyName[i].setVisible(shown);
         enemyStats[i].setVisible(shown);
         enemyDeal[i].setVisible(shown);
@@ -267,7 +291,7 @@ void ZoneScreen::refreshPanel(const Stats &stats)
             continue;
         }
 
-        const EnemyDef &enemy = zone.enemies[i];
+        const EnemyDef &enemy = zone.enemies[listed[i]];
         enemyName[i].setText(enemy.name);
         snprintf(buf, sizeof(buf), "HP %lu DEF %lu", (unsigned long)enemy.maxHp, (unsigned long)enemy.defense);
         enemyStats[i].setText(buf);
@@ -286,15 +310,6 @@ void ZoneScreen::refreshPanel(const Stats &stats)
         }
         enemyDeal[i].setText(buf);
         enemyDeal[i].setColor(REACH_COLORS[reachAgainst(stats, enemy, smiteUnlocked)]);
-
-        if (i == 0 || enemy.goldReward < minGold)
-        {
-            minGold = enemy.goldReward;
-        }
-        if (enemy.goldReward > maxGold)
-        {
-            maxGold = enemy.goldReward;
-        }
     }
 
     // Every distinct item the zone can drop, grayed until found

@@ -12,7 +12,6 @@ extern const unsigned char image_Ok_btn_bits[];
 extern const uint16_t image_armor_01b_pixels[];
 extern const unsigned char image_ButtonRightSmall_bits[];
 extern const unsigned char image_cards_hearts_bits[];
-extern const uint16_t image_rato_pixels[];
 extern const uint16_t image_sword_02b_pixels[];
 
 extern const uint16_t image_Icon31_33_pixels[];
@@ -45,16 +44,12 @@ extern const uint16_t image_award_trophy_pixels[];
 extern const uint16_t image_award_skull_pixels[];
 extern const uint16_t image_award_scroll_pixels[];
 
-// 16x16 item icons, one per ITEMS row (Iron Mail and Iron Sword use the armor and sword above)
-extern const uint16_t image_item_cloth_hood_pixels[];
-extern const uint16_t image_item_iron_helm_pixels[];
+// 16x16 item icons (Iron Mail uses the armor above; the items with artist art are in Sprites.h)
 extern const uint16_t image_item_steel_helm_pixels[];
 extern const uint16_t image_item_rune_helm_pixels[];
 extern const uint16_t image_item_cloth_vest_pixels[];
 extern const uint16_t image_item_steel_plate_pixels[];
 extern const uint16_t image_item_rune_plate_pixels[];
-extern const uint16_t image_item_cloth_pants_pixels[];
-extern const uint16_t image_item_iron_legs_pixels[];
 extern const uint16_t image_item_steel_legs_pixels[];
 extern const uint16_t image_item_rune_legs_pixels[];
 extern const uint16_t image_item_worn_boots_pixels[];
@@ -65,8 +60,6 @@ extern const uint16_t image_item_rag_gloves_pixels[];
 extern const uint16_t image_item_iron_gloves_pixels[];
 extern const uint16_t image_item_steel_grips_pixels[];
 extern const uint16_t image_item_rune_grips_pixels[];
-extern const uint16_t image_item_rusty_sword_pixels[];
-extern const uint16_t image_item_steel_sword_pixels[];
 extern const uint16_t image_item_rune_blade_pixels[];
 extern const uint16_t image_item_wood_shield_pixels[];
 extern const uint16_t image_item_iron_shield_pixels[];
@@ -76,14 +69,12 @@ extern const uint16_t image_item_tin_ring_pixels[];
 extern const uint16_t image_item_gold_ring_pixels[];
 extern const uint16_t image_item_ruby_ring_pixels[];
 extern const uint16_t image_item_miner_ring_pixels[];
-extern const uint16_t image_item_bone_charm_pixels[];
 extern const uint16_t image_item_jade_amulet_pixels[];
 extern const uint16_t image_item_gold_amulet_pixels[];
 extern const uint16_t image_item_core_sigil_pixels[];
 
 // 16x16 zone icons, one per ZONES row
 extern const uint16_t image_zone_sewers_pixels[];
-extern const uint16_t image_zone_caves_pixels[];
 extern const uint16_t image_zone_crypt_pixels[];
 extern const uint16_t image_zone_depths_pixels[];
 extern const uint16_t image_zone_core_pixels[];

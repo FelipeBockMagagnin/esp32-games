@@ -109,7 +109,7 @@ struct GoldUpgradeDef
 // Production bonuses are additive, so each is kept modest: together they reach +525%,
 // which is what lets the curve above hold instead of collapsing into a few minutes.
 // Combat upgrades and zone maps are gated so they land around when the zone that needs
-// them opens: Caves ~11 min, Crypt ~50 min, Depths ~2.5 h, Molten Core ~6.5 h.
+// them opens: Forest ~11 min, Crypt ~50 min, Depths ~2.5 h, Molten Core ~6.5 h.
 static constexpr GoldUpgradeDef GOLD_UPGRADES[] = {
     //  name             description                                  cost            bonus%   target                            reqBuilding           lvl  mineLvl
     {"Sharp Picks",     "Gold production is increased by 25%",        100,            25,      UpgradeTarget::PRODUCTION,        BUILDING_PICKAXE,     5,   0},
@@ -139,7 +139,7 @@ static constexpr GoldUpgradeDef GOLD_UPGRADES[] = {
     {"Bulwark",         "Defense is increased by 100%",               150000000,      100,     UpgradeTarget::DEFENSE,           BUILDING_DEEP_SHAFT,  1,   0},
     {"Deep Lungs",      "Maximum health is increased by 150%",        1500000000,     150,     UpgradeTarget::MAX_HP,            BUILDING_RUNE_FORGE,  1,   0},
 
-    {"Cave Maps",       "Opens the Caves for fighting",               40000,          1,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_EXCAVATOR,   1,   0},
+    {"Forest Maps",     "Opens the Forest for fighting",              40000,          1,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_EXCAVATOR,   1,   0},
     {"Crypt Maps",      "Opens the Crypt for fighting",               1500000,        2,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_SMELTER,     1,   0},
     {"Depth Maps",      "Opens the Depths for fighting",              40000000,       3,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_DEEP_SHAFT,  1,   0},
     {"Core Maps",       "Opens the Molten Core for fighting",         1000000000,     4,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_RUNE_FORGE,  1,   0},

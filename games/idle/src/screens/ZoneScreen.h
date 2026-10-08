@@ -22,14 +22,14 @@
 // screen's buttons are taken by the strike and guard actions.
 //
 // Each row says how the player's current gear fares there (idle, needs the strike or
-// smite, or out of reach), and the panel below spells it out per enemy along with the
-// zone's drops, so gearing up has a visible target.
+// smite, or out of reach), and the panel below spells it out for its easiest and toughest
+// enemy along with the zone's drops, so gearing up has a visible target.
 class ZoneScreen : public Screen
 {
 private:
     // Every zone fits on screen with room left for the detail panel
     static const uint8_t ROWS = 5;
-    static const uint8_t ENEMY_LINES = 2; // Zones have two enemies each; extras go unlisted
+    static const uint8_t ENEMY_LINES = 2; // The easiest and the toughest of the zone
 
     Header header;
 

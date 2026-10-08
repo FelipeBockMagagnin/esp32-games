@@ -106,7 +106,7 @@ CombatScreen::CombatScreen(CombatState &combat, SoundManager &sound)
 
       // Enemy block
       enemyName(CENTER_X, ENEMY_NAME_Y, "", ENEMY_NAME_COLOR, 2, TC_DATUM),
-      enemySprite(ENEMY_SPRITE_X, ENEMY_SPRITE_Y, ENEMY_SPRITE_SIZE, ENEMY_SPRITE_SIZE, image_rato_pixels, true, 0x0000),
+      enemySprite(ENEMY_SPRITE_X, ENEMY_SPRITE_Y),
       enemyStatsBox(ENEMY_BOX_X, ENEMY_BOX_Y, ENEMY_BOX_W, ENEMY_BOX_H, STAT_BOX_BORDER, true, Theme::CARD, true, 3),
       enemyStatsBand(ENEMY_BOX_X, ENEMY_BOX_Y, ENEMY_BOX_W, ENEMY_BAND_H, STAT_BOX_BORDER, true, STAT_BAND_COLOR, true, 3),
       enemyStatsHeader(ENEMY_BOX_X + ENEMY_BOX_W / 2, ENEMY_BOX_Y + 3, "STATS", Theme::TEXT, 1, TC_DATUM),
@@ -522,7 +522,8 @@ void CombatScreen::update(unsigned long now)
     messageText.setVisible(true);
 
     enemyName.setText(enemy.name);
-    enemySprite.setPixels(enemy.sprite, enemy.spriteW, enemy.spriteH, true, 0x0000);
+    enemySprite.setSprite(enemy.sprite);
+    enemySprite.setBackground(combat.getZone().background);
 
     // Enemy stat card: ATK, DEF then drop pool
     snprintf(buf, sizeof(buf), "%u", (unsigned)enemy.attack);

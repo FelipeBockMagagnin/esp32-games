@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "../assets/Assets.h"
+#include "../assets/Sprites.h"
 
 enum class EquipSlot : uint8_t
 {
@@ -64,21 +65,21 @@ struct ItemDef
 // The order here must match the table.
 enum ItemId : uint8_t
 {
-    ITEM_CLOTH_HOOD, ITEM_IRON_HELM, ITEM_STEEL_HELM, ITEM_RUNE_HELM,
+    ITEM_LEAF_HAT, ITEM_LEATHER_CAP, ITEM_STEEL_HELM, ITEM_RUNE_HELM,
     ITEM_CLOTH_VEST, ITEM_IRON_MAIL, ITEM_STEEL_PLATE, ITEM_RUNE_PLATE,
-    ITEM_CLOTH_PANTS, ITEM_IRON_LEGS, ITEM_STEEL_LEGS, ITEM_RUNE_LEGS,
+    ITEM_FIG_LEAF, ITEM_LOINCLOTH, ITEM_STEEL_LEGS, ITEM_RUNE_LEGS,
     ITEM_WORN_BOOTS, ITEM_IRON_BOOTS, ITEM_STEEL_BOOTS, ITEM_RUNE_BOOTS,
     ITEM_RAG_GLOVES, ITEM_IRON_GLOVES, ITEM_STEEL_GRIPS, ITEM_RUNE_GRIPS,
-    ITEM_RUSTY_SWORD, ITEM_IRON_SWORD, ITEM_STEEL_SWORD, ITEM_RUNE_BLADE,
+    ITEM_DULL_STICK, ITEM_GOOD_STICK, ITEM_GREAT_STICK, ITEM_RUNE_BLADE,
     ITEM_WOOD_SHIELD, ITEM_IRON_SHIELD, ITEM_STEEL_GUARD, ITEM_RUNE_AEGIS,
     ITEM_TIN_RING, ITEM_GOLD_RING, ITEM_RUBY_RING, ITEM_MINER_RING,
-    ITEM_BONE_CHARM, ITEM_JADE_AMULET, ITEM_GOLD_AMULET, ITEM_CORE_SIGIL
+    ITEM_WILSON, ITEM_JADE_AMULET, ITEM_GOLD_AMULET, ITEM_CORE_SIGIL
 };
 
 static constexpr ItemDef ITEMS[] = {
     //  name           slot                  atk  def  hp   prod%  click%  tier  icon
-    {"Cloth Hood",  EquipSlot::HELMET,    0,   2,   5,   0,     0,      0,     ICON(image_item_cloth_hood_pixels)},
-    {"Iron Helm",   EquipSlot::HELMET,    0,   6,   15,  0,     0,      1,     ICON(image_item_iron_helm_pixels)},
+    {"Leaf Hat",    EquipSlot::HELMET,    0,   2,   5,   0,     0,      0,     ICON(image_item_leaf_hat_pixels)},
+    {"Leather Cap", EquipSlot::HELMET,    0,   6,   15,  0,     0,      1,     ICON(image_item_leather_cap_pixels)},
     {"Steel Helm",  EquipSlot::HELMET,    0,   18,  45,  0,     0,      2,     ICON(image_item_steel_helm_pixels)},
     {"Rune Helm",   EquipSlot::HELMET,    0,   54,  135, 0,     0,      3,     ICON(image_item_rune_helm_pixels)},
 
@@ -87,8 +88,8 @@ static constexpr ItemDef ITEMS[] = {
     {"Steel Plate", EquipSlot::BODY,      0,   36,  90,  0,     0,      2,     ICON(image_item_steel_plate_pixels)},
     {"Rune Plate",  EquipSlot::BODY,      0,   108, 270, 0,     0,      3,     ICON(image_item_rune_plate_pixels)},
 
-    {"Cloth Pants", EquipSlot::PANTS,     0,   3,   6,   0,     0,      0,     ICON(image_item_cloth_pants_pixels)},
-    {"Iron Legs",   EquipSlot::PANTS,     0,   9,   18,  0,     0,      1,     ICON(image_item_iron_legs_pixels)},
+    {"Fig Leaf",    EquipSlot::PANTS,     0,   3,   6,   0,     0,      0,     ICON(image_item_fig_leaf_pixels)},
+    {"Loincloth",   EquipSlot::PANTS,     0,   9,   18,  0,     0,      1,     ICON(image_item_loincloth_pixels)},
     {"Steel Legs",  EquipSlot::PANTS,     0,   27,  54,  0,     0,      2,     ICON(image_item_steel_legs_pixels)},
     {"Rune Legs",   EquipSlot::PANTS,     0,   81,  162, 0,     0,      3,     ICON(image_item_rune_legs_pixels)},
 
@@ -102,9 +103,9 @@ static constexpr ItemDef ITEMS[] = {
     {"Steel Grips", EquipSlot::GLOVES,    9,   9,   0,   0,     0,      2,     ICON(image_item_steel_grips_pixels)},
     {"Rune Grips",  EquipSlot::GLOVES,    27,  27,  0,   0,     0,      3,     ICON(image_item_rune_grips_pixels)},
 
-    {"Rusty Sword", EquipSlot::SWORD,     5,   0,   0,   0,     0,      0,     ICON(image_item_rusty_sword_pixels)},
-    {"Iron Sword",  EquipSlot::SWORD,     15,  0,   0,   0,     0,      1,     ICON(image_sword_02b_pixels)},
-    {"Steel Sword", EquipSlot::SWORD,     45,  0,   0,   0,     0,      2,     ICON(image_item_steel_sword_pixels)},
+    {"Dull Stick",  EquipSlot::SWORD,     5,   0,   0,   0,     0,      0,     ICON(image_item_dull_stick_pixels)},
+    {"Good Stick",  EquipSlot::SWORD,     15,  0,   0,   0,     0,      1,     ICON(image_item_good_stick_pixels)},
+    {"Great Stick", EquipSlot::SWORD,     45,  0,   0,   0,     0,      2,     ICON(image_item_great_stick_pixels)},
     {"Rune Blade",  EquipSlot::SWORD,     135, 0,   0,   0,     0,      3,     ICON(image_item_rune_blade_pixels)},
 
     {"Wood Shield", EquipSlot::SHIELD,    0,   5,   5,   0,     0,      0,     ICON(image_item_wood_shield_pixels)},
@@ -117,7 +118,7 @@ static constexpr ItemDef ITEMS[] = {
     {"Ruby Ring",   EquipSlot::RING,      18,  0,   0,   0,     40,      2,     ICON(image_item_ruby_ring_pixels)},
     {"Miner Ring",  EquipSlot::RING,      54,  0,   0,   0,     100,      3,     ICON(image_item_miner_ring_pixels)},
 
-    {"Bone Charm",  EquipSlot::AMULET,    0,   2,   0,   5,     0,      0,     ICON(image_item_bone_charm_pixels)},
+    {"Wilson",      EquipSlot::AMULET,    0,   2,   0,   5,     0,      0,     ICON(image_item_wilson_pixels)},
     {"Jade Amulet", EquipSlot::AMULET,    0,   6,   0,   15,    0,      1,     ICON(image_item_jade_amulet_pixels)},
     {"Gold Amulet", EquipSlot::AMULET,    0,   18,  0,   40,    0,      2,     ICON(image_item_gold_amulet_pixels)},
     {"Core Sigil",  EquipSlot::AMULET,    0,   54,  0,   100,   0,      3,     ICON(image_item_core_sigil_pixels)},

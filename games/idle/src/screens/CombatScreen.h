@@ -5,6 +5,7 @@
 #include "../ui/Text.h"
 #include "../ui/Header.h"
 #include "../ui/Image.h"
+#include "../ui/EnemySprite.h"
 #include "../ui/Box.h"
 #include "../ui/ButtonBadge.h"
 #include "../ui/ProgressBar.h"
@@ -23,7 +24,7 @@ private:
 
     // Enemy block
     Text enemyName;
-    Image enemySprite;
+    EnemySprite enemySprite;
     Box enemyStatsBox;
     Box enemyStatsBand; // Filled title strip across the top of the card
     Text enemyStatsHeader;
