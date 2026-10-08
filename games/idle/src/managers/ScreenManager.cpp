@@ -1,7 +1,7 @@
 #include "ScreenManager.h"
 
 ScreenManager::ScreenManager(TFT_eSPI &display)
-    : tft(display), currentIndex(-1)
+    : tft(display), currentIndex(-1), modal(nullptr)
 {
 }
 
@@ -55,7 +55,11 @@ int ScreenManager::stepFrom(int index, int direction) const
 
 void ScreenManager::refreshNavLabels()
 {
-    Screen *screen = getCurrentScreen();
+    if (currentIndex < 0 || currentIndex >= (int)screens.size())
+    {
+        return;
+    }
+    Screen *screen = screens[currentIndex];
     if (screen == nullptr)
     {
         return;
@@ -70,7 +74,7 @@ void ScreenManager::refreshNavLabels()
 
 void ScreenManager::setScreen(int index)
 {
-    if (index < 0 || index >= (int)screens.size() || index == currentIndex)
+    if (modal != nullptr || index < 0 || index >= (int)screens.size() || index == currentIndex)
     {
         return;
     }
@@ -106,8 +110,43 @@ void ScreenManager::previousScreen()
     setScreen(stepFrom(currentIndex, -1));
 }
 
+void ScreenManager::openModal(Screen *screen)
+{
+    if (screen == nullptr || modal != nullptr)
+    {
+        return;
+    }
+
+    if (currentIndex >= 0 && currentIndex < (int)screens.size())
+    {
+        screens[currentIndex]->onExit();
+    }
+    modal = screen;
+    modal->setNavLabels("", "");
+    modal->onEnter(tft);
+}
+
+void ScreenManager::closeModal()
+{
+    if (modal == nullptr)
+    {
+        return;
+    }
+
+    modal->onExit();
+    modal = nullptr;
+    if (currentIndex >= 0 && currentIndex < (int)screens.size())
+    {
+        screens[currentIndex]->onEnter(tft);
+    }
+}
+
 Screen *ScreenManager::getCurrentScreen() const
 {
+    if (modal != nullptr)
+    {
+        return modal;
+    }
     if (currentIndex >= 0 && currentIndex < (int)screens.size())
     {
         return screens[currentIndex];
@@ -127,10 +166,11 @@ int ScreenManager::getScreenCount() const
 
 void ScreenManager::update(unsigned long now)
 {
-    if (currentIndex >= 0 && currentIndex < (int)screens.size())
+    Screen *screen = getCurrentScreen();
+    if (screen != nullptr)
     {
-        screens[currentIndex]->update(now);
-        screens[currentIndex]->render(tft);
+        screen->update(now);
+        screen->render(tft);
     }
 }
 
@@ -166,6 +206,11 @@ bool ScreenManager::handleBackPress()
     // The current screen gets first refusal (e.g. inventory sub-list)
     Screen *screen = getCurrentScreen();
     if (screen != nullptr && screen->onBackPress())
+    {
+        return true;
+    }
+    // A modal that ignores the back button still keeps the rotation where it is
+    if (modal != nullptr)
     {
         return true;
     }

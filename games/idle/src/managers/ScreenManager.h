@@ -14,6 +14,7 @@ private:
     std::vector<const char *> navNames; // What the neighbours' header labels call each screen
     std::vector<bool> locked;
     int currentIndex;
+    Screen *modal; // Shown over the rotation, outside it; takes every input while open
 
     int stepFrom(int index, int direction) const; // Next unlocked screen that way, or index itself
     void refreshNavLabels();
@@ -28,6 +29,12 @@ public:
     void setScreen(int index);
     void nextScreen();
     void previousScreen();
+
+    // A modal screen replaces the current one until closed, and screen navigation stops
+    // meanwhile. Closing re-enters the screen underneath, which repaints it whole.
+    void openModal(Screen *screen);
+    void closeModal();
+    bool hasModal() const { return modal != nullptr; }
 
     Screen *getCurrentScreen() const;
     int getCurrentIndex() const;

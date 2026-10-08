@@ -30,6 +30,12 @@ public:
         return pinNumber;
     }
 
+    // Debounced level, for gestures that hold a button rather than tap it
+    bool isDown() const
+    {
+        return lastSteadyState == LOW;
+    }
+
     void loop()
     {
         unsigned long now = millis();

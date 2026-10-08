@@ -18,6 +18,7 @@
 #include "screens/UpgradeScreen.h"
 #include "screens/ZoneScreen.h"
 #include "screens/AchievementScreen.h"
+#include "screens/ResetScreen.h"
 
 // Screen Dimensions
 #define SCREEN_WIDTH 240
@@ -56,6 +57,8 @@ BuildingScreen buildingScreen(game, sound);
 UpgradeScreen upgradeScreen(game, sound);
 ZoneScreen zoneScreen(game, inventory, combat, sound, screenManager);
 AchievementScreen achievementScreen(achievements, game, inventory, combat, sound);
+// Not in the rotation: opened as a modal by holding Up and Down (see checkResetGesture)
+ResetScreen resetScreen(screenManager, sound);
 
 static const uint16_t UNLOCK_ACCENT = Theme::INFO; // Cyan, so a new screen never reads as an achievement
 
@@ -117,6 +120,34 @@ void autosave(unsigned long now)
     else
     {
         Serial.println("Save failed");
+    }
+}
+
+// Holding Up and Down this long in game asks whether to reset. The first touch of each
+// still reaches the screen as an ordinary press; only the long hold opens the question.
+static const unsigned long RESET_HOLD_MS = 3000;
+unsigned long resetHoldStart = 0;
+bool resetHolding = false;
+bool resetHoldFired = false; // Latched until a button is released, so one hold opens it once
+
+void checkResetGesture(unsigned long now)
+{
+    if (!upButton.isDown() || !downButton.isDown())
+    {
+        resetHolding = false;
+        resetHoldFired = false;
+        return;
+    }
+    if (!resetHolding)
+    {
+        resetHolding = true;
+        resetHoldStart = now;
+    }
+    if (!resetHoldFired && now - resetHoldStart >= RESET_HOLD_MS && !screenManager.hasModal())
+    {
+        resetHoldFired = true;
+        sound.playMenu();
+        screenManager.openModal(&resetScreen);
     }
 }
 
@@ -201,7 +232,9 @@ void loop()
     downButton.loop();
     leftButton.loop();
 
-    if (rightButton.wasPressed())
+    checkResetGesture(now);
+
+    if (rightButton.wasPressed() && !screenManager.hasModal())
     {
         sound.playMenu();
         screenManager.nextScreen();
