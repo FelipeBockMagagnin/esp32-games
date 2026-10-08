@@ -87,6 +87,7 @@ struct EnemyDef
     const SpriteDef *sprite;
     const DropDef *drops;
     uint8_t dropCount;
+    bool boss; // Left out of most rows, so it zero-initializes to false
 };
 
 struct ZoneDef
@@ -246,7 +247,7 @@ static constexpr EnemyDef SEWER_ENEMIES[] = {
     {"Sad Frog",      28,     12,   13,   2600,     21,        &sprite_sad_frog,     DROPS(SAD_FROG_DROPS)},
     {"Big Bad Rat",   38,     12,   13,   2400,     27,        &sprite_big_bad_rat,  DROPS(BIG_BAD_RAT_DROPS)},
     {"Frog Wizard",   36,     14,   13,   2800,     30,        &sprite_frog_wizard,  DROPS(FROG_WIZARD_DROPS)},
-    {"Gamer Mouse",   55,     13,   15,   2600,     90,        &sprite_gamer_mouse,  DROPS(GAMER_MOUSE_DROPS)},
+    {"Gamer Mouse",   55,     13,   15,   2600,     90,        &sprite_gamer_mouse,  DROPS(GAMER_MOUSE_DROPS), true},
 };
 static constexpr EnemyDef FOREST_ENEMIES[] = {
     {"Spider",        90,     56,   32,   2300,     15000,     &sprite_spider,       DROPS(SPIDER_DROPS)},
@@ -254,7 +255,7 @@ static constexpr EnemyDef FOREST_ENEMIES[] = {
     {"Bard Gnome",    95,     60,   35,   2600,     19000,     &sprite_bard_gnome,   DROPS(BARD_GNOME_DROPS)},
     {"Goblin",        98,     61,   36,   2400,     22000,     &sprite_goblin,       DROPS(GOBLIN_DROPS)},
     {"Zombie",        105,    63,   37,   2800,     26000,     &sprite_zombie,       DROPS(ZOMBIE_DROPS)},
-    {"Gnome Band",    154,    69,   39,   2600,     70000,     &sprite_gnome_band,   DROPS(GNOME_BAND_DROPS)},
+    {"Gnome Band",    154,    69,   39,   2600,     70000,     &sprite_gnome_band,   DROPS(GNOME_BAND_DROPS), true},
 };
 static constexpr EnemyDef CRYPT_ENEMIES[] = {
     {"Bone Digger",   300,    180,  124,  2400,     1200000,   PLACEHOLDER_SPRITE,   DROPS(BONE_DIGGER_DROPS)},

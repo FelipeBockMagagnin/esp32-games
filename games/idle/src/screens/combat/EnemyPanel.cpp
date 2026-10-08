@@ -14,6 +14,7 @@ static const int16_t ATK_LABEL_Y = SPRITE_Y + 2;
 static const int16_t ATK_VALUE_Y = ATK_LABEL_Y + 11;
 static const int16_t DEF_LABEL_Y = ATK_LABEL_Y + 36;
 static const int16_t DEF_VALUE_Y = DEF_LABEL_Y + 11;
+static const int16_t BOSS_Y = DEF_LABEL_Y + 40;
 
 static const int16_t DROPS_X = SPRITE_X + EnemySprite::SIZE + 4;
 static const int16_t DROPS_CENTER_X = (DROPS_X + 234) / 2;
@@ -32,6 +33,7 @@ EnemyPanel::EnemyPanel(CombatState &combat)
       atkValue(STATS_CENTER_X, ATK_VALUE_Y, "", Theme::ATTACK, 2, TC_DATUM),
       defLabel(STATS_CENTER_X, DEF_LABEL_Y, "DEF", Theme::TEXT_DIM, 1, TC_DATUM),
       defValue(STATS_CENTER_X, DEF_VALUE_Y, "", Theme::DEFENSE, 2, TC_DATUM),
+      bossTag(STATS_CENTER_X, BOSS_Y, "BOSS", Theme::BAD, 2, TC_DATUM),
       dropsCaption(DROPS_CENTER_X, DROPS_Y, "DROPS", Theme::TEXT_DIM, 1, TC_DATUM),
       combat(combat),
       bannerUntil(0)
@@ -56,6 +58,7 @@ void EnemyPanel::addTo(Screen &screen)
     screen.addElement(&atkValue);
     screen.addElement(&defLabel);
     screen.addElement(&defValue);
+    screen.addElement(&bossTag);
     screen.addElement(&dropsCaption);
     for (uint8_t i = 0; i < MAX_DROPS; i++)
     {
@@ -76,6 +79,7 @@ void EnemyPanel::setVisible(bool visible)
     dropsCaption.setVisible(visible);
     if (!visible)
     {
+        bossTag.setVisible(false);
         banner.setVisible(false);
         for (uint8_t i = 0; i < MAX_DROPS; i++)
         {
@@ -106,6 +110,7 @@ void EnemyPanel::refreshSideColumns(const EnemyDef &enemy)
     atkValue.setText(buf);
     snprintf(buf, sizeof(buf), "%u", (unsigned)enemy.defense);
     defValue.setText(buf);
+    bossTag.setVisible(enemy.boss);
 
     for (uint8_t i = 0; i < MAX_DROPS; i++)
     {
@@ -142,6 +147,7 @@ void EnemyPanel::redrawSideColumns()
     atkValue.resetDrawn();
     defLabel.resetDrawn();
     defValue.resetDrawn();
+    bossTag.resetDrawn();
     dropsCaption.resetDrawn();
     for (uint8_t i = 0; i < MAX_DROPS; i++)
     {
@@ -156,6 +162,7 @@ void EnemyPanel::refresh(unsigned long now)
 {
     const EnemyDef &enemy = combat.getEnemy();
     name.setText(enemy.name);
+    name.setColor(enemy.boss ? Theme::BAD : Theme::ENEMY_NAME);
 
     bool bannerLeaving = false;
     if (banner.isVisible())

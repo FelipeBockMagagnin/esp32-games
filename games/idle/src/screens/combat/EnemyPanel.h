@@ -24,6 +24,7 @@ private:
     Text atkValue;
     Text defLabel;
     Text defValue;
+    Text bossTag;
 
     Text dropsCaption;
     Image dropIcon[MAX_DROPS];
