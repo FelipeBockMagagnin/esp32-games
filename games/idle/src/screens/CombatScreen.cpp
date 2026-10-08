@@ -102,7 +102,7 @@ static const int16_t PLAYER_HP_H = 14;
 static const int16_t PLAYER_STATS_Y = 301;
 
 CombatScreen::CombatScreen(CombatState &combat, SoundManager &sound)
-    : header("Combat", "Zones", "Mining"),
+    : header("Combat"),
 
       // Enemy block
       enemyName(CENTER_X, ENEMY_NAME_Y, "", ENEMY_NAME_COLOR, 2, TC_DATUM),

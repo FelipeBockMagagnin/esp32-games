@@ -5,7 +5,7 @@ ScreenManager::ScreenManager(TFT_eSPI &display)
 {
 }
 
-void ScreenManager::addScreen(Screen *screen)
+void ScreenManager::addScreen(Screen *screen, const char *navName, bool startLocked)
 {
     if (screen == nullptr)
     {
@@ -13,12 +13,59 @@ void ScreenManager::addScreen(Screen *screen)
     }
 
     screens.push_back(screen);
+    navNames.push_back(navName);
+    locked.push_back(startLocked);
 
-    // If this is the first screen added, activate it immediately
-    if (currentIndex == -1)
+    // The first unlocked screen added becomes the current one
+    if (currentIndex == -1 && !startLocked)
     {
-        setScreen(0);
+        setScreen((int)screens.size() - 1);
     }
+    else
+    {
+        refreshNavLabels();
+    }
+}
+
+void ScreenManager::setLocked(Screen *screen, bool isLocked)
+{
+    for (size_t i = 0; i < screens.size(); i++)
+    {
+        if (screens[i] == screen && locked[i] != isLocked)
+        {
+            locked[i] = isLocked;
+            refreshNavLabels();
+        }
+    }
+}
+
+int ScreenManager::stepFrom(int index, int direction) const
+{
+    int count = (int)screens.size();
+    for (int step = 1; step < count; step++)
+    {
+        int candidate = ((index + direction * step) % count + count) % count;
+        if (!locked[candidate])
+        {
+            return candidate;
+        }
+    }
+    return index;
+}
+
+void ScreenManager::refreshNavLabels()
+{
+    Screen *screen = getCurrentScreen();
+    if (screen == nullptr)
+    {
+        return;
+    }
+
+    // With a single screen unlocked both labels stay empty, which hides the arrows too
+    int back = stepFrom(currentIndex, -1);
+    int next = stepFrom(currentIndex, 1);
+    screen->setNavLabels(back == currentIndex ? "" : navNames[back],
+                         next == currentIndex ? "" : navNames[next]);
 }
 
 void ScreenManager::setScreen(int index)
@@ -34,6 +81,8 @@ void ScreenManager::setScreen(int index)
     }
 
     currentIndex = index;
+    // Labels first, so the header's first draw after the switch already has them
+    refreshNavLabels();
     screens[currentIndex]->onEnter(tft);
 }
 
@@ -44,8 +93,7 @@ void ScreenManager::nextScreen()
         return;
     }
 
-    int nextIndex = (currentIndex + 1) % screens.size();
-    setScreen(nextIndex);
+    setScreen(stepFrom(currentIndex, 1));
 }
 
 void ScreenManager::previousScreen()
@@ -55,8 +103,7 @@ void ScreenManager::previousScreen()
         return;
     }
 
-    int prevIndex = (currentIndex - 1 + screens.size()) % screens.size();
-    setScreen(prevIndex);
+    setScreen(stepFrom(currentIndex, -1));
 }
 
 Screen *ScreenManager::getCurrentScreen() const

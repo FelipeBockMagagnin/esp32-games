@@ -7,8 +7,8 @@
 // An empty label hides that side, arrow included.
 //
 // It doubles as the notification area: while a notice is set it takes over the whole bar,
-// which is how an achievement unlocked on any screen gets shown without each screen
-// reserving space for it.
+// which is how an achievement or a newly unlocked screen gets shown on any screen without
+// each one reserving space for it. The caption (size 1) names the kind of notice.
 class Header : public UI
 {
 public:
@@ -24,6 +24,7 @@ public:
           backLabel(backLabel),
           nextLabel(nextLabel),
           notice(""),
+          noticeCaption(nullptr),
           hasNotice(false)
     {
     }
@@ -55,16 +56,18 @@ public:
         }
     }
 
-    // nullptr or an empty name gives the bar back to the title and nav labels
-    void setNotice(const char *name)
+    // nullptr or an empty name gives the bar back to the title and nav labels.
+    // The caption is compared by pointer, so pass a string literal or other fixed storage.
+    void setNotice(const char *caption, const char *name)
     {
         bool wanted = name != nullptr && name[0] != '\0';
-        if (wanted == hasNotice && (!wanted || notice == name))
+        if (wanted == hasNotice && (!wanted || (notice == name && noticeCaption == caption)))
         {
             return;
         }
         hasNotice = wanted;
         notice = wanted ? name : "";
+        noticeCaption = wanted ? caption : nullptr;
         markDirty();
     }
 
@@ -72,6 +75,7 @@ public:
 
 private:
     String notice;
+    const char *noticeCaption;
     bool hasNotice;
 };
 

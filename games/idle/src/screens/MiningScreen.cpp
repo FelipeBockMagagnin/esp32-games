@@ -53,7 +53,7 @@ static const int16_t MINE_LABEL_X = MARGIN_X + ButtonBadge::SIZE + 4;
 static const int16_t BADGE_OFFSET_Y = (8 - ButtonBadge::SIZE) / 2;
 
 MiningScreen::MiningScreen(GameState &game, SoundManager &sound)
-    : header("Mining", "Combat", "Buildings"),
+    : header("Mining"),
 
       // Gold card
       goldCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, false, 0x0000, true, 4),

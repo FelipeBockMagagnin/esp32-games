@@ -49,6 +49,15 @@ public:
         tone(pin, NOTE_G7, 220);
     }
 
+    // Two-step call when a new screen opens, distinct from the achievement fanfare
+    void playUnlock()
+    {
+        tone(pin, NOTE_G6, 120);
+        tone(pin, NOTE_C7, 120);
+        tone(pin, NOTE_G6, 120);
+        tone(pin, NOTE_C7, 260);
+    }
+
     // Low note when the player can't afford the upgrade
     void playError()
     {

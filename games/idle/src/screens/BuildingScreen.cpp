@@ -39,7 +39,7 @@ static const int16_t SHARE_Y = PANEL_Y + 17;
 static const int16_t SHARE_H = 13;
 
 BuildingScreen::BuildingScreen(GameState &game, SoundManager &sound)
-    : header("Buildings", "Mining", "Upgrade"),
+    : header("Buildings"),
 
       goldCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, false, 0x0000, true, 4),
       goldCoin(CARD_X + 12, CARD_Y + CARD_H / 2, COIN_RADIUS, COIN_RADIUS, GOLD_COLOR, true),

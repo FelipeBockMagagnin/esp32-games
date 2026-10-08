@@ -7,6 +7,7 @@
 #include "game/GameState.h"
 #include "game/Inventory.h"
 #include "game/Achievements.h"
+#include "game/Unlocks.h"
 #include "game/CombatState.h"
 #include "managers/SoundManager.h"
 #include "screens/InventoryScreen.h"
@@ -38,6 +39,7 @@ Button backButton = Button(BACK_BUTTON_PIN);
 // Declared before GameState, which reads both for its gold bonuses. Globals in one
 // translation unit initialize in declaration order, so the order here matters.
 Achievements achievements;
+Unlocks unlocks;
 Inventory inventory;
 GameState game(inventory, achievements);
 CombatState combat(game, inventory);
@@ -54,6 +56,22 @@ AchievementScreen achievementScreen(achievements, game, inventory, combat, sound
 
 // Last achievement count the loop played a sound for
 uint8_t seenAchievements = 0;
+// Last Unlocks revision the screen locks were applied for
+uint8_t seenUnlocks = 0;
+// Unlock notice the loop last saw, so its sound plays once when it appears
+const char *shownUnlockNotice = nullptr;
+
+// Applies the progression to the rotation: a screen stays out of it until its feature opens
+void applyUnlocks()
+{
+    screenManager.setLocked(&buildingScreen, !unlocks.isUnlocked(Feature::BUILDINGS));
+    screenManager.setLocked(&upgradeScreen, !unlocks.isUnlocked(Feature::UPGRADES));
+    screenManager.setLocked(&achievementScreen, !unlocks.isUnlocked(Feature::AWARDS));
+    screenManager.setLocked(&inventoryScreen, !unlocks.isUnlocked(Feature::INVENTORY));
+    // Zones and Combat open together: entering a zone jumps straight to the next screen
+    screenManager.setLocked(&zoneScreen, !unlocks.isUnlocked(Feature::COMBAT));
+    screenManager.setLocked(&combatScreen, !unlocks.isUnlocked(Feature::COMBAT));
+}
 
 void setup()
 {
@@ -74,15 +92,17 @@ void setup()
     tft.setRotation(2);
     tft.fillScreen(0x0000);
 
-    // This order is the navigation order, and each screen's Header labels name its
-    // neighbours, so the two must be kept in step
-    screenManager.addScreen(&miningScreen);
-    screenManager.addScreen(&buildingScreen);
-    screenManager.addScreen(&upgradeScreen);
-    screenManager.addScreen(&achievementScreen);
-    screenManager.addScreen(&inventoryScreen);
-    screenManager.addScreen(&zoneScreen);
-    screenManager.addScreen(&combatScreen);
+    // This order is the navigation order. Every screen but Mining starts locked and joins
+    // the rotation as the player progresses (see Unlocks); the header labels follow.
+    screenManager.addScreen(&miningScreen, "Mining");
+    screenManager.addScreen(&buildingScreen, "Buildings", true);
+    screenManager.addScreen(&upgradeScreen, "Upgrade", true);
+    screenManager.addScreen(&achievementScreen, "Awards", true);
+    screenManager.addScreen(&inventoryScreen, "Inventory", true);
+    screenManager.addScreen(&zoneScreen, "Zones", true);
+    screenManager.addScreen(&combatScreen, "Combat", true);
+    applyUnlocks();
+    seenUnlocks = unlocks.getRevision();
 }
 
 void loop()
@@ -137,10 +157,34 @@ void loop()
         sound.playAchievement();
     }
 
+    // Screens open as the player progresses. An unlock's notice waits while an achievement
+    // owns the header, since the first achievement is also what opens the Awards screen.
+    const char *achievementNotice = achievements.getNotice(now);
+    unlocks.evaluate(now, game, inventory, combat, achievements, achievementNotice != nullptr);
+    if (unlocks.getRevision() != seenUnlocks)
+    {
+        seenUnlocks = unlocks.getRevision();
+        applyUnlocks();
+    }
+
+    const char *unlockNotice = unlocks.getNotice(now);
+    if (unlockNotice != nullptr && unlockNotice != shownUnlockNotice)
+    {
+        sound.playUnlock();
+    }
+    shownUnlockNotice = unlockNotice;
+
     Screen *current = screenManager.getCurrentScreen();
     if (current != nullptr)
     {
-        current->applyNotice(achievements.getNotice(now));
+        if (unlockNotice != nullptr)
+        {
+            current->applyNotice("NEW SCREEN - PRESS MENU", unlockNotice);
+        }
+        else
+        {
+            current->applyNotice("ACHIEVEMENT", achievementNotice);
+        }
     }
 
     screenManager.update(now);

@@ -15,6 +15,11 @@ static int8_t findItem(const char *name)
 
 static const char *const STARTING_KIT[] = {"Rusty Sword", "Cloth Vest"};
 
+uint8_t Inventory::getStartingKitSize()
+{
+    return sizeof(STARTING_KIT) / sizeof(STARTING_KIT[0]);
+}
+
 Inventory::Inventory()
     : revision(0)
 {

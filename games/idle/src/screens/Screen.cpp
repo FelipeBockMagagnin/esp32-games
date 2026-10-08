@@ -10,11 +10,20 @@ void Screen::setHeader(Header *header)
     headerElement = header;
 }
 
-void Screen::applyNotice(const char *name)
+void Screen::applyNotice(const char *caption, const char *name)
 {
     if (headerElement != nullptr)
     {
-        headerElement->setNotice(name);
+        headerElement->setNotice(caption, name);
+    }
+}
+
+void Screen::setNavLabels(const char *back, const char *next)
+{
+    if (headerElement != nullptr)
+    {
+        headerElement->setBackLabel(back);
+        headerElement->setNextLabel(next);
     }
 }
 

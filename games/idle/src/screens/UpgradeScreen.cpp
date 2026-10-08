@@ -78,7 +78,7 @@ static const uint8_t DETAIL_LINE_CHARS = 35;
 static const uint8_t NO_UPGRADE = 0xFF;
 
 UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
-    : header("Upgrade", "Buildings", "Awards"),
+    : header("Upgrade"),
 
       goldCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, false, 0x0000, true, 4),
       goldCoin(CARD_X + 12, CARD_Y + CARD_H / 2, COIN_RADIUS, COIN_RADIUS, GOLD_COLOR, true),

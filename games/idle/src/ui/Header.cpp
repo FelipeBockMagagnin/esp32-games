@@ -20,7 +20,10 @@ void Header::draw(TFT_eSPI &tft)
         tft.setTextColor(GOLD_COLOR);
         tft.setTextDatum(TC_DATUM);
         tft.setTextSize(1);
-        tft.drawString("ACHIEVEMENT", x + w / 2, y + NOTICE_CAPTION_Y);
+        if (noticeCaption != nullptr)
+        {
+            tft.drawString(noticeCaption, x + w / 2, y + NOTICE_CAPTION_Y);
+        }
         tft.setTextSize(2);
         tft.drawString(notice, x + w / 2, y + NOTICE_NAME_Y);
         tft.setTextDatum(TL_DATUM);

@@ -112,7 +112,7 @@ static const char *unlockUpgradeName(uint8_t zoneId)
 
 ZoneScreen::ZoneScreen(GameState &game, Inventory &inventory, CombatState &combat,
                        SoundManager &sound, ScreenManager &screens)
-    : header("Zones", "Inventory", "Combat"),
+    : header("Zones"),
 
       statsCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, false, 0x0000, true, 4),
       attackIcon(CARD_X + 8, STAT_ICON_Y, 16, 16, image_sword_02b_pixels, true, 0x0000),

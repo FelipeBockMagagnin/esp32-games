@@ -78,7 +78,7 @@ static const uint16_t *iconFor(const AchievementDef &def)
 
 AchievementScreen::AchievementScreen(Achievements &achievements, GameState &game, Inventory &inventory,
                                      CombatState &combat, SoundManager &sound)
-    : header("Awards", "Upgrade", "Inventory"),
+    : header("Awards"),
 
       summaryCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, false, 0x0000, true, 4),
       trophyIcon(CARD_X + 6, CARD_Y + 7, 16, 16, image_award_trophy_pixels, true, 0x0000),

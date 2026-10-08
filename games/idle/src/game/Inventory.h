@@ -18,6 +18,9 @@ public:
 
     Inventory();
 
+    // Items every new game starts with, so "found something" means owning more than this
+    static uint8_t getStartingKitSize();
+
     // First drop of an item makes it level 1, a repeat raises its level.
     // Returns true when the item was new, so the UI can say so.
     bool addDrop(uint8_t itemId);

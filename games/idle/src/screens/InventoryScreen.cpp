@@ -117,7 +117,7 @@ static void setRowIcon(ListRow &row, const ItemDef &def)
 }
 
 InventoryScreen::InventoryScreen(GameState &game, Inventory &inventory, SoundManager &sound)
-    : header("Inventory", "Awards", "Zones"),
+    : header("Inventory"),
 
       statsCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, false, 0x0000, true, 4),
       attackIcon(CARD_X + 8, STAT_ICON_Y, 16, 16, image_sword_02b_pixels, true, 0x0000),
