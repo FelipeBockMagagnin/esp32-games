@@ -30,6 +30,11 @@ public:
     // Tint of the halo behind the ore; blended toward the background so it stays dim
     void setGlowColor(uint16_t color);
 
+    // A gold vein beside the ore: the icon (16x16 RGB565) at 2x with a pulsing glow and the
+    // Up button under it, on the left or right of the ore, blinking when `fading`
+    void setVein(const uint16_t *icon, bool leftSide, bool fading);
+    void clearVein();
+
     // Call every loop: advances the animations and marks the element dirty while they run
     void update(unsigned long now);
 
@@ -64,6 +69,11 @@ private:
     bool shaking;
     unsigned long shakeStart;
 
+    const uint16_t *veinIcon; // nullptr while no vein is shown
+    bool veinLeft;
+    bool veinFading;
+    unsigned long lastVeinFrame;
+
     unsigned long now;
     unsigned long lastFrame;
     bool animating;
@@ -73,6 +83,7 @@ private:
     int16_t shakeOffset() const;
     void drawBackdrop(TFT_eSPI &tft);
     void drawOre(int16_t left);
+    void drawVein(TFT_eSPI &tft);
 };
 
 #endif // UI_ORE_DISPLAY_H

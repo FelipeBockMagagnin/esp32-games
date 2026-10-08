@@ -1,4 +1,5 @@
 #include "MiningScreen.h"
+#include "../assets/Sprites.h"
 #include "../game/Format.h"
 
 static const unsigned long REFRESH_MS = 100;
@@ -60,6 +61,10 @@ static const int16_t BADGE_OFFSET_Y = (8 - ButtonBadge::SIZE) / 2;
 static const int16_t GOAL_Y = 302;
 static const int16_t GOAL_H = 15;
 
+// A vein blinks for this long before it goes, and what one gave stays on screen this long
+static const unsigned long VEIN_FADE_MS = 3000;
+static const unsigned long VEIN_MESSAGE_MS = 4000;
+
 // First-click prompt: shown until the player has mined this many times, blinking
 static const uint32_t PROMPT_CLICKS = 3;
 static const unsigned long PROMPT_BLINK_MS = 500;
@@ -97,7 +102,11 @@ MiningScreen::MiningScreen(GameState &game, const Unlocks &unlocks, SoundManager
       sound(sound),
       lastRefresh(0),
       shownTier(0),
-      prompting(false)
+      prompting(false),
+      seenVeinSpawns(0),
+      veinMessageUntil(0),
+      veinMessage(""),
+      veinMessageColor(Theme::GOLD)
 {
     addElement(&header);
     setHeader(&header);
@@ -154,9 +163,37 @@ void MiningScreen::applyOreTier(uint8_t tier)
     }
 }
 
+void MiningScreen::onEnter(TFT_eSPI &tft)
+{
+    // A vein that appeared while the player was elsewhere is shown without the chime
+    seenVeinSpawns = game.getVeinSpawns();
+    Screen::onEnter(tft);
+}
+
+// The vein beside the ore follows the game's state every frame (it can appear or be missed
+// at any moment); the side alternates from one vein to the next
+void MiningScreen::refreshVein(unsigned long now)
+{
+    if (game.getVeinSpawns() != seenVeinSpawns)
+    {
+        seenVeinSpawns = game.getVeinSpawns();
+        sound.playUnlock();
+    }
+    if (game.isVeinVisible())
+    {
+        oreDisplay.setVein(image_icon_gold_vein_pixels, seenVeinSpawns % 2 == 0,
+                           game.getVeinRemaining(now) < VEIN_FADE_MS);
+    }
+    else
+    {
+        oreDisplay.clearVein();
+    }
+}
+
 void MiningScreen::update(unsigned long now)
 {
     // Animations run at their own frame rate, independent of the text refresh below
+    refreshVein(now);
     oreDisplay.update(now);
 
     if (lastRefresh != 0 && now - lastRefresh < REFRESH_MS)
@@ -166,13 +203,49 @@ void MiningScreen::update(unsigned long now)
     lastRefresh = now;
 
     goldLabel.setText(formatAmount(game.getGold()));
-    goldRate.setText(formatRate(game.getProductionPerSecond()));
 
-    // A brand-new player gets told which button mines, in its color, until they have
-    // tried it; the line then goes back to pointing at the next ore
+    // A running vein bonus takes the rate line, with its multiplier and the time left
+    char buf[40];
+    unsigned long buffLeft = game.getBuffRemaining(now);
+    VeinEffect buff = game.getActiveBuff();
+    if (buff == VeinEffect::FRENZY)
+    {
+        snprintf(buf, sizeof(buf), "%s  FRENZY x%u %lus", formatRate(game.getProductionPerSecond()).c_str(),
+                 (unsigned)VEIN_FRENZY_MULTIPLIER, (buffLeft + 999) / 1000);
+        goldRate.setText(buf);
+        goldRate.setColor(Theme::GOLD);
+    }
+    else if (buff == VeinEffect::CLICK_FRENZY)
+    {
+        snprintf(buf, sizeof(buf), "%s  CLICKS x%u %lus", formatRate(game.getProductionPerSecond()).c_str(),
+                 (unsigned)VEIN_CLICK_MULTIPLIER, (buffLeft + 999) / 1000);
+        goldRate.setText(buf);
+        goldRate.setColor(Theme::GOLD);
+    }
+    else
+    {
+        goldRate.setText(formatRate(game.getProductionPerSecond()));
+        goldRate.setColor(RATE_COLOR);
+    }
+
+    // The line under the ore name carries, most urgent first: a vein waiting to be caught,
+    // what the last one gave, the first-click prompt for a brand-new player, and otherwise
+    // the next ore
     uint8_t tier = game.getOreTier();
     bool prompt = game.getTotalClicks() < PROMPT_CLICKS;
-    if (prompt)
+    if (game.isVeinVisible())
+    {
+        prompting = true;
+        nextOreText.setText("GOLD VEIN! Press Up to catch it");
+        nextOreText.setColor((now / PROMPT_BLINK_MS) % 2 == 0 ? Theme::GOLD : Theme::TEXT);
+    }
+    else if ((long)(now - veinMessageUntil) < 0)
+    {
+        prompting = true;
+        nextOreText.setText(veinMessage);
+        nextOreText.setColor(veinMessageColor);
+    }
+    else if (prompt)
     {
         prompting = true;
         nextOreText.setText("Press the red button to mine!");
@@ -193,7 +266,6 @@ void MiningScreen::update(unsigned long now)
         goalBar.setProgress((int32_t)min(goal->done, goal->target), (int32_t)max(goal->target, (uint32_t)1));
     }
 
-    char buf[32];
     snprintf(buf, sizeof(buf), "Level %u", (unsigned)game.getMiningLevel());
     levelText.setText(buf);
 
@@ -206,6 +278,7 @@ void MiningScreen::update(unsigned long now)
     snprintf(buf, sizeof(buf), "+%s gold  +%lu XP", formatAmount(game.getClickAmount()).c_str(),
              (unsigned long)MINE_XP);
     mineValue.setText(buf);
+    mineValue.setColor(buff == VeinEffect::CLICK_FRENZY ? Theme::SELECT : Theme::GOLD);
 }
 
 void MiningScreen::onConfirmPress()
@@ -224,5 +297,40 @@ void MiningScreen::onConfirmPress()
     {
         sound.playMine();
     }
+    lastRefresh = 0;
+}
+
+// Catches the vein beside the ore, if one is there, and says what it gave on the line under
+// the ore name for a few seconds; a Lucky also floats its gold up from the ore
+void MiningScreen::onUpPress()
+{
+    unsigned long now = millis();
+    VeinEffect effect = game.catchVein(now);
+    if (effect == VeinEffect::NONE)
+    {
+        return;
+    }
+
+    sound.playDrop();
+    oreDisplay.clearVein();
+    char buf[40];
+    switch (effect)
+    {
+    case VeinEffect::LUCKY:
+        snprintf(buf, sizeof(buf), "LUCKY! +%s gold", formatAmount(game.getLastLuckyGold()).c_str());
+        oreDisplay.addPopup(String("+") + formatAmount(game.getLastLuckyGold()));
+        break;
+    case VeinEffect::FRENZY:
+        snprintf(buf, sizeof(buf), "FRENZY! Gold/s x%u for %lus", (unsigned)VEIN_FRENZY_MULTIPLIER,
+                 (game.getBuffRemaining(now) + 999) / 1000);
+        break;
+    default:
+        snprintf(buf, sizeof(buf), "CLICK FRENZY! x%u for %lus", (unsigned)VEIN_CLICK_MULTIPLIER,
+                 (game.getBuffRemaining(now) + 999) / 1000);
+        break;
+    }
+    veinMessage = buf;
+    veinMessageColor = Theme::GOLD;
+    veinMessageUntil = now + VEIN_MESSAGE_MS;
     lastRefresh = 0;
 }

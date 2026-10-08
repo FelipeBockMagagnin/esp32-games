@@ -19,7 +19,8 @@ enum class AchKind : uint8_t
     ZONE_KILLS,       // Kills in ZONES[target]
     ITEMS_OWNED,      // Distinct items found
     ITEM_LEVEL,       // Highest level reached by any one item
-    ACHIEVEMENTS      // Achievements already unlocked, so the list rewards itself
+    ACHIEVEMENTS,     // Achievements already unlocked, so the list rewards itself
+    VEINS_CAUGHT      // Gold veins caught on the Mining screen
 };
 
 static const uint8_t NO_ACH_TARGET = 0xFF;
@@ -59,7 +60,8 @@ static constexpr AchievementDef ACHIEVEMENTS[] = {
 
     {"Shopper",      "Buy 5 upgrades",                    AchKind::UPGRADES_BOUGHT,  NO_ACH_TARGET,         5,            1},
     {"Collector",    "Buy 15 upgrades",                   AchKind::UPGRADES_BOUGHT,  NO_ACH_TARGET,         15,           3},
-    {"Completionist", "Buy every upgrade",                AchKind::UPGRADES_BOUGHT,  NO_ACH_TARGET,         GOLD_UPGRADE_COUNT, 8},
+    {"Big Spender",  "Buy 35 upgrades",                   AchKind::UPGRADES_BOUGHT,  NO_ACH_TARGET,         35,           5},
+    {"Completionist", "Buy 60 upgrades",                  AchKind::UPGRADES_BOUGHT,  NO_ACH_TARGET,         60,           8},
 
     {"Apprentice",   "Reach mining level 10",             AchKind::MINING_LEVEL,     NO_ACH_TARGET,         10,           1},
     {"Journeyman",   "Reach mining level 25",             AchKind::MINING_LEVEL,     NO_ACH_TARGET,         25,           3},
@@ -77,6 +79,10 @@ static constexpr AchievementDef ACHIEVEMENTS[] = {
     {"Refined",      "Raise an item to level 4",          AchKind::ITEM_LEVEL,       NO_ACH_TARGET,         4,           2},
     {"Masterwork",   "Raise an item to level 7",          AchKind::ITEM_LEVEL,       NO_ACH_TARGET,         7,           4},
     {"Legendary",    "Raise an item to max level",        AchKind::ITEM_LEVEL,       NO_ACH_TARGET,         ITEM_MAX_LEVEL,           6},
+
+    {"Lucky Find",   "Catch a gold vein",                 AchKind::VEINS_CAUGHT,     NO_ACH_TARGET,         1,            1},
+    {"Prospector",   "Catch 25 gold veins",               AchKind::VEINS_CAUGHT,     NO_ACH_TARGET,         25,           3},
+    {"Vein Hunter",  "Catch 100 gold veins",              AchKind::VEINS_CAUGHT,     NO_ACH_TARGET,         100,          6},
 
     {"Decorated",    "Unlock 10 achievements",            AchKind::ACHIEVEMENTS,     NO_ACH_TARGET,         10,           3},
     {"Hall of Fame", "Unlock 25 achievements",            AchKind::ACHIEVEMENTS,     NO_ACH_TARGET,         25,           6},

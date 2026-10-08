@@ -1,4 +1,5 @@
 #include "OreDisplay.h"
+#include "ButtonBadge.h"
 
 // ~30 fps is smooth enough and leaves the SPI bus free for the rest of the screen
 static const unsigned long FRAME_MS = 33;
@@ -24,6 +25,15 @@ static const uint8_t SHADOW_RX_PERCENT = 40;
 static const int16_t SHADOW_RY = 5;
 static const uint8_t SHADOW_ALPHA = 200; // Background blended over the halo
 
+// The vein beside the ore: its icon at 2x over a glow that pulses, and the Up button under
+// it. It only needs a slow frame rate, which keeps a waiting vein cheap on the SPI bus.
+static const unsigned long VEIN_FRAME_MS = 100;
+static const uint8_t VEIN_SCALE = 2;
+static const int16_t VEIN_MARGIN = 4;
+static const int16_t VEIN_TOP = 14;
+static const unsigned long VEIN_PULSE_MS = 1200;
+static const unsigned long VEIN_BLINK_MS = 200;
+
 static uint16_t swapBytes(uint16_t color)
 {
     return (uint16_t)((color >> 8) | (color << 8));
@@ -46,6 +56,10 @@ OreDisplay::OreDisplay(int16_t x, int16_t y, int16_t w, int16_t h,
       nextPopup(0),
       shaking(false),
       shakeStart(0),
+      veinIcon(nullptr),
+      veinLeft(false),
+      veinFading(false),
+      lastVeinFrame(0),
       now(0),
       lastFrame(0),
       animating(false),
@@ -106,9 +120,36 @@ void OreDisplay::setGlowColor(uint16_t color)
     }
 }
 
+void OreDisplay::setVein(const uint16_t *icon, bool leftSide, bool fading)
+{
+    if (veinIcon != icon || veinLeft != leftSide || veinFading != fading)
+    {
+        veinIcon = icon;
+        veinLeft = leftSide;
+        veinFading = fading;
+        markDirty();
+    }
+}
+
+void OreDisplay::clearVein()
+{
+    if (veinIcon != nullptr)
+    {
+        veinIcon = nullptr;
+        markDirty();
+    }
+}
+
 void OreDisplay::update(unsigned long time)
 {
     now = time;
+
+    // A waiting vein pulses on its own slow clock, apart from the click animations
+    if (veinIcon != nullptr && now - lastVeinFrame >= VEIN_FRAME_MS)
+    {
+        lastVeinFrame = now;
+        markDirty();
+    }
 
     if (shaking && now - shakeStart >= SHAKE_STEP_MS * SHAKE_STEPS)
     {
@@ -206,6 +247,42 @@ void OreDisplay::drawOre(int16_t left)
     }
 }
 
+// Drawn into the sprite like everything else, so it can sit in the ore's area without the
+// two erasing each other. The glow breathes, and the whole vein blinks when about to go.
+void OreDisplay::drawVein(TFT_eSPI &tft)
+{
+    if (veinIcon == nullptr || (veinFading && (now / VEIN_BLINK_MS) % 2 == 1))
+    {
+        return;
+    }
+
+    int16_t size = 16 * VEIN_SCALE;
+    int16_t left = veinLeft ? VEIN_MARGIN : w - VEIN_MARGIN - size;
+    int16_t cx = left + size / 2;
+    int16_t cy = VEIN_TOP + size / 2;
+
+    // Pulse: 0..255..0 over VEIN_PULSE_MS
+    unsigned long phase = now % VEIN_PULSE_MS;
+    uint8_t pulse = (uint8_t)(phase < VEIN_PULSE_MS / 2 ? phase * 510 / VEIN_PULSE_MS : (VEIN_PULSE_MS - phase) * 510 / VEIN_PULSE_MS);
+    sprite->fillCircle(cx, cy, size / 2 + 3, tft.alphaBlend(40 + pulse / 4, Theme::GOLD, eraseColor));
+
+    for (int16_t row = 0; row < 16; row++)
+    {
+        for (int16_t col = 0; col < 16; col++)
+        {
+            uint16_t raw = pgm_read_word(veinIcon + row * 16 + col);
+            if (raw != 0)
+            {
+                sprite->fillRect(left + col * VEIN_SCALE, VEIN_TOP + row * VEIN_SCALE, VEIN_SCALE, VEIN_SCALE,
+                                 swapBytes(raw));
+            }
+        }
+    }
+
+    // The button that catches it, right under it
+    ButtonBadge::drawCap(*sprite, cx, VEIN_TOP + size + 10, 6, ButtonBadge::UP, false);
+}
+
 void OreDisplay::draw(TFT_eSPI &tft)
 {
     if (sprite == nullptr)
@@ -236,6 +313,7 @@ void OreDisplay::draw(TFT_eSPI &tft)
     sprite->fillSprite(eraseColor);
     drawBackdrop(tft);
     drawOre(oreX + shakeOffset());
+    drawVein(tft);
 
     sprite->setTextSize(2);
     sprite->setTextDatum(MC_DATUM);

@@ -24,6 +24,7 @@ public:
         uint32_t miningXp;
         uint32_t totalClicks;
         uint64_t totalGoldEarned;
+        uint32_t veinsCaught;
     };
 
     GameState(Inventory &inventory, Achievements &achievements);
@@ -43,6 +44,7 @@ public:
     // One building's share of that, all its levels and one level, with the same bonuses applied
     uint64_t getBuildingProduction(uint8_t id) const;      // GOLD_SCALE units
     uint64_t getBuildingProductionPerLevel(uint8_t id) const; // GOLD_SCALE units
+    uint32_t getBuildingMultiplier(uint8_t id) const; // From its BUILDING_BOOST upgrades: 1, 2, 4...
     uint32_t getClickAmount() const; // Whole units gained by the next mine(): ore tier, click upgrades, share of production
 
     // Buildings
@@ -75,6 +77,20 @@ public:
     uint8_t getOreTier() const; // Index into ORE_TIERS, based on the mining level
     const char *getOreTierName() const { return ORE_TIERS[getOreTier()].name; }
 
+    // Gold veins (see VeinEffect). Only the count caught is saved; a vein on screen or a
+    // bonus running is lost on a reboot, like a fight in progress.
+    bool isVeinVisible() const { return veinVisible; }
+    unsigned long getVeinRemaining(unsigned long now) const;
+    VeinEffect catchVein(unsigned long now); // NONE when there is no vein to catch
+    uint64_t getLastLuckyGold() const { return lastLuckyGold; } // Whole units
+    VeinEffect getActiveBuff() const { return buff; }
+    unsigned long getBuffRemaining(unsigned long now) const;
+    uint32_t getVeinsCaught() const { return veinsCaught; }
+    // Bumped each time a vein appears, so the Mining screen can chime once per vein
+    uint32_t getVeinSpawns() const { return veinSpawns; }
+    uint32_t getVeinFrequencyPercent() const;
+    uint32_t getVeinPowerPercent() const;
+
     // Lifetime totals, which only achievements read today
     uint32_t getTotalClicks() const { return totalClicks; }
     uint64_t getTotalGoldEarned() const; // Whole units
@@ -86,6 +102,10 @@ public:
 
 private:
     uint32_t getBonusPercent(UpgradeTarget target) const;
+    void countBoosts(uint8_t *boosts) const; // BUILDING_COUNT entries
+    uint64_t getBaseProductionPerSecond() const; // Without a vein's frenzy
+    void updateVeins(unsigned long now);
+    void scheduleVein(unsigned long now);
     void creditGold(uint64_t scaledAmount); // Single place where gold comes in
 
     Inventory &inventory;
@@ -104,6 +124,14 @@ private:
 
     bool started;
     unsigned long lastUpdate;
+
+    bool veinVisible;
+    unsigned long veinAt; // Next vein while none is up, else when the visible one goes
+    VeinEffect buff;
+    unsigned long buffUntil;
+    uint64_t lastLuckyGold;
+    uint32_t veinsCaught;
+    uint32_t veinSpawns;
 };
 
 #endif // GAME_STATE_H

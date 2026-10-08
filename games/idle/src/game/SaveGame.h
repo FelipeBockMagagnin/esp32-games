@@ -15,7 +15,7 @@
 // Adding a field to any Snapshot changes the layout, so bump SAVE_VERSION. Adding a row
 // to a config table changes it too, but `layout` already catches that: a save whose
 // version or layout does not match is ignored and the game starts fresh.
-static const uint16_t SAVE_VERSION = 4;
+static const uint16_t SAVE_VERSION = 5;
 
 struct SaveBlob
 {

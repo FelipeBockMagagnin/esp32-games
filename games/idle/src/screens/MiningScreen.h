@@ -48,17 +48,26 @@ private:
     SoundManager &sound;
     unsigned long lastRefresh;
     uint8_t shownTier; // Ore tier the tier-dependent elements were last set for
-    bool prompting;    // The next-ore line is showing the first-click prompt instead
+    bool prompting;    // The next-ore line is showing a prompt or message instead
+
+    // Gold veins: the Mining screen is where they show and where Up catches them
+    uint32_t seenVeinSpawns;       // So a vein chimes once, when it appears
+    unsigned long veinMessageUntil; // What the last caught vein gave stays on the line until then
+    String veinMessage;
+    uint16_t veinMessageColor;
 
     void applyOreTier(uint8_t tier);
+    void refreshVein(unsigned long now);
 
 public:
     MiningScreen(GameState &game, const Unlocks &unlocks, SoundManager &sound);
 
+    void onEnter(TFT_eSPI &tft) override;
     void update(unsigned long now) override;
 
-    // Confirm mines gold
+    // Confirm mines gold, Up catches a gold vein
     void onConfirmPress() override;
+    void onUpPress() override;
 };
 
 #endif // MINING_SCREEN_H

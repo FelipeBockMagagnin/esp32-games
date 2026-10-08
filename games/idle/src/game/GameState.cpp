@@ -12,7 +12,14 @@ GameState::GameState(Inventory &inventory, Achievements &achievements)
       totalClicks(0),
       totalGoldEarned(0),
       started(false),
-      lastUpdate(0)
+      lastUpdate(0),
+      veinVisible(false),
+      veinAt(0),
+      buff(VeinEffect::NONE),
+      buffUntil(0),
+      lastLuckyGold(0),
+      veinsCaught(0),
+      veinSpawns(0)
 {
     for (uint8_t i = 0; i < BUILDING_COUNT; i++)
     {
@@ -30,8 +37,11 @@ void GameState::update(unsigned long now)
     {
         started = true;
         lastUpdate = now;
+        scheduleVein(now);
         return;
     }
+
+    updateVeins(now);
 
     unsigned long elapsed = now - lastUpdate; // Unsigned math survives millis() rollover
     if (elapsed == 0)
@@ -98,10 +108,11 @@ void GameState::addGold(uint64_t amount)
     creditGold(amount * GOLD_SCALE);
 }
 
+// Saturates rather than wrapping: a 64-bit balance in thousandths tops out near 1.8e16 gold
 void GameState::creditGold(uint64_t scaledAmount)
 {
-    gold += scaledAmount;
-    totalGoldEarned += scaledAmount;
+    gold = gold > UINT64_MAX - scaledAmount ? UINT64_MAX : gold + scaledAmount;
+    totalGoldEarned = totalGoldEarned > UINT64_MAX - scaledAmount ? UINT64_MAX : totalGoldEarned + scaledAmount;
 }
 
 uint64_t GameState::getGold() const
@@ -109,14 +120,47 @@ uint64_t GameState::getGold() const
     return gold / GOLD_SCALE;
 }
 
+// A running frenzy multiplies everything the buildings make, on screen as well
 uint64_t GameState::getProductionPerSecond() const
 {
+    uint64_t base = getBaseProductionPerSecond();
+    return buff == VeinEffect::FRENZY ? base * VEIN_FRENZY_MULTIPLIER : base;
+}
+
+uint64_t GameState::getBaseProductionPerSecond() const
+{
+    uint8_t boosts[BUILDING_COUNT];
+    countBoosts(boosts);
     uint64_t total = 0;
     for (uint8_t i = 0; i < BUILDING_COUNT; i++)
     {
-        total += (uint64_t)BUILDINGS[i].productionPerLevel * buildingLevels[i];
+        total += ((uint64_t)BUILDINGS[i].productionPerLevel << boosts[i]) * buildingLevels[i];
     }
     return total * (100 + getProductionBonusPercent()) / 100;
+}
+
+// Bought BUILDING_BOOST upgrades per building; each one doubles that building's output
+void GameState::countBoosts(uint8_t *boosts) const
+{
+    for (uint8_t i = 0; i < BUILDING_COUNT; i++)
+    {
+        boosts[i] = 0;
+    }
+    for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
+    {
+        const GoldUpgradeDef &def = GOLD_UPGRADES[i];
+        if (goldUpgradesBought[i] && def.target == UpgradeTarget::BUILDING_BOOST && def.reqBuilding < BUILDING_COUNT)
+        {
+            boosts[def.reqBuilding]++;
+        }
+    }
+}
+
+uint32_t GameState::getBuildingMultiplier(uint8_t id) const
+{
+    uint8_t boosts[BUILDING_COUNT];
+    countBoosts(boosts);
+    return id < BUILDING_COUNT ? (uint32_t)1 << boosts[id] : 1;
 }
 
 uint64_t GameState::getBuildingProduction(uint8_t id) const
@@ -130,7 +174,8 @@ uint64_t GameState::getBuildingProductionPerLevel(uint8_t id) const
     {
         return 0;
     }
-    return (uint64_t)BUILDINGS[id].productionPerLevel * (100 + getProductionBonusPercent()) / 100;
+    return ((uint64_t)BUILDINGS[id].productionPerLevel * getBuildingMultiplier(id)) *
+           (100 + getProductionBonusPercent()) / 100;
 }
 
 uint32_t GameState::getClickAmount() const
@@ -138,6 +183,10 @@ uint32_t GameState::getClickAmount() const
     uint64_t amount = ORE_TIERS[getOreTier()].clickAmount;
     amount = amount * (100 + getClickBonusPercent()) / 100;
     amount += getProductionPerSecond() * getClickProductionPercent() / 100 / GOLD_SCALE;
+    if (buff == VeinEffect::CLICK_FRENZY)
+    {
+        amount *= VEIN_CLICK_MULTIPLIER;
+    }
     return amount > UINT32_MAX ? UINT32_MAX : (uint32_t)amount;
 }
 
@@ -226,6 +275,94 @@ uint32_t GameState::getClickProductionPercent() const
     return getBonusPercent(UpgradeTarget::CLICK_PRODUCTION);
 }
 
+uint32_t GameState::getVeinFrequencyPercent() const
+{
+    return getBonusPercent(UpgradeTarget::VEIN_FREQUENCY);
+}
+
+uint32_t GameState::getVeinPowerPercent() const
+{
+    return getBonusPercent(UpgradeTarget::VEIN_POWER);
+}
+
+static bool veinReached(unsigned long now, unsigned long deadline)
+{
+    return (long)(now - deadline) >= 0;
+}
+
+// The wait for the next vein is random within the base range, shortened by the frequency
+// upgrades
+void GameState::scheduleVein(unsigned long now)
+{
+    unsigned long wait = (unsigned long)random((long)VEIN_MIN_INTERVAL_MS, (long)VEIN_MAX_INTERVAL_MS + 1);
+    veinAt = now + wait * 100 / (100 + getVeinFrequencyPercent());
+}
+
+void GameState::updateVeins(unsigned long now)
+{
+    if (buff != VeinEffect::NONE && veinReached(now, buffUntil))
+    {
+        buff = VeinEffect::NONE;
+    }
+
+    if (veinVisible)
+    {
+        if (veinReached(now, veinAt))
+        {
+            veinVisible = false; // Missed
+            scheduleVein(now);
+        }
+    }
+    else if (veinReached(now, veinAt))
+    {
+        veinVisible = true;
+        veinAt = now + VEIN_VISIBLE_MS;
+        veinSpawns++;
+    }
+}
+
+unsigned long GameState::getVeinRemaining(unsigned long now) const
+{
+    return veinVisible && !veinReached(now, veinAt) ? veinAt - now : 0;
+}
+
+unsigned long GameState::getBuffRemaining(unsigned long now) const
+{
+    return buff != VeinEffect::NONE && !veinReached(now, buffUntil) ? buffUntil - now : 0;
+}
+
+// A caught vein rolls its bonus. A new frenzy replaces one still running rather than
+// stacking, so catching veins back to back never multiplies past one bonus.
+VeinEffect GameState::catchVein(unsigned long now)
+{
+    if (!veinVisible)
+    {
+        return VeinEffect::NONE;
+    }
+    veinVisible = false;
+    veinsCaught++;
+    scheduleVein(now);
+
+    uint32_t power = 100 + getVeinPowerPercent();
+    long roll = random(100);
+    if (roll < VEIN_LUCKY_WEIGHT)
+    {
+        // A share of the balance, capped by minutes of production, so it pays to bank
+        // gold before catching one but never more than the cap
+        uint64_t fromBank = gold * VEIN_LUCKY_BANK_PERCENT / 100;
+        uint64_t cap = getBaseProductionPerSecond() * VEIN_LUCKY_SECONDS * power / 100;
+        uint64_t scaled = (fromBank < cap ? fromBank : cap) + (uint64_t)getClickAmount() * VEIN_LUCKY_CLICKS * GOLD_SCALE;
+        creditGold(scaled);
+        lastLuckyGold = scaled / GOLD_SCALE;
+        return VeinEffect::LUCKY;
+    }
+
+    bool frenzy = roll < VEIN_LUCKY_WEIGHT + VEIN_FRENZY_WEIGHT;
+    buff = frenzy ? VeinEffect::FRENZY : VeinEffect::CLICK_FRENZY;
+    buffUntil = now + (frenzy ? VEIN_FRENZY_MS : VEIN_CLICK_MS) * power / 100;
+    return buff;
+}
+
 uint32_t GameState::getAttackBonusPercent() const
 {
     return getBonusPercent(UpgradeTarget::ATTACK);
@@ -298,6 +435,7 @@ void GameState::save(Snapshot &out) const
     out.miningXp = miningXp;
     out.totalClicks = totalClicks;
     out.totalGoldEarned = totalGoldEarned;
+    out.veinsCaught = veinsCaught;
     for (uint8_t i = 0; i < BUILDING_COUNT; i++)
     {
         out.buildingLevels[i] = buildingLevels[i];
@@ -316,6 +454,7 @@ void GameState::load(const Snapshot &in)
     miningXp = in.miningXp;
     totalClicks = in.totalClicks;
     totalGoldEarned = in.totalGoldEarned;
+    veinsCaught = in.veinsCaught;
     for (uint8_t i = 0; i < BUILDING_COUNT; i++)
     {
         buildingLevels[i] = in.buildingLevels[i];

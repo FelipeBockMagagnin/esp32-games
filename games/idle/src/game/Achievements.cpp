@@ -58,6 +58,8 @@ uint64_t Achievements::getProgress(const AchievementDef &def, const GameState &g
         return inventory.getHighestItemLevel();
     case AchKind::ACHIEVEMENTS:
         return unlockedCount;
+    case AchKind::VEINS_CAUGHT:
+        return game.getVeinsCaught();
     }
     return 0;
 }

@@ -47,4 +47,7 @@ extern const uint16_t image_item_leather_cap_pixels[]; // 16x16
 extern const uint16_t image_item_loincloth_pixels[]; // 16x16
 extern const uint16_t image_item_wilson_pixels[]; // 16x16
 
+// Icons
+extern const uint16_t image_icon_gold_vein_pixels[]; // 16x16
+
 #endif // SPRITES_H

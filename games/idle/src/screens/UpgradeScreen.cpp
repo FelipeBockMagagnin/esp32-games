@@ -33,11 +33,24 @@ static const CategoryStyle CATEGORY_STYLES[] = {
     {"HEALTH", Theme::HP, image_upgrade_heart_pixels},          // MAX_HP
     {"NEW ZONE", Theme::EPIC, image_upgrade_map_pixels},        // UNLOCK_ZONE
     {"MINING", Theme::GOLD_BAR, image_upgrade_click_pixels},    // CLICK_PRODUCTION
+    {"BUILDING", Theme::GOOD, image_upgrade_production_pixels}, // BUILDING_BOOST, icon per building
+    {"GOLD VEIN", Theme::GOLD, image_icon_gold_vein_pixels},    // VEIN_FREQUENCY
+    {"GOLD VEIN", Theme::GOLD, image_icon_gold_vein_pixels},    // VEIN_POWER
 };
 
 static const CategoryStyle &styleFor(UpgradeTarget target)
 {
     return CATEGORY_STYLES[(uint8_t)target];
+}
+
+// A building boost shows the building it boosts rather than the category's icon
+static const uint16_t *iconFor(const GoldUpgradeDef &def)
+{
+    if (def.target == UpgradeTarget::BUILDING_BOOST && def.reqBuilding < BUILDING_COUNT)
+    {
+        return BUILDINGS[def.reqBuilding].icon;
+    }
+    return styleFor(def.target).icon;
 }
 
 // Grid: three rows of six 34px tiles
@@ -139,19 +152,39 @@ UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
     refreshDetails();
 }
 
+// The cheapest available upgrades, cheapest first, so the grid reads as a shopping list:
+// the first tile is always the next thing the player can afford. Kept as an insertion into
+// a sorted list of at most MAX_VISIBLE_SLOTS, so the pricier ones simply fall off the end.
 void UpgradeScreen::rebuildVisible()
 {
     visibleCount = 0;
     availableCount = 0;
     for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
     {
-        if (game.isGoldUpgradeUnlocked(i) && !game.isGoldUpgradeBought(i))
+        if (!game.isGoldUpgradeUnlocked(i) || game.isGoldUpgradeBought(i))
         {
-            availableCount++;
-            if (visibleCount < MAX_VISIBLE_SLOTS)
-            {
-                visibleIds[visibleCount++] = i;
-            }
+            continue;
+        }
+        availableCount++;
+
+        uint8_t pos = visibleCount;
+        while (pos > 0 && GOLD_UPGRADES[visibleIds[pos - 1]].cost > GOLD_UPGRADES[i].cost)
+        {
+            pos--;
+        }
+        if (pos >= MAX_VISIBLE_SLOTS)
+        {
+            continue;
+        }
+        uint8_t last = visibleCount < MAX_VISIBLE_SLOTS ? visibleCount : MAX_VISIBLE_SLOTS - 1;
+        for (uint8_t k = last; k > pos; k--)
+        {
+            visibleIds[k] = visibleIds[k - 1];
+        }
+        visibleIds[pos] = i;
+        if (visibleCount < MAX_VISIBLE_SLOTS)
+        {
+            visibleCount++;
         }
     }
 
@@ -222,6 +255,29 @@ void UpgradeScreen::formatEffect(const GoldUpgradeDef &def, char *buf, size_t si
         // bonusPercent carries the zone index for this target
         snprintf(buf, size, "Opens zone: %s", def.bonusPercent < ZONE_COUNT ? ZONES[def.bonusPercent].name : "?");
         return;
+    case UpgradeTarget::VEIN_FREQUENCY:
+    {
+        // The base range shortened by the frequency bonus, before and after
+        uint32_t now = 100 + game.getVeinFrequencyPercent();
+        uint32_t after = now + def.bonusPercent;
+        snprintf(buf, size, "Every %lu-%lus > %lu-%lus", VEIN_MIN_INTERVAL_MS / 10 / now, VEIN_MAX_INTERVAL_MS / 10 / now,
+                 VEIN_MIN_INTERVAL_MS / 10 / after, VEIN_MAX_INTERVAL_MS / 10 / after);
+        return;
+    }
+    case UpgradeTarget::VEIN_POWER:
+    {
+        uint32_t now = 100 + game.getVeinPowerPercent();
+        snprintf(buf, size, "Frenzy %lus > %lus", VEIN_FRENZY_MS * now / 100000,
+                 VEIN_FRENZY_MS * (now + def.bonusPercent) / 100000);
+        return;
+    }
+    case UpgradeTarget::BUILDING_BOOST:
+    {
+        uint64_t now = game.getBuildingProduction(def.reqBuilding);
+        snprintf(buf, size, "%s %s > %s", BUILDINGS[def.reqBuilding].name, formatPerSecond(now).c_str(),
+                 formatPerSecond(now * 2).c_str());
+        return;
+    }
     }
     buf[0] = '\0';
 }
@@ -332,7 +388,7 @@ void UpgradeScreen::update(unsigned long now)
 
         uint8_t id = visibleIds[i];
         const CategoryStyle &style = styleFor(GOLD_UPGRADES[id].target);
-        slot.setIcon(style.icon);
+        slot.setIcon(iconFor(GOLD_UPGRADES[id]));
         slot.setAccent(style.accent);
 
         if (i == selectedSlot)

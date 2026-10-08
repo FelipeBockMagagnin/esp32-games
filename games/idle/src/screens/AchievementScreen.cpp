@@ -71,6 +71,8 @@ static const uint16_t *iconFor(const AchievementDef &def)
         return image_building_rune_forge_pixels;
     case AchKind::ACHIEVEMENTS:
         return image_award_trophy_pixels;
+    case AchKind::VEINS_CAUGHT:
+        return image_icon_gold_vein_pixels;
     }
     return image_award_trophy_pixels;
 }
