@@ -15,6 +15,22 @@ protected:
     uint16_t bgColor;
     Header *headerElement;
 
+    // Text rebuilds are gated to this interval while animations advance every frame;
+    // input handlers call forceRefresh() to skip the wait
+    unsigned long refreshMs = 100;
+    unsigned long lastRefresh = 0;
+
+    bool refreshDue(unsigned long now)
+    {
+        if (lastRefresh != 0 && now - lastRefresh < refreshMs)
+        {
+            return false;
+        }
+        lastRefresh = now;
+        return true;
+    }
+    void forceRefresh() { lastRefresh = 0; }
+
 public:
     Screen(uint16_t bgColor = Theme::BG);
     virtual ~Screen() = default;

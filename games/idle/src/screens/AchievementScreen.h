@@ -59,7 +59,6 @@ private:
     CombatState &combat;
     SoundManager &sound;
 
-    unsigned long lastRefresh;
     uint8_t lastUnlockedCount;
 
     void updateDetail();

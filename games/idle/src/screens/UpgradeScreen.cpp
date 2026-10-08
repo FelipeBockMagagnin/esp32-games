@@ -2,7 +2,6 @@
 #include "../game/Format.h"
 #include "../game/CombatConfig.h" // ZONES, for the zone an unlock opens
 
-static const unsigned long REFRESH_MS = 100;
 
 static const uint16_t CARD_BORDER = Theme::GOLD_FRAME; // Dark amber, same frame as the other gold cards
 static const uint16_t RATE_COLOR = Theme::GOOD;  // Soft green: income that grows on its own
@@ -113,7 +112,6 @@ UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
 
       game(game),
       sound(sound),
-      lastRefresh(0),
       visibleCount(0),
       availableCount(0),
       selectedSlot(0),
@@ -365,11 +363,10 @@ void UpgradeScreen::refreshDetails()
 
 void UpgradeScreen::update(unsigned long now)
 {
-    if (lastRefresh != 0 && now - lastRefresh < REFRESH_MS)
+    if (!refreshDue(now))
     {
         return;
     }
-    lastRefresh = now;
 
     goldText.setText(formatAmount(game.getGold()));
     goldRate.setText(formatRate(game.getProductionPerSecond()));
@@ -410,7 +407,7 @@ void UpgradeScreen::onUpPress()
     {
         selectedSlot = (selectedSlot == 0) ? (visibleCount - 1) : (selectedSlot - 1);
     }
-    lastRefresh = 0;
+    forceRefresh();
 }
 
 void UpgradeScreen::onDownPress()
@@ -419,7 +416,7 @@ void UpgradeScreen::onDownPress()
     {
         selectedSlot = (selectedSlot + 1) % visibleCount;
     }
-    lastRefresh = 0;
+    forceRefresh();
 }
 
 void UpgradeScreen::onConfirmPress()
@@ -433,5 +430,5 @@ void UpgradeScreen::onConfirmPress()
     {
         sound.playError();
     }
-    lastRefresh = 0;
+    forceRefresh();
 }

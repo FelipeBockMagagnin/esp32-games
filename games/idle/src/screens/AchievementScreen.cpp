@@ -2,7 +2,6 @@
 #include "../game/GameConfig.h"
 #include "../game/Format.h"
 
-static const unsigned long REFRESH_MS = 200; // Nothing here moves fast
 
 static const uint16_t CARD_BORDER = Theme::GOLD_FRAME;   // Dark amber, same frame as the gold cards
 static const uint16_t PANEL_BORDER = Theme::FRAME;  // Dark slate
@@ -104,9 +103,9 @@ AchievementScreen::AchievementScreen(Achievements &achievements, GameState &game
       inventory(inventory),
       combat(combat),
       sound(sound),
-      lastRefresh(0),
       lastUnlockedCount(0)
 {
+    refreshMs = 200; // Nothing here moves fast
     addElement(&header);
     setHeader(&header);
 
@@ -142,14 +141,13 @@ void AchievementScreen::update(unsigned long now)
     if (achievements.getUnlockedCount() != lastUnlockedCount)
     {
         lastUnlockedCount = achievements.getUnlockedCount();
-        lastRefresh = 0;
+        forceRefresh();
     }
 
-    if (lastRefresh != 0 && now - lastRefresh < REFRESH_MS)
+    if (!refreshDue(now))
     {
         return;
     }
-    lastRefresh = now;
 
     char buf[24];
     uint8_t visible = list.getVisibleCount();
@@ -247,13 +245,13 @@ void AchievementScreen::updateDetail()
 void AchievementScreen::onUpPress()
 {
     list.previous();
-    lastRefresh = 0;
+    forceRefresh();
 }
 
 void AchievementScreen::onDownPress()
 {
     list.next();
-    lastRefresh = 0;
+    forceRefresh();
 }
 
 void AchievementScreen::onConfirmPress()
@@ -267,7 +265,7 @@ void AchievementScreen::onConfirmPress()
         {
             list.setSelected(candidate);
             sound.playMenu();
-            lastRefresh = 0;
+            forceRefresh();
             return;
         }
     }

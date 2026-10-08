@@ -45,7 +45,6 @@ private:
 
     GameState &game;
     SoundManager &sound;
-    unsigned long lastRefresh;
 
     bool isRevealed(uint8_t id) const;
     void updateDetail();

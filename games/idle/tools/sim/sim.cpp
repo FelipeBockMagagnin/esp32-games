@@ -267,8 +267,8 @@ static ZoneOutlook outlook(uint8_t z, const Stats &s, bool active)
     for (uint8_t e = 0; e < zone.enemyCount; e++)
     {
         const EnemyDef &en = zone.enemies[e];
-        double autoHit = s.attack > en.defense ? s.attack - en.defense : 0;
-        double strikeHit = s.attack * STRIKE_MULTIPLIER > en.defense ? s.attack * STRIKE_MULTIPLIER - en.defense : 0;
+        double autoHit = damageThrough(s.attack, en.defense);
+        double strikeHit = damageThrough(s.attack * STRIKE_MULTIPLIER, en.defense);
         o.idle = o.idle && autoHit > 0;
         o.strike = o.strike && strikeHit > 0;
         double dps = autoHit / (AUTO_ATTACK_MS / 1000.0) + (active ? strikeHit / (STRIKE_COOLDOWN_MS / 1000.0) : 0);
@@ -278,7 +278,7 @@ static ZoneOutlook outlook(uint8_t z, const Stats &s, bool active)
             continue;
         }
         double fight = en.maxHp / dps;
-        double hurt = en.attack > s.defense ? en.attack - s.defense : 0;
+        double hurt = damageThrough(en.attack, s.defense);
         if (active)
         {
             hurt *= 0.7; // Timed guards

@@ -47,7 +47,6 @@ private:
 
     GameState &game;
     SoundManager &sound;
-    unsigned long lastRefresh;
 
     // Only unlocked, unbought upgrades get a slot, so the grid stays small as the
     // upgrade table grows. selectedSlot indexes this list, not GOLD_UPGRADES.

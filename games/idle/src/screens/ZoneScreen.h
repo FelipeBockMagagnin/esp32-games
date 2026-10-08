@@ -65,7 +65,6 @@ private:
     SoundManager &sound;
     ScreenManager &screens;
 
-    unsigned long lastRefresh;
 
     void refreshRows(const Stats &stats);
     void refreshPanel(const Stats &stats);

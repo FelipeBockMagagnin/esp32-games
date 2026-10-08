@@ -61,7 +61,6 @@ private:
 
     Mode mode;
     EquipSlot inspecting;
-    unsigned long lastRefresh;
     uint32_t lastRevision;
     bool rowsDirty; // Rows only change with the selection or the inventory, not with time
 

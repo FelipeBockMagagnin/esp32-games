@@ -46,7 +46,6 @@ private:
     GameState &game;
     const Unlocks &unlocks;
     SoundManager &sound;
-    unsigned long lastRefresh;
     uint8_t shownTier; // Ore tier the tier-dependent elements were last set for
     bool prompting;    // The next-ore line is showing a prompt or message instead
 

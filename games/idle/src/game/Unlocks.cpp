@@ -186,7 +186,7 @@ void Unlocks::refreshGoal(const GameState &game, const Inventory &inventory, con
     }
 
     case Feature::COMBAT:
-        snprintf(label, size, "Build a Drill to open Zones");
+        snprintf(label, size, "Build a Drill to open Combat");
         goal.done = clampProgress(game.getGold());
         goal.target = clampProgress(game.getBuildingCost(BUILDING_DRILL));
         break;

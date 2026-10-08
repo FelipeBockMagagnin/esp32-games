@@ -12,6 +12,13 @@ static const unsigned long AUTO_ATTACK_MS = 2000;
 static const unsigned long STRIKE_COOLDOWN_MS = 3000;
 static const uint8_t STRIKE_MULTIPLIER = 2; // Manual strike hits this many times as hard
 
+// No floor: an attack that cannot beat the defense does nothing. A floor of 1 would let
+// the auto-attack grind down anything, and gear would stop being the way into a zone.
+inline uint32_t damageThrough(uint32_t attack, uint32_t defense)
+{
+    return attack > defense ? attack - defense : 0;
+}
+
 static const unsigned long GUARD_COOLDOWN_MS = 9000;
 static const unsigned long GUARD_DURATION_MS = 3000;
 static const uint8_t GUARD_DAMAGE_PERCENT = 50; // Incoming damage while guarding

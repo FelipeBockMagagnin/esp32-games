@@ -1,7 +1,6 @@
 #include "InventoryScreen.h"
 #include "../game/CombatConfig.h" // spellForItem
 
-static const unsigned long REFRESH_MS = 100;
 
 static const uint16_t CARD_BORDER = Theme::FRAME;   // Dark slate: the player's side, not the gold cards
 static const uint16_t PANEL_BORDER = Theme::FRAME;
@@ -140,7 +139,6 @@ InventoryScreen::InventoryScreen(GameState &game, Inventory &inventory, SoundMan
       sound(sound),
       mode(SLOT_LIST),
       inspecting(EquipSlot::HELMET),
-      lastRefresh(0),
       lastRevision(0),
       rowsDirty(true)
 {
@@ -190,7 +188,7 @@ void InventoryScreen::enterSlotList()
     list.setCount(EQUIP_SLOT_COUNT);
     list.reset();
     rowsDirty = true;
-    lastRefresh = 0;
+    forceRefresh();
 }
 
 void InventoryScreen::enterItemList(EquipSlot slot)
@@ -202,7 +200,7 @@ void InventoryScreen::enterItemList(EquipSlot slot)
     list.setCount(1 + inventory.countItemsForSlot(slot));
     list.reset();
     rowsDirty = true;
-    lastRefresh = 0;
+    forceRefresh();
 }
 
 void InventoryScreen::refreshRows()
@@ -473,14 +471,13 @@ void InventoryScreen::update(unsigned long now)
             list.setCount(1 + inventory.countItemsForSlot(inspecting));
         }
         rowsDirty = true;
-        lastRefresh = 0;
+        forceRefresh();
     }
 
-    if (lastRefresh != 0 && now - lastRefresh < REFRESH_MS)
+    if (!refreshDue(now))
     {
         return;
     }
-    lastRefresh = now;
 
     if (rowsDirty)
     {
@@ -496,14 +493,14 @@ void InventoryScreen::onUpPress()
 {
     list.previous();
     rowsDirty = true;
-    lastRefresh = 0;
+    forceRefresh();
 }
 
 void InventoryScreen::onDownPress()
 {
     list.next();
     rowsDirty = true;
-    lastRefresh = 0;
+    forceRefresh();
 }
 
 void InventoryScreen::onConfirmPress()

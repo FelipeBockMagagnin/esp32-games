@@ -137,11 +137,7 @@ void CombatState::startFight(unsigned long now)
 
 uint32_t CombatState::damageTo(uint32_t defense, uint8_t multiplier) const
 {
-    uint32_t attack = cachedStats.attack * multiplier;
-    // No floor: an attack that cannot beat the defense does nothing at all. That is what
-    // stops the auto-attack from grinding down anything given enough time, and makes
-    // better gear the only way into a tougher zone.
-    return attack > defense ? attack - defense : 0;
+    return damageThrough(cachedStats.attack * multiplier, defense);
 }
 
 uint32_t CombatState::getAutoAttackDamage() const
@@ -199,8 +195,13 @@ uint32_t CombatState::getEnemyAttackDamage() const
     {
         return 0;
     }
-    uint32_t attack = getEnemy().attack;
-    return attack > cachedStats.defense ? attack - cachedStats.defense : 0;
+    return damageThrough(getEnemy().attack, cachedStats.defense);
+}
+
+uint32_t CombatState::getEnemyHitDamage(unsigned long now) const
+{
+    uint32_t damage = getEnemyAttackDamage();
+    return isGuarding(now) ? damage * GUARD_DAMAGE_PERCENT / 100 : damage;
 }
 
 // Every hit on the enemy goes through here, so the screen hears about each one
@@ -337,12 +338,8 @@ void CombatState::update(unsigned long now)
     {
         enemyAttackAt = now + enemy.attackIntervalMs;
 
-        uint32_t damage = enemy.attack > cachedStats.defense ? enemy.attack - cachedStats.defense : 0;
+        uint32_t damage = getEnemyHitDamage(now);
         bool guarded = isGuarding(now);
-        if (guarded)
-        {
-            damage = damage * GUARD_DAMAGE_PERCENT / 100;
-        }
         if (isWarded(now))
         {
             damage = 0;

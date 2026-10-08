@@ -2,7 +2,6 @@
 #include "../assets/Sprites.h"
 #include "../game/Format.h"
 
-static const unsigned long REFRESH_MS = 100;
 
 // The colors image_Icon31_33_pixels is drawn in (light, mid, dark), which each ore tier's
 // palette replaces. Must stay in step with the asset; copper's row in ORE_TIERS repeats them.
@@ -100,7 +99,6 @@ MiningScreen::MiningScreen(GameState &game, const Unlocks &unlocks, SoundManager
       game(game),
       unlocks(unlocks),
       sound(sound),
-      lastRefresh(0),
       shownTier(0),
       prompting(false),
       seenVeinSpawns(0),
@@ -196,11 +194,10 @@ void MiningScreen::update(unsigned long now)
     refreshVein(now);
     oreDisplay.update(now);
 
-    if (lastRefresh != 0 && now - lastRefresh < REFRESH_MS)
+    if (!refreshDue(now))
     {
         return;
     }
-    lastRefresh = now;
 
     goldLabel.setText(formatAmount(game.getGold()));
 
@@ -297,7 +294,7 @@ void MiningScreen::onConfirmPress()
     {
         sound.playMine();
     }
-    lastRefresh = 0;
+    forceRefresh();
 }
 
 // Catches the vein beside the ore, if one is there, and says what it gave on the line under
@@ -332,5 +329,5 @@ void MiningScreen::onUpPress()
     veinMessage = buf;
     veinMessageColor = Theme::GOLD;
     veinMessageUntil = now + VEIN_MESSAGE_MS;
-    lastRefresh = 0;
+    forceRefresh();
 }

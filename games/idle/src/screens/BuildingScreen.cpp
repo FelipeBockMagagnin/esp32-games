@@ -2,7 +2,6 @@
 #include "../game/Format.h"
 
 // Values change every frame while producing, so only rebuild the texts a few times per second
-static const unsigned long REFRESH_MS = 100;
 
 static const uint16_t CARD_BORDER = Theme::GOLD_FRAME;    // Dark amber, same frame as the Mining gold card
 static const uint16_t RATE_COLOR = Theme::GOOD;     // Soft green: income that grows on its own
@@ -53,8 +52,7 @@ BuildingScreen::BuildingScreen(GameState &game, SoundManager &sound)
       shareBar(PANEL_X + 5, SHARE_Y, PANEL_W - 10, SHARE_H, 0, 100, SHARE_COLOR, SHARE_BG, SHARE_BORDER),
 
       game(game),
-      sound(sound),
-      lastRefresh(0)
+      sound(sound)
 {
     addElement(&header);
     setHeader(&header);
@@ -92,11 +90,10 @@ bool BuildingScreen::isRevealed(uint8_t id) const
 
 void BuildingScreen::update(unsigned long now)
 {
-    if (lastRefresh != 0 && now - lastRefresh < REFRESH_MS)
+    if (!refreshDue(now))
     {
         return;
     }
-    lastRefresh = now;
 
     goldText.setText(formatAmount(game.getGold()));
     goldRate.setText(formatRate(game.getProductionPerSecond()));
@@ -196,13 +193,13 @@ void BuildingScreen::updateDetail()
 void BuildingScreen::onUpPress()
 {
     list.previous();
-    lastRefresh = 0;
+    forceRefresh();
 }
 
 void BuildingScreen::onDownPress()
 {
     list.next();
-    lastRefresh = 0;
+    forceRefresh();
 }
 
 void BuildingScreen::onConfirmPress()
@@ -216,5 +213,5 @@ void BuildingScreen::onConfirmPress()
     {
         sound.playError();
     }
-    lastRefresh = 0;
+    forceRefresh();
 }

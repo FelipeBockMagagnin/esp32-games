@@ -76,6 +76,8 @@ public:
     // What the enemy's next hit would take off, ignoring any active guard. Zero means the
     // player's defense shuts it out entirely.
     uint32_t getEnemyAttackDamage() const;
+    // The same hit with an active guard applied; a ward is left to the caller
+    uint32_t getEnemyHitDamage(unsigned long now) const;
 
     uint16_t getZoneKills(uint8_t zoneId) const;
     uint32_t getTotalKills() const; // Summed from the per-zone counts, so it persists with them

@@ -1,7 +1,6 @@
 #include "ZoneScreen.h"
 #include "../game/Format.h"
 
-static const unsigned long REFRESH_MS = 100;
 
 static const uint16_t CARD_BORDER = Theme::FRAME; // Dark slate, as on the Inventory stats card
 static const uint16_t PANEL_BORDER = Theme::FRAME;
@@ -52,13 +51,6 @@ static const int16_t DROPS_CAPTION_Y = PANEL_Y + 64;
 static const int16_t DROPS_Y = PANEL_Y + 74;
 static const int16_t FIGHT_ROW_Y = PANEL_Y + 94;
 static const int16_t BADGE_OFFSET_Y = (8 - ButtonBadge::SIZE) / 2;
-
-// No floor on damage, as in CombatState::damageTo: an attack that cannot beat the
-// defense does nothing
-static uint32_t damageThrough(uint32_t attack, uint32_t defense)
-{
-    return attack > defense ? attack - defense : 0;
-}
 
 static Reach reachAgainst(const Stats &stats, const EnemyDef &enemy)
 {
@@ -131,8 +123,7 @@ ZoneScreen::ZoneScreen(GameState &game, Inventory &inventory, CombatState &comba
       inventory(inventory),
       combat(combat),
       sound(sound),
-      screens(screens),
-      lastRefresh(0)
+      screens(screens)
 {
     addElement(&header);
     setHeader(&header);
@@ -343,11 +334,10 @@ void ZoneScreen::refreshPanel(const Stats &stats)
 
 void ZoneScreen::update(unsigned long now)
 {
-    if (lastRefresh != 0 && now - lastRefresh < REFRESH_MS)
+    if (!refreshDue(now))
     {
         return;
     }
-    lastRefresh = now;
 
     Stats total = resolvePlayerStats(game, inventory);
     char buf[12];
@@ -365,13 +355,13 @@ void ZoneScreen::update(unsigned long now)
 void ZoneScreen::onUpPress()
 {
     list.previous();
-    lastRefresh = 0;
+    forceRefresh();
 }
 
 void ZoneScreen::onDownPress()
 {
     list.next();
-    lastRefresh = 0;
+    forceRefresh();
 }
 
 void ZoneScreen::onConfirmPress()
@@ -383,7 +373,7 @@ void ZoneScreen::onConfirmPress()
     {
         sound.playMenu();
         screens.nextScreen();
-        lastRefresh = 0;
+        forceRefresh();
         return;
     }
 
@@ -397,5 +387,5 @@ void ZoneScreen::onConfirmPress()
     {
         sound.playError();
     }
-    lastRefresh = 0;
+    forceRefresh();
 }
