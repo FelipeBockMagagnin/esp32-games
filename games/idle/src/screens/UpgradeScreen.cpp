@@ -32,7 +32,7 @@ static const CategoryStyle CATEGORY_STYLES[] = {
     {"HEALTH", Theme::HP, image_upgrade_heart_pixels},          // MAX_HP
     {"NEW ZONE", Theme::EPIC, image_upgrade_map_pixels},        // UNLOCK_ZONE
     {"MINING", Theme::GOLD_BAR, image_upgrade_click_pixels},    // CLICK_PRODUCTION
-    {"BUILDING", Theme::GOOD, image_upgrade_production_pixels}, // BUILDING_BOOST, icon per building
+    {"BUILDING", Theme::INFO, image_upgrade_production_pixels}, // BUILDING_BOOST, icon per building
     {"GOLD VEIN", Theme::GOLD, image_icon_gold_vein_pixels},    // VEIN_FREQUENCY
     {"GOLD VEIN", Theme::GOLD, image_icon_gold_vein_pixels},    // VEIN_POWER
 };
