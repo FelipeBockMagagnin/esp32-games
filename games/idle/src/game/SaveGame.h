@@ -8,17 +8,19 @@
 #include "Achievements.h"
 #include "Unlocks.h"
 
-// Nothing is persisted yet, but every piece of state is already shaped for it: each
-// Snapshot holds only primitives and indices into the constexpr config tables, never a
-// String or a pointer, so the whole blob can go to flash as raw bytes.
+// The whole save is one raw blob in NVS (Preferences). That only works because every
+// Snapshot holds primitives and indices into the constexpr config tables, never a
+// String or a pointer.
 //
-// Adding a field to any Snapshot changes the layout, so bump SAVE_VERSION and have
-// loadGame() reject or migrate anything older.
-static const uint16_t SAVE_VERSION = 3;
+// Adding a field to any Snapshot changes the layout, so bump SAVE_VERSION. Adding a row
+// to a config table changes it too, but `layout` already catches that: a save whose
+// version or layout does not match is ignored and the game starts fresh.
+static const uint16_t SAVE_VERSION = 4;
 
 struct SaveBlob
 {
     uint16_t version;
+    uint32_t layout; // Fingerprint of the table sizes the snapshots were built against
     GameState::Snapshot game;
     Inventory::Snapshot inventory;
     CombatState::Snapshot combat;
@@ -26,18 +28,20 @@ struct SaveBlob
     Unlocks::Snapshot unlocks;
 };
 
-// TODO: implement over Preferences (NVS). Both are no-ops for now, so a boot always
-// starts fresh; the call sites are what this header exists to pin down.
-inline bool saveGame(const SaveBlob &blob)
-{
-    (void)blob;
-    return false;
-}
+// Fills a blob from the live state. Zeroes it first, so padding bytes are stable and the
+// checksum (and the unchanged-save check) only see real data.
+void captureSave(SaveBlob &blob, const GameState &game, const Inventory &inventory,
+                 const CombatState &combat, const Achievements &achievements, const Unlocks &unlocks);
 
-inline bool loadGame(SaveBlob &blob)
-{
-    (void)blob;
-    return false;
-}
+// Restores the live state, in dependency order: combat re-enters its zone, which reads
+// the player's stats from the inventory and the upgrades in the game state.
+void applySave(const SaveBlob &blob, GameState &game, Inventory &inventory, CombatState &combat,
+               Achievements &achievements, Unlocks &unlocks);
+
+// Both return false on any failure; loadGame also rejects a save that is the wrong size,
+// fails its checksum, or has another version or layout, leaving `blob` unusable.
+bool saveGame(const SaveBlob &blob);
+bool loadGame(SaveBlob &blob);
+void eraseSave();
 
 #endif // SAVE_GAME_H

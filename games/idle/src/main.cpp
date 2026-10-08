@@ -9,6 +9,7 @@
 #include "game/Achievements.h"
 #include "game/Unlocks.h"
 #include "game/CombatState.h"
+#include "game/SaveGame.h"
 #include "managers/SoundManager.h"
 #include "screens/InventoryScreen.h"
 #include "screens/MiningScreen.h"
@@ -65,6 +66,81 @@ uint8_t seenUnlocks = 0;
 // Unlock notice the loop last saw, so its sound plays once when it appears
 const char *shownUnlockNotice = nullptr;
 
+// Autosave. Idle gold alone is written once a minute, which keeps NVS wear to years of
+// play; anything the player would hate to lose (a purchase, a drop, an unlock) brings
+// the next save forward to a few seconds away.
+static const unsigned long SAVE_INTERVAL_MS = 60000;
+static const unsigned long SAVE_SOON_MS = 5000;
+SaveBlob saveBuffer;
+SaveBlob lastSaved;
+unsigned long nextSaveAt = 0;
+uint32_t savedMilestones = 0;
+
+// Folds the slow-moving progress counters into one number, so a change in any of them
+// can be noticed without comparing the whole blob every loop
+uint32_t milestoneSignature()
+{
+    uint32_t sig = inventory.getRevision();
+    sig = sig * 31 + game.getTotalBuildingLevels();
+    sig = sig * 31 + game.getUpgradesBoughtCount();
+    sig = sig * 31 + game.getMiningLevel();
+    sig = sig * 31 + achievements.getUnlockedCount();
+    sig = sig * 31 + unlocks.getRevision();
+    sig = sig * 31 + (combat.isInZone() ? combat.getCurrentZone() + 1 : 0);
+    return sig;
+}
+
+void autosave(unsigned long now)
+{
+    uint32_t milestones = milestoneSignature();
+    if (milestones != savedMilestones && (long)(nextSaveAt - (now + SAVE_SOON_MS)) > 0)
+    {
+        nextSaveAt = now + SAVE_SOON_MS;
+    }
+    if ((long)(now - nextSaveAt) < 0)
+    {
+        return;
+    }
+
+    nextSaveAt = now + SAVE_INTERVAL_MS;
+    savedMilestones = milestones;
+    captureSave(saveBuffer, game, inventory, combat, achievements, unlocks);
+    // Nothing moved since the last write (no production yet): spare the flash
+    if (memcmp(&saveBuffer, &lastSaved, sizeof(SaveBlob)) == 0)
+    {
+        return;
+    }
+    if (saveGame(saveBuffer))
+    {
+        lastSaved = saveBuffer;
+    }
+    else
+    {
+        Serial.println("Save failed");
+    }
+}
+
+// Holding Up and Down while the board powers on wipes the save and starts a new game
+void loadOrReset()
+{
+    if (digitalRead(UP_BUTTON_PIN) == LOW && digitalRead(DOWN_BUTTON_PIN) == LOW)
+    {
+        eraseSave();
+        Serial.println("Save erased");
+        return;
+    }
+    if (loadGame(saveBuffer))
+    {
+        applySave(saveBuffer, game, inventory, combat, achievements, unlocks);
+        lastSaved = saveBuffer;
+        Serial.println("Save loaded");
+    }
+    else
+    {
+        Serial.println("No save, starting fresh");
+    }
+}
+
 // Applies the progression to the rotation: a screen stays out of it until its feature opens
 void applyUnlocks()
 {
@@ -91,6 +167,12 @@ void setup()
     downButton.setup();
     leftButton.setup();
     delay(100);
+
+    // Before the screens and counters below take their first look at the state
+    loadOrReset();
+    seenAchievements = achievements.getUnlockedCount();
+    savedMilestones = milestoneSignature();
+    nextSaveAt = millis() + SAVE_INTERVAL_MS;
     
     tft.init();
     tft.setRotation(2);
@@ -192,4 +274,6 @@ void loop()
     }
 
     screenManager.update(now);
+
+    autosave(now);
 }
