@@ -194,7 +194,7 @@ void Unlocks::refreshGoal(const GameState &game, const Inventory &inventory, con
     case Feature::INVENTORY:
         if (combat.isInZone())
         {
-            snprintf(label, size, "Win loot in combat: Inventory");
+            snprintf(label, size, "Drop loot in combat: Inventory");
         }
         else
         {
