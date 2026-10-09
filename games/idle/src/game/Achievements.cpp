@@ -69,8 +69,7 @@ uint64_t Achievements::getProgress(const AchievementDef &def, const GameState &g
         for (uint8_t i = 0; i < ITEM_COUNT; i++)
         {
             const ItemDef &item = ITEMS[i];
-            if (item.tier == def.target && item.slot != EquipSlot::RING && item.slot != EquipSlot::AMULET &&
-                inventory.getItemLevel(i) >= ITEM_MAX_LEVEL)
+            if (item.tier == def.target && isGearSlot(item.slot) && inventory.getItemLevel(i) >= ITEM_MAX_LEVEL)
             {
                 maxed++;
             }

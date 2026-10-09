@@ -46,6 +46,7 @@ public:
     uint32_t getGoldProductionBonusPercent() const;
     uint32_t getClickBonusPercent() const;
     uint32_t getRespawnCutPercent() const; // Uncapped; combat caps it with the achievements' cut
+    uint32_t getRelicPercent(RelicEffect effect) const; // The worn relic's, or 0
 
     // Bumped on every change so screens and combat can notice without polling each item
     uint32_t getRevision() const { return revision; }

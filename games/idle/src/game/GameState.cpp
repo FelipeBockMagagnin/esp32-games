@@ -1,10 +1,12 @@
 #include "GameState.h"
 #include "Inventory.h"
 #include "Achievements.h"
+#include "Ascension.h"
 
-GameState::GameState(Inventory &inventory, Achievements &achievements)
+GameState::GameState(Inventory &inventory, Achievements &achievements, const Ascension &ascension)
     : inventory(inventory),
       achievements(achievements),
+      ascension(ascension),
       gold(0),
       productionRemainder(0),
       miningLevel(1),
@@ -13,6 +15,9 @@ GameState::GameState(Inventory &inventory, Achievements &achievements)
       totalGoldEarned(0),
       started(false),
       lastUpdate(0),
+      seenAscensionRevision(0),
+      lastMineAt(0),
+      comboCount(0),
       veinVisible(false),
       veinAt(0),
       buff(VeinEffect::NONE),
@@ -41,6 +46,13 @@ void GameState::update(unsigned long now)
         return;
     }
 
+    // A Heirloom level bought mid-run hands over its buildings at once
+    if (ascension.getRevision() != seenAscensionRevision)
+    {
+        seenAscensionRevision = ascension.getRevision();
+        applyHeadStart();
+    }
+
     updateVeins(now);
 
     unsigned long elapsed = now - lastUpdate; // Unsigned math survives millis() rollover
@@ -62,21 +74,61 @@ void GameState::update(unsigned long now)
     productionRemainder = scaled % 1000;
 }
 
-uint32_t GameState::mine(bool &leveledUp)
+uint32_t GameState::mine(bool &leveledUp, unsigned long now)
 {
-    uint32_t gained = getClickAmount();
-    creditGold((uint64_t)gained * GOLD_SCALE);
+    bool streak = comboCount > 0 && now - lastMineAt <= COMBO_WINDOW_MS;
+    comboCount = streak ? (comboCount < UINT16_MAX ? comboCount + 1 : comboCount) : 1;
+    lastMineAt = now;
+
+    uint64_t gained = (uint64_t)getClickAmount() * (100 + getComboPercent(now)) / 100;
+    if (gained > UINT32_MAX)
+    {
+        gained = UINT32_MAX;
+    }
+    creditGold(gained * GOLD_SCALE);
     totalClicks++;
 
     leveledUp = false;
-    miningXp += MINE_XP;
+    miningXp += getXpPerClick();
     while (miningXp >= getXpToNextLevel())
     {
         miningXp -= getXpToNextLevel();
         miningLevel++;
         leveledUp = true;
     }
-    return gained;
+    return (uint32_t)gained;
+}
+
+// The combo's bonus on the next click: a step per click in the streak beyond the first,
+// up to the Combo talent's ceiling, gone once the window since the last click has passed
+uint32_t GameState::getComboPercent(unsigned long now) const
+{
+    uint32_t ceiling = ascension.getPercent(TalentEffect::CLICK_COMBO);
+    if (ceiling == 0 || comboCount == 0 || now - lastMineAt > COMBO_WINDOW_MS)
+    {
+        return 0;
+    }
+    uint32_t percent = (comboCount - 1) * COMBO_STEP_PERCENT;
+    return percent < ceiling ? percent : ceiling;
+}
+
+uint32_t GameState::getXpPerClick() const
+{
+    return MINE_XP + ascension.getPercent(TalentEffect::MINING_XP);
+}
+
+// Raises the first buildings to Heirloom's floor; never takes any away
+void GameState::applyHeadStart()
+{
+    uint32_t level = ascension.getPercent(TalentEffect::HEAD_START);
+    for (uint8_t i = 0; i < HEAD_START_BUILDINGS && i < BUILDING_COUNT; i++)
+    {
+        uint16_t floor = HEAD_START_LEVELS[i] * level;
+        if (buildingLevels[i] < floor)
+        {
+            buildingLevels[i] = floor;
+        }
+    }
 }
 
 bool GameState::buyBuilding(uint8_t id)
@@ -98,7 +150,7 @@ bool GameState::buyGoldUpgrade(uint8_t id)
         return false;
     }
 
-    gold -= GOLD_UPGRADES[id].cost * GOLD_SCALE;
+    gold -= getGoldUpgradeCost(id) * GOLD_SCALE;
     goldUpgradesBought[id] = true;
     return true;
 }
@@ -134,9 +186,36 @@ uint64_t GameState::getBaseProductionPerSecond() const
     uint64_t total = 0;
     for (uint8_t i = 0; i < BUILDING_COUNT; i++)
     {
-        total += ((uint64_t)BUILDINGS[i].productionPerLevel << boosts[i]) * buildingLevels[i];
+        total += getBuildingBaseOutput(i, boosts) * buildingLevels[i];
     }
-    return total * (100 + getProductionBonusPercent()) / 100;
+    return applyProductionBonus(total);
+}
+
+// One level's output before the global bonuses: its boosts, then Synergy's share per
+// level of the building before it
+uint64_t GameState::getBuildingBaseOutput(uint8_t id, const uint8_t *boosts) const
+{
+    uint64_t output = (uint64_t)BUILDINGS[id].productionPerLevel << boosts[id];
+    uint32_t synergy = ascension.getPercent(TalentEffect::SYNERGY);
+    if (id > 0 && synergy > 0)
+    {
+        output = output * (100 + synergy * buildingLevels[id - 1]) / 100;
+    }
+    return output;
+}
+
+// The ascension's share multiplies the rest rather than adding to it, so it stays worth
+// as much late in a run, when the upgrades and awards have stacked up, as early on
+uint64_t GameState::applyProductionBonus(uint64_t production) const
+{
+    production = production * (100 + getProductionBonusPercent()) / 100;
+    return production * (100 + getAscensionProductionPercent()) / 100;
+}
+
+uint32_t GameState::getAscensionProductionPercent() const
+{
+    return ascension.getPointsEarned() * ASCEND_PRODUCTION_PER_POINT + ascension.getPercent(TalentEffect::PRODUCTION) +
+           ascension.getPercent(TalentEffect::PRODUCTION_PER_AWARD) * achievements.getUnlockedCount();
 }
 
 // Bought BUILDING_BOOST upgrades per building; each one doubles that building's output
@@ -174,8 +253,9 @@ uint64_t GameState::getBuildingProductionPerLevel(uint8_t id) const
     {
         return 0;
     }
-    return ((uint64_t)BUILDINGS[id].productionPerLevel * getBuildingMultiplier(id)) *
-           (100 + getProductionBonusPercent()) / 100;
+    uint8_t boosts[BUILDING_COUNT];
+    countBoosts(boosts);
+    return applyProductionBonus(getBuildingBaseOutput(id, boosts));
 }
 
 uint32_t GameState::getClickAmount() const
@@ -212,7 +292,8 @@ uint64_t GameState::getBuildingCost(uint8_t id) const
         }
         cost = cost * def.costGrowthPercent / 100;
     }
-    return cost;
+    uint32_t discount = ascension.getPercent(TalentEffect::BUILDING_DISCOUNT);
+    return discount >= 100 ? 0 : cost - cost * discount / 100;
 }
 
 bool GameState::canAffordBuilding(uint8_t id) const
@@ -233,6 +314,11 @@ bool GameState::isGoldUpgradeUnlocked(uint8_t id) const
     }
 
     const GoldUpgradeDef &def = GOLD_UPGRADES[id];
+    // A map Old Maps keeps is never on sale
+    if (def.target == UpgradeTarget::UNLOCK_ZONE && def.bonusPercent <= ascension.getPercent(TalentEffect::KEEP_MAPS))
+    {
+        return false;
+    }
     if (def.reqBuilding != NO_BUILDING_REQ && getBuildingLevel(def.reqBuilding) < def.reqBuildingLevel)
     {
         return false;
@@ -242,7 +328,18 @@ bool GameState::isGoldUpgradeUnlocked(uint8_t id) const
 
 bool GameState::canAffordGoldUpgrade(uint8_t id) const
 {
-    return isGoldUpgradeUnlocked(id) && !goldUpgradesBought[id] && getGold() >= GOLD_UPGRADES[id].cost;
+    return isGoldUpgradeUnlocked(id) && !goldUpgradesBought[id] && getGold() >= getGoldUpgradeCost(id);
+}
+
+uint64_t GameState::getGoldUpgradeCost(uint8_t id) const
+{
+    if (id >= GOLD_UPGRADE_COUNT)
+    {
+        return 0;
+    }
+    uint32_t discount = inventory.getRelicPercent(RelicEffect::UPGRADE_DISCOUNT);
+    uint64_t cost = GOLD_UPGRADES[id].cost;
+    return discount >= 100 ? 0 : cost - cost * discount / 100;
 }
 
 uint32_t GameState::getBonusPercent(UpgradeTarget target) const
@@ -262,12 +359,13 @@ uint32_t GameState::getProductionBonusPercent() const
 {
     return getBonusPercent(UpgradeTarget::PRODUCTION) +
            inventory.getGoldProductionBonusPercent() +
-           achievements.getProductionBonusPercent();
+           achievements.getProductionBonusPercent() * (100 + inventory.getRelicPercent(RelicEffect::AWARD_BOOST)) / 100;
 }
 
 uint32_t GameState::getClickBonusPercent() const
 {
-    return getBonusPercent(UpgradeTarget::CLICK) + inventory.getClickBonusPercent();
+    return getBonusPercent(UpgradeTarget::CLICK) + inventory.getClickBonusPercent() +
+           ascension.getPercent(TalentEffect::CLICK);
 }
 
 uint32_t GameState::getClickProductionPercent() const
@@ -277,12 +375,12 @@ uint32_t GameState::getClickProductionPercent() const
 
 uint32_t GameState::getVeinFrequencyPercent() const
 {
-    return getBonusPercent(UpgradeTarget::VEIN_FREQUENCY);
+    return getBonusPercent(UpgradeTarget::VEIN_FREQUENCY) + ascension.getPercent(TalentEffect::VEIN_FREQUENCY);
 }
 
 uint32_t GameState::getVeinPowerPercent() const
 {
-    return getBonusPercent(UpgradeTarget::VEIN_POWER);
+    return getBonusPercent(UpgradeTarget::VEIN_POWER) + ascension.getPercent(TalentEffect::VEIN_POWER);
 }
 
 static bool veinReached(unsigned long now, unsigned long deadline)
@@ -316,7 +414,7 @@ void GameState::updateVeins(unsigned long now)
     else if (veinReached(now, veinAt))
     {
         veinVisible = true;
-        veinAt = now + VEIN_VISIBLE_MS;
+        veinAt = now + VEIN_VISIBLE_MS + ascension.getPercent(TalentEffect::VEIN_LINGER) * 1000UL;
         veinSpawns++;
     }
 }
@@ -365,21 +463,27 @@ VeinEffect GameState::catchVein(unsigned long now)
 
 uint32_t GameState::getAttackBonusPercent() const
 {
-    return getBonusPercent(UpgradeTarget::ATTACK) + achievements.getRewardPercent(AchReward::ATTACK_DEFENSE);
+    return getBonusPercent(UpgradeTarget::ATTACK) + achievements.getRewardPercent(AchReward::ATTACK_DEFENSE) +
+           ascension.getPercent(TalentEffect::ATTACK_DEFENSE);
 }
 
 uint32_t GameState::getDefenseBonusPercent() const
 {
-    return getBonusPercent(UpgradeTarget::DEFENSE) + achievements.getRewardPercent(AchReward::ATTACK_DEFENSE);
+    return getBonusPercent(UpgradeTarget::DEFENSE) + achievements.getRewardPercent(AchReward::ATTACK_DEFENSE) +
+           ascension.getPercent(TalentEffect::ATTACK_DEFENSE);
 }
 
 uint32_t GameState::getMaxHpBonusPercent() const
 {
-    return getBonusPercent(UpgradeTarget::MAX_HP);
+    return getBonusPercent(UpgradeTarget::MAX_HP) + ascension.getPercent(TalentEffect::MAX_HP);
 }
 
 bool GameState::isZoneUnlockedByUpgrade(uint8_t zoneId) const
 {
+    if (zoneId <= ascension.getPercent(TalentEffect::KEEP_MAPS))
+    {
+        return true;
+    }
     // UNLOCK_ZONE upgrades carry the zone index in bonusPercent instead of a percentage
     for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
     {
@@ -463,6 +567,8 @@ void GameState::load(const Snapshot &in)
     {
         goldUpgradesBought[i] = in.goldUpgradesBought[i];
     }
+
+    applyHeadStart();
 
     // Force update() to re-baseline its clock instead of crediting the gap since boot
     started = false;

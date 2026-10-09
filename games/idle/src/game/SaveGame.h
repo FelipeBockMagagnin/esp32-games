@@ -7,6 +7,7 @@
 #include "CombatState.h"
 #include "Achievements.h"
 #include "Unlocks.h"
+#include "Ascension.h"
 
 // The whole save is one raw blob in NVS (Preferences). That only works because every
 // Snapshot holds primitives and indices into the constexpr config tables, never a
@@ -15,7 +16,7 @@
 // Adding a field to any Snapshot changes the layout, so bump SAVE_VERSION. Adding a row
 // to a config table changes it too, but `layout` already catches that: a save whose
 // version or layout does not match is ignored and the game starts fresh.
-static const uint16_t SAVE_VERSION = 5;
+static const uint16_t SAVE_VERSION = 7;
 
 struct SaveBlob
 {
@@ -26,17 +27,24 @@ struct SaveBlob
     CombatState::Snapshot combat;
     Achievements::Snapshot achievements;
     Unlocks::Snapshot unlocks;
+    Ascension::Snapshot ascension;
 };
 
 // Fills a blob from the live state. Zeroes it first, so padding bytes are stable and the
 // checksum (and the unchanged-save check) only see real data.
 void captureSave(SaveBlob &blob, const GameState &game, const Inventory &inventory,
-                 const CombatState &combat, const Achievements &achievements, const Unlocks &unlocks);
+                 const CombatState &combat, const Achievements &achievements, const Unlocks &unlocks,
+                 const Ascension &ascension);
+
+// Turns a captured save into the start of the next run: the gold, buildings, upgrades,
+// mining and zone progress go back to a new game's, while the items, awards, opened
+// screens and the ascension stay. Loading a zeroed snapshot is how a new game starts.
+void clearRun(SaveBlob &blob);
 
 // Restores the live state, in dependency order: combat re-enters its zone, which reads
 // the player's stats from the inventory and the upgrades in the game state.
 void applySave(const SaveBlob &blob, GameState &game, Inventory &inventory, CombatState &combat,
-               Achievements &achievements, Unlocks &unlocks);
+               Achievements &achievements, Unlocks &unlocks, Ascension &ascension);
 
 // Both return false on any failure; loadGame also rejects a save that is the wrong size,
 // fails its checksum, or has another version or layout, leaving `blob` unusable.

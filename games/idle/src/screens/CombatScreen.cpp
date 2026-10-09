@@ -67,6 +67,7 @@ CombatScreen::CombatScreen(CombatState &combat, SoundManager &sound)
       seenDrops(0),
       seenHits(0),
       seenHurts(0),
+      seenSecondWinds(0),
       messageUntil(0),
       enemyHitUntil(0),
       playerHitUntil(0),
@@ -99,6 +100,7 @@ void CombatScreen::onEnter(TFT_eSPI &tft)
     seenDrops = combat.getDropEvents();
     seenHits = combat.getHitEvents();
     seenHurts = combat.getHurtEvents();
+    seenSecondWinds = combat.getSecondWindEvents();
     messageUntil = 0;
     enemyHitUntil = 0;
     playerHitUntil = 0;
@@ -153,6 +155,13 @@ void CombatScreen::handleEvents(unsigned long now)
         playerHitUntil = now + HIT_TEXT_MS;
         playerFlashUntil = now + HURT_FLASH_MS;
         sound.playHurt();
+    }
+
+    if (combat.getSecondWindEvents() != seenSecondWinds)
+    {
+        seenSecondWinds = combat.getSecondWindEvents();
+        showMessage(now, "Second Wind!", Theme::HP, KILL_MESSAGE_MS);
+        sound.playLevelUp();
     }
 
     bool killed = combat.getKillEvents() != seenKills;

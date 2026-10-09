@@ -16,6 +16,7 @@ enum class EquipSlot : uint8_t
     SHIELD,
     RING,
     AMULET,
+    RELIC,
     COUNT
 };
 
@@ -25,13 +26,29 @@ static constexpr uint8_t EQUIP_SLOT_COUNT = (uint8_t)EquipSlot::COUNT;
 static const int8_t NO_ITEM = -1;
 
 static const char *const EQUIP_SLOT_NAMES[EQUIP_SLOT_COUNT] = {
-    "Helmet", "Body", "Pants", "Boots", "Gloves", "Sword", "Shield", "Ring", "Amulet"};
+    "Helmet", "Body", "Pants", "Boots", "Gloves", "Sword", "Shield", "Ring", "Amulet", "Relic"};
 
 // Item tiers, worst to best within a slot. The name color follows the familiar RPG
 // rarity scheme, so a better drop stands out in a list before its stats are read.
-static const uint8_t ITEM_TIER_COUNT = 4;
-static const char *const ITEM_TIER_NAMES[ITEM_TIER_COUNT] = {"Common", "Uncommon", "Rare", "Epic"};
-static const uint16_t ITEM_TIER_COLORS[ITEM_TIER_COUNT] = {0xBD52, 0x8E4D, 0x7D5A, 0xC45B}; // Theme TEXT_2, GOOD, DEFENSE, EPIC
+// Mythic gear drops only past the Molten Core, in the zones Deep Delver opens; relics are
+// a tier of their own, outside the gear ladder.
+static const uint8_t ITEM_TIER_COUNT = 6;
+static const uint8_t MYTHIC_TIER = 4;
+static const uint8_t RELIC_TIER = 5;
+static const char *const ITEM_TIER_NAMES[ITEM_TIER_COUNT] = {"Common", "Uncommon", "Rare", "Epic", "Mythic", "Relic"};
+static const uint16_t ITEM_TIER_COLORS[ITEM_TIER_COUNT] = {0xBD52, 0x8E4D, 0x7D5A, 0xC45B, 0xF443, 0xF5A8}; // Theme TEXT_2, GOOD, DEFENSE, EPIC, MYTHIC, GOLD
+
+// What the worn relic does, as relicPercent of it scaled by the relic's level like a stat.
+// Relics drop only once the Relic Sense talent has a level per relic, in table order.
+enum class RelicEffect : uint8_t
+{
+    NONE,
+    UPGRADE_DISCOUNT, // Gold upgrades cost less
+    COOLDOWN_CUT,     // Strike and guard come back sooner
+    AWARD_BOOST,      // The awards' gold production bonus grows by this share
+    HP_REGEN,         // Tenths of a percent of max HP regained per second
+    COUNT
+};
 
 // A duplicate drop levels an item up instead of stacking, adding this much of its
 // base stats per level above 1. The cap keeps a maxed item (+135%) below the next
@@ -63,6 +80,8 @@ struct ItemDef
     // Cut to the wait between enemies; flat, not levelled. Only a few rings and amulets
     // carry it, so it is left off the other rows and zero-initializes.
     uint8_t respawnCutPercent;
+    RelicEffect relic;
+    uint16_t relicPercent; // At level 1; levels scale it like a stat
 };
 
 // Caps the summed cut of items and achievements, so the next enemy always takes a moment
@@ -83,7 +102,10 @@ enum ItemId : uint8_t
     ITEM_DULL_STICK, ITEM_GOOD_STICK, ITEM_GREAT_STICK, ITEM_RUNE_BLADE,
     ITEM_WOOD_SHIELD, ITEM_IRON_SHIELD, ITEM_STEEL_GUARD, ITEM_RUNE_AEGIS,
     ITEM_TIN_RING, ITEM_GOLD_RING, ITEM_RUBY_RING, ITEM_MINER_RING,
-    ITEM_WILSON, ITEM_JADE_AMULET, ITEM_GOLD_AMULET, ITEM_CORE_SIGIL
+    ITEM_WILSON, ITEM_JADE_AMULET, ITEM_GOLD_AMULET, ITEM_CORE_SIGIL,
+    ITEM_EMBER_HELM, ITEM_EMBER_MAIL, ITEM_EMBER_LEGS, ITEM_EMBER_BOOTS, ITEM_EMBER_GRIPS,
+    ITEM_EMBER_BLADE, ITEM_EMBER_GUARD, ITEM_EMBER_RING, ITEM_EMBER_CHARM,
+    ITEM_TRADER_COIN, ITEM_TIME_CANDLE, ITEM_ELDER_BONE, ITEM_GOLEM_HEART
 };
 
 static constexpr ItemDef ITEMS[] = {
@@ -132,10 +154,42 @@ static constexpr ItemDef ITEMS[] = {
     {"Jade Amulet", EquipSlot::AMULET,    0,   6,   0,   0,   15,    0,      1,     ICON(image_item_jade_amulet_pixels)},
     {"Gold Amulet", EquipSlot::AMULET,    0,   18,  0,   0,   40,    0,      2,     ICON(image_item_gold_amulet_pixels), 20},
     {"Core Sigil",  EquipSlot::AMULET,    0,   54,  0,   0,   100,   0,      3,     ICON(image_item_core_sigil_pixels)},
+
+    // Mythic: three times the Epic piece of the slot, as each tier is of the one before
+    {"Ember Helm",  EquipSlot::HELMET,    0,   162, 405, 0,   0,     0,      4,     ICON(image_icon_ember_helm_pixels)},
+    {"Ember Mail",  EquipSlot::BODY,      0,   324, 810, 243, 0,     0,      4,     ICON(image_icon_ember_mail_pixels)},
+    {"Ember Legs",  EquipSlot::PANTS,     0,   243, 486, 0,   0,     0,      4,     ICON(image_icon_ember_legs_pixels)},
+    {"Ember Boots", EquipSlot::BOOTS,     0,   162, 324, 0,   0,     0,      4,     ICON(image_icon_ember_boots_pixels)},
+    {"Ember Grips", EquipSlot::GLOVES,    81,  81,  0,   0,   0,     0,      4,     ICON(image_icon_ember_grips_pixels)},
+    {"Ember Blade", EquipSlot::SWORD,     405, 0,   0,   0,   0,     0,      4,     ICON(image_icon_ember_blade_pixels)},
+    {"Ember Guard", EquipSlot::SHIELD,    0,   405, 405, 0,   0,     0,      4,     ICON(image_icon_ember_guard_pixels)},
+    {"Ember Ring",  EquipSlot::RING,      162, 0,   0,   0,   0,     250,    4,     ICON(image_icon_ember_ring_pixels), 30},
+    {"Ember Charm", EquipSlot::AMULET,    0,   162, 0,   0,   250,   0,      4,     ICON(image_icon_ember_charm_pixels)},
+
+    //  name           slot                  atk  def  hp   rgn  prod%  click%  tier  icon                                       cut  relic                          %
+    {"Trader Coin", EquipSlot::RELIC,     0,   0,   0,   0,   0,     0,      5,     ICON(image_icon_trader_coin_pixels),     0,   RelicEffect::UPGRADE_DISCOUNT, 10},
+    {"Time Candle", EquipSlot::RELIC,     0,   0,   0,   0,   0,     0,      5,     ICON(image_icon_time_candle_pixels),       0,   RelicEffect::COOLDOWN_CUT,     15},
+    {"Elder Bone",  EquipSlot::RELIC,     0,   0,   0,   0,   0,     0,      5,     ICON(image_icon_elder_bone_pixels),     0,   RelicEffect::AWARD_BOOST,      20},
+    {"Golem Heart", EquipSlot::RELIC,     0,   0,   0,   0,   0,     0,      5,     ICON(image_icon_golem_heart_pixels),       0,   RelicEffect::HP_REGEN,         4},
 };
 static constexpr uint8_t ITEM_COUNT = sizeof(ITEMS) / sizeof(ITEMS[0]);
 
 #undef ICON
+
+// 1 for the first relic in the table, 2 for the next...; 0 for anything else
+inline uint8_t relicRank(uint8_t itemId)
+{
+    if (itemId >= ITEM_COUNT || ITEMS[itemId].slot != EquipSlot::RELIC)
+    {
+        return 0;
+    }
+    uint8_t rank = 1;
+    for (uint8_t i = 0; i < itemId; i++)
+    {
+        rank += ITEMS[i].slot == EquipSlot::RELIC;
+    }
+    return rank;
+}
 
 // Level 1 gives the base value; every level after adds ITEM_LEVEL_GROWTH_PERCENT of it
 inline uint32_t scaleItemStat(uint16_t base, uint8_t level)

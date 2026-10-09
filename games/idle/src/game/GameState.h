@@ -6,6 +6,7 @@
 
 class Inventory;
 class Achievements;
+class Ascension;
 
 // Owns all game progress. Updated every loop regardless of the visible screen;
 // screens only read from it and call its actions.
@@ -27,17 +28,21 @@ public:
         uint32_t veinsCaught;
     };
 
-    GameState(Inventory &inventory, Achievements &achievements);
+    GameState(Inventory &inventory, Achievements &achievements, const Ascension &ascension);
 
     // Advances automatic production up to `now` (millis)
     void update(unsigned long now);
 
     // Actions
-    uint32_t mine(bool &leveledUp); // Returns the gold gained (whole units); leveledUp is set on a level-up
+    // Returns the gold gained (whole units); leveledUp is set on a level-up
+    uint32_t mine(bool &leveledUp, unsigned long now);
+    uint32_t getComboPercent(unsigned long now) const; // Bonus the next click would get
+    uint32_t getXpPerClick() const;
     bool buyBuilding(uint8_t id);
     bool buyGoldUpgrade(uint8_t id);
     void addGold(uint64_t amount); // Whole units; used by combat rewards
     const Achievements &getAchievements() const { return achievements; }
+    const Ascension &getAscension() const { return ascension; }
 
     // Gold
     uint64_t getGold() const; // Whole units
@@ -57,9 +62,12 @@ public:
     bool isGoldUpgradeBought(uint8_t id) const;
     bool isGoldUpgradeUnlocked(uint8_t id) const; // Requirements met, so the shop may show it
     bool canAffordGoldUpgrade(uint8_t id) const;
+    uint64_t getGoldUpgradeCost(uint8_t id) const; // Whole units, after the worn relic's discount
     // Production folds in equipped items and unlocked achievements, click folds in items,
     // so gear and milestones both feed the economy
     uint32_t getProductionBonusPercent() const;
+    // Points earned and production talents, applied on top of the bonus above
+    uint32_t getAscensionProductionPercent() const;
     uint32_t getClickBonusPercent() const;
     // Share of production per second that every click adds on top (CLICK_PRODUCTION
     // upgrades), which keeps clicking worth it once buildings dwarf the ore's own value
@@ -105,12 +113,16 @@ private:
     uint32_t getBonusPercent(UpgradeTarget target) const;
     void countBoosts(uint8_t *boosts) const; // BUILDING_COUNT entries
     uint64_t getBaseProductionPerSecond() const; // Without a vein's frenzy
+    uint64_t applyProductionBonus(uint64_t production) const;
+    uint64_t getBuildingBaseOutput(uint8_t id, const uint8_t *boosts) const;
+    void applyHeadStart();
     void updateVeins(unsigned long now);
     void scheduleVein(unsigned long now);
     void creditGold(uint64_t scaledAmount); // Single place where gold comes in
 
     Inventory &inventory;
     Achievements &achievements;
+    const Ascension &ascension;
 
     uint64_t gold;                // GOLD_SCALE units
     uint32_t productionRemainder; // Leftover (units * ms) below one GOLD_SCALE step
@@ -125,6 +137,10 @@ private:
 
     bool started;
     unsigned long lastUpdate;
+    uint32_t seenAscensionRevision;
+
+    unsigned long lastMineAt;
+    uint16_t comboCount; // Clicks in the current streak, runtime only
 
     bool veinVisible;
     unsigned long veinAt; // Next vein while none is up, else when the visible one goes

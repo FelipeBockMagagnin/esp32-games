@@ -17,10 +17,10 @@ An idle/clicker game for an ESP32 with a 240x320 ILI9341 SPI display, five push 
 ```bash
 pio run                       # Build
 pio run -t upload -t monitor  # Flash and open the serial monitor (115200)
-tools/sim/run.sh [--days 3] [--seed 1] [--session 5] [--cps 3] [--log]
+tools/sim/run.sh [--days 3] [--seed 1] [--session 5] [--cps 3] [--runs 1] [--log]
 ```
 
-There are no tests. The **balance simulator** compiles the real `src/game/` for the PC (against `tools/sim/stub/Arduino.h`) and plays a scripted player (active 30 min, then a 5-minute check-in every waking hour, asleep 00:00-08:00), printing each building's first purchase and each zone's unlock and self-farming point. **Rerun it after touching any table** in `GameConfig.h`, `ItemConfig.h` or `CombatConfig.h`; the timing numbers in their comments come from it. For a pure refactor, diffing its output against the previous commit with the same `--seed` proves behaviour did not change.
+There are no tests. The **balance simulator** compiles the real `src/game/` for the PC (against `tools/sim/stub/Arduino.h`) and plays a scripted player (active 30 min, then a 5-minute check-in every waking hour, asleep 00:00-08:00), printing each building's first purchase and each zone's unlock and self-farming point. `--runs N` ascends at the end of each `--days` run and spends the points, to measure later runs. **Rerun it after touching any table** in `GameConfig.h`, `ItemConfig.h`, `CombatConfig.h` or `AscensionConfig.h`; the timing numbers in their comments come from it. For a pure refactor, diffing its output against the previous commit with the same `--seed` proves behaviour did not change.
 
 ## Hardware
 
@@ -36,10 +36,10 @@ There are no tests. The **balance simulator** compiles the real `src/game/` for 
 
 Elapsed time uses unsigned subtraction (`now - last`), deadlines a signed difference (`(long)(now - deadline) >= 0`), so both survive `millis()` rollover. Deadlines are pushed from `now` (`deadline = now + interval`), never accumulated, to avoid catch-up bursts.
 
-**Global declaration order matters:** `Achievements`/`Unlocks`/`Inventory` → `GameState` → `CombatState`, since each holds references to the earlier ones.
+**Global declaration order matters:** `Achievements`/`Unlocks`/`Inventory`/`Ascension` → `GameState` → `CombatState`, since each holds references to the earlier ones.
 
 ### Screens
-`ScreenManager` cycles through screens in `addScreen()` order: Mining → Buildings → Upgrade → Awards → Zones → Combat → Inventory. All but Mining start locked; `src/game/Unlocks.h` opens them one at a time and `applyUnlocks()` in `main.cpp` maps features to screens. Zones and Combat must unlock together (entering a zone jumps to the next screen).
+`ScreenManager` cycles through screens in `addScreen()` order: Mining → Buildings → Upgrade → Awards → Zones → Combat → Inventory → Ascend. All but Mining start locked; `src/game/Unlocks.h` opens them one at a time and `applyUnlocks()` in `main.cpp` maps features to screens. Zones and Combat must unlock together (entering a zone jumps to the next screen).
 
 Header nav labels are computed from the nearest *unlocked* neighbours. The size-2 title and size-1 labels share a 28px bar, so **nav names stay at 9 chars or less** (hence "Awards").
 
@@ -52,7 +52,7 @@ Only the visible screen updates, so screens that react to background events diff
 
 A big screen can group elements into a plain class with `addTo(Screen &)`/`setVisible`/`refresh` (`src/screens/combat/EnemyPanel`, `ActionPanel`). `addTo` order still decides render order.
 
-**Modals:** `ScreenManager::openModal(screen)` shows a screen outside the rotation (`ResetScreen`) until `closeModal()`. Meanwhile `getCurrentScreen()` returns it, so update, input and notices go to it, and Right/Left navigation is suppressed. Closing re-enters the screen underneath, which repaints it whole.
+**Modals:** `ScreenManager::openModal(screen)` shows a screen outside the rotation (the `ConfirmScreen`s for reset and ascend) until `closeModal()`. Meanwhile `getCurrentScreen()` returns it, so update, input and notices go to it, and Right/Left navigation is suppressed. Closing re-enters the screen underneath, which repaints it whole.
 
 **Notifications go through the `Header`:** the main loop calls `getCurrentScreen()->applyNotice(...)` with achievements (gold) or screen unlocks (cyan, waits for an achievement notice), and the header paints it over its whole bar.
 
@@ -72,7 +72,8 @@ A big screen can group elements into a plain class with `addTo(Screen &)`/`setVi
 - **`GameState`** — gold (fixed-point thousandths, `GOLD_SCALE`; `uint64_t` production), buildings, upgrades, mining level, gold veins. Every income path goes through `creditGold()` so lifetime totals cannot drift. Display numbers only through `src/game/Format.h`.
 - **`Inventory`** — one byte per item (0 = not owned, else level; duplicates level up) plus the equipped item per slot.
 - **`CombatState`** — current zone, HP, cooldowns, kills, drops, spells.
-- **`Achievements`** and **`Unlocks`** hold **no references**: they take the other states as `evaluate()` arguments, which avoids a dependency cycle with `GameState`.
+- **`Ascension`** — what survives an ascension besides awards and items: the past runs' gold (points are `cbrt` of the lifetime total, see `AscensionConfig.h`) and the talent levels. Its production share multiplies the other production bonuses (`GameState::applyProductionBonus`).
+- **`Achievements`**, **`Unlocks`** and **`Ascension`** hold **no references**: they take the other states as `evaluate()` arguments, which avoids a dependency cycle with `GameState`.
 - **`Stats.h`** `resolvePlayerStats()` is the single source of the player's attack/defense/HP.
 
 ### Combat balance
@@ -87,13 +88,16 @@ Enemy tables are tuned so **a zone's defense sits at 1.2-1.4x the attack the pla
 
 **Snapshots stay POD: primitives and indices into the config tables, never a `String` or pointer.** Adding a field means bumping `SAVE_VERSION`; adding a table row is caught by the `layout` fingerprint. A mismatched save is discarded, with no migration.
 
-Reset: hold Up + Down while powering on, or for 3 s in game (`checkResetGesture()`), which opens `ResetScreen`; Yes erases the save and calls `ESP.restart()`.
+Reset: hold Up + Down while powering on, or for 3 s in game (`checkResetGesture()`), which opens the reset `ConfirmScreen`; Yes erases the save and calls `ESP.restart()`.
+
+Ascend does not reset objects in place: `ascendGame()` banks the points, captures the save, `clearRun()` zeroes the game and combat snapshots (a zeroed snapshot is a new game) and restarts into it, so the next run begins exactly like a boot. Inventory, awards, unlocked screens and the ascension are kept.
 
 ### Content is table-driven
 Adding content is adding a row to a `static constexpr` table (`*_COUNT` derived via `sizeof`):
 - **`GameConfig.h`** — `ORE_TIERS`, `BUILDINGS`, `GOLD_UPGRADES`. Upgrade prices use `AT(building, factor)` so retuning buildings carries the shop along. `BUILDING_BOOSTS` generates five doubling upgrades per building. For `UNLOCK_ZONE` upgrades, `bonusPercent` is the **zone index**.
-- **`ItemConfig.h`** — `EquipSlot`, `ITEMS`, `ItemId`.
-- **`CombatConfig.h`** — pacing constants, `ZONES`, enemies and drop tables (chance in basis points), `SPELLS`. **Enemy `defense` is the difficulty dial.**
+- **`ItemConfig.h`** — `EquipSlot`, `ITEMS`, `ItemId`. Tiers 0-4 are the gear ladder (each 3x the last; Mythic drops only in the Deep Delver zones); tier 5 is relics, worn in the `RELIC` slot, each with one `RelicEffect`, and dropping only once Relic Sense has a level per relic, in table order (`relicRank`, `CombatState::canDrop`).
+- **`CombatConfig.h`** — pacing constants, `ZONES`, enemies and drop tables (chance in basis points), `SPELLS`. Zones past the Molten Core set `reqDelveLevel` instead of needing a map. **Enemy `defense` is the difficulty dial.**
+- **`AscensionConfig.h`** — `TALENTS`, the talent tree: each row names its `parent` (a `TalentId`), which must come earlier in the table; `TalentId` must stay in table order. Most effects are percentages (`Ascension::getPercent`); the mechanic ones (combo, Heirloom, Second Wind, Old Maps, Deep Delver...) read a per-level value or `getEffectLevel`. A new `TalentEffect` needs a row in `AscendScreen`'s `EFFECT_STYLES` and a place that applies it.
 - **`AchievementConfig.h`** — `ACHIEVEMENTS`; a new `AchKind` needs a `case` in `Achievements::getProgress` and in `iconFor` (`AchievementScreen.cpp`).
 
 **`BuildingId` and `ItemId` must stay in the same order as their tables**, and so must `UpgradeScreen`'s `CATEGORY_STYLES` with `UpgradeTarget`. Name length limits are in the per-field comments of each table.

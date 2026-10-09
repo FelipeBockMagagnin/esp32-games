@@ -86,7 +86,7 @@ void ActionPanel::setVisible(bool visible)
 
 void ActionPanel::refresh(unsigned long now, bool fighting)
 {
-    refreshCooldown(actions[STRIKE], combat.getStrikeCooldownRemaining(now), STRIKE_COOLDOWN_MS,
+    refreshCooldown(actions[STRIKE], combat.getStrikeCooldownRemaining(now), combat.getStrikeCooldownMs(),
                     combat.getStrikeDamage(), fighting);
     refreshSpell(now, fighting);
     refreshGuard(now, fighting);
@@ -138,7 +138,7 @@ void ActionPanel::refreshGuard(unsigned long now, bool fighting)
     // The cooldown runs from the press, but the ring drains over the guard and only then
     // fills over what is left of it
     unsigned long duration = combat.getGuardDurationMs();
-    unsigned long recovery = GUARD_COOLDOWN_MS - duration;
+    unsigned long recovery = combat.getGuardCooldownMs() - duration;
     if (guarding)
     {
         guard.ring.setProgress((uint16_t)(up * 1000 / duration));

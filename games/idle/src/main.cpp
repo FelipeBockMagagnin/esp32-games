@@ -9,6 +9,7 @@
 #include "game/Achievements.h"
 #include "game/Unlocks.h"
 #include "game/CombatState.h"
+#include "game/Ascension.h"
 #include "game/SaveGame.h"
 #include "managers/SoundManager.h"
 #include "screens/InventoryScreen.h"
@@ -18,7 +19,8 @@
 #include "screens/UpgradeScreen.h"
 #include "screens/ZoneScreen.h"
 #include "screens/AchievementScreen.h"
-#include "screens/ResetScreen.h"
+#include "screens/AscendScreen.h"
+#include "screens/ConfirmScreen.h"
 
 // Screen Dimensions
 #define SCREEN_WIDTH 240
@@ -40,12 +42,13 @@ Button upButton = Button(UP_BUTTON_PIN);
 Button downButton = Button(DOWN_BUTTON_PIN);
 Button leftButton = Button(LEFT_BUTTON_PIN);
 
-// Declared before GameState, which reads both for its gold bonuses. Globals in one
+// Declared before GameState, which reads them for its bonuses. Globals in one
 // translation unit initialize in declaration order, so the order here matters.
 Achievements achievements;
 Unlocks unlocks;
 Inventory inventory;
-GameState game(inventory, achievements);
+Ascension ascension;
+GameState game(inventory, achievements, ascension);
 CombatState combat(game, inventory);
 SoundManager sound(BUZZER_PIN);
 ScreenManager screenManager(tft);
@@ -57,8 +60,17 @@ BuildingScreen buildingScreen(game, sound);
 UpgradeScreen upgradeScreen(game, sound);
 ZoneScreen zoneScreen(game, inventory, combat, sound, screenManager);
 AchievementScreen achievementScreen(achievements, game, inventory, combat, sound);
-// Not in the rotation: opened as a modal by holding Up and Down (see checkResetGesture)
-ResetScreen resetScreen(screenManager, sound);
+
+// Not in the rotation: modals, the first opened by holding Up and Down (see checkResetGesture)
+void resetGame();
+void ascendGame();
+ConfirmScreen resetScreen({"Reset", "Reset game?", "All progress will be lost,", "ascension and awards too.",
+                           "Erase the save and restart", "Resetting..."},
+                          Theme::BAD, resetGame, screenManager, sound);
+ConfirmScreen ascendConfirm({"Ascend", "Ascend now?", "Gold, buildings and upgrades reset.",
+                            "Awards, items and talents stay.", "Restart with the points", "Ascending..."},
+                           Theme::EPIC, ascendGame, screenManager, sound);
+AscendScreen ascendScreen(game, ascension, sound, screenManager, ascendConfirm);
 
 static const uint16_t UNLOCK_ACCENT = Theme::INFO; // Cyan, so a new screen never reads as an achievement
 
@@ -89,6 +101,7 @@ uint32_t milestoneSignature()
     sig = sig * 31 + game.getMiningLevel();
     sig = sig * 31 + achievements.getUnlockedCount();
     sig = sig * 31 + unlocks.getRevision();
+    sig = sig * 31 + ascension.getRevision();
     sig = sig * 31 + (combat.isInZone() ? combat.getCurrentZone() + 1 : 0);
     return sig;
 }
@@ -107,7 +120,7 @@ void autosave(unsigned long now)
 
     nextSaveAt = now + SAVE_INTERVAL_MS;
     savedMilestones = milestones;
-    captureSave(saveBuffer, game, inventory, combat, achievements, unlocks);
+    captureSave(saveBuffer, game, inventory, combat, achievements, unlocks, ascension);
     // Nothing moved since the last write (no production yet): spare the flash
     if (memcmp(&saveBuffer, &lastSaved, sizeof(SaveBlob)) == 0)
     {
@@ -121,6 +134,29 @@ void autosave(unsigned long now)
     {
         Serial.println("Save failed");
     }
+}
+
+void resetGame()
+{
+    eraseSave();
+    ESP.restart();
+}
+
+// The next run starts from a save rather than by resetting every object in place, so it
+// begins exactly like a boot does. A failed write restarts into the old save, which only
+// loses the ascension, never the run.
+void ascendGame()
+{
+    if (ascension.ascend(game.getTotalGoldEarned()))
+    {
+        captureSave(saveBuffer, game, inventory, combat, achievements, unlocks, ascension);
+        clearRun(saveBuffer);
+        if (!saveGame(saveBuffer))
+        {
+            Serial.println("Save failed");
+        }
+    }
+    ESP.restart();
 }
 
 // Holding Up and Down this long in game asks whether to reset. The first touch of each
@@ -162,7 +198,7 @@ void loadOrReset()
     }
     if (loadGame(saveBuffer))
     {
-        applySave(saveBuffer, game, inventory, combat, achievements, unlocks);
+        applySave(saveBuffer, game, inventory, combat, achievements, unlocks, ascension);
         lastSaved = saveBuffer;
         Serial.println("Save loaded");
     }
@@ -179,6 +215,7 @@ void applyUnlocks()
     screenManager.setLocked(&upgradeScreen, !unlocks.isUnlocked(Feature::UPGRADES));
     screenManager.setLocked(&achievementScreen, !unlocks.isUnlocked(Feature::AWARDS));
     screenManager.setLocked(&inventoryScreen, !unlocks.isUnlocked(Feature::INVENTORY));
+    screenManager.setLocked(&ascendScreen, !unlocks.isUnlocked(Feature::ASCEND));
     // Zones and Combat open together: entering a zone jumps straight to the next screen
     screenManager.setLocked(&zoneScreen, !unlocks.isUnlocked(Feature::COMBAT));
     screenManager.setLocked(&combatScreen, !unlocks.isUnlocked(Feature::COMBAT));
@@ -218,6 +255,7 @@ void setup()
     screenManager.addScreen(&zoneScreen, "Zones", true);
     screenManager.addScreen(&combatScreen, "Combat", true);
     screenManager.addScreen(&inventoryScreen, "Inventory", true);
+    screenManager.addScreen(&ascendScreen, "Ascend", true);
     applyUnlocks();
     seenUnlocks = unlocks.getRevision();
 }

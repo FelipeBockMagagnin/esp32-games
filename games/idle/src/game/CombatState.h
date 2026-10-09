@@ -60,6 +60,13 @@ public:
     // under way is left to run, so this never skips the revive wait.
     void rerollEnemy(unsigned long now);
     bool isZoneUnlocked(uint8_t zoneId) const;
+    // False for a relic the Relic Sense talent has not reached yet
+    bool canDrop(uint8_t itemId) const;
+
+    // Second Wind turns a death into a revive at half health, then recharges
+    bool isSecondWindReady(unsigned long now) const;
+    unsigned long getSecondWindRemaining(unsigned long now) const;
+    uint32_t getSecondWindEvents() const { return secondWindEvents; }
 
     Phase getPhase() const { return phase; }
     bool isInZone() const { return inZone; }
@@ -97,6 +104,8 @@ public:
     bool isGuarding(unsigned long now) const;
     // Base timings and odds with the achievement rewards and item cuts applied
     unsigned long getGuardDurationMs() const;
+    unsigned long getStrikeCooldownMs() const; // With the worn relic's cut
+    unsigned long getGuardCooldownMs() const;
     unsigned long getSpellCooldownMs(const SpellDef &spell) const;
     uint16_t getDropChanceBp(const DropDef &drop) const;
     unsigned long getGuardRemaining(unsigned long now) const; // 0 when not guarding
@@ -122,6 +131,7 @@ public:
     void load(const Snapshot &in);
 
 private:
+    uint32_t statsSignature() const;
     void refreshStats();
     void startFight(unsigned long now);
     void startRespawn(unsigned long now);
@@ -145,7 +155,7 @@ private:
     Phase phase;
 
     Stats cachedStats;
-    uint32_t seenInventoryRevision;
+    uint32_t seenStatsSignature;
 
     unsigned long autoAttackAt;
     unsigned long enemyAttackAt;
@@ -175,6 +185,8 @@ private:
     int8_t lastDrop;
     bool lastDropWasNew;
     uint8_t lastDropLevel; // Level the item reached with that drop
+    unsigned long secondWindReadyAt; // 0 until the first one is used
+    uint32_t secondWindEvents;
 };
 
 #endif // COMBAT_STATE_H

@@ -48,6 +48,21 @@ extern const uint16_t image_item_loincloth_pixels[]; // 16x16
 extern const uint16_t image_item_wilson_pixels[]; // 16x16
 
 // Icons
+extern const uint16_t image_icon_elder_bone_pixels[]; // 16x16
+extern const uint16_t image_icon_ember_blade_pixels[]; // 16x16
+extern const uint16_t image_icon_ember_boots_pixels[]; // 16x16
+extern const uint16_t image_icon_ember_charm_pixels[]; // 16x16
+extern const uint16_t image_icon_ember_grips_pixels[]; // 16x16
+extern const uint16_t image_icon_ember_guard_pixels[]; // 16x16
+extern const uint16_t image_icon_ember_helm_pixels[]; // 16x16
+extern const uint16_t image_icon_ember_legs_pixels[]; // 16x16
+extern const uint16_t image_icon_ember_mail_pixels[]; // 16x16
+extern const uint16_t image_icon_ember_ring_pixels[]; // 16x16
 extern const uint16_t image_icon_gold_vein_pixels[]; // 16x16
+extern const uint16_t image_icon_golem_heart_pixels[]; // 16x16
+extern const uint16_t image_icon_time_candle_pixels[]; // 16x16
+extern const uint16_t image_icon_trader_coin_pixels[]; // 16x16
+extern const uint16_t image_icon_zone_star_forge_pixels[]; // 16x16
+extern const uint16_t image_icon_zone_void_rift_pixels[]; // 16x16
 
 #endif // SPRITES_H

@@ -24,12 +24,13 @@ static uint32_t layoutFingerprint()
 {
     const uint32_t sizes[] = {
         (uint32_t)sizeof(SaveBlob), BUILDING_COUNT, GOLD_UPGRADE_COUNT, ITEM_COUNT,
-        EQUIP_SLOT_COUNT, ZONE_COUNT, ACHIEVEMENT_COUNT, FEATURE_COUNT};
+        EQUIP_SLOT_COUNT, ZONE_COUNT, ACHIEVEMENT_COUNT, FEATURE_COUNT, TALENT_COUNT};
     return checksum(sizes, sizeof(sizes));
 }
 
 void captureSave(SaveBlob &blob, const GameState &game, const Inventory &inventory,
-                 const CombatState &combat, const Achievements &achievements, const Unlocks &unlocks)
+                 const CombatState &combat, const Achievements &achievements, const Unlocks &unlocks,
+                 const Ascension &ascension)
 {
     memset(&blob, 0, sizeof(blob));
     blob.version = SAVE_VERSION;
@@ -39,11 +40,19 @@ void captureSave(SaveBlob &blob, const GameState &game, const Inventory &invento
     combat.save(blob.combat);
     achievements.save(blob.achievements);
     unlocks.save(blob.unlocks);
+    ascension.save(blob.ascension);
+}
+
+void clearRun(SaveBlob &blob)
+{
+    memset(&blob.game, 0, sizeof(blob.game));
+    memset(&blob.combat, 0, sizeof(blob.combat));
 }
 
 void applySave(const SaveBlob &blob, GameState &game, Inventory &inventory, CombatState &combat,
-               Achievements &achievements, Unlocks &unlocks)
+               Achievements &achievements, Unlocks &unlocks, Ascension &ascension)
 {
+    ascension.load(blob.ascension);
     inventory.load(blob.inventory);
     achievements.load(blob.achievements);
     game.load(blob.game);

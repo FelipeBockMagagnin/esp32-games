@@ -3,6 +3,8 @@
 #include "Inventory.h"
 #include "CombatState.h"
 #include "Achievements.h"
+#include "Ascension.h"
+#include "Format.h"
 
 static const unsigned long CHECK_INTERVAL_MS = 500;
 static const unsigned long NOTICE_MS = 4000;
@@ -13,7 +15,7 @@ static const uint32_t UPGRADES_MIN_BUILDINGS = 3;
 
 // Shown in the header notice, indexed by Feature
 static const char *const FEATURE_NAMES[FEATURE_COUNT] = {
-    "Buildings", "Upgrade", "Awards", "Zones & Combat", "Inventory"};
+    "Buildings", "Upgrade", "Awards", "Zones & Combat", "Inventory", "Ascend"};
 
 Unlocks::Unlocks()
     : revision(0),
@@ -61,6 +63,12 @@ bool Unlocks::isConditionMet(Feature feature, const GameState &game, const Inven
 
     case Feature::INVENTORY:
         return inventory.countOwnedItems() > Inventory::getStartingKitSize();
+
+    case Feature::ASCEND:
+    {
+        const Ascension &ascension = game.getAscension();
+        return ascension.getAscensions() > 0 || ascension.getPendingPoints(game.getTotalGoldEarned()) > 0;
+    }
     }
     return false;
 }
@@ -154,9 +162,9 @@ void Unlocks::refreshGoal(const GameState &game, const Inventory &inventory, con
             for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
             {
                 if (game.isGoldUpgradeUnlocked(i) && !game.isGoldUpgradeBought(i) &&
-                    (cheapest == 0 || GOLD_UPGRADES[i].cost < cheapest))
+                    (cheapest == 0 || game.getGoldUpgradeCost(i) < cheapest))
                 {
-                    cheapest = GOLD_UPGRADES[i].cost;
+                    cheapest = game.getGoldUpgradeCost(i);
                 }
             }
             snprintf(label, size, "Save gold to open Upgrade");
@@ -202,6 +210,12 @@ void Unlocks::refreshGoal(const GameState &game, const Inventory &inventory, con
         }
         goal.done = 0;
         goal.target = 0;
+        break;
+
+    case Feature::ASCEND:
+        snprintf(label, size, "Earn %s gold to open Ascend", formatAmount(ASCEND_GOLD_PER_POINT).c_str());
+        goal.done = clampProgress(game.getAscension().getLifetimeGold(game.getTotalGoldEarned()));
+        goal.target = clampProgress(ASCEND_GOLD_PER_POINT);
         break;
     }
 }

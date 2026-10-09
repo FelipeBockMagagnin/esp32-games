@@ -1,5 +1,6 @@
 #include "ZoneScreen.h"
 #include "../game/Format.h"
+#include "../game/Ascension.h"
 
 
 static const uint16_t CARD_BORDER = Theme::FRAME; // Dark slate, as on the Inventory stats card
@@ -196,6 +197,10 @@ void ZoneScreen::refreshRows(const Stats &stats)
             {
                 snprintf(buf, sizeof(buf), "buy %s", unlockUpgradeName(id));
             }
+            else if (zone.reqDelveLevel > game.getAscension().getEffectLevel(TalentEffect::DEEP_ZONES))
+            {
+                snprintf(buf, sizeof(buf), "Deep Delver %u talent", (unsigned)zone.reqDelveLevel);
+            }
             else
             {
                 snprintf(buf, sizeof(buf), "%u/%u kills in %s", (unsigned)combat.getZoneKills(id - 1),
@@ -242,8 +247,8 @@ void ZoneScreen::refreshPanel(const Stats &stats)
     // for the toughest. Shown for locked zones too, as something to gear for.
     uint8_t easiest = 0;
     uint8_t toughest = 0;
-    uint32_t minGold = zone.enemies[0].goldReward;
-    uint32_t maxGold = minGold;
+    uint64_t minGold = zone.enemies[0].goldReward;
+    uint64_t maxGold = minGold;
     for (uint8_t i = 1; i < zone.enemyCount; i++)
     {
         const EnemyDef &enemy = zone.enemies[i];
@@ -297,6 +302,11 @@ void ZoneScreen::refreshPanel(const Stats &stats)
         for (uint8_t d = 0; d < enemy.dropCount && dropCount < IconStrip::MAX_ICONS; d++)
         {
             uint8_t itemId = enemy.drops[d].itemId;
+            // A relic stays a secret until Relic Sense lets it drop
+            if (!combat.canDrop(itemId))
+            {
+                continue;
+            }
             bool duplicate = false;
             for (uint8_t k = 0; k < dropCount; k++)
             {

@@ -17,6 +17,7 @@
 #include "../../src/game/Inventory.h"
 #include "../../src/game/CombatState.h"
 #include "../../src/game/Achievements.h"
+#include "../../src/game/Ascension.h"
 #include "../../src/game/Stats.h"
 
 // ---- Arduino stubs --------------------------------------------------------------------
@@ -34,6 +35,7 @@ static unsigned long firstSession = 30 * MIN;
 static unsigned long sessionLength = 5 * MIN; // Per waking hour
 static double clicksPerSecond = 3.0;
 static double days = 3.0;
+static int runs = 1;
 
 static bool isActive(unsigned long t)
 {
@@ -73,7 +75,8 @@ static std::string fmt(double v)
 // ---- Game objects, in the same dependency order as main.cpp ---------------------------
 Achievements achievements;
 Inventory inventory;
-GameState game(inventory, achievements);
+Ascension ascension;
+GameState game(inventory, achievements, ascension);
 CombatState combat(game, inventory);
 
 static bool verbose = false;
@@ -195,7 +198,7 @@ static void shop()
             {
                 continue;
             }
-            double cost = (double)GOLD_UPGRADES[i].cost;
+            double cost = (double)game.getGoldUpgradeCost(i);
             double payback = cost / gain;
             if (payback < best)
             {
@@ -353,6 +356,63 @@ static void fight(unsigned long now)
     }
 }
 
+static void printMilestones()
+{
+    printf("\nMilestones:\n");
+    for (const std::string &line : summary)
+    {
+        printf("  %s\n", line.c_str());
+    }
+    summary.clear();
+}
+
+// What the game does on Ascend, minus the reboot: bank the points, keep the items and
+// awards, and load a new game's (zeroed) snapshots over the run. Talents that open content
+// are bought first, as the maps are in the shop; the rest of the points go to the cheapest
+// level on offer, which spreads them over the roots before going deep.
+static void ascendRun()
+{
+    uint32_t gained = ascension.getPendingPoints(game.getTotalGoldEarned());
+    ascension.ascend(game.getTotalGoldEarned());
+    for (;;)
+    {
+        int best = -1;
+        for (uint8_t t = 0; t < TALENT_COUNT; t++)
+        {
+            if (ascension.canBuyTalent(t) && (best < 0 || ascension.getTalentCost(t) < ascension.getTalentCost(best)))
+            {
+                best = t;
+            }
+        }
+        for (uint8_t t : {TALENT_OLD_MAPS, TALENT_DEEP_DELVER, TALENT_RELIC_SENSE})
+        {
+            if (ascension.isTalentOpen(t) && !ascension.isTalentMaxed(t))
+            {
+                // Saves up for it rather than spending on anything else
+                best = ascension.canBuyTalent(t) ? t : -1;
+                break;
+            }
+        }
+        if (best < 0)
+        {
+            break;
+        }
+        ascension.buyTalent((uint8_t)best);
+    }
+
+    GameState::Snapshot freshGame = {};
+    CombatState::Snapshot freshCombat = {};
+    game.load(freshGame);
+    combat.load(freshCombat);
+
+    printf("\n==== %s  ASCENDED +%u points (%u earned, gold/s x%.2f from ascension). Talents:", stamp(simNow).c_str(),
+           (unsigned)gained, (unsigned)ascension.getPointsEarned(), (100 + game.getAscensionProductionPercent()) / 100.0);
+    for (uint8_t t = 0; t < TALENT_COUNT; t++)
+    {
+        printf(" %s %u%s", TALENTS[t].name, (unsigned)ascension.getTalentLevel(t), t + 1 < TALENT_COUNT ? "," : "\n");
+    }
+}
+
 int main(int argc, char **argv)
 {
     for (int i = 1; i < argc; i++)
@@ -363,9 +423,11 @@ int main(int argc, char **argv)
         else if (a == "--seed" && i + 1 < argc) rng.seed(atoi(argv[++i]));
         else if (a == "--session" && i + 1 < argc) sessionLength = (unsigned long)(atof(argv[++i]) * MIN);
         else if (a == "--cps" && i + 1 < argc) clicksPerSecond = atof(argv[++i]);
+        else if (a == "--runs" && i + 1 < argc) runs = atoi(argv[++i]);
     }
 
-    unsigned long end = (unsigned long)(days * DAY);
+    unsigned long runLength = (unsigned long)(days * DAY);
+    unsigned long end = runLength * runs;
     double clickDebt = 0;
     int zoneShown = -2;
     uint8_t zoneUnlockedSeen = 1;
@@ -383,6 +445,17 @@ int main(int argc, char **argv)
     for (simNow = 0; simNow < end; simNow += TICK)
     {
         unsigned long now = simNow;
+        if (now > 0 && now % runLength == 0)
+        {
+            printMilestones();
+            ascendRun();
+            zoneShown = -2;
+            zoneUnlockedSeen = 1;
+            for (bool &reached : idleReach)
+            {
+                reached = false;
+            }
+        }
         bool active = isActive(now);
 
         // Gold veins: a present player catches one a couple of seconds after it shows
@@ -405,7 +478,7 @@ int main(int argc, char **argv)
             while (clickDebt >= 1)
             {
                 bool levelled;
-                game.mine(levelled);
+                game.mine(levelled, now);
                 clickDebt -= 1;
             }
         }
@@ -510,21 +583,17 @@ int main(int argc, char **argv)
                 owned += inventory.isOwned(i);
             }
             printf("---- %s  gold/s %s  bank %s  buildings %u  upgrades %u/%u  mining Lv %u  ATK %u DEF %u HP %u"
-                   "  items %u (avg Lv %.1f)  kills %u  deaths %u  veins %u\n",
+                   "  items %u (avg Lv %.1f)  kills %u  deaths %u  veins %u  ascend +%u\n",
                    stamp(now).c_str(), fmt(game.getProductionPerSecond() / (double)GOLD_SCALE).c_str(),
                    fmt((double)game.getGold()).c_str(), (unsigned)game.getTotalBuildingLevels(),
                    (unsigned)game.getUpgradesBoughtCount(), (unsigned)GOLD_UPGRADE_COUNT,
                    (unsigned)game.getMiningLevel(), (unsigned)s.attack, (unsigned)s.defense, (unsigned)s.maxHp,
                    owned, owned ? levels / (double)owned : 0.0, (unsigned)combat.getTotalKills(), deaths,
-                   (unsigned)game.getVeinsCaught());
+                   (unsigned)game.getVeinsCaught(), (unsigned)ascension.getPendingPoints(game.getTotalGoldEarned()));
         }
     }
 
-    printf("\nMilestones:\n");
-    for (const std::string &line : summary)
-    {
-        printf("  %s\n", line.c_str());
-    }
+    printMilestones();
     printf("\nBuildings:");
     for (uint8_t b = 0; b < BUILDING_COUNT; b++)
     {
@@ -533,5 +602,7 @@ int main(int argc, char **argv)
     printf("Gold veins: %u caught, %u appeared; Lucky paid %s in total\n", (unsigned)game.getVeinsCaught(),
            (unsigned)game.getVeinSpawns(), fmt(luckyGold).c_str());
     printf("Achievements: %u/%u\n", (unsigned)achievements.getUnlockedCount(), (unsigned)ACHIEVEMENT_COUNT);
+    printf("Ascending now banks %u points (run gold %s)\n",
+           (unsigned)ascension.getPendingPoints(game.getTotalGoldEarned()), fmt((double)game.getTotalGoldEarned()).c_str());
     return 0;
 }

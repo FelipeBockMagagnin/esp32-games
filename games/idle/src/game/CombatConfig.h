@@ -52,6 +52,7 @@ static constexpr SpellDef SPELLS[] = {
     {ITEM_JADE_AMULET,   "STUN",  SpellEffect::STUN,   1,     12000},
     {ITEM_GOLD_AMULET,   "MIDAS", SpellEffect::MIDAS,  3,     20000},
     {ITEM_CORE_SIGIL,    "WARD",  SpellEffect::WARD,   4000,  18000},
+    {ITEM_EMBER_CHARM,   "AEGIS", SpellEffect::WARD,   6000,  16000},
 };
 static constexpr uint8_t SPELL_COUNT = sizeof(SPELLS) / sizeof(SPELLS[0]);
 
@@ -82,7 +83,7 @@ struct EnemyDef
     uint32_t attack;
     uint32_t defense;
     unsigned long attackIntervalMs;
-    uint32_t goldReward;
+    uint64_t goldReward; // Past the Molten Core a kill pays more than 32 bits hold
     // 64x64 palette + run-length art, drawn at 2x. The Crypt, Depths and Core enemies
     // borrow a Sewers sprite until they get their own; swapping art is a pointer change.
     const SpriteDef *sprite;
@@ -100,6 +101,7 @@ struct ZoneDef
     uint16_t reqPrevZoneKills;  // Kills needed in the zone before it; 0 for none
     const uint16_t *icon;       // 16x16 RGB565, black transparent
     const SpriteDef *background; // 64x64, drawn behind the enemy at 2x
+    uint8_t reqDelveLevel;      // Deep Delver levels needed; left off the first zones' rows
 };
 
 // Drops get rarer the longer a zone lasts, so each zone's set is found early but only
@@ -136,6 +138,7 @@ static constexpr DropDef GAMER_MOUSE_DROPS[] = {
     {ITEM_TIN_RING, 300},
     {ITEM_WILSON, 300},
     {ITEM_WOOD_SHIELD, 210},
+    {ITEM_TRADER_COIN, 60},
 };
 
 static constexpr DropDef SPIDER_DROPS[] = {
@@ -165,6 +168,7 @@ static constexpr DropDef GNOME_BAND_DROPS[] = {
     {ITEM_IRON_SHIELD, 80},
     {ITEM_GOLD_RING, 75},
     {ITEM_JADE_AMULET, 75},
+    {ITEM_TIME_CANDLE, 40},
 };
 
 static constexpr DropDef BONE_DIGGER_DROPS[] = {
@@ -179,6 +183,7 @@ static constexpr DropDef CRYPT_GHOUL_DROPS[] = {
     {ITEM_STEEL_GUARD, 30},
     {ITEM_RUBY_RING, 10},
     {ITEM_GOLD_AMULET, 10},
+    {ITEM_ELDER_BONE, 10},
 };
 
 static constexpr DropDef DEEP_LURKER_DROPS[] = {
@@ -203,6 +208,42 @@ static constexpr DropDef CORE_GOLEM_DROPS[] = {
     {ITEM_RUNE_HELM, 20},
     {ITEM_MINER_RING, 5},
     {ITEM_CORE_SIGIL, 5},
+    {ITEM_GOLEM_HEART, 5},
+};
+
+// The Mythic set drops in both deep zones; the Star Forge levels it faster
+static constexpr DropDef RIFT_STALKER_DROPS[] = {
+    {ITEM_EMBER_HELM, 40},
+    {ITEM_EMBER_GRIPS, 40},
+    {ITEM_EMBER_BLADE, 40},
+};
+static constexpr DropDef VOID_WRAITH_DROPS[] = {
+    {ITEM_EMBER_MAIL, 40},
+    {ITEM_EMBER_LEGS, 40},
+    {ITEM_EMBER_BOOTS, 40},
+    {ITEM_EMBER_GUARD, 25},
+};
+static constexpr DropDef VOID_MAW_DROPS[] = {
+    {ITEM_EMBER_BLADE, 40},
+    {ITEM_EMBER_GUARD, 40},
+    {ITEM_EMBER_RING, 5},
+    {ITEM_EMBER_CHARM, 5},
+};
+static constexpr DropDef STAR_SMITH_DROPS[] = {
+    {ITEM_EMBER_HELM, 25},
+    {ITEM_EMBER_GRIPS, 25},
+    {ITEM_EMBER_BLADE, 25},
+    {ITEM_EMBER_GUARD, 20},
+};
+static constexpr DropDef NOVA_GOLEM_DROPS[] = {
+    {ITEM_EMBER_MAIL, 25},
+    {ITEM_EMBER_LEGS, 25},
+    {ITEM_EMBER_BOOTS, 25},
+};
+static constexpr DropDef SUN_EATER_DROPS[] = {
+    {ITEM_EMBER_RING, 15},
+    {ITEM_EMBER_CHARM, 15},
+    {ITEM_GOLEM_HEART, 10},
 };
 
 // Until the deeper zones get their own art
@@ -217,6 +258,8 @@ static constexpr DropDef CORE_GOLEM_DROPS[] = {
 //   arrival (atk / def / hp):  Sewers 10/5/90 (starting kit)   Forest 30/48/260
 //                              Crypt 100-125/220/450   Depths 270-370/800/2200
 //                              Molten Core 1100-1400/2100/5900
+//                              Void Rift 2050-2500/3100-4400/6900-8800
+//                              Star Forge 3700-5500/4600-9800/10800-21000
 //
 // Defense sits at 1.2-1.4x that attack, so the auto-attack is blocked on arrival while the
 // strike gets through. A hit costs 3-5% of max HP (8% for a boss), so a timed guard keeps
@@ -228,6 +271,10 @@ static constexpr DropDef CORE_GOLEM_DROPS[] = {
 // the Transmuter at ~57 h; each zone farms itself 2-8 h after it opens, the Core only on
 // day 5. The kill gates (150 / 500 / 1500 / 1000) keep a zone from opening before the
 // one before it has been fought for a while.
+//
+// The two zones past the Core are for later runs (tools/sim --runs 3): Deep Delver opens
+// the Void Rift a day or two into the second run, which farms itself 4-19 h later once a
+// few Mythic pieces have dropped; the Star Forge follows its 1500 kills within hours.
 //
 // The Sewers are set by hand: fought with the starting kit, they cost about 40% of health
 // per fight and a death every three to four kills until the first drops come in.
@@ -270,6 +317,16 @@ static constexpr EnemyDef CORE_ENEMIES[] = {
     {"Magma Hound",   4600,   2220, 1750, 2400,     480000000, PLACEHOLDER_SPRITE,   DROPS(MAGMA_HOUND_DROPS)},
     {"Core Golem",    5000,   2275, 1850, 2600,     720000000, PLACEHOLDER_SPRITE,   DROPS(CORE_GOLEM_DROPS)},
 };
+static constexpr EnemyDef RIFT_ENEMIES[] = {
+    {"Riftstalker",   4500,   3900, 2600, 2400,     10000000000ULL,  PLACEHOLDER_SPRITE, DROPS(RIFT_STALKER_DROPS)},
+    {"Void Wraith",   4800,   4000, 2700, 2600,     14000000000ULL,  PLACEHOLDER_SPRITE, DROPS(VOID_WRAITH_DROPS)},
+    {"Void Maw",      9000,   4600, 2950, 2800,     40000000000ULL,  PLACEHOLDER_SPRITE, DROPS(VOID_MAW_DROPS), true},
+};
+static constexpr EnemyDef STAR_ENEMIES[] = {
+    {"Star Smith",    20000,  9000, 4800, 2400,     80000000000ULL,  PLACEHOLDER_SPRITE, DROPS(STAR_SMITH_DROPS)},
+    {"Nova Golem",    22000,  9300, 5000, 2600,     110000000000ULL, PLACEHOLDER_SPRITE, DROPS(NOVA_GOLEM_DROPS)},
+    {"Sun Eater",     40000,  11000, 5400, 2800,    300000000000ULL, PLACEHOLDER_SPRITE, DROPS(SUN_EATER_DROPS), true},
+};
 
 #define ZONE(table) table, sizeof(table) / sizeof(table[0])
 
@@ -282,7 +339,11 @@ static constexpr ZoneDef ZONES[] = {
     {"Crypt",       ZONE(CRYPT_ENEMIES),       true,         500,            image_zone_crypt_pixels,    &background_stone},
     {"Depths",      ZONE(DEPTH_ENEMIES),       true,         1500,           image_zone_depths_pixels,   &background_stone},
     {"Molten Core", ZONE(CORE_ENEMIES),        true,         1000,           image_zone_core_pixels,     &background_stone},
+    // Past the Molten Core, opened by the Deep Delver talent instead of a map
+    {"Void Rift",   ZONE(RIFT_ENEMIES),        false,        1000,           image_icon_zone_void_rift_pixels,  &background_stone, 1},
+    {"Star Forge",  ZONE(STAR_ENEMIES),        false,        1500,           image_icon_zone_star_forge_pixels, &background_stone, 2},
 };
+static const uint8_t ZONE_MOLTEN_CORE = 4;
 static constexpr uint8_t ZONE_COUNT = sizeof(ZONES) / sizeof(ZONES[0]);
 
 #undef PLACEHOLDER_SPRITE

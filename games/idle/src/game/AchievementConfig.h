@@ -42,12 +42,15 @@ enum class AchReward : uint8_t
 };
 static constexpr uint8_t ACH_REWARD_COUNT = (uint8_t)AchReward::COUNT;
 
-// The gear pieces (everything but rings and amulets) in one tier, which a set needs maxed
+// Rings, amulets and relics are jewellery; the rest is gear, which a set needs maxed
+static constexpr bool isGearSlot(EquipSlot slot)
+{
+    return slot != EquipSlot::RING && slot != EquipSlot::AMULET && slot != EquipSlot::RELIC;
+}
+
 static constexpr uint8_t gearInTier(uint8_t tier, uint8_t i = 0)
 {
-    return i >= ITEM_COUNT ? 0
-                           : (ITEMS[i].tier == tier && ITEMS[i].slot != EquipSlot::RING &&
-                              ITEMS[i].slot != EquipSlot::AMULET) + gearInTier(tier, i + 1);
+    return i >= ITEM_COUNT ? 0 : (ITEMS[i].tier == tier && isGearSlot(ITEMS[i].slot)) + gearInTier(tier, i + 1);
 }
 
 static const uint8_t NO_ACH_TARGET = 0xFF;
@@ -98,7 +101,8 @@ static constexpr AchievementDef ACHIEVEMENTS[] = {
     {"Pest Control", "Defeat 10 enemies",                 AchKind::TOTAL_KILLS,      NO_ACH_TARGET,         10,           1},
     {"Exterminator", "Defeat 100 enemies",                AchKind::TOTAL_KILLS,      NO_ACH_TARGET,         100,          2},
     {"Slayer",       "Defeat 1000 enemies",               AchKind::TOTAL_KILLS,      NO_ACH_TARGET,         1000,         4},
-    {"Core Breaker", "Defeat 50 in the Molten Core",      AchKind::ZONE_KILLS,       ZONE_COUNT - 1,        50,           8},
+    {"Core Breaker", "Defeat 50 in the Molten Core",      AchKind::ZONE_KILLS,       ZONE_MOLTEN_CORE,      50,           8},
+    {"Star Breaker", "Defeat 50 in the Star Forge",       AchKind::ZONE_KILLS,       ZONE_COUNT - 1,        50,           10},
 
     {"Geared Up",    "Find 9 different items",            AchKind::ITEMS_OWNED,      NO_ACH_TARGET,         9,            1},
     {"Well Equipped", "Find 18 different items",          AchKind::ITEMS_OWNED,      NO_ACH_TARGET,         18,           3},
@@ -118,6 +122,7 @@ static constexpr AchievementDef ACHIEVEMENTS[] = {
     {"Iron Will",    "Max all Uncommon gear",             AchKind::GEAR_SET_MAXED,   1,                     gearInTier(1), 15, AchReward::ATTACK_DEFENSE},
     {"Steel Wall",   "Max all Rare gear",                 AchKind::GEAR_SET_MAXED,   2,                     gearInTier(2), 20, AchReward::ATTACK_DEFENSE},
     {"Rune Lord",    "Max all Epic gear",                 AchKind::GEAR_SET_MAXED,   3,                     gearInTier(3), 25, AchReward::ATTACK_DEFENSE},
+    {"Mythbreaker",  "Max all Mythic gear",               AchKind::GEAR_SET_MAXED,   MYTHIC_TIER,           gearInTier(MYTHIC_TIER), 30, AchReward::ATTACK_DEFENSE},
 
     {"Tin Polish",   "Max the Tin Ring",                  AchKind::ITEM_MAXED,       ITEM_TIN_RING,         ITEM_MAX_LEVEL, 25, AchReward::REVIVE_CUT},
     {"Gilded Guard", "Max the Gold Ring",                 AchKind::ITEM_MAXED,       ITEM_GOLD_RING,        ITEM_MAX_LEVEL, 33, AchReward::GUARD_TIME},

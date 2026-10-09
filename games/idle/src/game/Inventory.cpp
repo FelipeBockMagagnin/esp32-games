@@ -236,6 +236,16 @@ uint32_t Inventory::getRespawnCutPercent() const
     return total;
 }
 
+uint32_t Inventory::getRelicPercent(RelicEffect effect) const
+{
+    int8_t worn = equipped[(uint8_t)EquipSlot::RELIC];
+    if (worn == NO_ITEM || ITEMS[(uint8_t)worn].relic != effect)
+    {
+        return 0;
+    }
+    return scaleItemStat(ITEMS[(uint8_t)worn].relicPercent, itemLevels[(uint8_t)worn]);
+}
+
 void Inventory::save(Snapshot &out) const
 {
     for (uint8_t i = 0; i < ITEM_COUNT; i++)

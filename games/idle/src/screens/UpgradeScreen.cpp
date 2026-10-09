@@ -341,7 +341,8 @@ void UpgradeScreen::refreshDetails()
     // Savings toward the price, so a far-off upgrade still shows how close it is
     uint64_t gold = game.getGold();
     bool affordable = game.canAffordGoldUpgrade(id);
-    uint32_t percent = (affordable || def.cost == 0) ? 100 : (uint32_t)(gold * 100 / def.cost);
+    uint64_t cost = game.getGoldUpgradeCost(id);
+    uint32_t percent = (affordable || cost == 0) ? 100 : (uint32_t)(gold * 100 / cost);
     savingsBar.setProgress(percent, 100);
     savingsBar.setFillColor(affordable ? READY_FILL : SAVINGS_COLOR);
     if (affordable)
@@ -350,13 +351,13 @@ void UpgradeScreen::refreshDetails()
     }
     else
     {
-        snprintf(buf, sizeof(buf), "%s / %s  (%lu%%)", formatAmount(gold).c_str(), formatAmount(def.cost).c_str(),
+        snprintf(buf, sizeof(buf), "%s / %s  (%lu%%)", formatAmount(gold).c_str(), formatAmount(cost).c_str(),
                  (unsigned long)percent);
         savingsBar.setLabel(buf);
     }
 
     buyBadge.setDimmed(!affordable);
-    snprintf(buf, sizeof(buf), "%s gold", formatAmount(def.cost).c_str());
+    snprintf(buf, sizeof(buf), "%s gold", formatAmount(cost).c_str());
     priceText.setText(buf);
     priceText.setColor(affordable ? AFFORD_COLOR : HINT_COLOR);
 }

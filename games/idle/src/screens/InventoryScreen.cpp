@@ -363,8 +363,47 @@ static bool eitherHas(int8_t a, int8_t b, uint16_t ItemDef::*field)
     return (a != NO_ITEM && ITEMS[a].*field > 0) || (b != NO_ITEM && ITEMS[b].*field > 0);
 }
 
+// A relic's one effect, in the first column. Two relics do different things, so a relic is
+// described on its own rather than compared with the one worn.
+static void formatRelic(const Inventory &inventory, uint8_t id, char *buf, size_t size)
+{
+    uint32_t value = scaleItemStat(ITEMS[id].relicPercent, inventory.getItemLevel(id));
+    switch (ITEMS[id].relic)
+    {
+    case RelicEffect::UPGRADE_DISCOUNT:
+        snprintf(buf, size, "Upgrades -%lu%%", (unsigned long)value);
+        return;
+    case RelicEffect::COOLDOWN_CUT:
+        snprintf(buf, size, "Strike/guard cooldown -%lu%%", (unsigned long)value);
+        return;
+    case RelicEffect::AWARD_BOOST:
+        snprintf(buf, size, "Award gold bonus +%lu%%", (unsigned long)value);
+        return;
+    case RelicEffect::HP_REGEN:
+        snprintf(buf, size, "Regen %lu.%lu%% max HP/s", (unsigned long)(value / 10), (unsigned long)(value % 10));
+        return;
+    default:
+        buf[0] = '\0';
+        return;
+    }
+}
+
 void InventoryScreen::showStats(int8_t itemId, int8_t against, bool compare)
 {
+    if (itemId != NO_ITEM && ITEMS[itemId].slot == EquipSlot::RELIC)
+    {
+        char relicBuf[36];
+        formatRelic(inventory, (uint8_t)itemId, relicBuf, sizeof(relicBuf));
+        statColumns[0].setText(relicBuf);
+        statColumns[0].setColor(ITEM_TIER_COLORS[RELIC_TIER]);
+        statColumns[0].setVisible(true);
+        for (uint8_t i = 1; i < STAT_COLUMNS; i++)
+        {
+            statColumns[i].setVisible(false);
+        }
+        return;
+    }
+
     StatKind kinds[STAT_COLUMNS] = {STAT_ATTACK, STAT_DEFENSE, STAT_HP, STAT_GOLD};
     if ((itemId != NO_ITEM && ITEMS[itemId].respawnCutPercent > 0) ||
         (against != NO_ITEM && ITEMS[against].respawnCutPercent > 0))

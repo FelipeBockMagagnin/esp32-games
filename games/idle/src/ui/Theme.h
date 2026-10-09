@@ -33,6 +33,7 @@ namespace Theme
     static constexpr uint16_t BAD = 0xE309;    // #E0604E worse, blocked, out of reach
     static constexpr uint16_t INFO = 0x5E39;   // #5EC4C9 new screens, guarding
     static constexpr uint16_t EPIC = 0xC45B;   // #C58AD8 epic items, zone maps, spells
+    static constexpr uint16_t MYTHIC = 0xF443; // #F08818 mythic items
 
     // Player and enemy stats, the same on every screen that shows them
     static constexpr uint16_t ATTACK = 0xEB8B;     // #E8735A

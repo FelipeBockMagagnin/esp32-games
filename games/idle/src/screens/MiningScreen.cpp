@@ -273,15 +273,29 @@ void MiningScreen::update(unsigned long now)
     xpText.setText(buf);
 
     snprintf(buf, sizeof(buf), "+%s gold  +%lu XP", formatAmount(game.getClickAmount()).c_str(),
-             (unsigned long)MINE_XP);
+             (unsigned long)game.getXpPerClick());
     mineValue.setText(buf);
     mineValue.setColor(buff == VeinEffect::CLICK_FRENZY ? Theme::SELECT : Theme::GOLD);
+
+    // The running click combo, worth keeping up
+    uint32_t combo = game.getComboPercent(now);
+    if (combo > 0)
+    {
+        snprintf(buf, sizeof(buf), "Mine x%lu.%02lu", (unsigned long)(1 + combo / 100), (unsigned long)(combo % 100));
+        mineLabel.setText(buf);
+        mineLabel.setColor(Theme::SELECT);
+    }
+    else
+    {
+        mineLabel.setText("Mine");
+        mineLabel.setColor(Theme::TEXT);
+    }
 }
 
 void MiningScreen::onConfirmPress()
 {
     bool leveledUp;
-    uint32_t gained = game.mine(leveledUp);
+    uint32_t gained = game.mine(leveledUp, millis());
 
     oreDisplay.shake();
     oreDisplay.addPopup(String("+") + formatAmount(gained));

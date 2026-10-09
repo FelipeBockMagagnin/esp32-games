@@ -43,6 +43,7 @@ private:
     uint32_t seenDrops;
     uint32_t seenHits;
     uint32_t seenHurts;
+    uint32_t seenSecondWinds;
 
     unsigned long messageUntil;
     unsigned long enemyHitUntil;

@@ -2,6 +2,7 @@
 #include "GameState.h"
 #include "Inventory.h"
 #include "Achievements.h"
+#include "Ascension.h"
 
 // Every deadline is compared with a signed difference so the fight survives a
 // millis() rollover, the same way GameState::update does
@@ -30,7 +31,7 @@ CombatState::CombatState(GameState &game, Inventory &inventory)
       playerHp(0),
       phase(IDLE),
       cachedStats({BASE_ATTACK, BASE_DEFENSE, BASE_MAX_HP}),
-      seenInventoryRevision(0),
+      seenStatsSignature(UINT32_MAX),
       autoAttackAt(0),
       enemyAttackAt(0),
       strikeReadyAt(0),
@@ -57,7 +58,9 @@ CombatState::CombatState(GameState &game, Inventory &inventory)
       dropEvents(0),
       lastDrop(NO_ITEM),
       lastDropWasNew(false),
-      lastDropLevel(0)
+      lastDropLevel(0),
+      secondWindReadyAt(0),
+      secondWindEvents(0)
 {
     for (uint8_t i = 0; i < ZONE_COUNT; i++)
     {
@@ -65,14 +68,23 @@ CombatState::CombatState(GameState &game, Inventory &inventory)
     }
 }
 
+// Folds everything resolvePlayerStats() reads into one number: gear, upgrades, the awards
+// that pay attack and defense, and talents. Each only grows during a run, so the sum
+// cannot come back to a value already seen; load() forgets it for a new run.
+uint32_t CombatState::statsSignature() const
+{
+    return inventory.getRevision() + game.getUpgradesBoughtCount() + game.getAchievements().getUnlockedCount() +
+           game.getAscension().getRevision();
+}
+
 void CombatState::refreshStats()
 {
-    uint32_t revision = inventory.getRevision();
-    if (revision == seenInventoryRevision && cachedStats.maxHp > 0)
+    uint32_t signature = statsSignature();
+    if (signature == seenStatsSignature && cachedStats.maxHp > 0)
     {
         return;
     }
-    seenInventoryRevision = revision;
+    seenStatsSignature = signature;
 
     uint32_t previousMax = cachedStats.maxHp;
     cachedStats = resolvePlayerStats(game, inventory);
@@ -102,6 +114,10 @@ bool CombatState::isZoneUnlocked(uint8_t zoneId) const
 
     const ZoneDef &def = ZONES[zoneId];
     if (def.requiresUnlockUpgrade && !game.isZoneUnlockedByUpgrade(zoneId))
+    {
+        return false;
+    }
+    if (def.reqDelveLevel > game.getAscension().getEffectLevel(TalentEffect::DEEP_ZONES))
     {
         return false;
     }
@@ -170,14 +186,37 @@ void CombatState::startFight(unsigned long now)
     enemyAttackAt = now + getEnemy().attackIntervalMs;
 }
 
+// Talents that pay the same kind of bonus as an award add to it
 uint32_t CombatState::getReward(AchReward reward) const
 {
-    return game.getAchievements().getRewardPercent(reward);
+    uint32_t percent = game.getAchievements().getRewardPercent(reward);
+    if (reward == AchReward::DROP_CHANCE)
+    {
+        percent += game.getAscension().getPercent(TalentEffect::DROP_CHANCE);
+    }
+    else if (reward == AchReward::KILL_GOLD)
+    {
+        percent += game.getAscension().getPercent(TalentEffect::KILL_GOLD);
+    }
+    return percent;
 }
 
 unsigned long CombatState::getGuardDurationMs() const
 {
     return GUARD_DURATION_MS * (100 + getReward(AchReward::GUARD_TIME)) / 100;
+}
+
+unsigned long CombatState::getStrikeCooldownMs() const
+{
+    return cutBy(STRIKE_COOLDOWN_MS, inventory.getRelicPercent(RelicEffect::COOLDOWN_CUT));
+}
+
+// Never shorter than the guard it follows plus a second, so a guard cannot be held up
+unsigned long CombatState::getGuardCooldownMs() const
+{
+    unsigned long ms = cutBy(GUARD_COOLDOWN_MS, inventory.getRelicPercent(RelicEffect::COOLDOWN_CUT));
+    unsigned long floor = getGuardDurationMs() + 1000;
+    return ms > floor ? ms : floor;
 }
 
 unsigned long CombatState::getSpellCooldownMs(const SpellDef &spell) const
@@ -301,12 +340,21 @@ void CombatState::onEnemyKilled(unsigned long now)
     }
     killEvents++;
 
+    uint32_t twinChance = game.getAscension().getPercent(TalentEffect::TWIN_DROP);
     for (uint8_t i = 0; i < enemy.dropCount; i++)
     {
         const DropDef &drop = enemy.drops[i];
+        if (!canDrop(drop.itemId))
+        {
+            continue;
+        }
         if ((uint16_t)random(10000) < getDropChanceBp(drop))
         {
             lastDropWasNew = inventory.addDrop(drop.itemId);
+            if (twinChance > 0 && (uint32_t)random(100) < twinChance)
+            {
+                inventory.addDrop(drop.itemId);
+            }
             lastDrop = (int8_t)drop.itemId;
             lastDropLevel = inventory.getItemLevel(drop.itemId);
             dropEvents++;
@@ -330,8 +378,33 @@ void CombatState::regenerate(unsigned long now)
     playerHp = playerHp + gained < cachedStats.maxHp ? playerHp + gained : cachedStats.maxHp;
 }
 
+bool CombatState::canDrop(uint8_t itemId) const
+{
+    return relicRank(itemId) <= game.getAscension().getEffectLevel(TalentEffect::RELIC_HUNT);
+}
+
+bool CombatState::isSecondWindReady(unsigned long now) const
+{
+    return game.getAscension().getEffectLevel(TalentEffect::SECOND_WIND) > 0 &&
+           (secondWindReadyAt == 0 || reached(now, secondWindReadyAt));
+}
+
+unsigned long CombatState::getSecondWindRemaining(unsigned long now) const
+{
+    return secondWindReadyAt == 0 ? 0 : remainingUntil(now, secondWindReadyAt);
+}
+
 void CombatState::onPlayerDied(unsigned long now)
 {
+    if (isSecondWindReady(now))
+    {
+        playerHp = cachedStats.maxHp * SECOND_WIND_HP_PERCENT / 100;
+        unsigned long cut = game.getAscension().getPercent(TalentEffect::SECOND_WIND) * 60000UL;
+        secondWindReadyAt = now + (cut < SECOND_WIND_BASE_MS ? SECOND_WIND_BASE_MS - cut : 0) + 1;
+        secondWindEvents++;
+        return;
+    }
+
     playerHp = 0;
     phase = DEAD;
     deathAt = now;
@@ -453,7 +526,7 @@ bool CombatState::strike()
     {
         return false;
     }
-    strikeReadyAt = now + STRIKE_COOLDOWN_MS;
+    strikeReadyAt = now + getStrikeCooldownMs();
     hitEnemy(damage, HIT_STRIKE, now);
     return true;
 }
@@ -497,7 +570,7 @@ bool CombatState::guard()
     {
         return false;
     }
-    guardReadyAt = now + GUARD_COOLDOWN_MS;
+    guardReadyAt = now + getGuardCooldownMs();
     guardEndsAt = now + getGuardDurationMs();
     return true;
 }
@@ -575,6 +648,7 @@ void CombatState::save(Snapshot &out) const
 void CombatState::load(const Snapshot &in)
 {
     currentZone = in.currentZone < ZONE_COUNT ? in.currentZone : 0;
+    seenStatsSignature = UINT32_MAX;
     for (uint8_t i = 0; i < ZONE_COUNT; i++)
     {
         zoneKills[i] = in.zoneKills[i];

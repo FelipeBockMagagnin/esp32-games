@@ -10,7 +10,7 @@ class Achievements;
 
 // The screens a new player has not reached yet. A fresh game shows only Mining, and
 // each of these opens when the player first has a use for it, one at a time, so the
-// game introduces itself a piece at a time instead of all seven screens on boot.
+// game introduces itself a piece at a time instead of all eight screens on boot.
 // Declared in unlock order: each one also waits for the one before it.
 enum class Feature : uint8_t
 {
@@ -18,9 +18,10 @@ enum class Feature : uint8_t
     UPGRADES,  // A few buildings owned and an upgrade affordable
     AWARDS,    // First achievement earned
     COMBAT,    // A Drill owned; opens the Zones and Combat screens together
-    INVENTORY  // First item dropped beyond the starting kit
+    INVENTORY, // First item dropped beyond the starting kit
+    ASCEND     // Enough lifetime gold for the first ascension point
 };
-static constexpr uint8_t FEATURE_COUNT = 5;
+static constexpr uint8_t FEATURE_COUNT = 6;
 
 // Like Achievements, holds no references: evaluate() takes the states it reads, and
 // the main loop maps features to screens, so nothing here knows about the UI.
