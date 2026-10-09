@@ -149,10 +149,9 @@ void MiningScreen::applyOreTier(uint8_t tier)
 
     if (tier + 1 < ORE_TIER_COUNT)
     {
-        // Tier t is mined from level t * LEVELS_PER_TIER + 1
         char buf[40];
         snprintf(buf, sizeof(buf), "Next: %s at Lv %u", ORE_TIERS[tier + 1].name,
-                 (unsigned)((tier + 1) * LEVELS_PER_TIER + 1));
+                 (unsigned)ORE_TIERS[tier + 1].minLevel);
         nextOreText.setText(buf);
     }
     else

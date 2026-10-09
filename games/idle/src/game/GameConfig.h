@@ -11,10 +11,11 @@ static const uint32_t GOLD_SCALE = 1000;
 static const uint32_t MINE_XP = 1;         // Mining XP gained per click
 static const uint32_t XP_PER_LEVEL = 10;   // XP needed for next level = XP_PER_LEVEL * level
 
-// The ore mined changes every LEVELS_PER_TIER levels, both its name and its base click gold
+// The ore mined changes with the mining level, both its name and its base click gold
 struct OreTierDef
 {
-    const char *name;
+    const char *name;     // Up to 20 chars, the size-2 line's width
+    uint16_t minLevel;    // Mining level the ore is first mined at; ascending
     uint32_t clickAmount; // Whole gold units gained per click at this tier, before click upgrades
     uint16_t palette[3];  // Light, mid and dark shades the ore sprite is recolored to (RGB565)
 };
@@ -22,19 +23,28 @@ struct OreTierDef
 // Every tier shares one ore sprite; the palette swap is what tells them apart, so a
 // new tier needs three shades rather than another 18 KB image. Copper is the sprite's
 // own colors, which is why its row matches ORE_SPRITE_PALETTE in MiningScreen.cpp.
+// The first eight come every 5 levels, within the first active session; from Adamantite
+// the gaps widen so the last ore lands around day 7 of the simulator's scripted player.
 static constexpr OreTierDef ORE_TIERS[] = {
-    //  name             gold/click   light   mid     dark
-    {"Copper Ore",       1,           {0xFC08, 0xD163, 0x806A}},
-    {"Tin Ore",          3,           {0xCEBB, 0x8453, 0x422B}},
-    {"Iron Ore",         8,           {0xCC8E, 0x92A7, 0x4945}},
-    {"Silver Ore",       20,          {0xF7BF, 0xADB9, 0x5B0F}},
-    {"Gold Ore",         50,          {0xFEEA, 0xE4C2, 0x8221}},
-    {"Platinum Ore",     125,         {0xD7DE, 0x7E18, 0x3B0E}},
-    {"Diamond Ore",      300,         {0x9F9F, 0x2D5D, 0x1231}},
-    {"Mythril Ore",      750,         {0xD53F, 0x8A9D, 0x40F0}},
+    //  name             level  gold/click   light   mid     dark
+    {"Copper Ore",       1,     1,           {0xFC08, 0xD163, 0x806A}},
+    {"Tin Ore",          6,     3,           {0xCEBB, 0x8453, 0x422B}},
+    {"Iron Ore",         11,    8,           {0xCC8E, 0x92A7, 0x4945}},
+    {"Silver Ore",       16,    20,          {0xF7BF, 0xADB9, 0x5B0F}},
+    {"Gold Ore",         21,    50,          {0xFEEA, 0xE4C2, 0x8221}},
+    {"Platinum Ore",     26,    125,         {0xD7DE, 0x7E18, 0x3B0E}},
+    {"Diamond Ore",      31,    300,         {0x9F9F, 0x2D5D, 0x1231}},
+    {"Mythril Ore",      36,    750,         {0xD53F, 0x8A9D, 0x40F0}},
+    {"Adamantite Ore",   45,    1500,        {0x7F51, 0x2D29, 0x0A84}},
+    {"Orichalcum Ore",   55,    3000,        {0xFD6B, 0xDB43, 0x7961}},
+    {"Runite Ore",       66,    6000,        {0x6F1A, 0x1CB2, 0x0A29}},
+    {"Obsidian Ore",     78,    12000,       {0x93F5, 0x418A, 0x1884}},
+    {"Starmetal Ore",    91,    24000,       {0xEF9F, 0x953A, 0x428F}},
+    {"Voidstone Ore",    105,   48000,       {0xC37F, 0x7118, 0x284A}},
+    {"Celestium Ore",    120,   96000,       {0xFF94, 0x767F, 0x2AD5}},
+    {"Aetherium Ore",    136,   192000,      {0xFCDC, 0xD9F4, 0x68AA}},
 };
 static constexpr uint8_t ORE_TIER_COUNT = sizeof(ORE_TIERS) / sizeof(ORE_TIERS[0]);
-static constexpr uint8_t LEVELS_PER_TIER = 5; // Mining levels spent on each ore before the next
 
 // Gold veins, the golden cookie of this game: every few minutes a vein glints beside the
 // ore on the Mining screen for a short while, and pressing Up there catches it for a random

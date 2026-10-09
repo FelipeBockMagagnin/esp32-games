@@ -527,8 +527,12 @@ uint8_t GameState::getUpgradesBoughtCount() const
 
 uint8_t GameState::getOreTier() const
 {
-    uint16_t tier = (miningLevel - 1) / LEVELS_PER_TIER;
-    return tier < ORE_TIER_COUNT ? (uint8_t)tier : ORE_TIER_COUNT - 1;
+    uint8_t tier = 0;
+    while (tier + 1 < ORE_TIER_COUNT && miningLevel >= ORE_TIERS[tier + 1].minLevel)
+    {
+        tier++;
+    }
+    return tier;
 }
 
 void GameState::save(Snapshot &out) const
