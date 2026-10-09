@@ -67,6 +67,18 @@ bool Ascension::ascend(uint64_t runGold)
     return true;
 }
 
+// Each level costs costGrowthPercent of the one before, rounded up so a cheap talent's
+// price still climbs; saturates instead of wrapping
+uint32_t Ascension::talentCost(const TalentDef &def, uint8_t level)
+{
+    uint64_t cost = def.baseCost;
+    for (uint8_t i = 0; i < level && cost < UINT32_MAX; i++)
+    {
+        cost = (cost * def.costGrowthPercent + 99) / 100;
+    }
+    return cost < UINT32_MAX ? (uint32_t)cost : UINT32_MAX;
+}
+
 uint8_t Ascension::getTalentLevel(uint8_t id) const
 {
     return id < TALENT_COUNT ? talentLevels[id] : 0;
@@ -93,7 +105,7 @@ uint32_t Ascension::getTalentCost(uint8_t id) const
     {
         return 0;
     }
-    return TALENTS[id].baseCost + (uint32_t)TALENTS[id].costStep * talentLevels[id];
+    return talentCost(TALENTS[id], talentLevels[id]);
 }
 
 bool Ascension::canBuyTalent(uint8_t id) const
@@ -137,7 +149,7 @@ void Ascension::recount()
         const TalentDef &def = TALENTS[i];
         for (uint8_t level = 0; level < talentLevels[i]; level++)
         {
-            pointsSpent += def.baseCost + (uint32_t)def.costStep * level;
+            pointsSpent += talentCost(def, level);
         }
         effectPercent[(uint8_t)def.effect] += (uint32_t)def.perLevel * talentLevels[i];
         effectLevel[(uint8_t)def.effect] += talentLevels[i];

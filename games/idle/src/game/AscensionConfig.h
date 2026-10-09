@@ -9,14 +9,15 @@
 // awards, the items and the talents. Points follow Cookie Clicker's prestige curve: the
 // lifetime total is floor(cbrt(lifetime gold / ASCEND_GOLD_PER_POINT)), and ascending
 // banks whatever that total has gained, so ascending early never costs points.
-// From tools/sim --runs 3: a first run earns its first point within ten hours and 25-28 by
-// the end of day three; spent, those bring the second run's Transmuter from 57 h to about
-// 25 h, and that run banks 40-55 more. A fourth run reaches the 1.8e16 balance ceiling.
-static const uint64_t ASCEND_GOLD_PER_POINT = 1000000000ULL;
+// Tuned for months of play, measured with tools/sim --runs 30 (an ascension every three
+// days): about ten points a run for the first month, Deep Delver's zones around days 25
+// and 55, and a run only nearing the 1.8e16 balance ceiling around days 75-90. Past it a
+// run still banks a few points, against a tree that costs about 1.5 million.
+static const uint64_t ASCEND_GOLD_PER_POINT = 10000000000ULL;
 
 // Every point earned, spent or not, also adds this much gold production, as Cookie
 // Clicker's prestige levels do. It and the production talents multiply the other bonuses.
-static const uint32_t ASCEND_PRODUCTION_PER_POINT = 2;
+static const uint32_t ASCEND_PRODUCTION_PER_POINT = 1;
 
 // Most effects add a percentage; the rest change a mechanic, and their per-level value
 // means what the comment says
@@ -70,7 +71,7 @@ struct TalentDef
     uint16_t perLevel;       // Added to the effect per level, see TalentEffect
     uint8_t maxLevel;
     uint16_t baseCost;       // Points for the first level
-    uint16_t costStep;       // Added to the price by each level already bought
+    uint16_t costGrowthPercent; // Each level costs this much of the one before (125 = +25%)
     uint8_t parent;          // Needs a level in this talent first; NO_TALENT for a root
     const uint16_t *icon;    // 16x16 RGB565, black transparent
 };
@@ -87,30 +88,34 @@ enum TalentId : uint8_t
 
 // Shown in this order, so a talent's parent must come before it: the list draws the tree
 // by indenting each talent under its parent.
+//
+// Prices grow geometrically, as Cookie Clicker's and NGU's do, so the tree is a sink for
+// months of ascensions rather than something a few runs finish: the cheap first levels of
+// everything come early, and the deep levels of the percentage roots stay a long-term goal.
 static constexpr TalentDef TALENTS[] = {
-    //  name           description              effect                               val  max cost step parent               icon
-    {"Gilded Soul", "+10% gold/s per level",   TalentEffect::PRODUCTION,            10,  10, 1,   1,   NO_TALENT,           image_upgrade_production_pixels},
-    {"Quick Hands", "+50% gold/click a level", TalentEffect::CLICK,                 50,  5,  1,   1,   TALENT_GILDED_SOUL,  image_upgrade_click_pixels},
-    {"Combo",       "Quick clicks combo up",   TalentEffect::CLICK_COMBO,           50,  4,  2,   2,   TALENT_QUICK_HANDS,  image_upgrade_click_pixels},
-    {"Deep Focus",  "+1 mining XP a click",    TalentEffect::MINING_XP,             1,   4,  1,   2,   TALENT_QUICK_HANDS,  image_building_pickaxe_pixels},
-    {"Haggler",     "Buildings 2% cheaper",    TalentEffect::BUILDING_DISCOUNT,     2,   10, 2,   1,   TALENT_GILDED_SOUL,  image_award_scroll_pixels},
-    {"Legacy",      "+1% gold/s per award",    TalentEffect::PRODUCTION_PER_AWARD,  1,   3,  5,   5,   TALENT_HAGGLER,      image_award_trophy_pixels},
-    {"Heirloom",    "Start with buildings",    TalentEffect::HEAD_START,            1,   3,  2,   2,   TALENT_HAGGLER,      image_building_minecart_pixels},
-    {"Synergy",     "Buildings boost next",    TalentEffect::SYNERGY,               1,   3,  4,   4,   TALENT_HAGGLER,      image_building_excavator_pixels},
+    //  name           description              effect                               val  max cost grow% parent               icon
+    {"Gilded Soul", "+5% gold/s per level",    TalentEffect::PRODUCTION,            5,   50, 1,   125,  NO_TALENT,           image_upgrade_production_pixels},
+    {"Quick Hands", "+25% per click a level", TalentEffect::CLICK,                 25,  20, 1,   130,  TALENT_GILDED_SOUL,  image_upgrade_click_pixels},
+    {"Combo",       "Quick clicks combo up",   TalentEffect::CLICK_COMBO,           25,  8,  3,   160,  TALENT_QUICK_HANDS,  image_upgrade_click_pixels},
+    {"Deep Focus",  "+1 mining XP a click",    TalentEffect::MINING_XP,             1,   5,  2,   180,  TALENT_QUICK_HANDS,  image_building_pickaxe_pixels},
+    {"Haggler",     "Buildings 1% cheaper",    TalentEffect::BUILDING_DISCOUNT,     1,   20, 2,   130,  TALENT_GILDED_SOUL,  image_award_scroll_pixels},
+    {"Legacy",      "+1% gold/s per award",    TalentEffect::PRODUCTION_PER_AWARD,  1,   5,  10,  200,  TALENT_HAGGLER,      image_award_trophy_pixels},
+    {"Heirloom",    "Start with buildings",    TalentEffect::HEAD_START,            1,   5,  3,   200,  TALENT_HAGGLER,      image_building_minecart_pixels},
+    {"Synergy",     "Buildings boost next",    TalentEffect::SYNERGY,               1,   5,  15,  250,  TALENT_HAGGLER,      image_building_excavator_pixels},
 
-    {"War Spirit",  "+10% ATK and DEF a lvl",  TalentEffect::ATTACK_DEFENSE,        10,  10, 1,   1,   NO_TALENT,           image_sword_02b_pixels},
-    {"Iron Body",   "+20% max HP per level",   TalentEffect::MAX_HP,                20,  5,  1,   1,   TALENT_WAR_SPIRIT,   image_upgrade_heart_pixels},
-    {"Second Wind", "Cheat death sometimes",   TalentEffect::SECOND_WIND,           2,   3,  2,   2,   TALENT_IRON_BODY,    image_upgrade_heart_pixels},
-    {"Keen Eye",    "+10% drop chance a lvl",  TalentEffect::DROP_CHANCE,           10,  5,  2,   2,   TALENT_WAR_SPIRIT,   image_item_ruby_ring_pixels},
-    {"Bounty",      "+25% kill gold a level",  TalentEffect::KILL_GOLD,             25,  4,  2,   1,   TALENT_KEEN_EYE,     image_item_miner_ring_pixels},
-    {"Twin Drop",   "10% drops count twice",   TalentEffect::TWIN_DROP,             10,  5,  2,   1,   TALENT_KEEN_EYE,     image_item_gold_ring_pixels},
-    {"Relic Sense", "Relics start to drop",    TalentEffect::RELIC_HUNT,            1,   4,  3,   3,   TALENT_KEEN_EYE,     image_award_skull_pixels},
-    {"Old Maps",    "Keep zone maps",          TalentEffect::KEEP_MAPS,             1,   4,  1,   1,   TALENT_WAR_SPIRIT,   image_upgrade_map_pixels},
-    {"Deep Delver", "Opens deeper zones",      TalentEffect::DEEP_ZONES,            1,   2,  8,   8,   TALENT_OLD_MAPS,     image_zone_depths_pixels},
+    {"War Spirit",  "+5% ATK/DEF per level", TalentEffect::ATTACK_DEFENSE,        5,   50, 1,   125,  NO_TALENT,           image_sword_02b_pixels},
+    {"Iron Body",   "+10% max HP per level",   TalentEffect::MAX_HP,                10,  30, 1,   125,  TALENT_WAR_SPIRIT,   image_upgrade_heart_pixels},
+    {"Second Wind", "Cheat death sometimes",   TalentEffect::SECOND_WIND,           2,   3,  5,   200,  TALENT_IRON_BODY,    image_upgrade_heart_pixels},
+    {"Keen Eye",    "+5% drop chance a lvl",   TalentEffect::DROP_CHANCE,           5,   20, 2,   140,  TALENT_WAR_SPIRIT,   image_item_ruby_ring_pixels},
+    {"Bounty",      "+10% kill gold a level",  TalentEffect::KILL_GOLD,             10,  20, 2,   140,  TALENT_KEEN_EYE,     image_item_miner_ring_pixels},
+    {"Twin Drop",   "5% drops count twice",    TalentEffect::TWIN_DROP,             5,   10, 4,   150,  TALENT_KEEN_EYE,     image_item_gold_ring_pixels},
+    {"Relic Sense", "Relics start to drop",    TalentEffect::RELIC_HUNT,            1,   4,  6,   200,  TALENT_KEEN_EYE,     image_award_skull_pixels},
+    {"Old Maps",    "Keep zone maps",          TalentEffect::KEEP_MAPS,             1,   4,  3,   150,  TALENT_WAR_SPIRIT,   image_upgrade_map_pixels},
+    {"Deep Delver", "Opens deeper zones",      TalentEffect::DEEP_ZONES,            1,   2,  40,  300,  TALENT_OLD_MAPS,     image_zone_depths_pixels},
 
-    {"Dowser",      "Veins 10% more often",    TalentEffect::VEIN_FREQUENCY,        10,  5,  1,   1,   NO_TALENT,           image_icon_gold_vein_pixels},
-    {"Vein Lore",   "Vein bonuses +10% a lvl", TalentEffect::VEIN_POWER,            10,  5,  2,   1,   TALENT_DOWSER,       image_icon_gold_vein_pixels},
-    {"Lingering",   "Veins stay 3s longer",    TalentEffect::VEIN_LINGER,           3,   5,  1,   1,   TALENT_DOWSER,       image_icon_gold_vein_pixels},
+    {"Dowser",      "Veins 5% more often",     TalentEffect::VEIN_FREQUENCY,        5,   20, 1,   135,  NO_TALENT,           image_icon_gold_vein_pixels},
+    {"Vein Lore",   "Vein bonuses +5% a lvl",  TalentEffect::VEIN_POWER,            5,   20, 2,   135,  TALENT_DOWSER,       image_icon_gold_vein_pixels},
+    {"Lingering",   "Veins stay 2s longer",    TalentEffect::VEIN_LINGER,           2,   10, 2,   140,  TALENT_DOWSER,       image_icon_gold_vein_pixels},
 };
 static constexpr uint8_t TALENT_COUNT = sizeof(TALENTS) / sizeof(TALENTS[0]);
 

@@ -20,6 +20,7 @@ public:
     Ascension();
 
     static uint32_t pointsFor(uint64_t lifetimeGold);
+    static uint32_t talentCost(const TalentDef &def, uint8_t level); // Of buying level + 1
 
     uint64_t getLifetimeGold(uint64_t runGold) const;
     uint32_t getPointsEarned() const { return pointsFor(priorGold); }

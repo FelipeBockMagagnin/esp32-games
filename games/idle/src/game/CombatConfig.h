@@ -272,9 +272,9 @@ static constexpr DropDef SUN_EATER_DROPS[] = {
 // day 5. The kill gates (150 / 500 / 1500 / 1000) keep a zone from opening before the
 // one before it has been fought for a while.
 //
-// The two zones past the Core are for later runs (tools/sim --runs 3): Deep Delver opens
-// the Void Rift a day or two into the second run, which farms itself 4-19 h later once a
-// few Mythic pieces have dropped; the Star Forge follows its 1500 kills within hours.
+// The two zones past the Core are for later runs: Deep Delver's two levels open them around
+// days 25 and 55 of ascending every three days (tools/sim --runs 30). The Void Rift farms
+// itself 4-19 h after it opens, once a few Mythic pieces have dropped.
 //
 // The Sewers are set by hand: fought with the starting kit, they cost about 40% of health
 // per fight and a death every three to four kills until the first drops come in.
@@ -318,14 +318,14 @@ static constexpr EnemyDef CORE_ENEMIES[] = {
     {"Core Golem",    5000,   2275, 1850, 2600,     720000000, PLACEHOLDER_SPRITE,   DROPS(CORE_GOLEM_DROPS)},
 };
 static constexpr EnemyDef RIFT_ENEMIES[] = {
-    {"Riftstalker",   4500,   3900, 2600, 2400,     10000000000ULL,  PLACEHOLDER_SPRITE, DROPS(RIFT_STALKER_DROPS)},
-    {"Void Wraith",   4800,   4000, 2700, 2600,     14000000000ULL,  PLACEHOLDER_SPRITE, DROPS(VOID_WRAITH_DROPS)},
-    {"Void Maw",      9000,   4600, 2950, 2800,     40000000000ULL,  PLACEHOLDER_SPRITE, DROPS(VOID_MAW_DROPS), true},
+    {"Riftstalker",   4500,   3900, 2600, 2400,     1000000000ULL,   PLACEHOLDER_SPRITE, DROPS(RIFT_STALKER_DROPS)},
+    {"Void Wraith",   4800,   4000, 2700, 2600,     1400000000ULL,   PLACEHOLDER_SPRITE, DROPS(VOID_WRAITH_DROPS)},
+    {"Void Maw",      9000,   4600, 2950, 2800,     4000000000ULL,   PLACEHOLDER_SPRITE, DROPS(VOID_MAW_DROPS), true},
 };
 static constexpr EnemyDef STAR_ENEMIES[] = {
-    {"Star Smith",    20000,  9000, 4800, 2400,     80000000000ULL,  PLACEHOLDER_SPRITE, DROPS(STAR_SMITH_DROPS)},
-    {"Nova Golem",    22000,  9300, 5000, 2600,     110000000000ULL, PLACEHOLDER_SPRITE, DROPS(NOVA_GOLEM_DROPS)},
-    {"Sun Eater",     40000,  11000, 5400, 2800,    300000000000ULL, PLACEHOLDER_SPRITE, DROPS(SUN_EATER_DROPS), true},
+    {"Star Smith",    20000,  9000, 4800, 2400,     6000000000ULL,   PLACEHOLDER_SPRITE, DROPS(STAR_SMITH_DROPS)},
+    {"Nova Golem",    22000,  9300, 5000, 2600,     8000000000ULL,   PLACEHOLDER_SPRITE, DROPS(NOVA_GOLEM_DROPS)},
+    {"Sun Eater",     40000,  11000, 5400, 2800,    24000000000ULL,  PLACEHOLDER_SPRITE, DROPS(SUN_EATER_DROPS), true},
 };
 
 #define ZONE(table) table, sizeof(table) / sizeof(table[0])
