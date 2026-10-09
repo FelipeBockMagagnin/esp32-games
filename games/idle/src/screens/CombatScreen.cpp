@@ -228,7 +228,7 @@ void CombatScreen::refreshEnemyAttack(unsigned long now, bool fighting)
         enemyAttackBar.setProgress(1, 1);
         enemyAttackBar.setFillColor(INERT_COLOR);
         enemyAttackBar.setBorderColor(ENEMY_ATTACK_BORDER);
-        enemyAttackBar.setLabel("can't hurt you");
+        enemyAttackBar.setLabel("0 dmg");
     }
     else
     {
@@ -294,14 +294,14 @@ void CombatScreen::refreshStatus(unsigned long now, bool fighting)
     {
         char buf[40];
         unsigned long remaining = combat.getReviveRemaining(now);
-        snprintf(buf, sizeof(buf), "Knocked out - back in %lu.%lus", remaining / 1000, (remaining % 1000) / 100);
+        snprintf(buf, sizeof(buf), "Defeated - reviving in %lu.%lus", remaining / 1000, (remaining % 1000) / 100);
         messageText.setColor(Theme::TEXT_2);
         messageText.setText(buf);
     }
     else if (fighting && combat.getBestAttackDamage() == 0)
     {
         messageText.setColor(CombatStyle::BLOCKED);
-        messageText.setText("Too strong - improve your ATK");
+        messageText.setText("BLOCKED");
     }
     else
     {

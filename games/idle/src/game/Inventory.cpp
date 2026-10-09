@@ -223,6 +223,20 @@ uint32_t Inventory::getClickBonusPercent() const
     return total;
 }
 
+uint32_t Inventory::getDropChanceBonusPercent() const
+{
+    uint32_t total = 0;
+    for (uint8_t slot = 0; slot < EQUIP_SLOT_COUNT; slot++)
+    {
+        if (equipped[slot] != NO_ITEM)
+        {
+            uint8_t id = (uint8_t)equipped[slot];
+            total += scaleItemStat(ITEMS[id].dropChanceBonusPercent, itemLevels[id]);
+        }
+    }
+    return total;
+}
+
 uint32_t Inventory::getRespawnCutPercent() const
 {
     uint32_t total = 0;

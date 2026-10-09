@@ -142,18 +142,18 @@ void EnemyPanel::refreshSideColumns(const EnemyDef &enemy)
     defValue.setText(buf);
     bossTag.setVisible(enemy.boss);
 
-    for (uint8_t i = 0; i < MAX_DROPS; i++)
+    uint8_t slot = 0;
+    for (uint8_t i = 0; i < enemy.dropCount && slot < MAX_DROPS; i++)
     {
-        bool used = i < count;
-        dropIcon[i].setVisible(used);
-        dropPct[i].setVisible(used);
-        if (!used)
+        const DropDef &drop = enemy.drops[i];
+        if (!combat.canDrop(drop.itemId))
         {
             continue;
         }
 
-        const DropDef &drop = enemy.drops[i];
-        dropIcon[i].setPixels(ITEMS[drop.itemId].iconPixels, DROP_ICON_SIZE, DROP_ICON_SIZE, true, 0x0000);
+        dropIcon[slot].setVisible(true);
+        dropPct[slot].setVisible(true);
+        dropIcon[slot].setPixels(ITEMS[drop.itemId].iconPixels, DROP_ICON_SIZE, DROP_ICON_SIZE, true, 0x0000);
 
         // Basis points: whole percents print plain, rare drops keep their tenth (5.5%)
         uint16_t chance = combat.getDropChanceBp(drop);
@@ -167,8 +167,15 @@ void EnemyPanel::refreshSideColumns(const EnemyDef &enemy)
         {
             snprintf(buf, sizeof(buf), "%u.%u%%", whole, tenth);
         }
-        dropPct[i].setText(buf);
-        dropPct[i].setColor(inventory.isOwned(drop.itemId) ? Theme::GOLD : Theme::GOOD);
+        dropPct[slot].setText(buf);
+        dropPct[slot].setColor(inventory.isOwned(drop.itemId) ? Theme::GOLD : Theme::GOOD);
+        slot++;
+    }
+
+    for (uint8_t i = slot; i < MAX_DROPS; i++)
+    {
+        dropIcon[i].setVisible(false);
+        dropPct[i].setVisible(false);
     }
 }
 

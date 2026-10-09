@@ -67,9 +67,10 @@ struct ItemDef
     // per tier, carry it at ~0.1-0.3% of the max HP the player has when that tier is worn,
     // so it shaves a tenth or so off the incoming damage rather than out-healing it.
     uint16_t regen;
-    // Rare items feed back into the economy
+    // Rare items feed back into the economy and combat drops
     uint16_t goldProductionBonusPercent;
     uint16_t clickBonusPercent;
+    uint16_t dropChanceBonusPercent;
     uint8_t tier;     // 0-3, from the slot's first item to its best; drives the name color
     // Exactly one of the two icon pointers is set, mirroring how Image draws both kinds.
     // New art only needs the pointer swapped here.
@@ -109,68 +110,68 @@ enum ItemId : uint8_t
 };
 
 static constexpr ItemDef ITEMS[] = {
-    //  name           slot                  atk  def  hp   rgn  prod%  click%  tier  icon
-    {"Leaf Hat",    EquipSlot::HELMET,    0,   2,   5,   3,   0,     0,      0,     ICON(image_item_leaf_hat_pixels)},
-    {"Leather Cap", EquipSlot::HELMET,    0,   6,   15,  0,   0,     0,      1,     ICON(image_item_leather_cap_pixels)},
-    {"Steel Helm",  EquipSlot::HELMET,    0,   18,  45,  0,   0,     0,      2,     ICON(image_item_steel_helm_pixels)},
-    {"Rune Helm",   EquipSlot::HELMET,    0,   54,  135, 81,  0,     0,      3,     ICON(image_item_rune_helm_pixels)},
+    //  name           slot                  atk  def  hp   rgn  prod%  click% drop% tier  icon
+    {"Leaf Hat",    EquipSlot::HELMET,    0,   2,   5,   3,   0,     0,     0,    0,     ICON(image_item_leaf_hat_pixels)},
+    {"Leather Cap", EquipSlot::HELMET,    0,   6,   15,  0,   0,     0,     0,    1,     ICON(image_item_leather_cap_pixels)},
+    {"Steel Helm",  EquipSlot::HELMET,    0,   18,  45,  0,   0,     0,     0,    2,     ICON(image_item_steel_helm_pixels)},
+    {"Rune Helm",   EquipSlot::HELMET,    0,   54,  135, 81,  0,     0,     0,    3,     ICON(image_item_rune_helm_pixels)},
 
-    {"Cloth Vest",  EquipSlot::BODY,      0,   4,   10,  0,   0,     0,      0,     ICON(image_item_cloth_vest_pixels)},
-    {"Iron Mail",   EquipSlot::BODY,      0,   12,  30,  0,   0,     0,      1,     ICON(image_armor_01b_pixels)},
-    {"Steel Plate", EquipSlot::BODY,      0,   36,  90,  27,  0,     0,      2,     ICON(image_item_steel_plate_pixels)},
-    {"Rune Plate",  EquipSlot::BODY,      0,   108, 270, 0,   0,     0,      3,     ICON(image_item_rune_plate_pixels)},
+    {"Cloth Vest",  EquipSlot::BODY,      0,   4,   10,  0,   0,     0,     0,    0,     ICON(image_item_cloth_vest_pixels)},
+    {"Iron Mail",   EquipSlot::BODY,      0,   12,  30,  0,   0,     0,     0,    1,     ICON(image_armor_01b_pixels)},
+    {"Steel Plate", EquipSlot::BODY,      0,   36,  90,  27,  0,     0,     0,    2,     ICON(image_item_steel_plate_pixels)},
+    {"Rune Plate",  EquipSlot::BODY,      0,   108, 270, 0,   0,     0,     0,    3,     ICON(image_item_rune_plate_pixels)},
 
-    {"Fig Leaf",    EquipSlot::PANTS,     0,   3,   6,   0,   0,     0,      0,     ICON(image_item_fig_leaf_pixels)},
-    {"Loincloth",   EquipSlot::PANTS,     0,   9,   18,  9,   0,     0,      1,     ICON(image_item_loincloth_pixels)},
-    {"Steel Legs",  EquipSlot::PANTS,     0,   27,  54,  0,   0,     0,      2,     ICON(image_item_steel_legs_pixels)},
-    {"Rune Legs",   EquipSlot::PANTS,     0,   81,  162, 0,   0,     0,      3,     ICON(image_item_rune_legs_pixels)},
+    {"Fig Leaf",    EquipSlot::PANTS,     0,   3,   6,   0,   0,     0,     0,    0,     ICON(image_item_fig_leaf_pixels)},
+    {"Loincloth",   EquipSlot::PANTS,     0,   9,   18,  9,   0,     0,     0,    1,     ICON(image_item_loincloth_pixels)},
+    {"Steel Legs",  EquipSlot::PANTS,     0,   27,  54,  0,   0,     0,     0,    2,     ICON(image_item_steel_legs_pixels)},
+    {"Rune Legs",   EquipSlot::PANTS,     0,   81,  162, 0,   0,     0,     0,    3,     ICON(image_item_rune_legs_pixels)},
 
-    {"Worn Boots",  EquipSlot::BOOTS,     0,   2,   4,   0,   0,     0,      0,     ICON(image_item_worn_boots_pixels)},
-    {"Iron Boots",  EquipSlot::BOOTS,     0,   6,   12,  0,   0,     0,      1,     ICON(image_item_iron_boots_pixels)},
-    {"Steel Boots", EquipSlot::BOOTS,     0,   18,  36,  0,   0,     0,      2,     ICON(image_item_steel_boots_pixels)},
-    {"Rune Boots",  EquipSlot::BOOTS,     0,   54,  108, 0,   0,     0,      3,     ICON(image_item_rune_boots_pixels)},
+    {"Worn Boots",  EquipSlot::BOOTS,     0,   2,   4,   0,   0,     0,     0,    0,     ICON(image_item_worn_boots_pixels)},
+    {"Iron Boots",  EquipSlot::BOOTS,     0,   6,   12,  0,   0,     0,     0,    1,     ICON(image_item_iron_boots_pixels)},
+    {"Steel Boots", EquipSlot::BOOTS,     0,   18,  36,  0,   0,     0,     0,    2,     ICON(image_item_steel_boots_pixels)},
+    {"Rune Boots",  EquipSlot::BOOTS,     0,   54,  108, 0,   0,     0,     0,    3,     ICON(image_item_rune_boots_pixels)},
 
-    {"Rag Gloves",  EquipSlot::GLOVES,    1,   1,   0,   0,   0,     0,      0,     ICON(image_item_rag_gloves_pixels)},
-    {"Iron Gloves", EquipSlot::GLOVES,    3,   3,   0,   0,   0,     0,      1,     ICON(image_item_iron_gloves_pixels)},
-    {"Steel Grips", EquipSlot::GLOVES,    9,   9,   0,   0,   0,     0,      2,     ICON(image_item_steel_grips_pixels)},
-    {"Rune Grips",  EquipSlot::GLOVES,    27,  27,  0,   0,   0,     0,      3,     ICON(image_item_rune_grips_pixels)},
+    {"Rag Gloves",  EquipSlot::GLOVES,    1,   1,   0,   0,   0,     5,     0,    0,     ICON(image_item_rag_gloves_pixels)},
+    {"Iron Gloves", EquipSlot::GLOVES,    3,   3,   0,   0,   0,     0,     0,    1,     ICON(image_item_iron_gloves_pixels)},
+    {"Steel Grips", EquipSlot::GLOVES,    9,   9,   0,   0,   0,     0,     0,    2,     ICON(image_item_steel_grips_pixels)},
+    {"Rune Grips",  EquipSlot::GLOVES,    27,  27,  0,   0,   0,     0,     0,    3,     ICON(image_item_rune_grips_pixels)},
 
-    {"Dull Stick",  EquipSlot::SWORD,     5,   0,   0,   0,   0,     0,      0,     ICON(image_item_dull_stick_pixels)},
-    {"Good Stick",  EquipSlot::SWORD,     15,  0,   0,   0,   0,     0,      1,     ICON(image_item_good_stick_pixels)},
-    {"Great Stick", EquipSlot::SWORD,     45,  0,   0,   0,   0,     0,      2,     ICON(image_item_great_stick_pixels)},
-    {"Rune Blade",  EquipSlot::SWORD,     135, 0,   0,   0,   0,     0,      3,     ICON(image_item_rune_blade_pixels)},
+    {"Dull Stick",  EquipSlot::SWORD,     5,   0,   0,   0,   0,     8,     0,    0,     ICON(image_item_dull_stick_pixels)},
+    {"Good Stick",  EquipSlot::SWORD,     15,  0,   0,   0,   0,     0,     0,    1,     ICON(image_item_good_stick_pixels)},
+    {"Great Stick", EquipSlot::SWORD,     45,  0,   0,   0,   0,     0,     0,    2,     ICON(image_item_great_stick_pixels)},
+    {"Rune Blade",  EquipSlot::SWORD,     135, 0,   0,   0,   0,     0,     0,    3,     ICON(image_item_rune_blade_pixels)},
 
-    {"Wood Shield", EquipSlot::SHIELD,    0,   5,   5,   0,   0,     0,      0,     ICON(image_item_wood_shield_pixels)},
-    {"Iron Shield", EquipSlot::SHIELD,    0,   15,  15,  0,   0,     0,      1,     ICON(image_item_iron_shield_pixels)},
-    {"Steel Guard", EquipSlot::SHIELD,    0,   45,  45,  0,   0,     0,      2,     ICON(image_item_steel_guard_pixels)},
-    {"Rune Aegis",  EquipSlot::SHIELD,    0,   135, 135, 0,   0,     0,      3,     ICON(image_item_rune_aegis_pixels)},
+    {"Wood Shield", EquipSlot::SHIELD,    0,   5,   5,   0,   0,     0,     0,    0,     ICON(image_item_wood_shield_pixels)},
+    {"Iron Shield", EquipSlot::SHIELD,    0,   15,  15,  0,   0,     5,     0,    1,     ICON(image_item_iron_shield_pixels)},
+    {"Steel Guard", EquipSlot::SHIELD,    0,   45,  45,  0,   0,     0,     0,    2,     ICON(image_item_steel_guard_pixels)},
+    {"Rune Aegis",  EquipSlot::SHIELD,    0,   135, 135, 0,   0,     0,     0,    3,     ICON(image_item_rune_aegis_pixels)},
 
-    {"Tin Ring",    EquipSlot::RING,      2,   0,   0,   0,   0,     5,      0,     ICON(image_item_tin_ring_pixels)},
-    {"Gold Ring",   EquipSlot::RING,      6,   0,   0,   0,   0,     15,     1,     ICON(image_item_gold_ring_pixels)},
-    {"Ruby Ring",   EquipSlot::RING,      18,  0,   0,   0,   0,     40,     2,     ICON(image_item_ruby_ring_pixels), 20},
-    {"Miner Ring",  EquipSlot::RING,      54,  0,   0,   0,   0,     100,    3,     ICON(image_item_miner_ring_pixels), 30},
+    {"Tin Ring",    EquipSlot::RING,      2,   0,   0,   0,   0,     10,    5,    0,     ICON(image_item_tin_ring_pixels)},
+    {"Gold Ring",   EquipSlot::RING,      6,   0,   0,   0,   0,     20,    10,   1,     ICON(image_item_gold_ring_pixels)},
+    {"Ruby Ring",   EquipSlot::RING,      18,  0,   0,   0,   0,     50,    15,   2,     ICON(image_item_ruby_ring_pixels), 20},
+    {"Miner Ring",  EquipSlot::RING,      54,  0,   0,   0,   0,     120,   25,   3,     ICON(image_item_miner_ring_pixels), 30},
 
-    {"Wilson",      EquipSlot::AMULET,    0,   2,   0,   0,   5,     0,      0,     ICON(image_item_wilson_pixels)},
-    {"Jade Amulet", EquipSlot::AMULET,    0,   6,   0,   0,   15,    0,      1,     ICON(image_item_jade_amulet_pixels)},
-    {"Gold Amulet", EquipSlot::AMULET,    0,   18,  0,   0,   40,    0,      2,     ICON(image_item_gold_amulet_pixels), 20},
-    {"Core Sigil",  EquipSlot::AMULET,    0,   54,  0,   0,   100,   0,      3,     ICON(image_item_core_sigil_pixels)},
+    {"Wilson",      EquipSlot::AMULET,    0,   2,   0,   0,   10,    0,     0,    0,     ICON(image_item_wilson_pixels)},
+    {"Jade Amulet", EquipSlot::AMULET,    0,   6,   0,   0,   20,    0,     0,    1,     ICON(image_item_jade_amulet_pixels)},
+    {"Gold Amulet", EquipSlot::AMULET,    0,   18,  0,   0,   50,    0,     0,    2,     ICON(image_item_gold_amulet_pixels), 20},
+    {"Core Sigil",  EquipSlot::AMULET,    0,   54,  0,   0,   120,   0,     0,    3,     ICON(image_item_core_sigil_pixels)},
 
     // Mythic: three times the Epic piece of the slot, as each tier is of the one before
-    {"Ember Helm",  EquipSlot::HELMET,    0,   162, 405, 0,   0,     0,      4,     ICON(image_icon_ember_helm_pixels)},
-    {"Ember Mail",  EquipSlot::BODY,      0,   324, 810, 243, 0,     0,      4,     ICON(image_icon_ember_mail_pixels)},
-    {"Ember Legs",  EquipSlot::PANTS,     0,   243, 486, 0,   0,     0,      4,     ICON(image_icon_ember_legs_pixels)},
-    {"Ember Boots", EquipSlot::BOOTS,     0,   162, 324, 0,   0,     0,      4,     ICON(image_icon_ember_boots_pixels)},
-    {"Ember Grips", EquipSlot::GLOVES,    81,  81,  0,   0,   0,     0,      4,     ICON(image_icon_ember_grips_pixels)},
-    {"Ember Blade", EquipSlot::SWORD,     405, 0,   0,   0,   0,     0,      4,     ICON(image_icon_ember_blade_pixels)},
-    {"Ember Guard", EquipSlot::SHIELD,    0,   405, 405, 0,   0,     0,      4,     ICON(image_icon_ember_guard_pixels)},
-    {"Ember Ring",  EquipSlot::RING,      162, 0,   0,   0,   0,     250,    4,     ICON(image_icon_ember_ring_pixels), 30},
-    {"Ember Charm", EquipSlot::AMULET,    0,   162, 0,   0,   250,   0,      4,     ICON(image_icon_ember_charm_pixels)},
+    {"Ember Helm",  EquipSlot::HELMET,    0,   162, 405, 0,   0,     0,     0,    4,     ICON(image_icon_ember_helm_pixels)},
+    {"Ember Mail",  EquipSlot::BODY,      0,   324, 810, 243, 0,     0,     0,    4,     ICON(image_icon_ember_mail_pixels)},
+    {"Ember Legs",  EquipSlot::PANTS,     0,   243, 486, 0,   0,     0,     0,    4,     ICON(image_icon_ember_legs_pixels)},
+    {"Ember Boots", EquipSlot::BOOTS,     0,   162, 324, 0,   0,     0,     0,    4,     ICON(image_icon_ember_boots_pixels)},
+    {"Ember Grips", EquipSlot::GLOVES,    81,  81,  0,   0,   0,     0,     0,    4,     ICON(image_icon_ember_grips_pixels)},
+    {"Ember Blade", EquipSlot::SWORD,     405, 0,   0,   0,   0,     0,     0,    4,     ICON(image_icon_ember_blade_pixels)},
+    {"Ember Guard", EquipSlot::SHIELD,    0,   405, 405, 0,   0,     0,     0,    4,     ICON(image_icon_ember_guard_pixels)},
+    {"Ember Ring",  EquipSlot::RING,      162, 0,   0,   0,   0,     250,   40,   4,     ICON(image_icon_ember_ring_pixels), 30},
+    {"Ember Charm", EquipSlot::AMULET,    0,   162, 0,   0,   250,   0,     0,    4,     ICON(image_icon_ember_charm_pixels)},
 
-    //  name           slot                  atk  def  hp   rgn  prod%  click%  tier  icon                                       cut  relic                          %
-    {"Trader Coin", EquipSlot::RELIC,     0,   0,   0,   0,   0,     0,      5,     ICON(image_icon_trader_coin_pixels),     0,   RelicEffect::UPGRADE_DISCOUNT, 10},
-    {"Time Candle", EquipSlot::RELIC,     0,   0,   0,   0,   0,     0,      5,     ICON(image_icon_time_candle_pixels),       0,   RelicEffect::COOLDOWN_CUT,     15},
-    {"Elder Bone",  EquipSlot::RELIC,     0,   0,   0,   0,   0,     0,      5,     ICON(image_icon_elder_bone_pixels),     0,   RelicEffect::AWARD_BOOST,      20},
-    {"Golem Heart", EquipSlot::RELIC,     0,   0,   0,   0,   0,     0,      5,     ICON(image_icon_golem_heart_pixels),       0,   RelicEffect::HP_REGEN,         4},
+    //  name           slot                  atk  def  hp   rgn  prod%  click% drop% tier  icon                                       cut  relic                          %
+    {"Trader Coin", EquipSlot::RELIC,     0,   0,   0,   0,   0,     0,     0,    5,     ICON(image_icon_trader_coin_pixels),     0,   RelicEffect::UPGRADE_DISCOUNT, 10},
+    {"Time Candle", EquipSlot::RELIC,     0,   0,   0,   0,   0,     0,     0,    5,     ICON(image_icon_time_candle_pixels),       0,   RelicEffect::COOLDOWN_CUT,     15},
+    {"Elder Bone",  EquipSlot::RELIC,     0,   0,   0,   0,   0,     0,     0,    5,     ICON(image_icon_elder_bone_pixels),     0,   RelicEffect::AWARD_BOOST,      20},
+    {"Golem Heart", EquipSlot::RELIC,     0,   0,   0,   0,   0,     0,     0,    5,     ICON(image_icon_golem_heart_pixels),       0,   RelicEffect::HP_REGEN,         4},
 };
 static constexpr uint8_t ITEM_COUNT = sizeof(ITEMS) / sizeof(ITEMS[0]);
 

@@ -45,6 +45,7 @@ public:
     Stats getEquippedStats() const;
     uint32_t getGoldProductionBonusPercent() const;
     uint32_t getClickBonusPercent() const;
+    uint32_t getDropChanceBonusPercent() const;
     uint32_t getRespawnCutPercent() const; // Uncapped; combat caps it with the achievements' cut
     uint32_t getRelicPercent(RelicEffect effect) const; // The worn relic's, or 0
 

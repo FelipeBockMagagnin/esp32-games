@@ -108,67 +108,67 @@ struct ZoneDef
 // levelled up over the whole stay: with N enemies picked at random, an item on k of them at
 // chance c drops at k*c/N per kill. The boss of each zone carries its ring and amulet.
 static constexpr DropDef SMALL_RAT_DROPS[] = {
-    {ITEM_DULL_STICK, 300},
-    {ITEM_RAG_GLOVES, 300},
+    {ITEM_DULL_STICK, 550},
+    {ITEM_RAG_GLOVES, 550},
 };
 static constexpr DropDef SLIME_DROPS[] = {
-    {ITEM_FIG_LEAF, 300},
-    {ITEM_WORN_BOOTS, 300},
+    {ITEM_FIG_LEAF, 550},
+    {ITEM_WORN_BOOTS, 550},
 };
 static constexpr DropDef FROG_DROPS[] = {
-    {ITEM_LEAF_HAT, 300},
-    {ITEM_CLOTH_VEST, 300},
+    {ITEM_LEAF_HAT, 550},
+    {ITEM_CLOTH_VEST, 550},
 };
 static constexpr DropDef SAD_FROG_DROPS[] = {
-    {ITEM_DULL_STICK, 300},
-    {ITEM_FIG_LEAF, 300},
-    {ITEM_WOOD_SHIELD, 150},
+    {ITEM_DULL_STICK, 550},
+    {ITEM_FIG_LEAF, 550},
+    {ITEM_WOOD_SHIELD, 350},
 };
 static constexpr DropDef BIG_BAD_RAT_DROPS[] = {
-    {ITEM_RAG_GLOVES, 300},
-    {ITEM_WORN_BOOTS, 300},
-    {ITEM_CLOTH_VEST, 300},
+    {ITEM_RAG_GLOVES, 550},
+    {ITEM_WORN_BOOTS, 550},
+    {ITEM_CLOTH_VEST, 550},
 };
 static constexpr DropDef FROG_WIZARD_DROPS[] = {
-    {ITEM_LEAF_HAT, 300},
-    {ITEM_WOOD_SHIELD, 150},
-    {ITEM_TIN_RING, 90},
+    {ITEM_LEAF_HAT, 550},
+    {ITEM_WOOD_SHIELD, 350},
+    {ITEM_TIN_RING, 250},
 };
 static constexpr DropDef GAMER_MOUSE_DROPS[] = {
-    {ITEM_TIN_RING, 300},
-    {ITEM_WILSON, 300},
-    {ITEM_WOOD_SHIELD, 210},
-    {ITEM_TRADER_COIN, 60},
+    {ITEM_TIN_RING, 450},
+    {ITEM_WILSON, 450},
+    {ITEM_WOOD_SHIELD, 350},
+    {ITEM_TRADER_COIN, 80},
 };
 
 static constexpr DropDef SPIDER_DROPS[] = {
-    {ITEM_LEATHER_CAP, 110},
-    {ITEM_IRON_GLOVES, 110},
+    {ITEM_LEATHER_CAP, 220},
+    {ITEM_IRON_GLOVES, 220},
 };
 static constexpr DropDef GNOME_DROPS[] = {
-    {ITEM_GOOD_STICK, 110},
-    {ITEM_IRON_MAIL, 110},
+    {ITEM_GOOD_STICK, 220},
+    {ITEM_IRON_MAIL, 220},
 };
 static constexpr DropDef BARD_GNOME_DROPS[] = {
-    {ITEM_LOINCLOTH, 110},
-    {ITEM_IRON_BOOTS, 110},
-    {ITEM_LEATHER_CAP, 110},
+    {ITEM_LOINCLOTH, 220},
+    {ITEM_IRON_BOOTS, 220},
+    {ITEM_LEATHER_CAP, 220},
 };
 static constexpr DropDef GOBLIN_DROPS[] = {
-    {ITEM_GOOD_STICK, 110},
-    {ITEM_IRON_GLOVES, 110},
-    {ITEM_IRON_SHIELD, 80},
+    {ITEM_GOOD_STICK, 220},
+    {ITEM_IRON_GLOVES, 220},
+    {ITEM_IRON_SHIELD, 160},
 };
 static constexpr DropDef ZOMBIE_DROPS[] = {
-    {ITEM_IRON_MAIL, 110},
-    {ITEM_LOINCLOTH, 110},
-    {ITEM_IRON_BOOTS, 110},
+    {ITEM_IRON_MAIL, 220},
+    {ITEM_LOINCLOTH, 220},
+    {ITEM_IRON_BOOTS, 220},
 };
 static constexpr DropDef GNOME_BAND_DROPS[] = {
-    {ITEM_IRON_SHIELD, 80},
-    {ITEM_GOLD_RING, 75},
-    {ITEM_JADE_AMULET, 75},
-    {ITEM_TIME_CANDLE, 40},
+    {ITEM_IRON_SHIELD, 160},
+    {ITEM_GOLD_RING, 150},
+    {ITEM_JADE_AMULET, 150},
+    {ITEM_TIME_CANDLE, 80},
 };
 
 static constexpr DropDef BONE_DIGGER_DROPS[] = {

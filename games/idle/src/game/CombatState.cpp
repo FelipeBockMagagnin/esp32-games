@@ -226,7 +226,8 @@ unsigned long CombatState::getSpellCooldownMs(const SpellDef &spell) const
 
 uint16_t CombatState::getDropChanceBp(const DropDef &drop) const
 {
-    uint32_t chance = (uint32_t)drop.chanceBp * (100 + getReward(AchReward::DROP_CHANCE)) / 100;
+    uint32_t bonus = getReward(AchReward::DROP_CHANCE) + inventory.getDropChanceBonusPercent();
+    uint32_t chance = (uint32_t)drop.chanceBp * (100 + bonus) / 100;
     return chance < 10000 ? (uint16_t)chance : 10000;
 }
 

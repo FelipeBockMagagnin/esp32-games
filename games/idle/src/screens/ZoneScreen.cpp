@@ -13,16 +13,7 @@ static const uint16_t STATS_COLOR = Theme::TEXT;
 static const uint16_t ENEMY_NAME_COLOR = Theme::ENEMY_NAME; // Warm peach, the enemy's side on the combat screen
 static const uint16_t ACTIVE_COLOR = Theme::GOOD;
 
-// How far the player's gear reaches into a zone, best to worst
-enum Reach : uint8_t
-{
-    REACH_IDLE,    // The auto-attack gets through: the zone farms itself
-    REACH_STRIKE,  // Only the manual strike gets through
-    REACH_BLOCKED  // Nothing gets through yet
-};
 
-static const char *const REACH_LABELS[] = {"IDLE", "STRIKE", "TOO HARD"};
-static const uint16_t REACH_COLORS[] = {Theme::GOOD, Theme::GOLD, Theme::BAD};
 
 // Stats card
 static const int16_t CARD_X = 5;
@@ -53,33 +44,7 @@ static const int16_t DROPS_Y = PANEL_Y + 74;
 static const int16_t FIGHT_ROW_Y = PANEL_Y + 94;
 static const int16_t BADGE_OFFSET_Y = (8 - ButtonBadge::SIZE) / 2;
 
-static Reach reachAgainst(const Stats &stats, const EnemyDef &enemy)
-{
-    if (damageThrough(stats.attack, enemy.defense) > 0)
-    {
-        return REACH_IDLE;
-    }
-    if (damageThrough(stats.attack * STRIKE_MULTIPLIER, enemy.defense) > 0)
-    {
-        return REACH_STRIKE;
-    }
-    return REACH_BLOCKED;
-}
 
-// A zone is only as easy as its hardest enemy, since the fight picks between them
-static Reach reachInZone(const Stats &stats, const ZoneDef &zone)
-{
-    Reach worst = REACH_IDLE;
-    for (uint8_t i = 0; i < zone.enemyCount; i++)
-    {
-        Reach reach = reachAgainst(stats, zone.enemies[i]);
-        if (reach > worst)
-        {
-            worst = reach;
-        }
-    }
-    return worst;
-}
 
 // The UNLOCK_ZONE upgrade for a zone carries its index, so its name can be looked up
 // instead of duplicated in the zone table
@@ -214,10 +179,7 @@ void ZoneScreen::refreshRows(const Stats &stats)
 
         snprintf(buf, sizeof(buf), isActive ? "%u kills, fighting" : "%u kills", (unsigned)combat.getZoneKills(id));
         row.setSubtitle(buf);
-
-        Reach reach = reachInZone(stats, zone);
-        row.setValue(REACH_LABELS[reach]);
-        row.setValueColor(REACH_COLORS[reach]);
+        row.setValue("");
 
         if (isSelected)
         {
@@ -289,7 +251,7 @@ void ZoneScreen::refreshPanel(const Stats &stats)
         uint32_t strikeHit = damageThrough(stats.attack * STRIKE_MULTIPLIER, enemy.defense);
         snprintf(buf, sizeof(buf), "hit %lu / %lu", (unsigned long)autoHit, (unsigned long)strikeHit);
         enemyDeal[i].setText(buf);
-        enemyDeal[i].setColor(REACH_COLORS[reachAgainst(stats, enemy)]);
+        enemyDeal[i].setColor(Theme::TEXT);
     }
 
     // Every distinct item the zone can drop, grayed until found

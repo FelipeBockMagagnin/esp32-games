@@ -69,8 +69,13 @@ static String describeItem(const Inventory &inventory, uint8_t itemId)
     }
     if (def.clickBonusPercent > 0 && n < sizeof(buf) - 1)
     {
-        snprintf(buf + n, sizeof(buf) - n, "%s+%lu%% click", n > 0 ? " " : "",
+        n += snprintf(buf + n, sizeof(buf) - n, "%s+%lu%% click", n > 0 ? " " : "",
                  (unsigned long)scaleItemStat(def.clickBonusPercent, level));
+    }
+    if (def.dropChanceBonusPercent > 0 && n < sizeof(buf) - 1)
+    {
+        snprintf(buf + n, sizeof(buf) - n, "%s+%lu%% drop", n > 0 ? " " : "",
+                 (unsigned long)scaleItemStat(def.dropChanceBonusPercent, level));
     }
     return String(buf);
 }
@@ -330,7 +335,8 @@ enum StatKind : uint8_t
     STAT_RESPAWN,
     STAT_CLICK,
     STAT_GOLD,
-    STAT_REGEN
+    STAT_REGEN,
+    STAT_DROP
 };
 
 static int32_t statValue(const Inventory &inventory, uint8_t id, StatKind kind)
@@ -353,6 +359,8 @@ static int32_t statValue(const Inventory &inventory, uint8_t id, StatKind kind)
         return (int32_t)scaleItemStat(ITEMS[id].goldProductionBonusPercent, level);
     case STAT_REGEN:
         return (int32_t)s.regen;
+    case STAT_DROP:
+        return (int32_t)scaleItemStat(ITEMS[id].dropChanceBonusPercent, level);
     }
     return 0;
 }
@@ -414,12 +422,16 @@ void InventoryScreen::showStats(int8_t itemId, int8_t against, bool compare)
     {
         kinds[3] = STAT_CLICK;
     }
+    else if (eitherHas(itemId, against, &ItemDef::dropChanceBonusPercent))
+    {
+        kinds[3] = STAT_DROP;
+    }
     else if (eitherHas(itemId, against, &ItemDef::regen))
     {
         kinds[3] = STAT_REGEN;
     }
 
-    static const char *const LABELS[] = {"ATK", "DEF", "HP", "RSP", "CLK", "GLD", "RGN"};
+    static const char *const LABELS[] = {"ATK", "DEF", "HP", "RSP", "CLK", "GLD", "RGN", "DRP"};
     char buf[16];
     for (uint8_t i = 0; i < STAT_COLUMNS; i++)
     {
