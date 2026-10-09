@@ -13,6 +13,14 @@ static const int16_t POPUP_RISE = 45;          // Pixels travelled over its life
 static const unsigned long POPUP_FADE_MS = 300; // Fades out during the last part
 static const int16_t POPUP_SPREAD = 20;         // Random horizontal jitter so fast clicks don't stack
 
+static const unsigned long CHIP_MS = 450;
+static const int16_t CHIP_GRAVITY = 900; // Pixels per second squared
+static const int16_t CHIP_SPREAD_X = 24;
+static const int16_t CHIP_SPEED_X = 140;
+static const int16_t CHIP_SPEED_UP_MIN = 120;
+static const int16_t CHIP_SPEED_UP_MAX = 300;
+static const int16_t CHIP_SIZE = 3;
+
 // Halo behind the ore: rings from the outside in, each a stronger blend of the glow
 // color into the background. Radii are relative to the ore's size.
 static const uint8_t GLOW_RINGS = 3;
@@ -54,6 +62,7 @@ OreDisplay::OreDisplay(int16_t x, int16_t y, int16_t w, int16_t h,
       paletteCount(0),
       glowColor(0x0000),
       nextPopup(0),
+      nextChip(0),
       shaking(false),
       shakeStart(0),
       veinIcon(nullptr),
@@ -68,6 +77,10 @@ OreDisplay::OreDisplay(int16_t x, int16_t y, int16_t w, int16_t h,
     for (uint8_t i = 0; i < MAX_POPUPS; i++)
     {
         popups[i].active = false;
+    }
+    for (uint8_t i = 0; i < MAX_CHIPS; i++)
+    {
+        chips[i].active = false;
     }
 }
 
@@ -89,6 +102,11 @@ void OreDisplay::shake()
 
 void OreDisplay::addPopup(const String &text)
 {
+    addPopup(text, popupColor);
+}
+
+void OreDisplay::addPopup(const String &text, uint16_t color)
+{
     // Reuses the oldest slot when all are in use
     Popup &popup = popups[nextPopup];
     nextPopup = (nextPopup + 1) % MAX_POPUPS;
@@ -96,7 +114,37 @@ void OreDisplay::addPopup(const String &text)
     popup.active = true;
     popup.start = now;
     popup.x = oreX + oreW / 2 + random(-POPUP_SPREAD, POPUP_SPREAD + 1);
+    popup.color = color;
     popup.text = text;
+    lastFrame = 0;
+}
+
+void OreDisplay::burst(uint8_t count, bool gold)
+{
+    for (uint8_t n = 0; n < count; n++)
+    {
+        Chip &chip = chips[nextChip];
+        nextChip = (nextChip + 1) % MAX_CHIPS;
+
+        chip.active = true;
+        chip.start = now;
+        chip.x = oreX + oreW / 2 + random(-CHIP_SPREAD_X, CHIP_SPREAD_X + 1);
+        chip.y = oreY + oreH / 3 + random(0, oreH / 4);
+        chip.vx = random(-CHIP_SPEED_X, CHIP_SPEED_X + 1);
+        chip.vy = -random(CHIP_SPEED_UP_MIN, CHIP_SPEED_UP_MAX + 1);
+        if (gold)
+        {
+            chip.color = n % 2 == 0 ? Theme::GOLD : Theme::TEXT;
+        }
+        else if (paletteTarget != nullptr)
+        {
+            chip.color = paletteTarget[random(0, paletteCount)];
+        }
+        else
+        {
+            chip.color = popupColor;
+        }
+    }
     lastFrame = 0;
 }
 
@@ -156,18 +204,27 @@ void OreDisplay::update(unsigned long time)
         shaking = false;
     }
 
-    bool anyPopup = false;
+    bool anyEffect = false;
     for (uint8_t i = 0; i < MAX_POPUPS; i++)
     {
         if (popups[i].active && now - popups[i].start >= POPUP_MS)
         {
             popups[i].active = false;
         }
-        anyPopup = anyPopup || popups[i].active;
+        anyEffect = anyEffect || popups[i].active;
+    }
+
+    for (uint8_t i = 0; i < MAX_CHIPS; i++)
+    {
+        if (chips[i].active && now - chips[i].start >= CHIP_MS)
+        {
+            chips[i].active = false;
+        }
+        anyEffect = anyEffect || chips[i].active;
     }
 
     bool wasAnimating = animating;
-    animating = shaking || anyPopup;
+    animating = shaking || anyEffect;
 
     if (animating && now - lastFrame >= FRAME_MS)
     {
@@ -283,6 +340,23 @@ void OreDisplay::drawVein(TFT_eSPI &tft)
     ButtonBadge::drawCap(*sprite, cx, VEIN_TOP + size + 10, 6, ButtonBadge::UP, false);
 }
 
+void OreDisplay::drawChips()
+{
+    for (uint8_t i = 0; i < MAX_CHIPS; i++)
+    {
+        const Chip &chip = chips[i];
+        if (!chip.active)
+        {
+            continue;
+        }
+        int32_t age = now - chip.start;
+        int16_t cx = chip.x + (int32_t)chip.vx * age / 1000;
+        int16_t cy = chip.y + (int32_t)chip.vy * age / 1000 + (int32_t)CHIP_GRAVITY * age / 1000 * age / 2000;
+        int16_t size = age < (int32_t)CHIP_MS / 2 ? CHIP_SIZE : CHIP_SIZE - 1;
+        sprite->fillRect(cx - size / 2, cy - size / 2, size, size, chip.color);
+    }
+}
+
 void OreDisplay::draw(TFT_eSPI &tft)
 {
     if (sprite == nullptr)
@@ -314,6 +388,7 @@ void OreDisplay::draw(TFT_eSPI &tft)
     drawBackdrop(tft);
     drawOre(oreX + shakeOffset());
     drawVein(tft);
+    drawChips();
 
     sprite->setTextSize(2);
     sprite->setTextDatum(MC_DATUM);
@@ -328,12 +403,12 @@ void OreDisplay::draw(TFT_eSPI &tft)
         unsigned long age = now - popup.start;
         int16_t popupY = oreY + oreH / 2 - (int32_t)POPUP_RISE * age / POPUP_MS;
 
-        uint16_t color = popupColor;
+        uint16_t color = popup.color;
         unsigned long fadeStart = POPUP_MS - POPUP_FADE_MS;
         if (age > fadeStart)
         {
             uint8_t alpha = 255 - 255 * (age - fadeStart) / POPUP_FADE_MS;
-            color = tft.alphaBlend(alpha, popupColor, eraseColor);
+            color = tft.alphaBlend(alpha, popup.color, eraseColor);
         }
 
         sprite->setTextColor(color);

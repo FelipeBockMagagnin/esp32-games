@@ -42,6 +42,10 @@ public:
     void addTo(Screen &screen);
     void setVisible(bool visible);
     void hideBanner();
+    void onHit(uint32_t damage, bool heavy);
+    void onKill();
+    void stopAnimations();
+    void animate(unsigned long now);
     void showDrop(uint8_t itemId, bool isNew, uint8_t level, unsigned long until);
     void refresh(unsigned long now);
 };

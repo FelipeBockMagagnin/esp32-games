@@ -52,6 +52,20 @@ public:
         setPosition(cx - rx, cy - ry);
     }
 
+    // Keeps the centre where it is
+    void setRadius(int16_t r)
+    {
+        if (rx != r || ry != r)
+        {
+            int16_t cx = centerX();
+            int16_t cy = centerY();
+            rx = r;
+            ry = r;
+            setPosition(cx - r, cy - r);
+            setSize(r * 2 + 1, r * 2 + 1);
+        }
+    }
+
     void draw(TFT_eSPI &tft) override;
 };
 

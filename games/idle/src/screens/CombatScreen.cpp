@@ -90,6 +90,9 @@ CombatScreen::CombatScreen(CombatState &combat, SoundManager &sound)
     addElement(&regenValue);
     addElement(&playerHpBar);
     addElement(&playerHitText);
+
+    enemyHpBar.enableTrail(Theme::HIT_TRAIL);
+    playerHpBar.enableTrail(Theme::HIT_TRAIL);
 }
 
 void CombatScreen::onEnter(TFT_eSPI &tft)
@@ -107,6 +110,7 @@ void CombatScreen::onEnter(TFT_eSPI &tft)
     playerFlashUntil = 0;
     forceRefresh();
     enemyPanel.hideBanner();
+    enemyPanel.stopAnimations();
     Screen::onEnter(tft);
 }
 
@@ -145,6 +149,7 @@ void CombatScreen::handleEvents(unsigned long now)
         snprintf(buf, sizeof(buf), "-%u", (unsigned)combat.getLastHitDamage());
         enemyHitText.setText(buf);
         enemyHitUntil = now + HIT_TEXT_MS;
+        enemyPanel.onHit(combat.getLastHitDamage(), combat.getLastHitKind() == CombatState::HIT_STRIKE);
     }
 
     if (combat.getHurtEvents() != seenHurts)
@@ -168,6 +173,7 @@ void CombatScreen::handleEvents(unsigned long now)
     if (killed)
     {
         seenKills = combat.getKillEvents();
+        enemyPanel.onKill();
         bool midas = combat.wasLastKillMidas();
         snprintf(buf, sizeof(buf), midas ? "MIDAS! +%s gold" : "Defeated! +%s gold",
                  formatAmount(combat.getLastKillGold()).c_str());
@@ -302,8 +308,18 @@ void CombatScreen::refreshStatus(unsigned long now, bool fighting)
     }
 }
 
+// Events are picked up every loop rather than at the refresh rate, so a hit's animation
+// starts with the hit
 void CombatScreen::update(unsigned long now)
 {
+    if (combat.isInZone())
+    {
+        handleEvents(now);
+    }
+    enemyPanel.animate(now);
+    enemyHpBar.update(now);
+    playerHpBar.update(now);
+
     if (!refreshDue(now))
     {
         return;
@@ -319,8 +335,6 @@ void CombatScreen::update(unsigned long now)
         messageText.setText("Pick a zone on the Zones screen");
         return;
     }
-
-    handleEvents(now);
 
     const EnemyDef &enemy = combat.getEnemy();
     bool fighting = combat.getPhase() == CombatState::FIGHTING;

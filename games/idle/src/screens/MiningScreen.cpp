@@ -30,6 +30,8 @@ static const int16_t CARD_Y = 32;
 static const int16_t CARD_W = 224;
 static const int16_t CARD_H = 46;
 static const int16_t COIN_RADIUS = 8;
+static const int16_t COIN_PULSE_RADIUS = 10;
+static const unsigned long COIN_PULSE_MS = 120;
 static const int16_t COIN_X = CARD_X + 18;
 static const int16_t COIN_Y = CARD_Y + 18;
 static const int16_t GOLD_TEXT_X = CARD_X + 34;
@@ -68,6 +70,10 @@ static const unsigned long VEIN_MESSAGE_MS = 4000;
 static const uint32_t PROMPT_CLICKS = 3;
 static const unsigned long PROMPT_BLINK_MS = 500;
 
+static const uint8_t MINE_CHIPS = 4;
+static const uint8_t LEVEL_UP_SPARKS = 14;
+static const uint8_t LUCKY_SPARKS = 10;
+
 MiningScreen::MiningScreen(GameState &game, const Unlocks &unlocks, SoundManager &sound)
     : header("Mining"),
 
@@ -104,7 +110,8 @@ MiningScreen::MiningScreen(GameState &game, const Unlocks &unlocks, SoundManager
       seenVeinSpawns(0),
       veinMessageUntil(0),
       veinMessage(""),
-      veinMessageColor(Theme::GOLD)
+      veinMessageColor(Theme::GOLD),
+      coinPulseUntil(0)
 {
     addElement(&header);
     setHeader(&header);
@@ -192,6 +199,7 @@ void MiningScreen::update(unsigned long now)
     // Animations run at their own frame rate, independent of the text refresh below
     refreshVein(now);
     oreDisplay.update(now);
+    goldCoin.setRadius((long)(now - coinPulseUntil) < 0 ? COIN_PULSE_RADIUS : COIN_RADIUS);
 
     if (!refreshDue(now))
     {
@@ -291,20 +299,30 @@ void MiningScreen::update(unsigned long now)
     }
 }
 
+void MiningScreen::pulseCoin()
+{
+    coinPulseUntil = millis() + COIN_PULSE_MS;
+}
+
 void MiningScreen::onConfirmPress()
 {
     bool leveledUp;
     uint32_t gained = game.mine(leveledUp, millis());
 
     oreDisplay.shake();
-    oreDisplay.addPopup(String("+") + formatAmount(gained));
+    oreDisplay.burst(MINE_CHIPS, false);
+    pulseCoin();
 
+    // Both would rise from the same spot, so a level-up takes the popup
     if (leveledUp)
     {
+        oreDisplay.addPopup("LEVEL UP!", Theme::INFO);
+        oreDisplay.burst(LEVEL_UP_SPARKS, true);
         sound.playLevelUp();
     }
     else
     {
+        oreDisplay.addPopup(String("+") + formatAmount(gained));
         sound.playMine();
     }
     forceRefresh();
@@ -329,6 +347,8 @@ void MiningScreen::onUpPress()
     case VeinEffect::LUCKY:
         snprintf(buf, sizeof(buf), "LUCKY! +%s gold", formatAmount(game.getLastLuckyGold()).c_str());
         oreDisplay.addPopup(String("+") + formatAmount(game.getLastLuckyGold()));
+        oreDisplay.burst(LUCKY_SPARKS, true);
+        pulseCoin();
         break;
     case VeinEffect::FRENZY:
         snprintf(buf, sizeof(buf), "FRENZY! Gold/s x%u for %lus", (unsigned)VEIN_FRENZY_MULTIPLIER,

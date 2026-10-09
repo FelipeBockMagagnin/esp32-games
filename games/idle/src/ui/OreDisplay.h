@@ -3,7 +3,7 @@
 
 #include "UI.h"
 
-// Ore image that shakes when mined, with "+N" popups floating up from it.
+// Ore image that shakes when mined, throwing off chips, with "+N" popups floating up from it.
 // Everything is composed in an off-screen sprite and pushed at once, so the
 // popups can pass over the ore without flicker or erasing holes in it.
 //
@@ -22,6 +22,9 @@ public:
     // Animations start at the time of the last update(), so their age can never be negative
     void shake();
     void addPopup(const String &text);
+    void addPopup(const String &text, uint16_t color);
+    // Chips fly off the ore and fall; in the ore's own colours, or gold sparks
+    void burst(uint8_t count, bool gold);
 
     // Both arrays hold `count` RGB565 colors and must outlive the element (point into
     // constexpr tables). Pass a null target to draw the image in its own colors.
@@ -42,13 +45,26 @@ public:
 
 private:
     static const uint8_t MAX_POPUPS = 5;
+    static const uint8_t MAX_CHIPS = 20;
 
     struct Popup
     {
         bool active;
         unsigned long start;
         int16_t x;
+        uint16_t color;
         String text;
+    };
+
+    struct Chip
+    {
+        bool active;
+        unsigned long start;
+        int16_t x;
+        int16_t y;
+        int16_t vx; // Pixels per second
+        int16_t vy;
+        uint16_t color;
     };
 
     const uint16_t *orePixels;
@@ -65,6 +81,8 @@ private:
 
     Popup popups[MAX_POPUPS];
     uint8_t nextPopup;
+    Chip chips[MAX_CHIPS];
+    uint8_t nextChip;
 
     bool shaking;
     unsigned long shakeStart;
@@ -84,6 +102,7 @@ private:
     void drawBackdrop(TFT_eSPI &tft);
     void drawOre(int16_t left);
     void drawVein(TFT_eSPI &tft);
+    void drawChips();
 };
 
 #endif // UI_ORE_DISPLAY_H

@@ -94,6 +94,31 @@ void EnemyPanel::hideBanner()
     banner.setVisible(false);
 }
 
+void EnemyPanel::onHit(uint32_t damage, bool heavy)
+{
+    sprite.hit(heavy);
+    sprite.addDamage(damage, heavy);
+}
+
+void EnemyPanel::onKill()
+{
+    sprite.kill();
+}
+
+void EnemyPanel::stopAnimations()
+{
+    sprite.stopAnimations();
+}
+
+// The banner covers the sprite, and a frame drawn under it would paint over it
+void EnemyPanel::animate(unsigned long now)
+{
+    if (!banner.isVisible())
+    {
+        sprite.update(now);
+    }
+}
+
 void EnemyPanel::showDrop(uint8_t itemId, bool isNew, uint8_t level, unsigned long until)
 {
     banner.show(itemId, isNew, level);

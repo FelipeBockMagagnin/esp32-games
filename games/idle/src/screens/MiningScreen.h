@@ -55,6 +55,9 @@ private:
     String veinMessage;
     uint16_t veinMessageColor;
 
+    unsigned long coinPulseUntil;
+    void pulseCoin();
+
     void applyOreTier(uint8_t tier);
     void refreshVein(unsigned long now);
 

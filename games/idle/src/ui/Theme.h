@@ -65,6 +65,7 @@ namespace Theme
     static constexpr uint16_t ENEMY_ATK_TRACK = 0x3103; // #35201B
     static constexpr uint16_t ENEMY_ATK_BORDER = 0x69C5; // #6F3B2F
     static constexpr uint16_t INERT_BAR = FRAME;        // a full bar that does nothing
+    static constexpr uint16_t HIT_TRAIL = 0xF6B3;       // #F2D49A health just lost, draining away
 
     // The enemy's stat card on the combat screen
     static constexpr uint16_t ENEMY_FRAME = 0xB227; // #B5473A

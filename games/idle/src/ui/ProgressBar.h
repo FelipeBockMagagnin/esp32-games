@@ -27,7 +27,12 @@ public:
           borderColor(Theme::XP_BORDER),
           showBorder(true),
           label(""),
-          labelColor(Theme::TEXT)
+          labelColor(Theme::TEXT),
+          trailColor(0),
+          trailValue(0),
+          trailHoldUntil(0),
+          lastTrailStep(0),
+          now(0)
     {
     }
 
@@ -40,19 +45,47 @@ public:
           borderColor(borderColor),
           showBorder(true),
           label(""),
-          labelColor(Theme::TEXT)
+          labelColor(Theme::TEXT),
+          trailColor(0),
+          trailValue(0),
+          trailHoldUntil(0),
+          lastTrailStep(0),
+          now(0)
     {
+    }
+
+    // A drop then leaves the lost part lit in `color` for a moment before it drains away,
+    // so a hit reads as a chunk taken out. Needs update() every loop.
+    void enableTrail(uint16_t color)
+    {
+        trailColor = color;
     }
 
     void setProgress(int32_t val, int32_t max)
     {
-        if (current != val || maxVal != max)
+        if (current == val && maxVal == max)
         {
-            current = val;
-            maxVal = max;
-            markDirty();
+            return;
         }
+        // A rise (regen, a heal) leaves a trail that is still draining alone
+        if (trailColor == 0 || max != maxVal)
+        {
+            trailValue = val;
+        }
+        else if (val < current)
+        {
+            if (trailValue < current)
+            {
+                trailValue = current;
+            }
+            trailHoldUntil = now + TRAIL_HOLD_MS;
+        }
+        current = val;
+        maxVal = max;
+        markDirty();
     }
+
+    void update(unsigned long time);
 
     void setFillColor(uint16_t color)
     {
@@ -82,6 +115,15 @@ public:
     }
 
     void draw(TFT_eSPI &tft) override;
+
+private:
+    static const unsigned long TRAIL_HOLD_MS = 250;
+
+    uint16_t trailColor; // 0 while the trail is off
+    int32_t trailValue;
+    unsigned long trailHoldUntil;
+    unsigned long lastTrailStep;
+    unsigned long now;
 };
 
 #endif // UI_PROGRESS_BAR_H
