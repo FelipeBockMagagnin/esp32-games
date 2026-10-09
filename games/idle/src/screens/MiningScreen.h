@@ -56,6 +56,7 @@ private:
     uint16_t veinMessageColor;
 
     unsigned long coinPulseUntil;
+    unsigned long levelFlashUntil;
     void pulseCoin();
 
     void applyOreTier(uint8_t tier);

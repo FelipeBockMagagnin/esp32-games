@@ -23,6 +23,10 @@ static const int16_t DEATH_SINK = 6;
 
 static const unsigned long BOB_MS = 500;
 
+static const unsigned long LUNGE_STEP_MS = 35;
+static const int8_t LUNGE_OFFSETS[] = {2, 4, 4, 3, 1}; // Frame pixels down, toward the player's side
+static const uint8_t LUNGE_STEPS = sizeof(LUNGE_OFFSETS);
+
 static const unsigned long NUMBER_MS = 750;
 static const unsigned long NUMBER_BLINK_MS = 150; // Blinks out over the end of its life
 static const int16_t NUMBER_START_Y = 26;
@@ -105,6 +109,7 @@ static void paintRow(const SpriteDef &def, const uint8_t *&runs, int16_t row, ui
 EnemySprite::EnemySprite(int16_t x, int16_t y, const SpriteDef *sprite)
     : UI(x, y, SIZE, SIZE), sprite(sprite), background(nullptr), countdown(0),
       dyingSprite(nullptr), deathStart(0), hitting(false), hitHeavy(false), hitStart(0),
+      lunging(false), lungeStart(0),
       nextNumber(0), bob(0), now(0), lastFrame(0), animating(false)
 {
     for (uint8_t i = 0; i < MAX_NUMBERS; i++)
@@ -122,6 +127,17 @@ void EnemySprite::hit(bool heavy)
     hitting = true;
     hitHeavy = heavy;
     hitStart = now;
+    lastFrame = 0;
+}
+
+void EnemySprite::lunge()
+{
+    if (dyingSprite != nullptr || sprite == nullptr)
+    {
+        return;
+    }
+    lunging = true;
+    lungeStart = now;
     lastFrame = 0;
 }
 
@@ -164,6 +180,7 @@ void EnemySprite::stopAnimations()
 {
     dyingSprite = nullptr;
     hitting = false;
+    lunging = false;
     for (uint8_t i = 0; i < MAX_NUMBERS; i++)
     {
         numbers[i].active = false;
@@ -186,6 +203,11 @@ void EnemySprite::update(unsigned long time)
         hitting = false;
     }
 
+    if (lunging && now - lungeStart >= LUNGE_STEP_MS * LUNGE_STEPS)
+    {
+        lunging = false;
+    }
+
     bool anyNumber = false;
     for (uint8_t i = 0; i < MAX_NUMBERS; i++)
     {
@@ -197,7 +219,7 @@ void EnemySprite::update(unsigned long time)
     }
 
     bool wasAnimating = animating;
-    animating = dyingSprite != nullptr || hitting || anyNumber;
+    animating = dyingSprite != nullptr || hitting || lunging || anyNumber;
     if (animating && now - lastFrame >= FRAME_MS)
     {
         lastFrame = now;
@@ -316,6 +338,11 @@ void EnemySprite::draw(TFT_eSPI &tft)
         {
             style.tintAlpha = HIT_FLASH_ALPHA;
         }
+    }
+    if (lunging && dyingSprite == nullptr)
+    {
+        uint8_t step = (now - lungeStart) / LUNGE_STEP_MS;
+        dy += step < LUNGE_STEPS ? LUNGE_OFFSETS[step] : 0;
     }
     style.tint = swapBytes(Theme::TEXT);
 

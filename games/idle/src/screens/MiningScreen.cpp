@@ -1,6 +1,7 @@
 #include "MiningScreen.h"
 #include "../assets/Sprites.h"
 #include "../game/Format.h"
+#include "../game/AscensionConfig.h"
 
 
 // The colors image_Icon31_33_pixels is drawn in (light, mid, dark), which each ore tier's
@@ -32,6 +33,7 @@ static const int16_t CARD_H = 46;
 static const int16_t COIN_RADIUS = 8;
 static const int16_t COIN_PULSE_RADIUS = 10;
 static const unsigned long COIN_PULSE_MS = 120;
+static const unsigned long LEVEL_FLASH_MS = 400;
 static const int16_t COIN_X = CARD_X + 18;
 static const int16_t COIN_Y = CARD_Y + 18;
 static const int16_t GOLD_TEXT_X = CARD_X + 34;
@@ -111,7 +113,8 @@ MiningScreen::MiningScreen(GameState &game, const Unlocks &unlocks, SoundManager
       veinMessageUntil(0),
       veinMessage(""),
       veinMessageColor(Theme::GOLD),
-      coinPulseUntil(0)
+      coinPulseUntil(0),
+      levelFlashUntil(0)
 {
     addElement(&header);
     setHeader(&header);
@@ -273,6 +276,10 @@ void MiningScreen::update(unsigned long now)
     snprintf(buf, sizeof(buf), "Level %u", (unsigned)game.getMiningLevel());
     levelText.setText(buf);
 
+    bool levelFlash = (long)(now - levelFlashUntil) < 0;
+    levelText.setColor(levelFlash ? Theme::INFO : Theme::TEXT);
+    expBar.setFillColor(levelFlash ? Theme::INFO : XP_BAR_COLOR);
+
     uint32_t xp = game.getMiningXp();
     uint32_t xpToNext = game.getXpToNextLevel();
     expBar.setProgress(xp, xpToNext);
@@ -307,7 +314,8 @@ void MiningScreen::pulseCoin()
 void MiningScreen::onConfirmPress()
 {
     bool leveledUp;
-    uint32_t gained = game.mine(leveledUp, millis());
+    unsigned long now = millis();
+    uint32_t gained = game.mine(leveledUp, now);
 
     oreDisplay.shake();
     oreDisplay.burst(MINE_CHIPS, false);
@@ -317,13 +325,14 @@ void MiningScreen::onConfirmPress()
     if (leveledUp)
     {
         oreDisplay.addPopup("LEVEL UP!", Theme::INFO);
+        levelFlashUntil = now + LEVEL_FLASH_MS;
         oreDisplay.burst(LEVEL_UP_SPARKS, true);
         sound.playLevelUp();
     }
     else
     {
         oreDisplay.addPopup(String("+") + formatAmount(gained));
-        sound.playMine();
+        sound.playMine((uint8_t)(game.getComboPercent(now) / COMBO_STEP_PERCENT));
     }
     forceRefresh();
 }

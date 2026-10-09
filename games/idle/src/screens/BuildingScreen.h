@@ -2,6 +2,7 @@
 #define BUILDING_SCREEN_H
 
 #include "Screen.h"
+#include "../ui/PressFeedback.h"
 #include "../ui/Box.h"
 #include "../ui/Header.h"
 #include "../ui/ListRow.h"
@@ -45,6 +46,8 @@ private:
 
     GameState &game;
     SoundManager &sound;
+    PressFeedback feedback;
+    unsigned long spentUntil = 0; // The balance blinks white as a purchase spends it
 
     bool isRevealed(uint8_t id) const;
     void updateDetail();

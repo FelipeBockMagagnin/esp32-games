@@ -18,10 +18,19 @@ public:
         tone(pin, NOTE_GS7, 100);
     }
 
-    // Kept short so fast repeated clicks don't blur together
-    void playMine()
+    // Kept short so fast repeated clicks don't blur together. A running combo raises it a
+    // semitone per step, capped at an octave, so a streak is heard climbing.
+    void playMine(uint8_t semitones = 0)
     {
-        tone(pin, NOTE_E6, 30);
+        uint8_t steps = semitones < 12 ? semitones : 12;
+        tone(pin, (unsigned int)(NOTE_E6 * powf(2.0f, steps / 12.0f)), 30);
+    }
+
+    // Lower and punchier than a mining click, so the strike lands with some weight
+    void playStrike()
+    {
+        tone(pin, NOTE_G5, 25);
+        tone(pin, NOTE_C5, 45);
     }
 
     // Rising arpeggio; the ESP32 core queues tone() calls, so the notes play in sequence without blocking
@@ -33,10 +42,11 @@ public:
         tone(pin, NOTE_C7, 160);
     }
 
-    // High note for a successful purchase
+    // Two quick rising notes, a till's "ka-ching", for a successful purchase
     void playBuy()
     {
-        tone(pin, NOTE_C7, 120);
+        tone(pin, NOTE_C7, 50);
+        tone(pin, NOTE_G7, 110);
     }
 
     // Longer fanfare than a level-up, so an achievement is unmistakable

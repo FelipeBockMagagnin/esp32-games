@@ -2,6 +2,7 @@
 #define UPGRADE_SCREEN_H
 
 #include "Screen.h"
+#include "../ui/PressFeedback.h"
 #include "../ui/Text.h"
 #include "../ui/Header.h"
 #include "../ui/Box.h"
@@ -47,6 +48,8 @@ private:
 
     GameState &game;
     SoundManager &sound;
+    PressFeedback feedback;
+    unsigned long spentUntil = 0; // The balance blinks white as a purchase spends it
 
     // Only unlocked, unbought upgrades get a slot, so the grid stays small as the
     // upgrade table grows. selectedSlot indexes this list, not GOLD_UPGRADES.

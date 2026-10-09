@@ -41,7 +41,8 @@ public:
           selectedFill(Theme::ROW_SELECTED),
           hasSelectedFill(true),
           titleColorOverride(Theme::TEXT),
-          hasTitleColor(false)
+          hasTitleColor(false),
+          flashOn(false)
     {
     }
 
@@ -111,6 +112,16 @@ public:
         }
     }
 
+    // A green flash over every state, for an action that just went through
+    void setFlash(bool on)
+    {
+        if (flashOn != on)
+        {
+            flashOn = on;
+            markDirty();
+        }
+    }
+
     void setIconBitmap(const unsigned char *bitmap, int16_t bw, int16_t bh, uint16_t color = Theme::TEXT);
     void setIconPixels(const uint16_t *pixels, int16_t pw, int16_t ph);
     void clearIcon();
@@ -148,6 +159,7 @@ private:
     bool hasSelectedFill;
     uint16_t titleColorOverride;
     bool hasTitleColor;
+    bool flashOn;
 };
 
 #endif // UI_LIST_ROW_H

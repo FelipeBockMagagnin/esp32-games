@@ -15,9 +15,24 @@ static const int16_t TITLE_Y = 10; // Size 2 glyphs end above the rule on the bo
 static const int16_t NOTICE_CAPTION_Y = 2;
 static const int16_t NOTICE_NAME_Y = 11;
 
+static const unsigned long FLASH_STEP_MS = 70;
+static const uint8_t FLASH_ALPHA_PER_STEP = 30;
+
+void Header::update(unsigned long now)
+{
+    if (flashLevel > 0 && now - lastFlashStep >= FLASH_STEP_MS)
+    {
+        lastFlashStep = now;
+        flashLevel--;
+        markDirty();
+    }
+}
+
 void Header::draw(TFT_eSPI &tft)
 {
-    tft.fillRect(x, y, w, h - 1, BAND_COLOR);
+    uint16_t band = flashLevel > 0 ? tft.alphaBlend(flashLevel * FLASH_ALPHA_PER_STEP, noticeAccent, BAND_COLOR)
+                                   : BAND_COLOR;
+    tft.fillRect(x, y, w, h - 1, band);
     tft.drawFastHLine(x, y + h - 1, w, hasNotice ? noticeAccent : RULE_COLOR);
 
     if (hasNotice)

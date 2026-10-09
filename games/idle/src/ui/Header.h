@@ -12,6 +12,8 @@
 // each one reserving space for it. The caption (size 1) names the kind of notice, and the
 // accent color tints it and the bar's bottom rule so each kind is recognisable at a glance.
 //
+// A new notice flashes the bar in its accent and fades back, which needs update() every loop.
+//
 // The bar is painted in its own band color rather than the screen background, so it reads
 // as a title bar on every screen.
 class Header : public UI
@@ -31,7 +33,9 @@ public:
           notice(""),
           noticeCaption(nullptr),
           noticeAccent(Theme::TEXT),
-          hasNotice(false)
+          hasNotice(false),
+          flashLevel(0),
+          lastFlashStep(0)
     {
     }
 
@@ -72,20 +76,28 @@ public:
         {
             return;
         }
+        bool fresh = wanted && notice != name;
         hasNotice = wanted;
+        flashLevel = fresh ? FLASH_STEPS : 0;
         notice = wanted ? name : "";
         noticeCaption = wanted ? caption : nullptr;
         noticeAccent = accent;
         markDirty();
     }
 
+    void update(unsigned long now);
+
     void draw(TFT_eSPI &tft) override;
 
 private:
+    static const uint8_t FLASH_STEPS = 6;
+
     String notice;
     const char *noticeCaption;
     uint16_t noticeAccent;
     bool hasNotice;
+    uint8_t flashLevel;
+    unsigned long lastFlashStep;
 };
 
 #endif // UI_HEADER_H

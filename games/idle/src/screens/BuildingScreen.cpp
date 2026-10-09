@@ -3,6 +3,7 @@
 
 // Values change every frame while producing, so only rebuild the texts a few times per second
 
+static const unsigned long SPENT_BLINK_MS = 150;
 static const uint16_t CARD_BORDER = Theme::GOLD_FRAME;    // Dark amber, same frame as the Mining gold card
 static const uint16_t RATE_COLOR = Theme::GOOD;     // Soft green: income that grows on its own
 static const uint16_t AFFORD_COLOR = Theme::GOOD;   // Green price when the player can buy
@@ -90,6 +91,8 @@ bool BuildingScreen::isRevealed(uint8_t id) const
 
 void BuildingScreen::update(unsigned long now)
 {
+    feedback.update(now);
+    goldText.setColor((long)(now - spentUntil) < 0 ? Theme::TEXT : Theme::GOLD);
     if (!refreshDue(now))
     {
         return;
@@ -205,13 +208,17 @@ void BuildingScreen::onDownPress()
 void BuildingScreen::onConfirmPress()
 {
     // buyBuilding only spends gold when the player can afford it
+    ListRow &row = rows[list.getSelected() - list.getFirstVisible()];
     if (game.buyBuilding((uint8_t)list.getSelected()))
     {
         sound.playBuy();
+        spentUntil = millis() + SPENT_BLINK_MS;
+        feedback.flash(row);
     }
     else
     {
         sound.playError();
+        feedback.shake(row);
     }
     forceRefresh();
 }

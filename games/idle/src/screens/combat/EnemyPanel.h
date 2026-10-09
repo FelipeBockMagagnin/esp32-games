@@ -44,6 +44,7 @@ public:
     void hideBanner();
     void onHit(uint32_t damage, bool heavy);
     void onKill();
+    void onAttack();
     void stopAnimations();
     void animate(unsigned long now);
     void showDrop(uint8_t itemId, bool isNew, uint8_t level, unsigned long until);

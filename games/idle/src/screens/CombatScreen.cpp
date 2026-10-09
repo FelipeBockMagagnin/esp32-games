@@ -159,6 +159,7 @@ void CombatScreen::handleEvents(unsigned long now)
         playerHitText.setText(buf);
         playerHitUntil = now + HIT_TEXT_MS;
         playerFlashUntil = now + HURT_FLASH_MS;
+        enemyPanel.onAttack();
         sound.playHurt();
     }
 
@@ -358,7 +359,7 @@ void CombatScreen::onConfirmPress()
 {
     if (combat.strike())
     {
-        sound.playMine();
+        sound.playStrike();
     }
     else
     {

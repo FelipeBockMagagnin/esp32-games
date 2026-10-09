@@ -13,6 +13,8 @@ static const int16_t TEXT_DX = 31;
 static const int16_t VALUE_MARGIN = 5;
 static const int16_t COIN_RADIUS = 3;
 static const uint8_t DIM_ICON_PERCENT = 55; // Brightness a locked row's gray icon keeps
+static const uint16_t FLASH_COLOR = Theme::GOOD;
+static const uint8_t FLASH_FILL_ALPHA = 90;
 
 void ListRow::setIconBitmap(const unsigned char *bitmap, int16_t bw, int16_t bh, uint16_t color)
 {
@@ -62,7 +64,12 @@ void ListRow::draw(TFT_eSPI &tft)
     }
 
     bool highlighted = state == SELECTED && hasSelectedFill;
-    tft.fillRect(x, y, w, h, highlighted ? selectedFill : fillColor);
+    uint16_t fill = highlighted ? selectedFill : fillColor;
+    if (flashOn)
+    {
+        fill = tft.alphaBlend(FLASH_FILL_ALPHA, FLASH_COLOR, fill);
+    }
+    tft.fillRect(x, y, w, h, fill);
 
     uint16_t frame = frameColor;
     uint16_t titleColor = Theme::TEXT;
@@ -91,7 +98,7 @@ void ListRow::draw(TFT_eSPI &tft)
         titleColor = titleColorOverride;
     }
 
-    tft.drawRect(x, y, w, h, frame);
+    tft.drawRect(x, y, w, h, flashOn ? FLASH_COLOR : frame);
 
     if (iconW > 0 && iconH > 0)
     {

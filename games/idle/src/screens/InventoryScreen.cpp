@@ -534,6 +534,7 @@ void InventoryScreen::refreshPanel()
 
 void InventoryScreen::update(unsigned long now)
 {
+    feedback.update(now);
     // A drop landing while this screen is open changes the list under the player
     uint32_t revision = inventory.getRevision();
     if (revision != lastRevision)
@@ -584,6 +585,7 @@ void InventoryScreen::onConfirmPress()
         if (inventory.countItemsForSlot(slot) == 0)
         {
             sound.playError();
+            feedback.shake(rows[list.getSelected() - list.getFirstVisible()]);
             return;
         }
         sound.playMenu();

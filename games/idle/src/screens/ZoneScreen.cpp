@@ -344,6 +344,7 @@ void ZoneScreen::refreshPanel(const Stats &stats)
 
 void ZoneScreen::update(unsigned long now)
 {
+    feedback.update(now);
     if (!refreshDue(now))
     {
         return;
@@ -396,6 +397,7 @@ void ZoneScreen::onConfirmPress()
     else
     {
         sound.playError();
+        feedback.shake(rows[id - list.getFirstVisible()]);
     }
     forceRefresh();
 }

@@ -6,7 +6,7 @@
 
 // A ring that fills clockwise from 12 o'clock as a cooldown recovers, optionally around a
 // drawing of the physical button that fires it. A full ring with a gold outline means
-// "press now". Positioned by its centre; the area inside the ring (between the cap and the
+// "press now", and the ring flashes white the moment it gets one. Positioned by its centre; the area inside the ring (between the cap and the
 // arc) is never painted, so another element (an icon) can sit there.
 class CooldownRing : public UI
 {
@@ -26,7 +26,8 @@ public:
     CooldownRing(int16_t cx, int16_t cy, int16_t radius, ButtonBadge::Kind kind, bool hasCap = true)
         : UI(cx - radius - 1, cy - radius - 1, 2 * radius + 3, 2 * radius + 3),
           radius(radius), kind(kind), hasCap(hasCap), step(0), ringColor(Theme::TEXT_DIM),
-          trackColor(Theme::FRAME_DIM), outlined(false), outlineColor(Theme::SELECT), capDimmed(false)
+          trackColor(Theme::FRAME_DIM), outlined(false), outlineColor(Theme::SELECT), capDimmed(false),
+          pingPending(false), pinging(false), pingStart(0)
     {
     }
 
@@ -55,6 +56,8 @@ public:
         if (outlined != on)
         {
             outlined = on;
+            pingPending = on;
+            pinging = false;
             markDirty();
         }
     }
@@ -68,6 +71,9 @@ public:
         }
     }
 
+    // Times the ready flash; call after the setters
+    void update(unsigned long now);
+
     void draw(TFT_eSPI &tft) override;
 
 private:
@@ -80,6 +86,9 @@ private:
     bool outlined;
     uint16_t outlineColor;
     bool capDimmed;
+    bool pingPending;
+    bool pinging;
+    unsigned long pingStart;
 };
 
 #endif // UI_COOLDOWN_RING_H

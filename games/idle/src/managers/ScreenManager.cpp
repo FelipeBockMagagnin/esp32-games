@@ -169,6 +169,7 @@ void ScreenManager::update(unsigned long now)
     Screen *screen = getCurrentScreen();
     if (screen != nullptr)
     {
+        screen->updateHeader(now);
         screen->update(now);
         screen->render(tft);
     }

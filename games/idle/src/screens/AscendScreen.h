@@ -2,6 +2,7 @@
 #define ASCEND_SCREEN_H
 
 #include "Screen.h"
+#include "../ui/PressFeedback.h"
 #include "../ui/Box.h"
 #include "../ui/Text.h"
 #include "../ui/Header.h"
@@ -47,6 +48,7 @@ private:
     const GameState &game;
     Ascension &ascension;
     SoundManager &sound;
+    PressFeedback feedback;
     ScreenManager &screenManager;
     Screen &confirmScreen;
 

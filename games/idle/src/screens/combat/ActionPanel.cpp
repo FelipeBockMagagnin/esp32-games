@@ -91,6 +91,10 @@ void ActionPanel::refresh(unsigned long now, bool fighting)
     refreshSpell(now, fighting);
     refreshGuard(now, fighting);
     refreshAutoAttack(now, fighting);
+    for (uint8_t i = 0; i < ACTION_COUNT; i++)
+    {
+        actions[i].ring.update(now);
+    }
 }
 
 // A hit that cannot beat the enemy's defense says so instead of inviting a useless press

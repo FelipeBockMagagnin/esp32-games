@@ -100,6 +100,11 @@ void EnemyPanel::onHit(uint32_t damage, bool heavy)
     sprite.addDamage(damage, heavy);
 }
 
+void EnemyPanel::onAttack()
+{
+    sprite.lunge();
+}
+
 void EnemyPanel::onKill()
 {
     sprite.kill();

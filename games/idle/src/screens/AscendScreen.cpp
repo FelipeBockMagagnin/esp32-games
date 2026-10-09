@@ -126,6 +126,7 @@ AscendScreen::AscendScreen(const GameState &game, Ascension &ascension, SoundMan
 
 void AscendScreen::update(unsigned long now)
 {
+    feedback.update(now);
     if (!refreshDue(now))
     {
         return;
@@ -376,6 +377,7 @@ void AscendScreen::onDownPress()
 void AscendScreen::onConfirmPress()
 {
     uint8_t item = (uint8_t)list.getSelected();
+    ListRow &row = rows[item - list.getFirstVisible()];
     if (item == 0)
     {
         if (ascension.getPendingPoints(game.getTotalGoldEarned()) > 0)
@@ -386,6 +388,7 @@ void AscendScreen::onConfirmPress()
         else
         {
             sound.playError();
+            feedback.shake(row);
         }
         return;
     }
@@ -393,10 +396,12 @@ void AscendScreen::onConfirmPress()
     if (ascension.buyTalent(item - 1))
     {
         sound.playBuy();
+        feedback.flash(row);
     }
     else
     {
         sound.playError();
+        feedback.shake(row);
     }
     forceRefresh();
 }

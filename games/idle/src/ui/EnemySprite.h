@@ -53,6 +53,7 @@ public:
     // Animations start at the time of the last update() and only mark the element dirty
     // from update(), so a caller can hold them back while something covers the sprite
     void hit(bool heavy);
+    void lunge(); // Jumps at the player as its own hit lands
     void addDamage(uint32_t damage, bool heavy);
     void kill(); // Fades out the enemy shown now, even once setSprite() has moved on
     void stopAnimations();
@@ -85,6 +86,8 @@ private:
     bool hitting;
     bool hitHeavy;
     unsigned long hitStart;
+    bool lunging;
+    unsigned long lungeStart;
     DamageNumber numbers[MAX_NUMBERS];
     uint8_t nextNumber;
     uint8_t bob;

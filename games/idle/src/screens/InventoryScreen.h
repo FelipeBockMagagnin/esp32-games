@@ -2,6 +2,7 @@
 #define INVENTORY_SCREEN_H
 
 #include "Screen.h"
+#include "../ui/PressFeedback.h"
 #include "../ui/Box.h"
 #include "../ui/Text.h"
 #include "../ui/Header.h"
@@ -58,6 +59,7 @@ private:
     GameState &game;
     Inventory &inventory;
     SoundManager &sound;
+    PressFeedback feedback;
 
     Mode mode;
     EquipSlot inspecting;

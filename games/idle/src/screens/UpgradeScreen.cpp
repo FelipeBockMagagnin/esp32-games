@@ -3,6 +3,7 @@
 #include "../game/CombatConfig.h" // ZONES, for the zone an unlock opens
 
 
+static const unsigned long SPENT_BLINK_MS = 150;
 static const uint16_t CARD_BORDER = Theme::GOLD_FRAME; // Dark amber, same frame as the other gold cards
 static const uint16_t RATE_COLOR = Theme::GOOD;  // Soft green: income that grows on its own
 static const uint16_t PANEL_BORDER = Theme::FRAME; // Dark slate
@@ -364,6 +365,8 @@ void UpgradeScreen::refreshDetails()
 
 void UpgradeScreen::update(unsigned long now)
 {
+    feedback.update(now);
+    goldText.setColor((long)(now - spentUntil) < 0 ? Theme::TEXT : Theme::GOLD);
     if (!refreshDue(now))
     {
         return;
@@ -426,10 +429,15 @@ void UpgradeScreen::onConfirmPress()
     if (visibleCount > 0 && game.buyGoldUpgrade(visibleIds[selectedSlot]))
     {
         sound.playBuy();
+        spentUntil = millis() + SPENT_BLINK_MS;
     }
     else
     {
         sound.playError();
+        if (visibleCount > 0)
+        {
+            feedback.shake(slots[selectedSlot]);
+        }
     }
     forceRefresh();
 }
