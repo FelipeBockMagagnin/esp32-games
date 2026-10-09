@@ -142,108 +142,108 @@ static constexpr DropDef GAMER_MOUSE_DROPS[] = {
 };
 
 static constexpr DropDef SPIDER_DROPS[] = {
-    {ITEM_LEATHER_CAP, 220},
-    {ITEM_IRON_GLOVES, 220},
+    {ITEM_LEATHER_CAP, 350},
+    {ITEM_IRON_GLOVES, 350},
 };
 static constexpr DropDef GNOME_DROPS[] = {
-    {ITEM_GOOD_STICK, 220},
-    {ITEM_IRON_MAIL, 220},
+    {ITEM_GOOD_STICK, 350},
+    {ITEM_IRON_MAIL, 350},
 };
 static constexpr DropDef BARD_GNOME_DROPS[] = {
-    {ITEM_LOINCLOTH, 220},
-    {ITEM_IRON_BOOTS, 220},
-    {ITEM_LEATHER_CAP, 220},
+    {ITEM_LOINCLOTH, 350},
+    {ITEM_IRON_BOOTS, 350},
+    {ITEM_LEATHER_CAP, 350},
 };
 static constexpr DropDef GOBLIN_DROPS[] = {
-    {ITEM_GOOD_STICK, 220},
-    {ITEM_IRON_GLOVES, 220},
-    {ITEM_IRON_SHIELD, 160},
+    {ITEM_GOOD_STICK, 350},
+    {ITEM_IRON_GLOVES, 350},
+    {ITEM_IRON_SHIELD, 250},
 };
 static constexpr DropDef ZOMBIE_DROPS[] = {
-    {ITEM_IRON_MAIL, 220},
-    {ITEM_LOINCLOTH, 220},
-    {ITEM_IRON_BOOTS, 220},
+    {ITEM_IRON_MAIL, 350},
+    {ITEM_LOINCLOTH, 350},
+    {ITEM_IRON_BOOTS, 350},
 };
 static constexpr DropDef GNOME_BAND_DROPS[] = {
-    {ITEM_IRON_SHIELD, 160},
-    {ITEM_GOLD_RING, 150},
-    {ITEM_JADE_AMULET, 150},
-    {ITEM_TIME_CANDLE, 80},
+    {ITEM_IRON_SHIELD, 250},
+    {ITEM_GOLD_RING, 250},
+    {ITEM_JADE_AMULET, 250},
+    {ITEM_TIME_CANDLE, 150},
 };
 
 static constexpr DropDef BONE_DIGGER_DROPS[] = {
-    {ITEM_STEEL_HELM, 40},
-    {ITEM_STEEL_GRIPS, 40},
-    {ITEM_GREAT_STICK, 40},
+    {ITEM_STEEL_HELM, 120},
+    {ITEM_STEEL_GRIPS, 120},
+    {ITEM_GREAT_STICK, 120},
 };
 static constexpr DropDef CRYPT_GHOUL_DROPS[] = {
-    {ITEM_STEEL_PLATE, 40},
-    {ITEM_STEEL_LEGS, 40},
-    {ITEM_STEEL_BOOTS, 40},
-    {ITEM_STEEL_GUARD, 30},
-    {ITEM_RUBY_RING, 10},
-    {ITEM_GOLD_AMULET, 10},
-    {ITEM_ELDER_BONE, 10},
+    {ITEM_STEEL_PLATE, 120},
+    {ITEM_STEEL_LEGS, 120},
+    {ITEM_STEEL_BOOTS, 120},
+    {ITEM_STEEL_GUARD, 100},
+    {ITEM_RUBY_RING, 50},
+    {ITEM_GOLD_AMULET, 50},
+    {ITEM_ELDER_BONE, 50},
 };
 
 static constexpr DropDef DEEP_LURKER_DROPS[] = {
-    {ITEM_RUNE_HELM, 20},
-    {ITEM_RUNE_GRIPS, 20},
-    {ITEM_RUNE_BLADE, 20},
+    {ITEM_RUNE_HELM, 80},
+    {ITEM_RUNE_GRIPS, 80},
+    {ITEM_RUNE_BLADE, 80},
 };
 static constexpr DropDef ABYSS_WORM_DROPS[] = {
-    {ITEM_RUNE_PLATE, 20},
-    {ITEM_RUNE_LEGS, 20},
-    {ITEM_RUNE_BOOTS, 20},
-    {ITEM_RUNE_AEGIS, 10},
+    {ITEM_RUNE_PLATE, 80},
+    {ITEM_RUNE_LEGS, 80},
+    {ITEM_RUNE_BOOTS, 80},
+    {ITEM_RUNE_AEGIS, 50},
 };
 
 static constexpr DropDef MAGMA_HOUND_DROPS[] = {
-    {ITEM_RUNE_BLADE, 20},
-    {ITEM_RUNE_AEGIS, 15},
-    {ITEM_MINER_RING, 5},
+    {ITEM_RUNE_BLADE, 80},
+    {ITEM_RUNE_AEGIS, 60},
+    {ITEM_MINER_RING, 30},
 };
 static constexpr DropDef CORE_GOLEM_DROPS[] = {
-    {ITEM_RUNE_PLATE, 20},
-    {ITEM_RUNE_HELM, 20},
-    {ITEM_MINER_RING, 5},
-    {ITEM_CORE_SIGIL, 5},
-    {ITEM_GOLEM_HEART, 5},
+    {ITEM_RUNE_PLATE, 80},
+    {ITEM_RUNE_HELM, 80},
+    {ITEM_MINER_RING, 30},
+    {ITEM_CORE_SIGIL, 30},
+    {ITEM_GOLEM_HEART, 30},
 };
 
 // The Mythic set drops in both deep zones; the Star Forge levels it faster
 static constexpr DropDef RIFT_STALKER_DROPS[] = {
-    {ITEM_EMBER_HELM, 40},
-    {ITEM_EMBER_GRIPS, 40},
-    {ITEM_EMBER_BLADE, 40},
+    {ITEM_EMBER_HELM, 80},
+    {ITEM_EMBER_GRIPS, 80},
+    {ITEM_EMBER_BLADE, 80},
 };
 static constexpr DropDef VOID_WRAITH_DROPS[] = {
-    {ITEM_EMBER_MAIL, 40},
-    {ITEM_EMBER_LEGS, 40},
-    {ITEM_EMBER_BOOTS, 40},
-    {ITEM_EMBER_GUARD, 25},
+    {ITEM_EMBER_MAIL, 80},
+    {ITEM_EMBER_LEGS, 80},
+    {ITEM_EMBER_BOOTS, 80},
+    {ITEM_EMBER_GUARD, 60},
 };
 static constexpr DropDef VOID_MAW_DROPS[] = {
-    {ITEM_EMBER_BLADE, 40},
-    {ITEM_EMBER_GUARD, 40},
-    {ITEM_EMBER_RING, 5},
-    {ITEM_EMBER_CHARM, 5},
+    {ITEM_EMBER_BLADE, 80},
+    {ITEM_EMBER_GUARD, 80},
+    {ITEM_EMBER_RING, 30},
+    {ITEM_EMBER_CHARM, 30},
 };
 static constexpr DropDef STAR_SMITH_DROPS[] = {
-    {ITEM_EMBER_HELM, 25},
-    {ITEM_EMBER_GRIPS, 25},
-    {ITEM_EMBER_BLADE, 25},
-    {ITEM_EMBER_GUARD, 20},
+    {ITEM_EMBER_HELM, 80},
+    {ITEM_EMBER_GRIPS, 80},
+    {ITEM_EMBER_BLADE, 80},
+    {ITEM_EMBER_GUARD, 60},
 };
 static constexpr DropDef NOVA_GOLEM_DROPS[] = {
-    {ITEM_EMBER_MAIL, 25},
-    {ITEM_EMBER_LEGS, 25},
-    {ITEM_EMBER_BOOTS, 25},
+    {ITEM_EMBER_MAIL, 80},
+    {ITEM_EMBER_LEGS, 80},
+    {ITEM_EMBER_BOOTS, 80},
 };
 static constexpr DropDef SUN_EATER_DROPS[] = {
-    {ITEM_EMBER_RING, 15},
-    {ITEM_EMBER_CHARM, 15},
-    {ITEM_GOLEM_HEART, 10},
+    {ITEM_EMBER_RING, 50},
+    {ITEM_EMBER_CHARM, 30},
+    {ITEM_GOLEM_HEART, 30},
 };
 
 // Until the deeper zones get their own art

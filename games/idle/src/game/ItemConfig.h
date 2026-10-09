@@ -110,7 +110,7 @@ enum ItemId : uint8_t
 };
 
 static constexpr ItemDef ITEMS[] = {
-    //  name           slot                  atk  def  hp   rgn  prod%  click% drop% tier  icon
+    //  name           slot               atk  def  hp   rgn  prod%  click% drop% tier  icon
     {"Leaf Hat",    EquipSlot::HELMET,    0,   2,   5,   3,   0,     0,     0,    0,     ICON(image_item_leaf_hat_pixels)},
     {"Leather Cap", EquipSlot::HELMET,    0,   6,   15,  0,   0,     0,     0,    1,     ICON(image_item_leather_cap_pixels)},
     {"Steel Helm",  EquipSlot::HELMET,    0,   18,  45,  0,   0,     0,     0,    2,     ICON(image_item_steel_helm_pixels)},
@@ -152,9 +152,9 @@ static constexpr ItemDef ITEMS[] = {
     {"Miner Ring",  EquipSlot::RING,      54,  0,   0,   0,   0,     120,   25,   3,     ICON(image_item_miner_ring_pixels), 30},
 
     {"Wilson",      EquipSlot::AMULET,    0,   2,   0,   0,   10,    0,     0,    0,     ICON(image_item_wilson_pixels)},
-    {"Jade Amulet", EquipSlot::AMULET,    0,   6,   0,   0,   20,    0,     0,    1,     ICON(image_item_jade_amulet_pixels)},
-    {"Gold Amulet", EquipSlot::AMULET,    0,   18,  0,   0,   50,    0,     0,    2,     ICON(image_item_gold_amulet_pixels), 20},
-    {"Core Sigil",  EquipSlot::AMULET,    0,   54,  0,   0,   120,   0,     0,    3,     ICON(image_item_core_sigil_pixels)},
+    {"Jade Amulet", EquipSlot::AMULET,    0,   6,   0,   0,   20,    0,     0,   1,     ICON(image_item_jade_amulet_pixels)},
+    {"Gold Amulet", EquipSlot::AMULET,    0,   18,  0,   0,   50,    0,     50,   2,     ICON(image_item_gold_amulet_pixels), 20},
+    {"Core Sigil",  EquipSlot::AMULET,    0,   54,  0,   0,   120,   0,     0,   3,     ICON(image_item_core_sigil_pixels)},
 
     // Mythic: three times the Epic piece of the slot, as each tier is of the one before
     {"Ember Helm",  EquipSlot::HELMET,    0,   162, 405, 0,   0,     0,     0,    4,     ICON(image_icon_ember_helm_pixels)},
