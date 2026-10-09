@@ -18,14 +18,16 @@
 #include "../managers/SoundManager.h"
 
 // Lists every achievement, unlocked or not, with the running total of how much gold
-// production they have earned. Up / Down browse the list, Confirm jumps to the next one
+// production they have earned and, under the list, the combat bonuses the maxed gear and
+// jewellery have paid. Up / Down browse the list, Confirm jumps to the next one
 // still locked, which beats pressing through 35 rows. The panel under the list shows how
 // far the selected one has got.
 class AchievementScreen : public Screen
 {
 private:
-    // Two rows fewer than the default, to make room for the progress panel
-    static const uint8_t ROWS = ListView::VISIBLE_ROWS - 2;
+    // Three rows fewer than the default, to make room for the bonus card and progress panel
+    static const uint8_t ROWS = ListView::VISIBLE_ROWS - 3;
+    static const uint8_t BONUS_CELLS = ACH_REWARD_COUNT - 1; // Every reward but production
 
     Header header;
 
@@ -38,6 +40,11 @@ private:
 
     ListRow rows[ROWS];
     ListView list;
+
+    // One cell per combat reward, dimmed until something pays into it, so it also shows
+    // what is left to earn
+    Box bonusCard;
+    Text bonusCells[BONUS_CELLS];
 
     // Which achievement each row shows, so its fixed texts are not rebuilt every refresh
     uint8_t rowAchievement[ROWS];

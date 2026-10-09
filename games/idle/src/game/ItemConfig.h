@@ -65,7 +65,7 @@ struct ItemDef
     uint8_t respawnCutPercent;
 };
 
-// Caps the summed cut, so the next enemy always takes a moment to arrive
+// Caps the summed cut of items and achievements, so the next enemy always takes a moment
 static const uint8_t MAX_RESPAWN_CUT_PERCENT = 50;
 
 // Every item has its own 16x16 RGB565 icon

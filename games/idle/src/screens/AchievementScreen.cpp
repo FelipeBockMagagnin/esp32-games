@@ -26,6 +26,15 @@ static const int16_t ROW_X = 5;
 static const int16_t LIST_TOP = 65;
 static const int16_t ROW_PITCH = 28;
 
+// Bonus card, two rows of four cells between the list and the panel
+static const int16_t BONUS_Y = 234;
+static const int16_t BONUS_H = 25;
+static const int16_t BONUS_CELL_X = CARD_X + 7;
+static const int16_t BONUS_CELL_PITCH = 56;
+static const int16_t BONUS_ROW_Y = BONUS_Y + 4;
+static const int16_t BONUS_ROW_PITCH = 10;
+static const uint8_t BONUS_COLUMNS = 4;
+
 // Progress panel; text (8px) and badges (11px) are centred on the row's middle
 static const int16_t PANEL_X = 5;
 static const int16_t PANEL_Y = 263;
@@ -72,8 +81,51 @@ static const uint16_t *iconFor(const AchievementDef &def)
         return image_award_trophy_pixels;
     case AchKind::VEINS_CAUGHT:
         return image_icon_gold_vein_pixels;
+    case AchKind::GEAR_SET_MAXED:
+        // The set's body armour stands for it
+        for (uint8_t i = 0; i < ITEM_COUNT; i++)
+        {
+            if (ITEMS[i].slot == EquipSlot::BODY && ITEMS[i].tier == def.target)
+            {
+                return ITEMS[i].iconPixels;
+            }
+        }
+        return image_armor_01b_pixels;
+    case AchKind::ITEM_MAXED:
+        return def.target < ITEM_COUNT ? ITEMS[def.target].iconPixels : image_award_trophy_pixels;
     }
     return image_award_trophy_pixels;
+}
+
+static const char *const REWARD_NAMES[ACH_REWARD_COUNT] = {
+    "gold/s", "ATK and DEF", "respawn time", "revive time", "guard time", "spell cooldown", "kill gold", "drop chance"};
+
+// Indexed by reward minus one, production having the summary card. Three letters, like
+// the inventory's stat codes, so four cells fit across.
+static const char *const BONUS_CODES[ACH_REWARD_COUNT - 1] = {"A/D", "RSP", "REV", "GRD", "SPL", "KIL", "DRP"};
+
+// Each reward in the colour of what it touches elsewhere: gold for the economy, the
+// combat screen's stat colours for the fight, the spell purple, the guard's cyan
+static const uint16_t REWARD_COLORS[ACH_REWARD_COUNT] = {
+    Theme::GOLD,       // PRODUCTION
+    Theme::ATTACK,     // ATTACK_DEFENSE
+    Theme::TEXT,       // RESPAWN_CUT
+    Theme::HP,         // REVIVE_CUT
+    Theme::INFO,       // GUARD_TIME
+    Theme::EPIC,       // SPELL_COOLDOWN_CUT
+    Theme::ENEMY_NAME, // KILL_GOLD
+    Theme::DEFENSE,    // DROP_CHANCE, the rare-item blue
+};
+
+static uint16_t rewardColor(AchReward reward)
+{
+    return REWARD_COLORS[(uint8_t)reward];
+}
+
+static bool isCut(AchReward reward)
+{
+    return reward == AchReward::RESPAWN_CUT || reward == AchReward::REVIVE_CUT ||
+           reward == AchReward::SPELL_COOLDOWN_CUT;
 }
 
 AchievementScreen::AchievementScreen(Achievements &achievements, GameState &game, Inventory &inventory,
@@ -87,6 +139,8 @@ AchievementScreen::AchievementScreen(Achievements &achievements, GameState &game
       completionBar(COMPLETION_X, CARD_Y + 17, CARD_RIGHT - COMPLETION_X, 8, 0, 1, BAR_COLOR, BAR_BG, BAR_BORDER),
 
       list(ROWS),
+
+      bonusCard(CARD_X, BONUS_Y, CARD_W, BONUS_H, PANEL_BORDER, true, Theme::CARD, true, 4),
 
       detailPanel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, PANEL_BORDER, true, Theme::CARD, true, 4),
       rewardText(TEXT_X, REWARD_Y, "", Theme::GOLD, 1),
@@ -120,6 +174,14 @@ AchievementScreen::AchievementScreen(Achievements &achievements, GameState &game
         rows[i].setPosition(ROW_X, LIST_TOP + i * ROW_PITCH);
         rowAchievement[i] = NO_ACHIEVEMENT;
         addElement(&rows[i]);
+    }
+
+    addElement(&bonusCard);
+    for (uint8_t i = 0; i < BONUS_CELLS; i++)
+    {
+        bonusCells[i].setPosition(BONUS_CELL_X + (i % BONUS_COLUMNS) * BONUS_CELL_PITCH,
+                                  BONUS_ROW_Y + (i / BONUS_COLUMNS) * BONUS_ROW_PITCH);
+        addElement(&bonusCells[i], Theme::CARD);
     }
 
     addElement(&detailPanel);
@@ -172,10 +234,10 @@ void AchievementScreen::update(unsigned long now)
             row.setTitle(def.name);
             row.setSubtitle(def.description);
             row.setIconPixels(iconFor(def), 16, 16);
-            snprintf(buf, sizeof(buf), "+%u%%", (unsigned)def.bonusPercent);
+            snprintf(buf, sizeof(buf), "%c%u%%", isCut(def.reward) ? '-' : '+', (unsigned)def.bonusPercent);
             row.setValue(buf);
         }
-        row.setValueColor(unlocked ? UNLOCKED_COLOR : Theme::GOLD);
+        row.setValueColor(rewardColor(def.reward));
 
         // A locked one shows how far along it is, so the list doubles as a to-do list. Only
         // a percentage fits beside the subtitle; the panel below has the full count. Capped
@@ -209,6 +271,15 @@ void AchievementScreen::update(unsigned long now)
     snprintf(buf, sizeof(buf), "+%u%% gold/s", (unsigned)achievements.getProductionBonusPercent());
     bonusText.setText(buf);
 
+    for (uint8_t i = 0; i < BONUS_CELLS; i++)
+    {
+        AchReward reward = (AchReward)(i + 1);
+        uint32_t percent = achievements.getRewardPercent(reward);
+        snprintf(buf, sizeof(buf), "%s %c%lu%%", BONUS_CODES[i], isCut(reward) ? '-' : '+', (unsigned long)percent);
+        bonusCells[i].setText(buf);
+        bonusCells[i].setColor(percent > 0 ? rewardColor(reward) : LOCKED_COLOR);
+    }
+
     updateDetail();
 }
 
@@ -219,8 +290,10 @@ void AchievementScreen::updateDetail()
     bool unlocked = achievements.isUnlocked(id);
     char buf[40];
 
-    snprintf(buf, sizeof(buf), "Reward: +%u%% gold/s", (unsigned)def.bonusPercent);
+    snprintf(buf, sizeof(buf), "Reward: %c%u%% %s", isCut(def.reward) ? '-' : '+', (unsigned)def.bonusPercent,
+             REWARD_NAMES[(uint8_t)def.reward]);
     rewardText.setText(buf);
+    rewardText.setColor(rewardColor(def.reward));
     statusText.setText(unlocked ? "UNLOCKED" : "LOCKED");
     statusText.setColor(unlocked ? UNLOCKED_COLOR : LOCKED_COLOR);
 

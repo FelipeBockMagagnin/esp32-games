@@ -223,7 +223,7 @@ uint32_t Inventory::getClickBonusPercent() const
     return total;
 }
 
-uint8_t Inventory::getRespawnCutPercent() const
+uint32_t Inventory::getRespawnCutPercent() const
 {
     uint32_t total = 0;
     for (uint8_t slot = 0; slot < EQUIP_SLOT_COUNT; slot++)
@@ -233,7 +233,7 @@ uint8_t Inventory::getRespawnCutPercent() const
             total += ITEMS[(uint8_t)equipped[slot]].respawnCutPercent;
         }
     }
-    return total < MAX_RESPAWN_CUT_PERCENT ? (uint8_t)total : MAX_RESPAWN_CUT_PERCENT;
+    return total;
 }
 
 void Inventory::save(Snapshot &out) const

@@ -1,6 +1,7 @@
 #include "CombatState.h"
 #include "GameState.h"
 #include "Inventory.h"
+#include "Achievements.h"
 
 // Every deadline is compared with a signed difference so the fight survives a
 // millis() rollover, the same way GameState::update does
@@ -12,6 +13,11 @@ static bool reached(unsigned long now, unsigned long deadline)
 static unsigned long remainingUntil(unsigned long now, unsigned long deadline)
 {
     return reached(now, deadline) ? 0 : deadline - now;
+}
+
+static unsigned long cutBy(unsigned long ms, uint32_t percent)
+{
+    return percent >= 100 ? 0 : ms * (100 - percent) / 100;
 }
 
 CombatState::CombatState(GameState &game, Inventory &inventory)
@@ -35,6 +41,7 @@ CombatState::CombatState(GameState &game, Inventory &inventory)
       guardEndsAt(0),
       respawnAt(0),
       reviveAt(0),
+      reviveMs(REVIVE_MS),
       deathAt(0),
       regenAt(0),
       regenCarry(0),
@@ -163,10 +170,32 @@ void CombatState::startFight(unsigned long now)
     enemyAttackAt = now + getEnemy().attackIntervalMs;
 }
 
+uint32_t CombatState::getReward(AchReward reward) const
+{
+    return game.getAchievements().getRewardPercent(reward);
+}
+
+unsigned long CombatState::getGuardDurationMs() const
+{
+    return GUARD_DURATION_MS * (100 + getReward(AchReward::GUARD_TIME)) / 100;
+}
+
+unsigned long CombatState::getSpellCooldownMs(const SpellDef &spell) const
+{
+    return cutBy(spell.cooldownMs, getReward(AchReward::SPELL_COOLDOWN_CUT));
+}
+
+uint16_t CombatState::getDropChanceBp(const DropDef &drop) const
+{
+    uint32_t chance = (uint32_t)drop.chanceBp * (100 + getReward(AchReward::DROP_CHANCE)) / 100;
+    return chance < 10000 ? (uint16_t)chance : 10000;
+}
+
 void CombatState::startRespawn(unsigned long now)
 {
     phase = RESPAWNING;
-    respawnAt = now + RESPAWN_MS * (100 - inventory.getRespawnCutPercent()) / 100;
+    uint32_t cut = inventory.getRespawnCutPercent() + getReward(AchReward::RESPAWN_CUT);
+    respawnAt = now + cutBy(RESPAWN_MS, cut < MAX_RESPAWN_CUT_PERCENT ? cut : MAX_RESPAWN_CUT_PERCENT);
 }
 
 uint32_t CombatState::damageTo(uint32_t defense, uint8_t multiplier) const
@@ -258,7 +287,7 @@ void CombatState::onEnemyKilled(unsigned long now)
 
     // An armed Midas multiplies this kill's gold and is spent by it
     lastKillMidas = midasArmed;
-    lastKillGold = enemy.goldReward;
+    lastKillGold = (uint64_t)enemy.goldReward * (100 + getReward(AchReward::KILL_GOLD)) / 100;
     if (midasArmed)
     {
         const SpellDef *spell = getSpell();
@@ -275,7 +304,7 @@ void CombatState::onEnemyKilled(unsigned long now)
     for (uint8_t i = 0; i < enemy.dropCount; i++)
     {
         const DropDef &drop = enemy.drops[i];
-        if ((uint16_t)random(10000) < drop.chanceBp)
+        if ((uint16_t)random(10000) < getDropChanceBp(drop))
         {
             lastDropWasNew = inventory.addDrop(drop.itemId);
             lastDrop = (int8_t)drop.itemId;
@@ -306,7 +335,8 @@ void CombatState::onPlayerDied(unsigned long now)
     playerHp = 0;
     phase = DEAD;
     deathAt = now;
-    reviveAt = now + REVIVE_MS;
+    reviveMs = cutBy(REVIVE_MS, getReward(AchReward::REVIVE_CUT));
+    reviveAt = now + reviveMs;
     guardEndsAt = 0; // Losing the fight drops the guard and the ward
     wardEndsAt = 0;
 }
@@ -333,7 +363,7 @@ void CombatState::update(unsigned long now)
         else
         {
             unsigned long elapsed = now - deathAt;
-            playerHp = (uint32_t)((uint64_t)cachedStats.maxHp * elapsed / REVIVE_MS);
+            playerHp = (uint32_t)((uint64_t)cachedStats.maxHp * elapsed / reviveMs);
         }
         return;
 
@@ -456,7 +486,7 @@ bool CombatState::castSpell()
         break;
     }
 
-    spellReadyAt = now + spell->cooldownMs;
+    spellReadyAt = now + getSpellCooldownMs(*spell);
     return true;
 }
 
@@ -468,7 +498,7 @@ bool CombatState::guard()
         return false;
     }
     guardReadyAt = now + GUARD_COOLDOWN_MS;
-    guardEndsAt = now + GUARD_DURATION_MS;
+    guardEndsAt = now + getGuardDurationMs();
     return true;
 }
 

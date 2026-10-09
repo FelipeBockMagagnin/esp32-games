@@ -45,7 +45,7 @@ public:
     Stats getEquippedStats() const;
     uint32_t getGoldProductionBonusPercent() const;
     uint32_t getClickBonusPercent() const;
-    uint8_t getRespawnCutPercent() const; // Capped at MAX_RESPAWN_CUT_PERCENT
+    uint32_t getRespawnCutPercent() const; // Uncapped; combat caps it with the achievements' cut
 
     // Bumped on every change so screens and combat can notice without polling each item
     uint32_t getRevision() const { return revision; }

@@ -9,7 +9,6 @@ static const unsigned long CHECK_INTERVAL_MS = 500;
 
 Achievements::Achievements()
     : unlockedCount(0),
-      bonusPercent(0),
       lastCheck(0),
       noticeName(nullptr),
       noticeUntil(0)
@@ -17,6 +16,10 @@ Achievements::Achievements()
     for (uint8_t i = 0; i < ACHIEVEMENT_COUNT; i++)
     {
         unlocked[i] = false;
+    }
+    for (uint8_t i = 0; i < ACH_REWARD_COUNT; i++)
+    {
+        rewardPercent[i] = 0;
     }
 }
 
@@ -60,6 +63,22 @@ uint64_t Achievements::getProgress(const AchievementDef &def, const GameState &g
         return unlockedCount;
     case AchKind::VEINS_CAUGHT:
         return game.getVeinsCaught();
+    case AchKind::GEAR_SET_MAXED:
+    {
+        uint8_t maxed = 0;
+        for (uint8_t i = 0; i < ITEM_COUNT; i++)
+        {
+            const ItemDef &item = ITEMS[i];
+            if (item.tier == def.target && item.slot != EquipSlot::RING && item.slot != EquipSlot::AMULET &&
+                inventory.getItemLevel(i) >= ITEM_MAX_LEVEL)
+            {
+                maxed++;
+            }
+        }
+        return maxed;
+    }
+    case AchKind::ITEM_MAXED:
+        return inventory.getItemLevel(def.target);
     }
     return 0;
 }
@@ -68,7 +87,7 @@ void Achievements::unlock(uint8_t id, unsigned long now)
 {
     unlocked[id] = true;
     unlockedCount++;
-    bonusPercent += ACHIEVEMENTS[id].bonusPercent;
+    rewardPercent[(uint8_t)ACHIEVEMENTS[id].reward] += ACHIEVEMENTS[id].bonusPercent;
 
     // Several can land in one pass; the last one takes the header and the list has the rest
     noticeName = ACHIEVEMENTS[id].name;
@@ -126,13 +145,16 @@ void Achievements::load(const Snapshot &in)
 void Achievements::recount()
 {
     unlockedCount = 0;
-    bonusPercent = 0;
+    for (uint8_t i = 0; i < ACH_REWARD_COUNT; i++)
+    {
+        rewardPercent[i] = 0;
+    }
     for (uint8_t i = 0; i < ACHIEVEMENT_COUNT; i++)
     {
         if (unlocked[i])
         {
             unlockedCount++;
-            bonusPercent += ACHIEVEMENTS[i].bonusPercent;
+            rewardPercent[(uint8_t)ACHIEVEMENTS[i].reward] += ACHIEVEMENTS[i].bonusPercent;
         }
     }
 }

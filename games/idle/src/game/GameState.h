@@ -37,6 +37,7 @@ public:
     bool buyBuilding(uint8_t id);
     bool buyGoldUpgrade(uint8_t id);
     void addGold(uint64_t amount); // Whole units; used by combat rewards
+    const Achievements &getAchievements() const { return achievements; }
 
     // Gold
     uint64_t getGold() const; // Whole units

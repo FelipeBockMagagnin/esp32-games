@@ -137,10 +137,11 @@ void ActionPanel::refreshGuard(unsigned long now, bool fighting)
     unsigned long up = combat.getGuardRemaining(now);
     // The cooldown runs from the press, but the ring drains over the guard and only then
     // fills over what is left of it
-    unsigned long recovery = GUARD_COOLDOWN_MS - GUARD_DURATION_MS;
+    unsigned long duration = combat.getGuardDurationMs();
+    unsigned long recovery = GUARD_COOLDOWN_MS - duration;
     if (guarding)
     {
-        guard.ring.setProgress((uint16_t)(up * 1000 / GUARD_DURATION_MS));
+        guard.ring.setProgress((uint16_t)(up * 1000 / duration));
     }
     else
     {
@@ -198,7 +199,8 @@ void ActionPanel::refreshSpell(unsigned long now, bool fighting)
 
     row.name.setText(spell->name);
     row.name.setColor(ready || warded ? Theme::TEXT : Theme::TEXT_2);
-    row.ring.setProgress(left == 0 ? 1000 : (uint16_t)(1000 - left * 1000 / spell->cooldownMs));
+    unsigned long cooldown = combat.getSpellCooldownMs(*spell);
+    row.ring.setProgress(left == 0 ? 1000 : left >= cooldown ? 0 : (uint16_t)(1000 - left * 1000 / cooldown));
     row.ring.setRingColor(warded ? CombatStyle::ACTIVE : ready ? CombatStyle::READY : Theme::TEXT_DIM);
     row.ring.setOutline(ready);
     row.ring.setCapDimmed(!fighting);

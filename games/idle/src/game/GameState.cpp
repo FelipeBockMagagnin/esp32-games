@@ -365,12 +365,12 @@ VeinEffect GameState::catchVein(unsigned long now)
 
 uint32_t GameState::getAttackBonusPercent() const
 {
-    return getBonusPercent(UpgradeTarget::ATTACK);
+    return getBonusPercent(UpgradeTarget::ATTACK) + achievements.getRewardPercent(AchReward::ATTACK_DEFENSE);
 }
 
 uint32_t GameState::getDefenseBonusPercent() const
 {
-    return getBonusPercent(UpgradeTarget::DEFENSE);
+    return getBonusPercent(UpgradeTarget::DEFENSE) + achievements.getRewardPercent(AchReward::ATTACK_DEFENSE);
 }
 
 uint32_t GameState::getMaxHpBonusPercent() const

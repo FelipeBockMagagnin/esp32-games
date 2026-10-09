@@ -8,7 +8,7 @@ class GameState;
 class Inventory;
 class CombatState;
 
-// Tracks which achievements are unlocked and the gold production they add together.
+// Tracks which achievements are unlocked and what their rewards add up to.
 // Holds no references of its own, which is what lets GameState read its bonus without
 // a dependency cycle: evaluate() takes the other states as arguments instead.
 class Achievements
@@ -27,7 +27,8 @@ public:
 
     bool isUnlocked(uint8_t id) const;
     uint8_t getUnlockedCount() const { return unlockedCount; }
-    uint32_t getProductionBonusPercent() const { return bonusPercent; }
+    uint32_t getProductionBonusPercent() const { return getRewardPercent(AchReward::PRODUCTION); }
+    uint32_t getRewardPercent(AchReward reward) const { return rewardPercent[(uint8_t)reward]; }
 
     // Current value of the counter an achievement watches; it unlocks once this reaches
     // the def's amount. Lets a screen show how close a locked one is.
@@ -49,7 +50,7 @@ private:
 
     bool unlocked[ACHIEVEMENT_COUNT];
     uint8_t unlockedCount;
-    uint32_t bonusPercent; // Cached sum, so the production getter stays cheap
+    uint32_t rewardPercent[ACH_REWARD_COUNT]; // Cached sums, so the getters stay cheap
 
     unsigned long lastCheck;
     const char *noticeName;

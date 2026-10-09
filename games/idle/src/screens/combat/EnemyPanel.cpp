@@ -126,8 +126,9 @@ void EnemyPanel::refreshSideColumns(const EnemyDef &enemy)
         dropIcon[i].setPixels(ITEMS[drop.itemId].iconPixels, DROP_ICON_SIZE, DROP_ICON_SIZE, true, 0x0000);
 
         // Basis points: whole percents print plain, rare drops keep their tenth (5.5%)
-        unsigned whole = drop.chanceBp / 100;
-        unsigned tenth = (drop.chanceBp % 100) / 10;
+        uint16_t chance = combat.getDropChanceBp(drop);
+        unsigned whole = chance / 100;
+        unsigned tenth = (chance % 100) / 10;
         if (tenth == 0)
         {
             snprintf(buf, sizeof(buf), "%u%%", whole);

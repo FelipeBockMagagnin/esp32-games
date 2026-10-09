@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include "CombatConfig.h"
 #include "Stats.h"
+#include "AchievementConfig.h"
 
 class GameState;
 class Inventory;
@@ -94,12 +95,16 @@ public:
     unsigned long getReviveRemaining(unsigned long now) const;
     unsigned long getRespawnRemaining(unsigned long now) const;
     bool isGuarding(unsigned long now) const;
+    // Base timings and odds with the achievement rewards and item cuts applied
+    unsigned long getGuardDurationMs() const;
+    unsigned long getSpellCooldownMs(const SpellDef &spell) const;
+    uint16_t getDropChanceBp(const DropDef &drop) const;
     unsigned long getGuardRemaining(unsigned long now) const; // 0 when not guarding
 
     // Monotonic counters the screen diffs against its own last-seen values, so it can
     // react to a kill or a drop without the engine knowing about the UI
     uint32_t getKillEvents() const { return killEvents; }
-    uint32_t getLastKillGold() const { return lastKillGold; } // With any Midas multiplier
+    uint64_t getLastKillGold() const { return lastKillGold; } // With any Midas multiplier
     bool wasLastKillMidas() const { return lastKillMidas; }
     // A hit on the enemy, and a hit on the player that did damage (after any guard)
     uint32_t getHitEvents() const { return hitEvents; }
@@ -121,6 +126,7 @@ private:
     void startFight(unsigned long now);
     void startRespawn(unsigned long now);
     void regenerate(unsigned long now);
+    uint32_t getReward(AchReward reward) const;
     void pickEnemy(uint8_t avoid = 0xFF);
     uint32_t damageTo(uint32_t defense, uint8_t multiplier) const;
     void hitEnemy(uint32_t damage, HitKind kind, unsigned long now);
@@ -151,12 +157,13 @@ private:
     unsigned long guardEndsAt;
     unsigned long respawnAt;
     unsigned long reviveAt;
+    unsigned long reviveMs; // This death's wait, which the health bar fills over
     unsigned long deathAt;
     unsigned long regenAt;
     uint8_t regenCarry; // Tenths of HP not yet credited
 
     uint32_t killEvents;
-    uint32_t lastKillGold;
+    uint64_t lastKillGold;
     bool lastKillMidas;
     uint32_t hitEvents;
     uint32_t lastHitDamage;

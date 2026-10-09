@@ -79,6 +79,8 @@ CombatState combat(game, inventory);
 static bool verbose = false;
 static std::vector<std::string> summary;
 
+static bool awardSeen[ACHIEVEMENT_COUNT];
+
 static void event(const std::string &what, bool milestone = false)
 {
     std::string line = stamp(simNow) + "  " + what;
@@ -411,6 +413,14 @@ int main(int argc, char **argv)
         game.update(now);
         combat.update(now);
         achievements.evaluate(now, game, inventory, combat);
+        for (uint8_t i = 0; i < ACHIEVEMENT_COUNT; i++)
+        {
+            if (ACHIEVEMENTS[i].reward != AchReward::PRODUCTION && achievements.isUnlocked(i) && !awardSeen[i])
+            {
+                awardSeen[i] = true;
+                event(std::string("AWARD    ") + ACHIEVEMENTS[i].name, true);
+            }
+        }
 
         if (active)
         {
