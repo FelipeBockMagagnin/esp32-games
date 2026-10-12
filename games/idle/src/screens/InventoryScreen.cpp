@@ -37,45 +37,100 @@ static const int16_t TITLE_Y = PANEL_Y + 6;
 static const int16_t STATS_Y = PANEL_Y + 21;
 static const int16_t HINT_ROW_Y = PANEL_Y + 38;
 static const int16_t BADGE_OFFSET_Y = (8 - ButtonBadge::SIZE) / 2;
-// Four columns: "ATK +135" needs 48px, the gold column ("CLK +100%") a little more
-static const int16_t STAT_COLUMN_X[] = {TEXT_X, TEXT_X + 52, TEXT_X + 104, TEXT_X + 156};
+// Four 9-char columns ("CLK +587%") fill the panel's inner width exactly
+static const int16_t STAT_COLUMN_W = 54;
 
-// Compact "atk 12 def 4 hp 30 +15% click", skipping whatever the item does not give
+enum StatKind : uint8_t
+{
+    STAT_ATTACK,
+    STAT_DEFENSE,
+    STAT_HP,
+    STAT_REGEN,
+    STAT_GOLD,
+    STAT_CLICK,
+    STAT_DROP,
+    STAT_RESPAWN,
+    STAT_KIND_COUNT
+};
+
+static const char *const STAT_LABELS[STAT_KIND_COUNT] = {"ATK", "DEF", "HP", "RGN", "GLD", "CLK", "DRP", "RSP"};
+static const char *const STAT_SHORT_LABELS[STAT_KIND_COUNT] = {"atk", "def", "hp", "rgn", "gld", "clk", "drp", "rsp"};
+
+static bool isPercentStat(StatKind kind)
+{
+    return kind >= STAT_GOLD;
+}
+
+static uint16_t baseStat(const ItemDef &def, StatKind kind)
+{
+    switch (kind)
+    {
+    case STAT_ATTACK:
+        return def.attack;
+    case STAT_DEFENSE:
+        return def.defense;
+    case STAT_HP:
+        return def.maxHp;
+    case STAT_REGEN:
+        return def.regen;
+    case STAT_GOLD:
+        return def.goldProductionBonusPercent;
+    case STAT_CLICK:
+        return def.clickBonusPercent;
+    case STAT_DROP:
+        return def.dropChanceBonusPercent;
+    case STAT_RESPAWN:
+        return def.respawnCutPercent;
+    default:
+        return 0;
+    }
+}
+
+// A respawn cut is flat and comes back negative, so less is better there
+static int32_t statValue(const Inventory &inventory, uint8_t id, StatKind kind)
+{
+    if (kind == STAT_RESPAWN)
+    {
+        return -(int32_t)ITEMS[id].respawnCutPercent;
+    }
+    return (int32_t)scaleItemStat(baseStat(ITEMS[id], kind), inventory.getItemLevel(id));
+}
+
+static void formatStat(char *buf, size_t size, const char *label, StatKind kind, int32_t value, bool forceSign)
+{
+    const char *sign = value < 0 ? "-" : value > 0 && forceSign ? "+" : "";
+    unsigned long magnitude = (unsigned long)(value < 0 ? -value : value);
+    if (kind == STAT_REGEN)
+    {
+        snprintf(buf, size, "%s %s%lu.%lu", label, sign, magnitude / 10, magnitude % 10);
+    }
+    else
+    {
+        snprintf(buf, size, "%s %s%lu%s", label, sign, magnitude, isPercentStat(kind) ? "%" : "");
+    }
+}
+
+// Compact "atk 12 clk 10% drp 5%" for a row subtitle, which has room for 24 chars before
+// the value column. The respawn cut is left to the detail panel.
 static String describeItem(const Inventory &inventory, uint8_t itemId)
 {
-    Stats s = inventory.getItemStats(itemId);
-    const ItemDef &def = ITEMS[itemId];
-    uint8_t level = inventory.getItemLevel(itemId);
     char buf[48];
     size_t n = 0;
     buf[0] = '\0';
-
-    if (s.attack > 0)
+    for (uint8_t k = 0; k < STAT_RESPAWN && n < sizeof(buf) - 1; k++)
     {
-        n += snprintf(buf + n, sizeof(buf) - n, "atk %u", (unsigned)s.attack);
-    }
-    if (s.defense > 0 && n < sizeof(buf) - 1)
-    {
-        n += snprintf(buf + n, sizeof(buf) - n, "%sdef %u", n > 0 ? " " : "", (unsigned)s.defense);
-    }
-    if (s.maxHp > 0 && n < sizeof(buf) - 1)
-    {
-        n += snprintf(buf + n, sizeof(buf) - n, "%shp %u", n > 0 ? " " : "", (unsigned)s.maxHp);
-    }
-    if (def.goldProductionBonusPercent > 0 && n < sizeof(buf) - 1)
-    {
-        n += snprintf(buf + n, sizeof(buf) - n, "%s+%lu%% gold", n > 0 ? " " : "",
-                      (unsigned long)scaleItemStat(def.goldProductionBonusPercent, level));
-    }
-    if (def.clickBonusPercent > 0 && n < sizeof(buf) - 1)
-    {
-        n += snprintf(buf + n, sizeof(buf) - n, "%s+%lu%% click", n > 0 ? " " : "",
-                 (unsigned long)scaleItemStat(def.clickBonusPercent, level));
-    }
-    if (def.dropChanceBonusPercent > 0 && n < sizeof(buf) - 1)
-    {
-        snprintf(buf + n, sizeof(buf) - n, "%s+%lu%% drop", n > 0 ? " " : "",
-                 (unsigned long)scaleItemStat(def.dropChanceBonusPercent, level));
+        StatKind kind = (StatKind)k;
+        int32_t value = statValue(inventory, itemId, kind);
+        if (value == 0)
+        {
+            continue;
+        }
+        if (n > 0)
+        {
+            buf[n++] = ' ';
+        }
+        formatStat(buf + n, sizeof(buf) - n, STAT_SHORT_LABELS[kind], kind, value, false);
+        n += strlen(buf + n);
     }
     return String(buf);
 }
@@ -169,7 +224,7 @@ InventoryScreen::InventoryScreen(GameState &game, Inventory &inventory, SoundMan
     addElement(&panelRight, Theme::CARD);
     for (uint8_t i = 0; i < STAT_COLUMNS; i++)
     {
-        statColumns[i] = Text(STAT_COLUMN_X[i], STATS_Y, "", VALUE_COLOR, 1);
+        statColumns[i] = Text(TEXT_X + i * STAT_COLUMN_W, STATS_Y, "", VALUE_COLOR, 1);
         addElement(&statColumns[i], Theme::CARD);
     }
     addElement(&actionBadge, Theme::CARD);
@@ -324,51 +379,23 @@ void InventoryScreen::hideStats()
     }
 }
 
-// What a stat column shows. Columns 2 and 3 change kind with the slot: rings and amulets
-// give no HP, so their respawn cut takes that column, and the last one holds whichever
-// extra the slot gives (clicks for rings, production for amulets, regen for armour).
-enum StatKind : uint8_t
+// The stats any item of the slot gives, in StatKind order, so a stat keeps its column
+// while scrolling through the slot
+static uint8_t slotStatKinds(EquipSlot slot, StatKind *out, uint8_t max)
 {
-    STAT_ATTACK,
-    STAT_DEFENSE,
-    STAT_HP,
-    STAT_RESPAWN,
-    STAT_CLICK,
-    STAT_GOLD,
-    STAT_REGEN,
-    STAT_DROP
-};
-
-static int32_t statValue(const Inventory &inventory, uint8_t id, StatKind kind)
-{
-    Stats s = inventory.getItemStats(id);
-    uint8_t level = inventory.getItemLevel(id);
-    switch (kind)
+    uint8_t count = 0;
+    for (uint8_t k = 0; k < STAT_KIND_COUNT && count < max; k++)
     {
-    case STAT_ATTACK:
-        return (int32_t)s.attack;
-    case STAT_DEFENSE:
-        return (int32_t)s.defense;
-    case STAT_HP:
-        return (int32_t)s.maxHp;
-    case STAT_RESPAWN:
-        return -(int32_t)ITEMS[id].respawnCutPercent;
-    case STAT_CLICK:
-        return (int32_t)scaleItemStat(ITEMS[id].clickBonusPercent, level);
-    case STAT_GOLD:
-        return (int32_t)scaleItemStat(ITEMS[id].goldProductionBonusPercent, level);
-    case STAT_REGEN:
-        return (int32_t)s.regen;
-    case STAT_DROP:
-        return (int32_t)scaleItemStat(ITEMS[id].dropChanceBonusPercent, level);
+        for (uint8_t i = 0; i < ITEM_COUNT; i++)
+        {
+            if (ITEMS[i].slot == slot && baseStat(ITEMS[i], (StatKind)k) > 0)
+            {
+                out[count++] = (StatKind)k;
+                break;
+            }
+        }
     }
-    return 0;
-}
-
-// Both sides of a comparison share a slot, so either one having the stat picks the kind
-static bool eitherHas(int8_t a, int8_t b, uint16_t ItemDef::*field)
-{
-    return (a != NO_ITEM && ITEMS[a].*field > 0) || (b != NO_ITEM && ITEMS[b].*field > 0);
+    return count;
 }
 
 // A relic's one effect, in the first column. Two relics do different things, so a relic is
@@ -412,35 +439,25 @@ void InventoryScreen::showStats(int8_t itemId, int8_t against, bool compare)
         return;
     }
 
-    StatKind kinds[STAT_COLUMNS] = {STAT_ATTACK, STAT_DEFENSE, STAT_HP, STAT_GOLD};
-    if ((itemId != NO_ITEM && ITEMS[itemId].respawnCutPercent > 0) ||
-        (against != NO_ITEM && ITEMS[against].respawnCutPercent > 0))
-    {
-        kinds[2] = STAT_RESPAWN;
-    }
-    if (eitherHas(itemId, against, &ItemDef::clickBonusPercent))
-    {
-        kinds[3] = STAT_CLICK;
-    }
-    else if (eitherHas(itemId, against, &ItemDef::dropChanceBonusPercent))
-    {
-        kinds[3] = STAT_DROP;
-    }
-    else if (eitherHas(itemId, against, &ItemDef::regen))
-    {
-        kinds[3] = STAT_REGEN;
-    }
+    StatKind kinds[STAT_COLUMNS];
+    EquipSlot slot = ITEMS[itemId != NO_ITEM ? itemId : against].slot;
+    uint8_t kindCount = slotStatKinds(slot, kinds, STAT_COLUMNS);
 
-    static const char *const LABELS[] = {"ATK", "DEF", "HP", "RSP", "CLK", "GLD", "RGN", "DRP"};
     char buf[16];
     for (uint8_t i = 0; i < STAT_COLUMNS; i++)
     {
+        Text &column = statColumns[i];
+        if (i >= kindCount)
+        {
+            column.setVisible(false);
+            continue;
+        }
+
         StatKind kind = kinds[i];
         int32_t mine = itemId != NO_ITEM ? statValue(inventory, (uint8_t)itemId, kind) : 0;
         int32_t theirs = against != NO_ITEM ? statValue(inventory, (uint8_t)against, kind) : 0;
         int32_t value = compare ? mine - theirs : mine;
 
-        Text &column = statColumns[i];
         bool shown = compare ? (mine != 0 || theirs != 0) : mine != 0;
         column.setVisible(shown);
         if (!shown)
@@ -448,20 +465,10 @@ void InventoryScreen::showStats(int8_t itemId, int8_t against, bool compare)
             continue;
         }
 
-        bool percent = kind == STAT_RESPAWN || kind == STAT_CLICK || kind == STAT_GOLD;
-        const char *sign = value > 0 && (compare || percent || kind == STAT_REGEN) ? "+" : value < 0 ? "-" : "";
-        unsigned long magnitude = (unsigned long)(value < 0 ? -value : value);
-        if (kind == STAT_REGEN)
-        {
-            snprintf(buf, sizeof(buf), "%s %s%lu.%lu", LABELS[kind], sign, magnitude / 10, magnitude % 10);
-        }
-        else
-        {
-            snprintf(buf, sizeof(buf), "%s %s%lu%s", LABELS[kind], sign, magnitude, percent ? "%" : "");
-        }
+        formatStat(buf, sizeof(buf), STAT_LABELS[kind], kind, value,
+                   compare || isPercentStat(kind) || kind == STAT_REGEN);
         column.setText(buf);
 
-        // A respawn cut is stored negative, so less is better there
         int32_t gain = kind == STAT_RESPAWN ? -value : value;
         column.setColor(!compare ? VALUE_COLOR : gain > 0 ? BETTER_COLOR : gain < 0 ? WORSE_COLOR : SAME_COLOR);
     }

@@ -31,7 +31,7 @@ private:
 
     // Two rows fewer than the default, to make room for the detail panel
     static const uint8_t ROWS = ListView::VISIBLE_ROWS - 2;
-    static const uint8_t STAT_COLUMNS = 4; // Attack, defense, max HP, gold bonus
+    static const uint8_t STAT_COLUMNS = 4; // No slot gives more than four stats
 
     Header header;
 
