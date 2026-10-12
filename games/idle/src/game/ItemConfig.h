@@ -50,14 +50,16 @@ enum class RelicEffect : uint8_t
     COUNT
 };
 
-// What an item adds besides combat stats. Every perk but the respawn cut scales with the
-// item's level like a stat; the summed caps below keep stacking them from breaking a system.
+// What an item adds besides combat stats. Every perk but the respawn cut and the drop
+// chance scales with the item's level like a stat; a levelled drop perk made duplicates
+// come faster the more of them were found, maxing whole sets within the first run. The
+// summed caps below keep stacking them from breaking a system.
 enum class ItemPerk : uint8_t
 {
     NONE,
     GOLD,             // Gold production
     CLICK,            // Gold per click
-    DROP,             // Scales every drop's chance
+    DROP,             // Scales every drop's chance, not levelled
     RESPAWN_CUT,      // Flat cut to the wait between enemies, not levelled
     KILL_GOLD,        // Gold per kill
     DOUBLE_MINE,      // Chance a click mines twice

@@ -10,10 +10,11 @@
 // lifetime total is floor(cbrt(lifetime gold / ASCEND_GOLD_PER_POINT)), and ascending
 // banks whatever that total has gained, so ascending early never costs points.
 // Tuned for months of play, measured with tools/sim --runs 30 (an ascension every three
-// days): about ten points a run for the first month, Deep Delver's zones around days 25
-// and 55, and a run only nearing the 1.8e16 balance ceiling around days 75-90. Past it a
-// run still banks a few points, against a tree that costs about 1.5 million.
-static const uint64_t ASCEND_GOLD_PER_POINT = 10000000000ULL;
+// days): 12-24 points a run for the first month, still about 10 by day 90, and Deep Delver's
+// zones around days 20 and 40. A run banks fewer points the more came before it, since
+// holding steady would need its gold to grow with the square of the points, so the deep
+// talent levels stay out of reach for good.
+static const uint64_t ASCEND_GOLD_PER_POINT = 4000000000ULL;
 
 // Every point earned, spent or not, also adds this much gold production, as Cookie
 // Clicker's prestige levels do. It and the production talents multiply the other bonuses.
@@ -111,7 +112,7 @@ static constexpr TalentDef TALENTS[] = {
     {"Twin Drop",   "5% drops count twice",    TalentEffect::TWIN_DROP,             5,   10, 4,   150,  TALENT_KEEN_EYE,     image_item_gold_ring_pixels},
     {"Relic Sense", "Relics start to drop",    TalentEffect::RELIC_HUNT,            1,   4,  6,   200,  TALENT_KEEN_EYE,     image_award_skull_pixels},
     {"Old Maps",    "Keep zone maps",          TalentEffect::KEEP_MAPS,             1,   4,  3,   150,  TALENT_WAR_SPIRIT,   image_upgrade_map_pixels},
-    {"Deep Delver", "Opens deeper zones",      TalentEffect::DEEP_ZONES,            1,   2,  40,  300,  TALENT_OLD_MAPS,     image_zone_depths_pixels},
+    {"Deep Delver", "Opens deeper zones",      TalentEffect::DEEP_ZONES,            1,   2,  70,  150,  TALENT_OLD_MAPS,     image_zone_depths_pixels},
 
     {"Dowser",      "Veins 5% more often",     TalentEffect::VEIN_FREQUENCY,        5,   20, 1,   135,  NO_TALENT,           image_icon_gold_vein_pixels},
     {"Vein Lore",   "Vein bonuses +5% a lvl",  TalentEffect::VEIN_POWER,            5,   20, 2,   135,  TALENT_DOWSER,       image_icon_gold_vein_pixels},

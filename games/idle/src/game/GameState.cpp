@@ -317,11 +317,11 @@ uint64_t GameState::getBuildingCost(uint8_t id) const
     uint64_t cost = def.baseCost;
     for (uint16_t level = 0; level < buildingLevels[id]; level++)
     {
-        if (cost > UINT64_MAX / GOLD_SCALE / def.costGrowthPercent)
-        {
-            return UINT64_MAX / GOLD_SCALE; // Too expensive to ever afford
-        }
         cost = cost * def.costGrowthPercent / 100;
+        if (cost >= UINT64_MAX / GOLD_SCALE)
+        {
+            return UINT64_MAX / GOLD_SCALE; // Past what a balance can hold
+        }
     }
     uint32_t discount = ascension.getPercent(TalentEffect::BUILDING_DISCOUNT);
     return discount >= 100 ? 0 : cost - cost * discount / 100;

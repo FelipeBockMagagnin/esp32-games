@@ -277,9 +277,9 @@ static constexpr DropDef SUN_EATER_DROPS[] = {
 //
 //   arrival (atk / def / hp):  Sewers 10/5/90 (starting kit)   Forest 21-22/30-36/230
 //                              Crypt 92-110/205-235/440-475   Depths 275-420/650-1015/1750-2600
-//                              Molten Core 1040-1380/2030-2500/5200-6200
+//                              Molten Core 890-1180/1750-2030/4460-5020
 //                              Void Rift 2000-2850/3100-5200/5900-9400
-//                              Star Forge 3700-5500/4600-9800/10800-21000
+//                              Star Forge 6200-6450/9090/16250
 //
 // Defense sits at 1.2-1.5x that attack, so the auto-attack is blocked on arrival while the
 // strike gets through. A hit costs 3-5% of max HP (8% for a boss), so a timed guard keeps
@@ -293,8 +293,10 @@ static constexpr DropDef SUN_EATER_DROPS[] = {
 // one before it has been fought for a while.
 //
 // The two zones past the Core are for later runs: Deep Delver's two levels open them around
-// days 20 and 55 of ascending every three days (tools/sim --runs 20). The Void Rift farms
-// itself 4-19 h after it opens, once a few Mythic pieces have dropped.
+// days 19-22 and 40-43 of ascending every three days (tools/sim --runs 30). The Void Rift
+// farms itself 15-45 h after it first opens, once a few Mythic pieces have dropped. The Star
+// Forge opens after the Mythic set is maxed, so nothing it drops raises attack: it turns
+// idle about 15 h in on talents and awards alone, and its auto-attack kills stay slow.
 //
 // The Sewers are set by hand: fought with the starting kit, they cost about 40% of health
 // per fight and a death every three to four kills until the first drops come in.
@@ -334,8 +336,8 @@ static constexpr EnemyDef DEPTH_ENEMIES[] = {
     {"Abyss Worm",    1200,   484,  430,  2600,     32000000,  PLACEHOLDER_SPRITE,   DROPS(ABYSS_WORM_DROPS)},
 };
 static constexpr EnemyDef CORE_ENEMIES[] = {
-    {"Magma Hound",   4600,   2220, 1750, 2400,     480000000, PLACEHOLDER_SPRITE,   DROPS(MAGMA_HOUND_DROPS)},
-    {"Core Golem",    5000,   2275, 1850, 2600,     720000000, PLACEHOLDER_SPRITE,   DROPS(CORE_GOLEM_DROPS)},
+    {"Magma Hound",   4200,   2100, 1450, 2400,     480000000, PLACEHOLDER_SPRITE,   DROPS(MAGMA_HOUND_DROPS)},
+    {"Core Golem",    4600,   2150, 1530, 2600,     720000000, PLACEHOLDER_SPRITE,   DROPS(CORE_GOLEM_DROPS)},
 };
 static constexpr EnemyDef RIFT_ENEMIES[] = {
     {"Riftstalker",   4500,   3900, 2600, 2400,     1000000000ULL,   PLACEHOLDER_SPRITE, DROPS(RIFT_STALKER_DROPS)},
@@ -343,9 +345,9 @@ static constexpr EnemyDef RIFT_ENEMIES[] = {
     {"Void Maw",      9000,   4600, 2950, 2800,     4000000000ULL,   PLACEHOLDER_SPRITE, DROPS(VOID_MAW_DROPS), true},
 };
 static constexpr EnemyDef STAR_ENEMIES[] = {
-    {"Star Smith",    20000,  9000, 4800, 2400,     6000000000ULL,   PLACEHOLDER_SPRITE, DROPS(STAR_SMITH_DROPS)},
-    {"Nova Golem",    22000,  9300, 5000, 2600,     8000000000ULL,   PLACEHOLDER_SPRITE, DROPS(NOVA_GOLEM_DROPS)},
-    {"Sun Eater",     40000,  11000, 5400, 2800,    24000000000ULL,  PLACEHOLDER_SPRITE, DROPS(SUN_EATER_DROPS), true},
+    {"Star Smith",    22000,  9700, 7800, 2400,     6000000000ULL,   PLACEHOLDER_SPRITE, DROPS(STAR_SMITH_DROPS)},
+    {"Nova Golem",    24000,  9900, 8100, 2600,     8000000000ULL,   PLACEHOLDER_SPRITE, DROPS(NOVA_GOLEM_DROPS)},
+    {"Sun Eater",     44000,  10400, 8800, 2800,    24000000000ULL,  PLACEHOLDER_SPRITE, DROPS(SUN_EATER_DROPS), true},
 };
 
 #define ZONE(table) table, sizeof(table) / sizeof(table[0])
