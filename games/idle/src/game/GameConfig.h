@@ -148,8 +148,8 @@ static constexpr uint64_t BOOST_COST_FACTORS[] = {10, 100, 1000, 50000, 1000000}
 // are met, so the shop reveals itself as the player progresses.
 struct GoldUpgradeDef
 {
-    const char *name;         // Up to 14 chars to fit the detail box title
-    const char *description;  // Wrapped over two lines of the detail box
+    const char *name;         // Up to 13 chars, so the size-2 row title clears the price
+    const char *description;  // Wrapped over two 36-char lines of the detail panel
     uint64_t cost;            // Whole gold units
     uint16_t bonusPercent;    // Added to the target (100 = +100%); bonuses of the same target stack additively.
                               // For UNLOCK_ZONE this carries the zone index instead of a percentage.

@@ -7,10 +7,10 @@ static const unsigned long SPENT_BLINK_MS = 150;
 static const uint16_t CARD_BORDER = Theme::GOLD_FRAME; // Dark amber, same frame as the other gold cards
 static const uint16_t RATE_COLOR = Theme::GOOD;  // Soft green: income that grows on its own
 static const uint16_t PANEL_BORDER = Theme::FRAME; // Dark slate
-static const uint16_t DIVIDER_COLOR = Theme::FRAME;
-static const uint16_t LINE_COLOR = Theme::TEXT_2;  // Description, a step below the white title
+static const uint16_t LINE_COLOR = Theme::TEXT_2;
 static const uint16_t HINT_COLOR = Theme::TEXT_2;
 static const uint16_t AFFORD_COLOR = Theme::GOOD;
+static const uint16_t TOO_DEAR_COLOR = Theme::TEXT_DIM;
 static const uint16_t SAVINGS_COLOR = Theme::GOLD_BAR; // Amber fill, dark enough for the white label
 static const uint16_t SAVINGS_BG = Theme::GOLD_TRACK;
 static const uint16_t SAVINGS_BORDER = Theme::GOLD_BORDER;
@@ -53,40 +53,32 @@ static const uint16_t *iconFor(const GoldUpgradeDef &def)
     return styleFor(def.target).icon;
 }
 
-// Grid: three rows of six 34px tiles
-static const uint8_t SLOTS_PER_ROW = 6;
-static const int16_t SLOT_SIZE = 34;
-static const int16_t SLOT_PITCH = 38;
-static const int16_t GRID_X = 8;
-static const int16_t GRID_Y = 58;
-
-// Gold card
 static const int16_t CARD_X = 5;
 static const int16_t CARD_Y = 31;
 static const int16_t CARD_W = 230;
 static const int16_t CARD_H = 22;
 static const int16_t COIN_RADIUS = 5;
 
-// Detail panel
+static const int16_t ROW_X = 5;
+static const int16_t LIST_TOP = 57;
+static const int16_t ROW_PITCH = 28;
+
 static const int16_t PANEL_X = 5;
-static const int16_t PANEL_Y = 174;
+static const int16_t PANEL_Y = 254;
 static const int16_t PANEL_W = 230;
-static const int16_t PANEL_H = 132;
-static const int16_t TEXT_X = PANEL_X + 7;
-static const int16_t TEXT_RIGHT = PANEL_X + PANEL_W - 7;
-static const int16_t CATEGORY_Y = PANEL_Y + 7;
-static const int16_t TITLE_Y = PANEL_Y + 19;
-static const int16_t LINE1_Y = PANEL_Y + 41;
-static const int16_t LINE2_Y = PANEL_Y + 52;
-static const int16_t DIVIDER_Y = PANEL_Y + 66;
-static const int16_t EFFECT_Y = PANEL_Y + 74;
-static const int16_t SAVINGS_Y = PANEL_Y + 90;
-static const int16_t SAVINGS_H = 14;
-static const int16_t BUY_ROW_Y = PANEL_Y + 116;
+static const int16_t PANEL_H = 64;
+static const int16_t TEXT_X = PANEL_X + 5;
+static const int16_t TEXT_RIGHT = PANEL_X + PANEL_W - 5;
+static const int16_t CATEGORY_Y = PANEL_Y + 5;
+static const int16_t LINE1_Y = PANEL_Y + 16;
+static const int16_t LINE2_Y = PANEL_Y + 26;
+static const int16_t BUY_ROW_Y = PANEL_Y + 38;
 static const int16_t BADGE_OFFSET_Y = (8 - ButtonBadge::SIZE) / 2;
+static const int16_t SAVINGS_Y = PANEL_Y + 48;
+static const int16_t SAVINGS_H = 13;
 
 // Size 1 characters are 6px wide, so this many fit inside the detail panel
-static const uint8_t DETAIL_LINE_CHARS = 35;
+static const uint8_t DETAIL_LINE_CHARS = 36;
 
 static const uint8_t NO_UPGRADE = 0xFF;
 
@@ -98,24 +90,21 @@ UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
       goldText(CARD_X + 23, CARD_Y + 4, "0", Theme::GOLD, 2),
       goldRate(CARD_X + CARD_W - 6, CARD_Y + 8, "+0 gold/s", RATE_COLOR, 1, TR_DATUM),
 
-      detailPanel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, PANEL_BORDER, true, Theme::CARD, true, 4),
+      list(ROWS),
+
+      detailPanel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, PANEL_BORDER, true, Theme::CARD, true, 3),
       categoryText(TEXT_X, CATEGORY_Y, "", Theme::TEXT, 1),
       countText(TEXT_RIGHT, CATEGORY_Y, "", HINT_COLOR, 1, TR_DATUM),
-      detailTitle(TEXT_X, TITLE_Y, "", Theme::TEXT, 2),
       detailLine1(TEXT_X, LINE1_Y, "", LINE_COLOR, 1),
       detailLine2(TEXT_X, LINE2_Y, "", LINE_COLOR, 1),
-      detailDivider(TEXT_X, DIVIDER_Y, TEXT_RIGHT - TEXT_X, 1, DIVIDER_COLOR, true, DIVIDER_COLOR),
-      effectText(TEXT_X, EFFECT_Y, "", Theme::TEXT, 1),
-      savingsBar(TEXT_X, SAVINGS_Y, TEXT_RIGHT - TEXT_X, SAVINGS_H, 0, 100, SAVINGS_COLOR, SAVINGS_BG, SAVINGS_BORDER),
       buyBadge(TEXT_X, BUY_ROW_Y + BADGE_OFFSET_Y, ButtonBadge::CONFIRM),
       buyLabel(TEXT_X + ButtonBadge::SIZE + 4, BUY_ROW_Y, "Buy", Theme::TEXT, 1),
       priceText(TEXT_RIGHT, BUY_ROW_Y, "", Theme::GOLD, 1, TR_DATUM),
+      savingsBar(TEXT_X, SAVINGS_Y, TEXT_RIGHT - TEXT_X, SAVINGS_H, 0, 100, SAVINGS_COLOR, SAVINGS_BG, SAVINGS_BORDER),
 
       game(game),
       sound(sound),
       visibleCount(0),
-      availableCount(0),
-      selectedSlot(0),
       shownUpgrade(NO_UPGRADE)
 {
     addElement(&header);
@@ -126,83 +115,69 @@ UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
     addElement(&goldText, Theme::CARD);
     addElement(&goldRate, Theme::CARD);
 
-    for (uint8_t i = 0; i < MAX_VISIBLE_SLOTS; i++)
+    for (uint8_t i = 0; i < ROWS; i++)
     {
-        slots[i] = UpgradeSlot(GRID_X + (i % SLOTS_PER_ROW) * SLOT_PITCH, GRID_Y + (i / SLOTS_PER_ROW) * SLOT_PITCH,
-                               SLOT_SIZE, SLOT_SIZE);
-        visibleIds[i] = 0;
-        addElement(&slots[i]);
+        rows[i].setPosition(ROW_X, LIST_TOP + i * ROW_PITCH);
+        rows[i].setShowCoin(true);
+        rowUpgrade[i] = NO_UPGRADE;
+        addElement(&rows[i]);
     }
 
     addElement(&detailPanel);
     addElement(&categoryText, Theme::CARD);
     addElement(&countText, Theme::CARD);
-    addElement(&detailTitle, Theme::CARD);
     addElement(&detailLine1, Theme::CARD);
     addElement(&detailLine2, Theme::CARD);
-    addElement(&detailDivider, Theme::CARD);
-    addElement(&effectText, Theme::CARD);
-    addElement(&savingsBar, Theme::CARD);
     addElement(&buyBadge, Theme::CARD);
     addElement(&buyLabel, Theme::CARD);
     addElement(&priceText, Theme::CARD);
+    addElement(&savingsBar, Theme::CARD);
 
     rebuildVisible();
     refreshDetails();
 }
 
-// The cheapest available upgrades, cheapest first, so the grid reads as a shopping list:
-// the first tile is always the next thing the player can afford. Kept as an insertion into
-// a sorted list of at most MAX_VISIBLE_SLOTS, so the pricier ones simply fall off the end.
+// The available upgrades, cheapest first, so the list reads as a shopping list: the top
+// row is always the next thing the player can afford. The selection follows its upgrade
+// when a cheaper one appears above it; once bought, it falls on the next one down.
 void UpgradeScreen::rebuildVisible()
 {
+    uint8_t selectedId = list.getCount() > 0 ? visibleIds[list.getSelected()] : NO_UPGRADE;
+
     visibleCount = 0;
-    availableCount = 0;
     for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
     {
         if (!game.isGoldUpgradeUnlocked(i) || game.isGoldUpgradeBought(i))
         {
             continue;
         }
-        availableCount++;
-
         uint8_t pos = visibleCount;
         while (pos > 0 && GOLD_UPGRADES[visibleIds[pos - 1]].cost > GOLD_UPGRADES[i].cost)
         {
+            visibleIds[pos] = visibleIds[pos - 1];
             pos--;
         }
-        if (pos >= MAX_VISIBLE_SLOTS)
-        {
-            continue;
-        }
-        uint8_t last = visibleCount < MAX_VISIBLE_SLOTS ? visibleCount : MAX_VISIBLE_SLOTS - 1;
-        for (uint8_t k = last; k > pos; k--)
-        {
-            visibleIds[k] = visibleIds[k - 1];
-        }
         visibleIds[pos] = i;
-        if (visibleCount < MAX_VISIBLE_SLOTS)
-        {
-            visibleCount++;
-        }
+        visibleCount++;
     }
 
-    // A purchase shrinks the list, so the selection can end up past the end
-    if (selectedSlot >= visibleCount)
+    list.setCount(visibleCount);
+    for (uint8_t i = 0; i < visibleCount; i++)
     {
-        selectedSlot = visibleCount > 0 ? visibleCount - 1 : 0;
+        if (visibleIds[i] == selectedId)
+        {
+            list.setSelected(i);
+            break;
+        }
     }
 }
 
 void UpgradeScreen::showDetailElements(bool visible)
 {
-    categoryText.setVisible(visible);
-    detailDivider.setVisible(visible);
-    effectText.setVisible(visible);
-    savingsBar.setVisible(visible);
     buyBadge.setVisible(visible);
     buyLabel.setVisible(visible);
     priceText.setVisible(visible);
+    savingsBar.setVisible(visible);
 }
 
 // What buying the upgrade changes, in the player's own numbers where the screen has them
@@ -286,17 +261,14 @@ void UpgradeScreen::refreshDetails()
     char buf[48];
 
     snprintf(buf, sizeof(buf), "%u/%u bought", (unsigned)game.getUpgradesBoughtCount(), (unsigned)GOLD_UPGRADE_COUNT);
-    if (availableCount > visibleCount)
-    {
-        snprintf(buf, sizeof(buf), "+%u more waiting", (unsigned)(availableCount - visibleCount));
-    }
     countText.setText(buf);
 
     if (visibleCount == 0)
     {
         showDetailElements(false);
         shownUpgrade = NO_UPGRADE;
-        detailTitle.setText("All caught up");
+        categoryText.setText("ALL CAUGHT UP");
+        categoryText.setColor(Theme::TEXT);
         detailLine1.setText("Buy buildings and mine deeper");
         detailLine2.setText("to unlock more upgrades.");
         return;
@@ -304,18 +276,15 @@ void UpgradeScreen::refreshDetails()
 
     showDetailElements(true);
 
-    uint8_t id = visibleIds[selectedSlot];
+    uint8_t id = visibleIds[list.getSelected()];
     const GoldUpgradeDef &def = GOLD_UPGRADES[id];
-    const CategoryStyle &style = styleFor(def.target);
 
-    // Name, category and description are fixed per upgrade, so only rewritten when the
-    // selection moves to a different one
     if (shownUpgrade != id)
     {
         shownUpgrade = id;
+        const CategoryStyle &style = styleFor(def.target);
         categoryText.setText(style.label);
         categoryText.setColor(style.accent);
-        detailTitle.setText(def.name);
 
         // Wrap the description at the last space that fits on the first line
         String description = def.description;
@@ -336,9 +305,6 @@ void UpgradeScreen::refreshDetails()
         }
     }
 
-    formatEffect(def, buf, sizeof(buf));
-    effectText.setText(buf);
-
     // Savings toward the price, so a far-off upgrade still shows how close it is
     uint64_t gold = game.getGold();
     bool affordable = game.canAffordGoldUpgrade(id);
@@ -358,7 +324,15 @@ void UpgradeScreen::refreshDetails()
     }
 
     buyBadge.setDimmed(!affordable);
-    snprintf(buf, sizeof(buf), "%s gold", formatAmount(cost).c_str());
+    if (affordable)
+    {
+        snprintf(buf, sizeof(buf), "%s gold", formatAmount(cost).c_str());
+    }
+    else
+    {
+        // Not affordable means the cost is above the balance, so this cannot underflow
+        snprintf(buf, sizeof(buf), "need %s more", formatAmount(cost - gold).c_str());
+    }
     priceText.setText(buf);
     priceText.setColor(affordable ? AFFORD_COLOR : HINT_COLOR);
 }
@@ -377,29 +351,34 @@ void UpgradeScreen::update(unsigned long now)
 
     rebuildVisible();
 
-    for (uint8_t i = 0; i < MAX_VISIBLE_SLOTS; i++)
+    uint8_t visible = list.getVisibleCount();
+    for (uint8_t i = 0; i < ROWS; i++)
     {
-        UpgradeSlot &slot = slots[i];
-        bool used = i < visibleCount;
-        slot.setVisible(used);
-        if (!used)
+        ListRow &row = rows[i];
+        if (i >= visible)
         {
+            row.setVisible(false);
             continue;
         }
+        row.setVisible(true);
 
-        uint8_t id = visibleIds[i];
-        const CategoryStyle &style = styleFor(GOLD_UPGRADES[id].target);
-        slot.setIcon(iconFor(GOLD_UPGRADES[id]));
-        slot.setAccent(style.accent);
+        uint16_t index = list.getFirstVisible() + i;
+        uint8_t id = visibleIds[index];
+        const GoldUpgradeDef &def = GOLD_UPGRADES[id];
 
-        if (i == selectedSlot)
+        if (rowUpgrade[i] != id)
         {
-            slot.setState(UpgradeSlot::SELECTED);
+            rowUpgrade[i] = id;
+            row.setTitle(def.name);
+            row.setIconPixels(iconFor(def), 16, 16);
         }
-        else
-        {
-            slot.setState(game.canAffordGoldUpgrade(id) ? UpgradeSlot::AFFORDABLE : UpgradeSlot::TOO_DEAR);
-        }
+
+        char buf[48];
+        formatEffect(def, buf, sizeof(buf));
+        row.setSubtitle(buf);
+        row.setValue(formatAmount(game.getGoldUpgradeCost(id)));
+        row.setValueColor(game.canAffordGoldUpgrade(id) ? AFFORD_COLOR : TOO_DEAR_COLOR);
+        row.setState(index == list.getSelected() ? ListRow::SELECTED : ListRow::NORMAL);
     }
 
     refreshDetails();
@@ -407,26 +386,20 @@ void UpgradeScreen::update(unsigned long now)
 
 void UpgradeScreen::onUpPress()
 {
-    if (visibleCount > 0)
-    {
-        selectedSlot = (selectedSlot == 0) ? (visibleCount - 1) : (selectedSlot - 1);
-    }
+    list.previous();
     forceRefresh();
 }
 
 void UpgradeScreen::onDownPress()
 {
-    if (visibleCount > 0)
-    {
-        selectedSlot = (selectedSlot + 1) % visibleCount;
-    }
+    list.next();
     forceRefresh();
 }
 
 void UpgradeScreen::onConfirmPress()
 {
     // buyGoldUpgrade only spends gold when the upgrade is unlocked, unowned and affordable
-    if (visibleCount > 0 && game.buyGoldUpgrade(visibleIds[selectedSlot]))
+    if (visibleCount > 0 && game.buyGoldUpgrade(visibleIds[list.getSelected()]))
     {
         sound.playBuy();
         spentUntil = millis() + SPENT_BLINK_MS;
@@ -436,7 +409,7 @@ void UpgradeScreen::onConfirmPress()
         sound.playError();
         if (visibleCount > 0)
         {
-            feedback.shake(slots[selectedSlot]);
+            feedback.shake(rows[list.getSelected() - list.getFirstVisible()]);
         }
     }
     forceRefresh();
