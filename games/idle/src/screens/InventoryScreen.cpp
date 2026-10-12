@@ -34,13 +34,16 @@ static const int16_t PANEL_H = 54;
 static const int16_t TEXT_X = PANEL_X + 7;
 static const int16_t TEXT_RIGHT = PANEL_X + PANEL_W - 7;
 static const int16_t TITLE_Y = PANEL_Y + 6;
-static const int16_t STATS_Y = PANEL_Y + 21;
-static const int16_t HINT_ROW_Y = PANEL_Y + 38;
+static const int16_t STATS_Y = PANEL_Y + 19;
+static const int16_t STAT_LINE_H = 10;
+static const int16_t HINT_ROW_Y = PANEL_Y + 42;
 static const int16_t BADGE_OFFSET_Y = (8 - ButtonBadge::SIZE) / 2;
-// Four 9-char columns ("CLK +587%") fill the panel's inner width exactly
-static const int16_t STAT_COLUMN_W = 54;
+// Two 18-char columns ("Double mine +1500%") fill the panel's inner width exactly
+static const int16_t STAT_COLUMN_W = 108;
+static const uint16_t NEW_COLOR = Theme::INFO;
 
-// Combat stats, then the perks; the respawn cut stays last, out of the row subtitle
+// Combat stats, then the perks; the respawn cut stays last, out of the row subtitle.
+// Labels stay at 11 chars so a label and "+1500%" fit a panel column.
 enum StatKind : uint8_t
 {
     STAT_ATTACK,
@@ -58,8 +61,11 @@ enum StatKind : uint8_t
     STAT_KIND_COUNT
 };
 
-static const char *const STAT_LABELS[STAT_KIND_COUNT] = {"ATK", "DEF", "HP", "RGN", "GLD", "CLK", "DRP", "BTY", "DBL", "XP", "DSC", "RSP"};
-static const char *const STAT_SHORT_LABELS[STAT_KIND_COUNT] = {"atk", "def", "hp", "rgn", "gld", "clk", "drp", "bty", "dbl", "xp", "dsc", "rsp"};
+static const char *const STAT_LABELS[STAT_KIND_COUNT] = {
+    "Attack", "Defense", "Max HP", "Regen", "Gold/s", "Click gold",
+    "Drop rate", "Kill gold", "Double mine", "Double XP", "Upg. cost", "Respawn"};
+static const char *const STAT_SHORT_LABELS[STAT_KIND_COUNT] = {
+    "atk", "def", "hp", "rgn", "gold", "clk", "drop", "kill", "2xmine", "2xxp", "cost", "resp"};
 static const ItemPerk STAT_PERKS[STAT_KIND_COUNT] = {
     ItemPerk::NONE, ItemPerk::NONE, ItemPerk::NONE, ItemPerk::NONE,
     ItemPerk::GOLD, ItemPerk::CLICK, ItemPerk::DROP, ItemPerk::KILL_GOLD,
@@ -68,6 +74,12 @@ static const ItemPerk STAT_PERKS[STAT_KIND_COUNT] = {
 static bool isPercentStat(StatKind kind)
 {
     return kind >= STAT_GOLD;
+}
+
+// Cuts read as what they take off, so they come back negative and less is better
+static bool lowerIsBetter(StatKind kind)
+{
+    return kind == STAT_DISCOUNT || kind == STAT_RESPAWN;
 }
 
 static bool hasStat(const ItemDef &def, StatKind kind)
@@ -94,7 +106,6 @@ static bool hasStat(const ItemDef &def, StatKind kind)
     }
 }
 
-// A respawn cut is flat and comes back negative, so less is better there
 static int32_t statValue(const Inventory &inventory, uint8_t id, StatKind kind)
 {
     const ItemDef &def = ITEMS[id];
@@ -109,10 +120,11 @@ static int32_t statValue(const Inventory &inventory, uint8_t id, StatKind kind)
         return (int32_t)scaleItemStat(def.maxHp, level);
     case STAT_REGEN:
         return (int32_t)scaleItemStat(def.regen, level);
-    case STAT_RESPAWN:
-        return -(int32_t)inventory.getItemPerk(id, ItemPerk::RESPAWN_CUT);
     default:
-        return (int32_t)inventory.getItemPerk(id, STAT_PERKS[kind]);
+    {
+        int32_t perk = (int32_t)inventory.getItemPerk(id, STAT_PERKS[kind]);
+        return lowerIsBetter(kind) ? -perk : perk;
+    }
     }
 }
 
@@ -130,14 +142,16 @@ static void formatStat(char *buf, size_t size, const char *label, StatKind kind,
     }
 }
 
-// Compact "atk 12 clk 10% drp 5%" for a row subtitle, which has room for 24 chars before
-// the value column. The respawn cut is left to the detail panel.
+// Compact "atk 12 clk 10% drop 5%" for a row subtitle, which has room for 24 chars before
+// the value column. Stats that would run past it, and the respawn cut, are left to the
+// detail panel.
+static const size_t SUBTITLE_CHARS = 24;
+
 static String describeItem(const Inventory &inventory, uint8_t itemId)
 {
-    char buf[48];
+    char buf[SUBTITLE_CHARS + 1] = "";
     size_t n = 0;
-    buf[0] = '\0';
-    for (uint8_t k = 0; k < STAT_RESPAWN && n < sizeof(buf) - 1; k++)
+    for (uint8_t k = 0; k < STAT_RESPAWN; k++)
     {
         StatKind kind = (StatKind)k;
         int32_t value = statValue(inventory, itemId, kind);
@@ -145,12 +159,15 @@ static String describeItem(const Inventory &inventory, uint8_t itemId)
         {
             continue;
         }
-        if (n > 0)
+        char stat[16];
+        formatStat(stat, sizeof(stat), STAT_SHORT_LABELS[kind], kind, value, false);
+        size_t needed = strlen(stat) + (n > 0 ? 1 : 0);
+        if (n + needed > SUBTITLE_CHARS)
         {
-            buf[n++] = ' ';
+            break;
         }
-        formatStat(buf + n, sizeof(buf) - n, STAT_SHORT_LABELS[kind], kind, value, false);
-        n += strlen(buf + n);
+        snprintf(buf + n, sizeof(buf) - n, "%s%s", n > 0 ? " " : "", stat);
+        n += needed;
     }
     return String(buf);
 }
@@ -180,6 +197,69 @@ static const ItemDef *firstItemOf(EquipSlot slot)
         }
     }
     return nullptr;
+}
+
+enum Verdict : uint8_t
+{
+    SAME,
+    BETTER,
+    WORSE,
+    MIXED
+};
+
+// Stat by stat against the item it would replace. Relics each do something different,
+// so they are never ranked against one another.
+static Verdict compareItems(const Inventory &inventory, uint8_t itemId, int8_t against)
+{
+    if (ITEMS[itemId].slot == EquipSlot::RELIC)
+    {
+        return SAME;
+    }
+    if (against == NO_ITEM)
+    {
+        return BETTER;
+    }
+    bool gains = false;
+    bool losses = false;
+    for (uint8_t k = 0; k < STAT_KIND_COUNT; k++)
+    {
+        StatKind kind = (StatKind)k;
+        int32_t diff = statValue(inventory, itemId, kind) - statValue(inventory, (uint8_t)against, kind);
+        int32_t gain = lowerIsBetter(kind) ? -diff : diff;
+        gains |= gain > 0;
+        losses |= gain < 0;
+    }
+    return gains && losses ? MIXED : gains ? BETTER : losses ? WORSE : SAME;
+}
+
+static ListRow::Trend trendFor(Verdict verdict)
+{
+    switch (verdict)
+    {
+    case BETTER:
+        return ListRow::TREND_UP;
+    case WORSE:
+        return ListRow::TREND_DOWN;
+    case MIXED:
+        return ListRow::TREND_MIXED;
+    default:
+        return ListRow::TREND_NONE;
+    }
+}
+
+static bool hasUpgradeInSlot(const Inventory &inventory, EquipSlot slot)
+{
+    int8_t worn = inventory.getEquipped(slot);
+    uint8_t count = inventory.countItemsForSlot(slot);
+    for (uint8_t i = 0; i < count; i++)
+    {
+        int8_t id = inventory.itemForSlotAt(slot, i);
+        if (id != NO_ITEM && id != worn && compareItems(inventory, (uint8_t)id, worn) == BETTER)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 static void setRowIcon(ListRow &row, const ItemDef &def)
@@ -220,6 +300,7 @@ InventoryScreen::InventoryScreen(GameState &game, Inventory &inventory, SoundMan
       mode(SLOT_LIST),
       inspecting(EquipSlot::HELMET),
       lastRevision(0),
+      viewedItem(NO_ITEM),
       rowsDirty(true)
 {
     addElement(&header);
@@ -244,7 +325,7 @@ InventoryScreen::InventoryScreen(GameState &game, Inventory &inventory, SoundMan
     addElement(&panelRight, Theme::CARD);
     for (uint8_t i = 0; i < STAT_COLUMNS; i++)
     {
-        statColumns[i] = Text(TEXT_X + i * STAT_COLUMN_W, STATS_Y, "", VALUE_COLOR, 1);
+        statColumns[i] = Text(TEXT_X + (i % 2) * STAT_COLUMN_W, STATS_Y + (i / 2) * STAT_LINE_H, "", VALUE_COLOR, 1);
         addElement(&statColumns[i], Theme::CARD);
     }
     addElement(&actionBadge, Theme::CARD);
@@ -261,8 +342,25 @@ void InventoryScreen::onEnter(TFT_eSPI &tft)
     Screen::onEnter(tft);
 }
 
+// An item counts as seen once the cursor has rested on it and moved on, so its NEW
+// tag stays up while it is being read
+void InventoryScreen::viewItem(int8_t itemId)
+{
+    if (itemId == viewedItem)
+    {
+        return;
+    }
+    if (viewedItem != NO_ITEM && inventory.markSeen((uint8_t)viewedItem))
+    {
+        rowsDirty = true;
+        forceRefresh();
+    }
+    viewedItem = itemId;
+}
+
 void InventoryScreen::enterSlotList()
 {
+    viewItem(NO_ITEM);
     mode = SLOT_LIST;
     header.setTitle("Inventory");
     list.setCount(EQUIP_SLOT_COUNT);
@@ -311,7 +409,10 @@ void InventoryScreen::refreshRows()
                 row.setTitle(EQUIP_SLOT_NAMES[index]);
                 row.setSubtitle(inventory.countItemsForSlot(slot) > 0 ? "empty, items to wear" : "empty");
                 row.setValue("");
-                row.setValueSub("");
+                bool fresh = inventory.hasUnseenInSlot(slot);
+                row.setValueSub(fresh ? "NEW" : "");
+                row.setValueSubColor(NEW_COLOR);
+                row.setTrend(ListRow::TREND_NONE);
                 const ItemDef *placeholder = firstItemOf(slot);
                 if (placeholder != nullptr)
                 {
@@ -329,7 +430,10 @@ void InventoryScreen::refreshRows()
                 row.setSubtitle(describeItem(inventory, (uint8_t)itemId));
                 snprintf(buf, sizeof(buf), "Lv %u", (unsigned)inventory.getItemLevel((uint8_t)itemId));
                 row.setValue(buf);
-                row.setValueSub(EQUIP_SLOT_NAMES[index]);
+                bool fresh = inventory.hasUnseenInSlot(slot);
+                row.setValueSub(fresh ? "NEW" : EQUIP_SLOT_NAMES[index]);
+                row.setValueSubColor(fresh ? NEW_COLOR : Theme::TEXT_2);
+                row.setTrend(hasUpgradeInSlot(inventory, slot) ? ListRow::TREND_UP : ListRow::TREND_NONE);
                 setRowIcon(row, def);
                 row.setState(isSelected ? ListRow::SELECTED : ListRow::NORMAL);
             }
@@ -343,6 +447,7 @@ void InventoryScreen::refreshRows()
             row.setSubtitle("to all slots");
             row.setValue("");
             row.setValueSub("");
+            row.setTrend(ListRow::TREND_NONE);
             row.clearIcon();
             row.setState(isSelected ? ListRow::SELECTED : ListRow::NORMAL);
             continue;
@@ -364,7 +469,11 @@ void InventoryScreen::refreshRows()
         row.setSubtitle(describeItem(inventory, (uint8_t)itemId));
         snprintf(buf, sizeof(buf), "Lv %u", (unsigned)inventory.getItemLevel((uint8_t)itemId));
         row.setValue(buf);
-        row.setValueSub(isEquipped ? "worn" : ITEM_TIER_NAMES[def.tier]);
+        bool fresh = inventory.isUnseen((uint8_t)itemId);
+        row.setValueSub(fresh ? "NEW" : isEquipped ? "worn" : ITEM_TIER_NAMES[def.tier]);
+        row.setValueSubColor(fresh ? NEW_COLOR : Theme::TEXT_2);
+        row.setTrend(isEquipped ? ListRow::TREND_NONE
+                                : trendFor(compareItems(inventory, (uint8_t)itemId, inventory.getEquipped(inspecting))));
         setRowIcon(row, def);
 
         if (isSelected)
@@ -472,7 +581,7 @@ void InventoryScreen::showStats(int8_t itemId, int8_t against, bool compare)
     StatKind kinds[STAT_COLUMNS];
     uint8_t kindCount = statKindsOf(itemId, compare ? against : NO_ITEM, kinds, STAT_COLUMNS);
 
-    char buf[16];
+    char buf[24];
     for (uint8_t i = 0; i < STAT_COLUMNS; i++)
     {
         Text &column = statColumns[i];
@@ -498,7 +607,7 @@ void InventoryScreen::showStats(int8_t itemId, int8_t against, bool compare)
                    compare || isPercentStat(kind) || kind == STAT_REGEN);
         column.setText(buf);
 
-        int32_t gain = kind == STAT_RESPAWN ? -value : value;
+        int32_t gain = lowerIsBetter(kind) ? -value : value;
         column.setColor(!compare ? VALUE_COLOR : gain > 0 ? BETTER_COLOR : gain < 0 ? WORSE_COLOR : SAME_COLOR);
     }
 }
@@ -541,6 +650,7 @@ void InventoryScreen::refreshPanel()
 
     uint16_t selected = list.getSelected();
     int8_t itemId = selected == 0 ? NO_ITEM : inventory.itemForSlotAt(inspecting, (uint8_t)(selected - 1));
+    viewItem(itemId);
     if (itemId == NO_ITEM)
     {
         panelTitle.setText("Back to slots");

@@ -38,6 +38,12 @@ public:
     uint8_t countItemsForSlot(EquipSlot slot) const;
     int8_t itemForSlotAt(EquipSlot slot, uint8_t index) const;
 
+    // Items found since boot that the player has not looked at yet. Kept out of the
+    // Snapshot: adding it would discard every save, and a power cycle may forget them.
+    bool isUnseen(uint8_t itemId) const { return itemId < ITEM_COUNT && unseen[itemId]; }
+    bool hasUnseenInSlot(EquipSlot slot) const;
+    bool markSeen(uint8_t itemId); // True when the item was unseen
+
     // Stats of a single owned item at its current level
     Stats getItemStats(uint8_t itemId) const;
 
@@ -56,6 +62,7 @@ public:
 private:
     uint8_t itemLevels[ITEM_COUNT];
     int8_t equipped[EQUIP_SLOT_COUNT];
+    bool unseen[ITEM_COUNT];
     uint32_t revision;
 };
 

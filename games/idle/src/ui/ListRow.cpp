@@ -15,6 +15,7 @@ static const int16_t COIN_RADIUS = 3;
 static const uint8_t DIM_ICON_PERCENT = 55; // Brightness a locked row's gray icon keeps
 static const uint16_t FLASH_COLOR = Theme::GOOD;
 static const uint8_t FLASH_FILL_ALPHA = 90;
+static const int16_t TREND_HALF_W = 3;
 
 void ListRow::setIconBitmap(const unsigned char *bitmap, int16_t bw, int16_t bh, uint16_t color)
 {
@@ -54,6 +55,20 @@ void ListRow::clearIcon()
     iconW = 0;
     iconH = 0;
     markDirty();
+}
+
+// Triangles rather than the GLCD font's arrow glyphs, which sit below the printable range
+static void drawTriangle(TFT_eSPI &tft, int16_t cx, int16_t top, int16_t height, bool up, uint16_t color)
+{
+    int16_t bottom = top + height - 1;
+    if (up)
+    {
+        tft.fillTriangle(cx - TREND_HALF_W, bottom, cx + TREND_HALF_W, bottom, cx, top, color);
+    }
+    else
+    {
+        tft.fillTriangle(cx - TREND_HALF_W, top, cx + TREND_HALF_W, top, cx, bottom, color);
+    }
 }
 
 void ListRow::draw(TFT_eSPI &tft)
@@ -150,11 +165,22 @@ void ListRow::draw(TFT_eSPI &tft)
             int16_t coinX = valueRight - tft.textWidth(value) - COIN_RADIUS - 3;
             tft.drawEllipse(coinX, y + 6, COIN_RADIUS, COIN_RADIUS, Theme::GOLD);
         }
+
+        int16_t trendX = valueRight - tft.textWidth(value) - TREND_HALF_W - 4;
+        if (state != DIMMED && (trend == TREND_UP || trend == TREND_DOWN))
+        {
+            drawTriangle(tft, trendX, y + 3, 7, trend == TREND_UP, trend == TREND_UP ? Theme::GOOD : Theme::BAD);
+        }
+        else if (state != DIMMED && trend == TREND_MIXED)
+        {
+            drawTriangle(tft, trendX, y + 2, 4, true, Theme::GOOD);
+            drawTriangle(tft, trendX, y + 7, 4, false, Theme::BAD);
+        }
     }
 
     if (valueSub.length() > 0)
     {
-        tft.setTextColor(state == DIMMED ? DIMMED_COLOR : SUBTITLE_COLOR);
+        tft.setTextColor(state == DIMMED ? DIMMED_COLOR : valueSubColor);
         tft.drawString(valueSub, valueRight, y + h - 9);
     }
 

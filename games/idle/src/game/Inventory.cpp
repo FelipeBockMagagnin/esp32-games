@@ -26,6 +26,7 @@ Inventory::Inventory()
     for (uint8_t i = 0; i < ITEM_COUNT; i++)
     {
         itemLevels[i] = 0;
+        unseen[i] = false;
     }
     for (uint8_t i = 0; i < EQUIP_SLOT_COUNT; i++)
     {
@@ -55,6 +56,7 @@ bool Inventory::addDrop(uint8_t itemId)
     if (itemLevels[itemId] == 0)
     {
         itemLevels[itemId] = 1;
+        unseen[itemId] = true;
         return true;
     }
 
@@ -149,6 +151,30 @@ int8_t Inventory::itemForSlotAt(EquipSlot slot, uint8_t index) const
         }
     }
     return NO_ITEM;
+}
+
+bool Inventory::hasUnseenInSlot(EquipSlot slot) const
+{
+    for (uint8_t i = 0; i < ITEM_COUNT; i++)
+    {
+        if (unseen[i] && ITEMS[i].slot == slot)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Leaves the revision alone: the saver and combat's stat cache watch it, and seeing an
+// item changes neither
+bool Inventory::markSeen(uint8_t itemId)
+{
+    if (itemId >= ITEM_COUNT || !unseen[itemId])
+    {
+        return false;
+    }
+    unseen[itemId] = false;
+    return true;
 }
 
 Stats Inventory::getItemStats(uint8_t itemId) const
@@ -246,6 +272,7 @@ void Inventory::load(const Snapshot &in)
     for (uint8_t i = 0; i < ITEM_COUNT; i++)
     {
         itemLevels[i] = in.itemLevels[i];
+        unseen[i] = false;
     }
     for (uint8_t i = 0; i < EQUIP_SLOT_COUNT; i++)
     {

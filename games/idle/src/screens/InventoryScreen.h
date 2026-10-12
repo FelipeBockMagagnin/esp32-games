@@ -64,8 +64,10 @@ private:
     Mode mode;
     EquipSlot inspecting;
     uint32_t lastRevision;
+    int8_t viewedItem;
     bool rowsDirty; // Rows only change with the selection or the inventory, not with time
 
+    void viewItem(int8_t itemId);
     void enterSlotList();
     void enterItemList(EquipSlot slot);
     void refreshRows();

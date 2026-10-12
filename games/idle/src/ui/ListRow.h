@@ -18,6 +18,15 @@ public:
         OWNED     // Green frame; already taken or currently active
     };
 
+    // A small arrow left of the value: how this row compares with what it would replace
+    enum Trend : uint8_t
+    {
+        TREND_NONE,
+        TREND_UP,
+        TREND_DOWN,
+        TREND_MIXED // Gains some, loses some
+    };
+
     static const int16_t DEFAULT_W = 230;
     static const int16_t DEFAULT_H = 26;
     static const uint16_t DEFAULT_FRAME_COLOR = Theme::FRAME_DIM;
@@ -30,7 +39,9 @@ public:
           valueSub(""),
           state(NORMAL),
           valueColor(Theme::TEXT),
+          valueSubColor(Theme::TEXT_2),
           showCoin(false),
+          trend(TREND_NONE),
           iconBitmap(nullptr),
           iconPixels(nullptr),
           iconW(0),
@@ -65,6 +76,24 @@ public:
         if (valueColor != v)
         {
             valueColor = v;
+            markDirty();
+        }
+    }
+
+    void setValueSubColor(uint16_t v)
+    {
+        if (valueSubColor != v)
+        {
+            valueSubColor = v;
+            markDirty();
+        }
+    }
+
+    void setTrend(Trend v)
+    {
+        if (trend != v)
+        {
+            trend = v;
             markDirty();
         }
     }
@@ -145,7 +174,9 @@ private:
 
     State state;
     uint16_t valueColor;
+    uint16_t valueSubColor;
     bool showCoin;
+    Trend trend;
 
     const unsigned char *iconBitmap;
     const uint16_t *iconPixels;
