@@ -357,7 +357,7 @@ void CombatScreen::update(unsigned long now)
 
 void CombatScreen::onConfirmPress()
 {
-    if (combat.strike())
+    if (combat.strike(millis()))
     {
         sound.playStrike();
     }
@@ -371,9 +371,10 @@ void CombatScreen::onConfirmPress()
 // Casting says what it did in the status line, since a heal or a ward is easy to miss
 void CombatScreen::onUpPress()
 {
+    unsigned long now = millis();
     const SpellDef *spell = combat.getSpell();
     uint32_t hpBefore = combat.getPlayerHp();
-    if (spell == nullptr || !combat.castSpell())
+    if (spell == nullptr || !combat.castSpell(now))
     {
         sound.playError();
         forceRefresh();
@@ -381,7 +382,6 @@ void CombatScreen::onUpPress()
     }
 
     sound.playLevelUp();
-    unsigned long now = millis();
     char buf[32];
     switch (spell->effect)
     {
@@ -406,7 +406,7 @@ void CombatScreen::onUpPress()
 
 void CombatScreen::onDownPress()
 {
-    if (combat.guard())
+    if (combat.guard(millis()))
     {
         sound.playMenu();
     }

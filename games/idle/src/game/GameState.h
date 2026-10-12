@@ -119,6 +119,7 @@ private:
     uint64_t getBaseProductionPerSecond() const; // Without a vein's frenzy
     uint64_t applyProductionBonus(uint64_t production) const;
     uint64_t getBuildingBaseOutput(uint8_t id, const uint8_t *boosts) const;
+    uint32_t productionSignature() const;
     void applyHeadStart();
     void updateVeins(unsigned long now);
     void scheduleVein(unsigned long now);
@@ -138,6 +139,10 @@ private:
 
     uint32_t totalClicks;
     uint64_t totalGoldEarned; // GOLD_SCALE units, never spent down
+
+    uint32_t revision; // Bumped by anything here that changes production
+    mutable uint32_t cachedProductionSignature;
+    mutable uint64_t cachedBaseProduction;
 
     bool started;
     unsigned long lastUpdate;

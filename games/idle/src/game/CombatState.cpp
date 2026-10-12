@@ -29,6 +29,7 @@ CombatState::CombatState(GameState &game, Inventory &inventory)
       currentEnemy(0),
       enemyHp(0),
       playerHp(0),
+      hpStarted(false),
       phase(IDLE),
       cachedStats({BASE_ATTACK, BASE_DEFENSE, BASE_MAX_HP}),
       seenStatsSignature(UINT32_MAX),
@@ -124,7 +125,10 @@ bool CombatState::isZoneUnlocked(uint8_t zoneId) const
     return zoneKills[zoneId - 1] >= def.reqPrevZoneKills;
 }
 
-bool CombatState::enterZone(uint8_t zoneId)
+// Health carries over from the last zone, so hopping between zones never heals; only the
+// first entry after boot starts full. A death moves along with the player, its revive
+// wait still running.
+bool CombatState::enterZone(uint8_t zoneId, unsigned long now)
 {
     if (!isZoneUnlocked(zoneId))
     {
@@ -133,10 +137,19 @@ bool CombatState::enterZone(uint8_t zoneId)
 
     currentZone = zoneId;
     inZone = true;
-    refreshStats();
-    playerHp = cachedStats.maxHp;
     pickEnemy();
-    startRespawn(millis());
+    if (phase == DEAD)
+    {
+        return true;
+    }
+
+    refreshStats();
+    if (!hpStarted)
+    {
+        hpStarted = true;
+        playerHp = cachedStats.maxHp;
+    }
+    startRespawn(now);
     return true;
 }
 
@@ -516,9 +529,8 @@ void CombatState::update(unsigned long now)
     }
 }
 
-bool CombatState::strike()
+bool CombatState::strike(unsigned long now)
 {
-    unsigned long now = millis();
     if (phase != FIGHTING || !reached(now, strikeReadyAt))
     {
         return false;
@@ -533,9 +545,8 @@ bool CombatState::strike()
     return true;
 }
 
-bool CombatState::castSpell()
+bool CombatState::castSpell(unsigned long now)
 {
-    unsigned long now = millis();
     const SpellDef *spell = getSpell();
     if (phase != FIGHTING || spell == nullptr || !reached(now, spellReadyAt) || isSpellUseless())
     {
@@ -565,9 +576,8 @@ bool CombatState::castSpell()
     return true;
 }
 
-bool CombatState::guard()
+bool CombatState::guard(unsigned long now)
 {
-    unsigned long now = millis();
     if (phase != FIGHTING || !reached(now, guardReadyAt))
     {
         return false;
@@ -661,6 +671,6 @@ void CombatState::load(const Snapshot &in)
     phase = IDLE;
     if (in.inZone)
     {
-        enterZone(currentZone);
+        enterZone(currentZone, millis());
     }
 }

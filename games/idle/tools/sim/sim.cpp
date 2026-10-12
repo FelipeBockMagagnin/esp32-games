@@ -209,7 +209,6 @@ static bool isCombatUpgrade(UpgradeTarget t)
            t == UpgradeTarget::UNLOCK_ZONE || t == UpgradeTarget::VEIN_FREQUENCY || t == UpgradeTarget::VEIN_POWER;
 }
 
-static int buildingsOwnedFirst[BUILDING_COUNT];
 static int upgradesBoughtAt[GOLD_UPGRADE_COUNT];
 
 static void shop()
@@ -438,13 +437,13 @@ static void fight(unsigned long now)
     {
         return;
     }
-    combat.strike();
+    combat.strike(now);
 
     unsigned long hitIn = combat.getEnemyAttackRemaining(now);
     bool hitComing = hitIn < 600 && combat.getEnemyAttackDamage() > 0;
     if (hitComing && combat.getGuardCooldownRemaining(now) == 0)
     {
-        combat.guard();
+        combat.guard(now);
     }
 
     const SpellDef *spell = combat.getSpell();
@@ -456,18 +455,18 @@ static void fight(unsigned long now)
         case SpellEffect::HEAL:
             if (combat.getPlayerHp() < s.maxHp / 2)
             {
-                combat.castSpell();
+                combat.castSpell(now);
             }
             break;
         case SpellEffect::STUN:
         case SpellEffect::WARD:
             if (hitComing && !combat.isGuarding(now))
             {
-                combat.castSpell();
+                combat.castSpell(now);
             }
             break;
         case SpellEffect::MIDAS:
-            combat.castSpell();
+            combat.castSpell(now);
             break;
         }
     }
@@ -641,7 +640,7 @@ int main(int argc, char **argv)
                 }
                 else if (z >= 0 && (!combat.isInZone() || combat.getCurrentZone() != z))
                 {
-                    combat.enterZone((uint8_t)z);
+                    combat.enterZone((uint8_t)z, now);
                 }
                 if (justLeft && combat.isInZone())
                 {

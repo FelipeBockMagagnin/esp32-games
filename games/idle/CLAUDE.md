@@ -18,9 +18,10 @@ An idle/clicker game for an ESP32 with a 240x320 ILI9341 SPI display, five push 
 pio run                       # Build
 pio run -t upload -t monitor  # Flash and open the serial monitor (115200)
 tools/sim/run.sh [--days 3] [--seed 1] [--session 5] [--cps 3] [--runs 1] [--log]
+tools/sim/test.sh             # Logic tests: save slots, zone changes, saturation
 ```
 
-There are no tests. The **balance simulator** compiles the real `src/game/` for the PC (against `tools/sim/stub/Arduino.h`) and plays a scripted player (active 30 min, then a 5-minute check-in every waking hour, asleep 00:00-08:00), printing each building's first purchase and each zone's unlock and self-farming point. `--runs N` ascends at the end of each `--days` run and spends the points, to measure later runs. **Rerun it after touching any table** in `GameConfig.h`, `ItemConfig.h`, `CombatConfig.h` or `AscensionConfig.h`; the timing numbers in their comments come from it. For a pure refactor, diffing its output against the previous commit with the same `--seed` proves behaviour did not change.
+`tools/sim/test.cpp` holds a few asserts on what the simulator cannot see, built against the same stub (which also fakes `String`, `Serial` and an in-memory `Preferences`). The **balance simulator** compiles the real `src/game/` for the PC (against `tools/sim/stub/Arduino.h`) and plays a scripted player (active 30 min, then a 5-minute check-in every waking hour, asleep 00:00-08:00), printing each building's first purchase and each zone's unlock and self-farming point. `--runs N` ascends at the end of each `--days` run and spends the points, to measure later runs. **Rerun it after touching any table** in `GameConfig.h`, `ItemConfig.h`, `CombatConfig.h` or `AscensionConfig.h`; the timing numbers in their comments come from it. For a pure refactor, diffing its output against the previous commit with the same `--seed` proves behaviour did not change.
 
 ## Hardware
 
@@ -82,9 +83,9 @@ Damage is `damageThrough(attack, defense)` in `CombatConfig.h`: **`attack - defe
 Enemy tables are tuned so **a zone's defense sits at 1.2-1.5x the attack the player arrives with**: the auto-attack is blocked, the strike (`STRIKE_MULTIPLIER`) gets through, so a new zone is fought actively and becomes idle-farmable once its own drops are levelled. Arrival stats and zone timing are measured by `tools/sim` and noted in `CombatConfig.h`. `ITEM_MAX_LEVEL` (100, +1.5% a level, +148.5% maxed) stays below the next tier's 3x so levelling never skips a zone. Drop chances are fixed (only equipped `DROP` perks, awards and Keen Eye raise them); a zone's are set so its set stands around Lv 30-60 when the next zone opens, and maxing an item is a goal across ascensions. Spells (`SPELLS`, one per amulet) deliberately deal no damage, so they never change which zones are reachable. Actions that would do nothing (`strike()`, `castSpell()`) refuse without spending their cooldown.
 
 ### Persistence
-`src/game/SaveGame.{h,cpp}` writes one raw `SaveBlob` plus a checksum to NVS. Each state exposes a POD `Snapshot`; `applySave()` restores in dependency order (combat last, since it re-enters its zone). No offline progress: the board has no clock across power-off.
+`src/game/SaveGame.{h,cpp}` writes one raw `SaveBlob` to NVS, alternating between two slots that each carry a sequence number and a checksum in the same key, so a power cut mid-write only loses that write. The old single-slot `blob`/`crc` keys are still read once and then removed. Each state exposes a POD `Snapshot`; `applySave()` restores in dependency order (combat last, since it re-enters its zone). No offline progress: the board has no clock across power-off.
 
-`autosave()` writes every 60 s, brought forward to 5 s on a milestone (`milestoneSignature()`), and skips byte-identical blobs. The interval is a flash-wear budget; don't shorten it casually.
+`AutoSaver` writes every 60 s, brought forward to 5 s on a milestone (`milestoneSignature()`), and skips byte-identical blobs. The interval is a flash-wear budget; don't shorten it casually.
 
 **Snapshots stay POD: primitives and indices into the config tables, never a `String` or pointer.** Adding a field means bumping `SAVE_VERSION`; adding a table row is caught by the `layout` fingerprint. A mismatched save is discarded, with no migration.
 

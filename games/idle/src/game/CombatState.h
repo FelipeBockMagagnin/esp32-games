@@ -41,9 +41,9 @@ public:
     void update(unsigned long now);
 
     // Actions; all return false when still on cooldown, out of combat, or unavailable
-    bool strike();
-    bool guard();
-    bool castSpell(); // The equipped amulet's spell; see SPELLS
+    bool strike(unsigned long now);
+    bool guard(unsigned long now);
+    bool castSpell(unsigned long now); // The equipped amulet's spell; see SPELLS
 
     // The spell the equipped amulet grants, or nullptr without one
     const SpellDef *getSpell() const;
@@ -54,7 +54,7 @@ public:
     unsigned long getWardRemaining(unsigned long now) const;
     bool isMidasArmed() const { return midasArmed; }
 
-    bool enterZone(uint8_t zoneId);
+    bool enterZone(uint8_t zoneId, unsigned long now);
     void leaveZone();
     // Swaps a fight in progress for a fresh, different enemy. A death or a respawn already
     // under way is left to run, so this never skips the revive wait.
@@ -151,6 +151,7 @@ private:
     uint8_t currentEnemy;
     uint32_t enemyHp;
     uint32_t playerHp;
+    bool hpStarted;
     uint16_t zoneKills[ZONE_COUNT];
     Phase phase;
 

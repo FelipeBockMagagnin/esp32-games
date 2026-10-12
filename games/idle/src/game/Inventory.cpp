@@ -249,9 +249,10 @@ void Inventory::load(const Snapshot &in)
     }
     for (uint8_t i = 0; i < EQUIP_SLOT_COUNT; i++)
     {
-        // Drop anything that points at an item the player does not actually own
+        // Drop anything that points at an item the player does not own, or at one from another slot
         int8_t id = in.equipped[i];
-        equipped[i] = (id >= 0 && id < (int8_t)ITEM_COUNT && itemLevels[id] > 0) ? id : NO_ITEM;
+        bool valid = id >= 0 && id < (int8_t)ITEM_COUNT && itemLevels[id] > 0 && (uint8_t)ITEMS[id].slot == i;
+        equipped[i] = valid ? id : NO_ITEM;
     }
     revision++;
 }

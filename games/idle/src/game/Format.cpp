@@ -26,10 +26,8 @@ String formatAmount(uint64_t value)
 }
 
 // Rate number without sign or unit, at one decimal place: "0.1", "1.2", "12", "12.3K"
-static String formatRateNumber(uint64_t perSecond)
+static void formatRateNumber(char *out, size_t size, uint64_t perSecond)
 {
-    char number[16];
-
     // Round to tenths first, so the decimal shown is the rounded one rather than a
     // truncation of the thousandths GOLD_SCALE actually stores
     uint64_t tenths = (perSecond + GOLD_SCALE / 20) / (GOLD_SCALE / 10);
@@ -38,19 +36,26 @@ static String formatRateNumber(uint64_t perSecond)
 
     if (tenth == 0 || whole >= 10000)
     {
-        return formatAmount(whole);
+        snprintf(out, size, "%s", formatAmount(whole).c_str());
+        return;
     }
-
-    snprintf(number, sizeof(number), "%u.%u", (unsigned)whole, tenth);
-    return String(number);
+    snprintf(out, size, "%u.%u", (unsigned)whole, tenth);
 }
 
-String formatRate(uint64_t perSecond)
+FormattedText formatRate(uint64_t perSecond)
 {
-    return String("+") + formatRateNumber(perSecond) + " gold/s";
+    char number[16];
+    formatRateNumber(number, sizeof(number), perSecond);
+    FormattedText out;
+    snprintf(out.text, sizeof(out.text), "+%s gold/s", number);
+    return out;
 }
 
-String formatPerSecond(uint64_t perSecond)
+FormattedText formatPerSecond(uint64_t perSecond)
 {
-    return String("+") + formatRateNumber(perSecond) + "/s";
+    char number[16];
+    formatRateNumber(number, sizeof(number), perSecond);
+    FormattedText out;
+    snprintf(out.text, sizeof(out.text), "+%s/s", number);
+    return out;
 }

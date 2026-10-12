@@ -350,7 +350,7 @@ void ZoneScreen::onConfirmPress()
         return;
     }
 
-    if (combat.enterZone(id))
+    if (combat.enterZone(id, millis()))
     {
         sound.playBuy();
         // Combat is the screen right after this one in the rotation

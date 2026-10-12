@@ -52,4 +52,33 @@ bool saveGame(const SaveBlob &blob);
 bool loadGame(SaveBlob &blob);
 void eraseSave();
 
+// Idle gold alone is written once a minute, which keeps NVS wear to years of play;
+// anything the player would hate to lose (a purchase, a drop, an unlock) brings the next
+// save forward to a few seconds away.
+class AutoSaver
+{
+public:
+    AutoSaver(const GameState &game, const Inventory &inventory, const CombatState &combat,
+              const Achievements &achievements, const Unlocks &unlocks, const Ascension &ascension);
+
+    // Called once the state is loaded, with the blob it came from (nullptr for a new game)
+    void begin(unsigned long now, const SaveBlob *loaded);
+    void update(unsigned long now);
+
+private:
+    uint32_t milestoneSignature() const;
+
+    const GameState &game;
+    const Inventory &inventory;
+    const CombatState &combat;
+    const Achievements &achievements;
+    const Unlocks &unlocks;
+    const Ascension &ascension;
+
+    SaveBlob buffer;
+    SaveBlob lastSaved;
+    unsigned long nextSaveAt;
+    uint32_t savedMilestones;
+};
+
 #endif // SAVE_GAME_H

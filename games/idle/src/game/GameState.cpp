@@ -9,6 +9,17 @@ static bool rollPercent(uint32_t percent)
     return percent > 0 && (uint32_t)random(100) < percent;
 }
 
+// a * b / c, dividing first and then saturating once the product would not fit
+static uint64_t mulDiv(uint64_t a, uint64_t b, uint64_t c)
+{
+    if (b == 0 || a <= UINT64_MAX / b)
+    {
+        return a * b / c;
+    }
+    uint64_t quotient = a / c;
+    return quotient > UINT64_MAX / b ? UINT64_MAX : quotient * b;
+}
+
 GameState::GameState(Inventory &inventory, Achievements &achievements, const Ascension &ascension)
     : inventory(inventory),
       achievements(achievements),
@@ -19,6 +30,9 @@ GameState::GameState(Inventory &inventory, Achievements &achievements, const Asc
       miningXp(0),
       totalClicks(0),
       totalGoldEarned(0),
+      revision(0),
+      cachedProductionSignature(UINT32_MAX),
+      cachedBaseProduction(0),
       started(false),
       lastUpdate(0),
       seenAscensionRevision(0),
@@ -158,6 +172,7 @@ void GameState::applyHeadStart()
         if (buildingLevels[i] < floor)
         {
             buildingLevels[i] = floor;
+            revision++;
         }
     }
 }
@@ -171,6 +186,7 @@ bool GameState::buyBuilding(uint8_t id)
 
     gold -= getBuildingCost(id) * GOLD_SCALE;
     buildingLevels[id]++;
+    revision++;
     return true;
 }
 
@@ -183,6 +199,7 @@ bool GameState::buyGoldUpgrade(uint8_t id)
 
     gold -= getGoldUpgradeCost(id) * GOLD_SCALE;
     goldUpgradesBought[id] = true;
+    revision++;
     return true;
 }
 
@@ -210,8 +227,22 @@ uint64_t GameState::getProductionPerSecond() const
     return buff == VeinEffect::FRENZY ? base * VEIN_FRENZY_MULTIPLIER : base;
 }
 
+// Everything production depends on, as a sum of counters that only grow during a run, so
+// any change moves it to a value it never had before. The main loop asks for production
+// on every pass; this keeps it from walking the upgrade table each time.
+uint32_t GameState::productionSignature() const
+{
+    return revision + inventory.getRevision() + achievements.getUnlockedCount() + ascension.getRevision();
+}
+
 uint64_t GameState::getBaseProductionPerSecond() const
 {
+    uint32_t signature = productionSignature();
+    if (signature == cachedProductionSignature)
+    {
+        return cachedBaseProduction;
+    }
+
     uint8_t boosts[BUILDING_COUNT];
     countBoosts(boosts);
     uint64_t total = 0;
@@ -219,7 +250,9 @@ uint64_t GameState::getBaseProductionPerSecond() const
     {
         total += getBuildingBaseOutput(i, boosts) * buildingLevels[i];
     }
-    return applyProductionBonus(total);
+    cachedBaseProduction = applyProductionBonus(total);
+    cachedProductionSignature = signature;
+    return cachedBaseProduction;
 }
 
 // One level's output before the global bonuses: its boosts, then Synergy's share per
@@ -477,8 +510,8 @@ VeinEffect GameState::catchVein(unsigned long now)
     {
         // A share of the balance, capped by minutes of production, so it pays to bank
         // gold before catching one but never more than the cap
-        uint64_t fromBank = gold * VEIN_LUCKY_BANK_PERCENT / 100;
-        uint64_t cap = getBaseProductionPerSecond() * VEIN_LUCKY_SECONDS * power / 100;
+        uint64_t fromBank = mulDiv(gold, VEIN_LUCKY_BANK_PERCENT, 100);
+        uint64_t cap = mulDiv(getBaseProductionPerSecond(), (uint64_t)VEIN_LUCKY_SECONDS * power, 100);
         uint64_t scaled = (fromBank < cap ? fromBank : cap) + (uint64_t)getClickAmount() * VEIN_LUCKY_CLICKS * GOLD_SCALE;
         creditGold(scaled);
         lastLuckyGold = scaled / GOLD_SCALE;
@@ -602,6 +635,7 @@ void GameState::load(const Snapshot &in)
         goldUpgradesBought[i] = in.goldUpgradesBought[i];
     }
 
+    revision++;
     applyHeadStart();
 
     // Force update() to re-baseline its clock instead of crediting the gap since boot

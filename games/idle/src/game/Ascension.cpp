@@ -51,7 +51,12 @@ uint32_t Ascension::getPendingPoints(uint64_t runGold) const
 uint64_t Ascension::getRunGoldForNextPoint(uint64_t runGold) const
 {
     uint64_t next = pointsFor(getLifetimeGold(runGold)) + 1;
-    uint64_t lifetime = next * next * next * ASCEND_GOLD_PER_POINT;
+    uint64_t cube = next * next * next;
+    if (cube > UINT64_MAX / ASCEND_GOLD_PER_POINT)
+    {
+        return UINT64_MAX;
+    }
+    uint64_t lifetime = cube * ASCEND_GOLD_PER_POINT;
     return lifetime > priorGold ? lifetime - priorGold : 0;
 }
 

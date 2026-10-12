@@ -4,7 +4,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 OUT="${TMPDIR:-/tmp}/idle-sim"
-g++ -std=c++17 -O2 -w -I"$ROOT/tools/sim/stub" -o "$OUT" \
+g++ -std=c++17 -O2 -Wall -Wextra -Wno-missing-field-initializers -I"$ROOT/tools/sim/stub" -o "$OUT" \
     "$ROOT/tools/sim/sim.cpp" \
     "$ROOT"/src/game/GameState.cpp "$ROOT"/src/game/Inventory.cpp "$ROOT"/src/game/CombatState.cpp \
     "$ROOT"/src/game/Achievements.cpp "$ROOT"/src/game/Ascension.cpp "$ROOT"/src/game/Stats.cpp \
