@@ -34,7 +34,6 @@ public:
 
     // Walking the owned items of one slot, for the equip list
     uint8_t countOwnedItems() const;
-    uint8_t getHighestItemLevel() const;
 
     uint8_t countItemsForSlot(EquipSlot slot) const;
     int8_t itemForSlotAt(EquipSlot slot, uint8_t index) const;
@@ -43,10 +42,9 @@ public:
     Stats getItemStats(uint8_t itemId) const;
 
     Stats getEquippedStats() const;
-    uint32_t getGoldProductionBonusPercent() const;
-    uint32_t getClickBonusPercent() const;
-    uint32_t getDropChanceBonusPercent() const;
-    uint32_t getRespawnCutPercent() const; // Uncapped; combat caps it with the achievements' cut
+    uint32_t getPerkPercent(ItemPerk perk) const;
+    // One owned item's perk at its current level, 0 if it has none
+    uint32_t getItemPerk(uint8_t itemId, ItemPerk perk) const;
     uint32_t getRelicPercent(RelicEffect effect) const; // The worn relic's, or 0
 
     // Bumped on every change so screens and combat can notice without polling each item

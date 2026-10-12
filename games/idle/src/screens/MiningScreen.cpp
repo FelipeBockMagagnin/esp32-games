@@ -331,7 +331,14 @@ void MiningScreen::onConfirmPress()
     }
     else
     {
-        oreDisplay.addPopup(String("+") + formatAmount(gained));
+        if (game.wasLastMineDoubled())
+        {
+            oreDisplay.addPopup(String("x2 +") + formatAmount(gained), Theme::MYTHIC);
+        }
+        else
+        {
+            oreDisplay.addPopup(String("+") + formatAmount(gained));
+        }
         sound.playMine((uint8_t)(game.getComboPercent(now) / COMBO_STEP_PERCENT));
     }
     forceRefresh();

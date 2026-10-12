@@ -84,6 +84,74 @@ static std::vector<std::string> summary;
 
 static bool awardSeen[ACHIEVEMENT_COUNT];
 
+// When each item first reached these levels, and the kills and time spent in each zone
+static const uint8_t TRACKED_LEVELS[] = {1, 25, 50, 100};
+static const uint8_t TRACKED_COUNT = sizeof(TRACKED_LEVELS) / sizeof(TRACKED_LEVELS[0]);
+static unsigned long levelReachedAt[ITEM_COUNT][TRACKED_COUNT];
+static unsigned long zoneTime[ZONE_COUNT][2];
+static uint32_t zoneKillCount[ZONE_COUNT][2];
+
+static void trackItems(unsigned long now)
+{
+    for (uint8_t i = 0; i < ITEM_COUNT; i++)
+    {
+        for (uint8_t l = 0; l < TRACKED_COUNT; l++)
+        {
+            if (levelReachedAt[i][l] == 0 && inventory.getItemLevel(i) >= TRACKED_LEVELS[l])
+            {
+                levelReachedAt[i][l] = now + 1;
+            }
+        }
+    }
+}
+
+// Items in the order their zone drops them first, which is roughly the order they are met
+static void printItemReport()
+{
+    printf("\nItems (hours since the start, - for not yet):\n  %-12s %-9s", "item", "tier");
+    for (uint8_t l = 0; l < TRACKED_COUNT; l++)
+    {
+        printf("  Lv%-4u", (unsigned)TRACKED_LEVELS[l]);
+    }
+    printf("\n");
+    for (uint8_t tier = 0; tier < ITEM_TIER_COUNT; tier++)
+    {
+        for (uint8_t i = 0; i < ITEM_COUNT; i++)
+        {
+            if (ITEMS[i].tier != tier)
+            {
+                continue;
+            }
+            printf("  %-12s %-9s", ITEMS[i].name, ITEMS[i].tool ? "tool" : ITEM_TIER_NAMES[tier]);
+            for (uint8_t l = 0; l < TRACKED_COUNT; l++)
+            {
+                if (levelReachedAt[i][l])
+                {
+                    printf("  %6.1f", (levelReachedAt[i][l] - 1) / (double)HOUR);
+                }
+                else
+                {
+                    printf("  %6s", "-");
+                }
+            }
+            printf("\n");
+        }
+    }
+    printf("\nKills per hour:\n");
+    for (uint8_t z = 0; z < ZONE_COUNT; z++)
+    {
+        for (uint8_t a = 0; a < 2; a++)
+        {
+            if (zoneTime[z][a] >= MIN)
+            {
+                double hours = zoneTime[z][a] / (double)HOUR;
+                printf("  %-12s %-7s %6.1fh  %6.0f/h\n", ZONES[z].name, a ? "active" : "away", hours,
+                       zoneKillCount[z][a] / hours);
+            }
+        }
+    }
+}
+
 static void event(const std::string &what, bool milestone = false)
 {
     std::string line = stamp(simNow) + "  " + what;
@@ -228,7 +296,7 @@ static void shop()
 }
 
 // Best owned item per slot, weighting attack above defense above health and regen;
-// amulets go by tier since what they grant is a spell
+// amulets go by tier since what they grant is a spell. Tools never win this on stats.
 static void equipBest()
 {
     for (uint8_t slot = 0; slot < EQUIP_SLOT_COUNT; slot++)
@@ -251,6 +319,49 @@ static void equipBest()
         if (best >= 0 && inventory.getEquipped((EquipSlot)slot) != best)
         {
             inventory.equip((uint8_t)best);
+        }
+    }
+}
+
+struct ZoneOutlook;
+static ZoneOutlook outlook(uint8_t z, const Stats &s, bool active);
+static bool farmsItself(uint8_t z);
+
+// On leaving, the player swaps in whatever finds more loot, slot by slot, as long as the
+// zone still farms itself: the drop chance first, then the kill gold
+static void equipFarmLoadout(uint8_t zone)
+{
+    for (uint8_t slot = 0; slot < EQUIP_SLOT_COUNT; slot++)
+    {
+        int8_t worn = inventory.getEquipped((EquipSlot)slot);
+        double wornScore = worn == NO_ITEM ? 0
+                                           : inventory.getItemPerk(worn, ItemPerk::DROP) * 1000.0 +
+                                                 inventory.getItemPerk(worn, ItemPerk::KILL_GOLD);
+        for (uint8_t i = 0; i < ITEM_COUNT; i++)
+        {
+            if ((uint8_t)ITEMS[i].slot != slot || !inventory.isOwned(i) || i == worn)
+            {
+                continue;
+            }
+            double score = inventory.getItemPerk(i, ItemPerk::DROP) * 1000.0 + inventory.getItemPerk(i, ItemPerk::KILL_GOLD);
+            if (score <= wornScore)
+            {
+                continue;
+            }
+            int8_t before = inventory.getEquipped((EquipSlot)slot);
+            inventory.equip(i);
+            if (farmsItself(zone))
+            {
+                wornScore = score;
+            }
+            else if (before != NO_ITEM)
+            {
+                inventory.equip((uint8_t)before);
+            }
+            else
+            {
+                inventory.unequip((EquipSlot)slot);
+            }
         }
     }
 }
@@ -293,6 +404,12 @@ static ZoneOutlook outlook(uint8_t z, const Stats &s, bool active)
     }
     o.deathsPerKill = deaths / zone.enemyCount;
     return o;
+}
+
+static bool farmsItself(uint8_t z)
+{
+    ZoneOutlook o = outlook(z, resolvePlayerStats(game, inventory), false);
+    return o.idle && o.deathsPerKill < 0.7;
 }
 
 static int bestZone(bool active)
@@ -437,6 +554,8 @@ int main(int argc, char **argv)
     uint8_t itemsSeen = inventory.countOwnedItems();
     unsigned long nextReport = 6 * HOUR;
     unsigned long nextChoice = 0;
+    bool wasActive = true;
+    uint32_t killsSeen = 0;
 
     unsigned long veinSeenAt = 0;
     bool veinWasVisible = false;
@@ -500,15 +619,19 @@ int main(int argc, char **argv)
             fight(now);
         }
 
-        // Decisions every few seconds while present, and once on leaving
-        if ((long)(now - nextChoice) >= 0)
+        // Decisions every few seconds while present, and once on leaving: the gear that
+        // fights best, the zone, then the loot loadout that zone still farms in
+        bool justLeft = wasActive && !active;
+        wasActive = active;
+        if (justLeft)
         {
-            nextChoice = now + (active ? 2 * SEC : MIN);
-            if (active)
-            {
-                shop();
-                equipBest();
-            }
+            nextChoice = now;
+        }
+        if ((long)(now - nextChoice) >= 0 && (active || justLeft))
+        {
+            nextChoice = now + 2 * SEC;
+            shop();
+            equipBest();
             if (game.getBuildingLevel(BUILDING_DRILL) > 0)
             {
                 int z = bestZone(active);
@@ -520,11 +643,16 @@ int main(int argc, char **argv)
                 {
                     combat.enterZone((uint8_t)z);
                 }
+                if (justLeft && combat.isInZone())
+                {
+                    equipFarmLoadout(combat.getCurrentZone());
+                }
                 int shown = combat.isInZone() ? combat.getCurrentZone() : -1;
-                if (shown != zoneShown && active)
+                if (shown != zoneShown)
                 {
                     zoneShown = shown;
-                    event(shown < 0 ? "zone     none reachable" : std::string("zone     fighting in ") + ZONES[shown].name);
+                    event(std::string(shown < 0 ? "zone     none reachable" : std::string("zone     fighting in ") + ZONES[shown].name) +
+                          (active ? "" : " (away)"));
                 }
             }
         }
@@ -536,7 +664,7 @@ int main(int argc, char **argv)
             unsigned prevOwned = 0, prevLevels = 0, prevTotal = 0;
             for (uint8_t i = 0; i < ITEM_COUNT; i++)
             {
-                if (ITEMS[i].tier == zoneUnlockedSeen - 1)
+                if (ITEMS[i].tier == zoneUnlockedSeen - 1 && !ITEMS[i].tool)
                 {
                     prevTotal++;
                     prevOwned += inventory.isOwned(i);
@@ -563,6 +691,16 @@ int main(int argc, char **argv)
                 }
             }
         }
+        trackItems(now);
+        if (combat.isInZone())
+        {
+            uint8_t z = combat.getCurrentZone();
+            zoneTime[z][active] += TICK;
+            // An ascension zeroes the kills
+            zoneKillCount[z][active] += combat.getTotalKills() >= killsSeen ? combat.getTotalKills() - killsSeen : 0;
+        }
+        killsSeen = combat.getTotalKills();
+
         if (inventory.countOwnedItems() != itemsSeen)
         {
             itemsSeen = inventory.countOwnedItems();
@@ -594,6 +732,7 @@ int main(int argc, char **argv)
     }
 
     printMilestones();
+    printItemReport();
     printf("\nBuildings:");
     for (uint8_t b = 0; b < BUILDING_COUNT; b++)
     {

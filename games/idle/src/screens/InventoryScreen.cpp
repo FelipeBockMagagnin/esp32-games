@@ -40,6 +40,7 @@ static const int16_t BADGE_OFFSET_Y = (8 - ButtonBadge::SIZE) / 2;
 // Four 9-char columns ("CLK +587%") fill the panel's inner width exactly
 static const int16_t STAT_COLUMN_W = 54;
 
+// Combat stats, then the perks; the respawn cut stays last, out of the row subtitle
 enum StatKind : uint8_t
 {
     STAT_ATTACK,
@@ -49,51 +50,70 @@ enum StatKind : uint8_t
     STAT_GOLD,
     STAT_CLICK,
     STAT_DROP,
+    STAT_KILL_GOLD,
+    STAT_DOUBLE_MINE,
+    STAT_MINE_XP,
+    STAT_DISCOUNT,
     STAT_RESPAWN,
     STAT_KIND_COUNT
 };
 
-static const char *const STAT_LABELS[STAT_KIND_COUNT] = {"ATK", "DEF", "HP", "RGN", "GLD", "CLK", "DRP", "RSP"};
-static const char *const STAT_SHORT_LABELS[STAT_KIND_COUNT] = {"atk", "def", "hp", "rgn", "gld", "clk", "drp", "rsp"};
+static const char *const STAT_LABELS[STAT_KIND_COUNT] = {"ATK", "DEF", "HP", "RGN", "GLD", "CLK", "DRP", "BTY", "DBL", "XP", "DSC", "RSP"};
+static const char *const STAT_SHORT_LABELS[STAT_KIND_COUNT] = {"atk", "def", "hp", "rgn", "gld", "clk", "drp", "bty", "dbl", "xp", "dsc", "rsp"};
+static const ItemPerk STAT_PERKS[STAT_KIND_COUNT] = {
+    ItemPerk::NONE, ItemPerk::NONE, ItemPerk::NONE, ItemPerk::NONE,
+    ItemPerk::GOLD, ItemPerk::CLICK, ItemPerk::DROP, ItemPerk::KILL_GOLD,
+    ItemPerk::DOUBLE_MINE, ItemPerk::MINE_XP, ItemPerk::UPGRADE_DISCOUNT, ItemPerk::RESPAWN_CUT};
 
 static bool isPercentStat(StatKind kind)
 {
     return kind >= STAT_GOLD;
 }
 
-static uint16_t baseStat(const ItemDef &def, StatKind kind)
+static bool hasStat(const ItemDef &def, StatKind kind)
 {
     switch (kind)
     {
     case STAT_ATTACK:
-        return def.attack;
+        return def.attack > 0;
     case STAT_DEFENSE:
-        return def.defense;
+        return def.defense > 0;
     case STAT_HP:
-        return def.maxHp;
+        return def.maxHp > 0;
     case STAT_REGEN:
-        return def.regen;
-    case STAT_GOLD:
-        return def.goldProductionBonusPercent;
-    case STAT_CLICK:
-        return def.clickBonusPercent;
-    case STAT_DROP:
-        return def.dropChanceBonusPercent;
-    case STAT_RESPAWN:
-        return def.respawnCutPercent;
+        return def.regen > 0;
     default:
-        return 0;
+        for (const PerkValue &p : def.perks)
+        {
+            if (p.kind == STAT_PERKS[kind] && p.value > 0)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }
 
 // A respawn cut is flat and comes back negative, so less is better there
 static int32_t statValue(const Inventory &inventory, uint8_t id, StatKind kind)
 {
-    if (kind == STAT_RESPAWN)
+    const ItemDef &def = ITEMS[id];
+    uint8_t level = inventory.getItemLevel(id);
+    switch (kind)
     {
-        return -(int32_t)ITEMS[id].respawnCutPercent;
+    case STAT_ATTACK:
+        return (int32_t)scaleItemStat(def.attack, level);
+    case STAT_DEFENSE:
+        return (int32_t)scaleItemStat(def.defense, level);
+    case STAT_HP:
+        return (int32_t)scaleItemStat(def.maxHp, level);
+    case STAT_REGEN:
+        return (int32_t)scaleItemStat(def.regen, level);
+    case STAT_RESPAWN:
+        return -(int32_t)inventory.getItemPerk(id, ItemPerk::RESPAWN_CUT);
+    default:
+        return (int32_t)inventory.getItemPerk(id, STAT_PERKS[kind]);
     }
-    return (int32_t)scaleItemStat(baseStat(ITEMS[id], kind), inventory.getItemLevel(id));
 }
 
 static void formatStat(char *buf, size_t size, const char *label, StatKind kind, int32_t value, bool forceSign)
@@ -379,23 +399,33 @@ void InventoryScreen::hideStats()
     }
 }
 
-// The stats any item of the slot gives, in StatKind order, so a stat keeps its column
-// while scrolling through the slot
-static uint8_t slotStatKinds(EquipSlot slot, StatKind *out, uint8_t max)
+// The stats either item gives, in StatKind order, so a stat sits in the same column for
+// the item and the one it is compared against. When the two give more than fit, the
+// item's own stats win the columns.
+static uint8_t statKindsOf(int8_t itemId, int8_t against, StatKind *out, uint8_t max)
 {
+    bool picked[STAT_KIND_COUNT] = {};
     uint8_t count = 0;
-    for (uint8_t k = 0; k < STAT_KIND_COUNT && count < max; k++)
+    for (int8_t source : {itemId, against})
     {
-        for (uint8_t i = 0; i < ITEM_COUNT; i++)
+        for (uint8_t k = 0; k < STAT_KIND_COUNT && count < max && source != NO_ITEM; k++)
         {
-            if (ITEMS[i].slot == slot && baseStat(ITEMS[i], (StatKind)k) > 0)
+            if (!picked[k] && hasStat(ITEMS[source], (StatKind)k))
             {
-                out[count++] = (StatKind)k;
-                break;
+                picked[k] = true;
+                count++;
             }
         }
     }
-    return count;
+    uint8_t n = 0;
+    for (uint8_t k = 0; k < STAT_KIND_COUNT; k++)
+    {
+        if (picked[k])
+        {
+            out[n++] = (StatKind)k;
+        }
+    }
+    return n;
 }
 
 // A relic's one effect, in the first column. Two relics do different things, so a relic is
@@ -440,8 +470,7 @@ void InventoryScreen::showStats(int8_t itemId, int8_t against, bool compare)
     }
 
     StatKind kinds[STAT_COLUMNS];
-    EquipSlot slot = ITEMS[itemId != NO_ITEM ? itemId : against].slot;
-    uint8_t kindCount = slotStatKinds(slot, kinds, STAT_COLUMNS);
+    uint8_t kindCount = statKindsOf(itemId, compare ? against : NO_ITEM, kinds, STAT_COLUMNS);
 
     char buf[16];
     for (uint8_t i = 0; i < STAT_COLUMNS; i++)

@@ -18,10 +18,9 @@ enum class AchKind : uint8_t
     TOTAL_KILLS,      // Enemies killed across every zone
     ZONE_KILLS,       // Kills in ZONES[target]
     ITEMS_OWNED,      // Distinct items found
-    ITEM_LEVEL,       // Highest level reached by any one item
     ACHIEVEMENTS,     // Achievements already unlocked, so the list rewards itself
     VEINS_CAUGHT,     // Gold veins caught on the Mining screen
-    GEAR_SET_MAXED,   // Gear pieces of tier `target` at ITEM_MAX_LEVEL, rings and amulets aside
+    GEAR_SET_MAXED,   // Gear pieces of tier `target` at ITEM_MAX_LEVEL, jewellery and tools aside
     ITEM_MAXED        // Level of ITEMS[target]
 };
 
@@ -42,15 +41,16 @@ enum class AchReward : uint8_t
 };
 static constexpr uint8_t ACH_REWARD_COUNT = (uint8_t)AchReward::COUNT;
 
-// Rings, amulets and relics are jewellery; the rest is gear, which a set needs maxed
-static constexpr bool isGearSlot(EquipSlot slot)
+// Rings, amulets and relics are jewellery; the rest is gear, and the gear that is not a
+// tool makes up a tier's set
+static constexpr bool isSetPiece(const ItemDef &item)
 {
-    return slot != EquipSlot::RING && slot != EquipSlot::AMULET && slot != EquipSlot::RELIC;
+    return !item.tool && item.slot != EquipSlot::RING && item.slot != EquipSlot::AMULET && item.slot != EquipSlot::RELIC;
 }
 
 static constexpr uint8_t gearInTier(uint8_t tier, uint8_t i = 0)
 {
-    return i >= ITEM_COUNT ? 0 : (ITEMS[i].tier == tier && isGearSlot(ITEMS[i].slot)) + gearInTier(tier, i + 1);
+    return i >= ITEM_COUNT ? 0 : (ITEMS[i].tier == tier && isSetPiece(ITEMS[i])) + gearInTier(tier, i + 1);
 }
 
 static const uint8_t NO_ACH_TARGET = 0xFF;
@@ -106,32 +106,44 @@ static constexpr AchievementDef ACHIEVEMENTS[] = {
 
     {"Geared Up",    "Find 9 different items",            AchKind::ITEMS_OWNED,      NO_ACH_TARGET,         9,            1},
     {"Well Equipped", "Find 18 different items",          AchKind::ITEMS_OWNED,      NO_ACH_TARGET,         18,           3},
+    {"Curator",      "Find 40 different items",           AchKind::ITEMS_OWNED,      NO_ACH_TARGET,         40,           10, AchReward::DROP_CHANCE},
     {"Hoarder",      "Find every item",                   AchKind::ITEMS_OWNED,      NO_ACH_TARGET,         ITEM_COUNT,   8},
-
-    {"Refined",      "Raise an item to level 4",          AchKind::ITEM_LEVEL,       NO_ACH_TARGET,         4,           2},
-    {"Masterwork",   "Raise an item to level 7",          AchKind::ITEM_LEVEL,       NO_ACH_TARGET,         7,           4},
-    {"Legendary",    "Raise an item to max level",        AchKind::ITEM_LEVEL,       NO_ACH_TARGET,         ITEM_MAX_LEVEL,           6},
 
     {"Lucky Find",   "Catch a gold vein",                 AchKind::VEINS_CAUGHT,     NO_ACH_TARGET,         1,            1},
     {"Prospector",   "Catch 25 gold veins",               AchKind::VEINS_CAUGHT,     NO_ACH_TARGET,         25,           3},
     {"Vein Hunter",  "Catch 100 gold veins",              AchKind::VEINS_CAUGHT,     NO_ACH_TARGET,         100,          6},
 
-    // A maxed set lands well after its zone, so its stats help the zones ahead rather
-    // than the one that dropped it
+    // An item's level only pays an award for a whole set, a pick, an amulet or a ring, maxed.
+    // A maxed set lands well after its zone, so its stats help the zones ahead rather than
+    // the one that dropped it; with the levels carried across ascensions, these are the
+    // long goals of the game.
     {"Scrap Knight", "Max all Common gear",               AchKind::GEAR_SET_MAXED,   0,                     gearInTier(0), 10, AchReward::ATTACK_DEFENSE},
     {"Iron Will",    "Max all Uncommon gear",             AchKind::GEAR_SET_MAXED,   1,                     gearInTier(1), 15, AchReward::ATTACK_DEFENSE},
     {"Steel Wall",   "Max all Rare gear",                 AchKind::GEAR_SET_MAXED,   2,                     gearInTier(2), 20, AchReward::ATTACK_DEFENSE},
     {"Rune Lord",    "Max all Epic gear",                 AchKind::GEAR_SET_MAXED,   3,                     gearInTier(3), 25, AchReward::ATTACK_DEFENSE},
     {"Mythbreaker",  "Max all Mythic gear",               AchKind::GEAR_SET_MAXED,   MYTHIC_TIER,           gearInTier(MYTHIC_TIER), 30, AchReward::ATTACK_DEFENSE},
 
-    {"Tin Polish",   "Max the Tin Ring",                  AchKind::ITEM_MAXED,       ITEM_TIN_RING,         ITEM_MAX_LEVEL, 25, AchReward::REVIVE_CUT},
-    {"Gilded Guard", "Max the Gold Ring",                 AchKind::ITEM_MAXED,       ITEM_GOLD_RING,        ITEM_MAX_LEVEL, 33, AchReward::GUARD_TIME},
-    {"Ruby Luck",    "Max the Ruby Ring",                 AchKind::ITEM_MAXED,       ITEM_RUBY_RING,        ITEM_MAX_LEVEL, 10, AchReward::DROP_CHANCE},
-    {"Miner Pride",  "Max the Miner Ring",                AchKind::ITEM_MAXED,       ITEM_MINER_RING,       ITEM_MAX_LEVEL, 50, AchReward::KILL_GOLD},
+    // Picks pay gold production
+    {"Rust Bucket",  "Max the Rusty Pick",                AchKind::ITEM_MAXED,       ITEM_RUSTY_PICK,       ITEM_MAX_LEVEL, 5},
+    {"Iron Digger",  "Max the Iron Pick",                 AchKind::ITEM_MAXED,       ITEM_IRON_PICK,        ITEM_MAX_LEVEL, 10},
+    {"Steel Digger", "Max the Steel Pick",                AchKind::ITEM_MAXED,       ITEM_STEEL_PICK,       ITEM_MAX_LEVEL, 15},
+    {"Rune Digger",  "Max the Rune Pick",                 AchKind::ITEM_MAXED,       ITEM_RUNE_PICK,        ITEM_MAX_LEVEL, 20},
+    {"Void Digger",  "Max the Void Pick",                 AchKind::ITEM_MAXED,       ITEM_VOID_PICK,        ITEM_MAX_LEVEL, 30},
+
+    // Amulets pay a utility each
     {"Best Friend",  "Max Wilson",                        AchKind::ITEM_MAXED,       ITEM_WILSON,           ITEM_MAX_LEVEL, 15, AchReward::RESPAWN_CUT},
     {"Jade Focus",   "Max the Jade Amulet",               AchKind::ITEM_MAXED,       ITEM_JADE_AMULET,      ITEM_MAX_LEVEL, 15, AchReward::SPELL_COOLDOWN_CUT},
     {"Golden Hour",  "Max the Gold Amulet",               AchKind::ITEM_MAXED,       ITEM_GOLD_AMULET,      ITEM_MAX_LEVEL, 25, AchReward::KILL_GOLD},
-    {"Core Echo",    "Max the Core Sigil",                AchKind::ITEM_MAXED,       ITEM_CORE_SIGIL,       ITEM_MAX_LEVEL, 20, AchReward::SPELL_COOLDOWN_CUT},
+    {"Core Echo",    "Max the Core Sigil",                AchKind::ITEM_MAXED,       ITEM_CORE_SIGIL,       ITEM_MAX_LEVEL, 15, AchReward::DROP_CHANCE},
+    {"Ember Soul",   "Max the Ember Charm",               AchKind::ITEM_MAXED,       ITEM_EMBER_CHARM,      ITEM_MAX_LEVEL, 25, AchReward::REVIVE_CUT},
+
+    // Rings alternate between the two
+    {"Tin Polish",   "Max the Tin Ring",                  AchKind::ITEM_MAXED,       ITEM_TIN_RING,         ITEM_MAX_LEVEL, 5},
+    {"Golden Luck",  "Max the Gold Ring",                 AchKind::ITEM_MAXED,       ITEM_GOLD_RING,        ITEM_MAX_LEVEL, 10, AchReward::DROP_CHANCE},
+    {"Ruby Guard",   "Max the Ruby Ring",                 AchKind::ITEM_MAXED,       ITEM_RUBY_RING,        ITEM_MAX_LEVEL, 33, AchReward::GUARD_TIME},
+    {"Coin Hoard",   "Max the Coin Ring",                 AchKind::ITEM_MAXED,       ITEM_COIN_RING,        ITEM_MAX_LEVEL, 15},
+    {"Miner Pride",  "Max the Miner Ring",                AchKind::ITEM_MAXED,       ITEM_MINER_RING,       ITEM_MAX_LEVEL, 20},
+    {"Ember Pride",  "Max the Ember Ring",                AchKind::ITEM_MAXED,       ITEM_EMBER_RING,       ITEM_MAX_LEVEL, 50, AchReward::KILL_GOLD},
 
     {"Decorated",    "Unlock 10 achievements",            AchKind::ACHIEVEMENTS,     NO_ACH_TARGET,         10,           3},
     {"Hall of Fame", "Unlock 25 achievements",            AchKind::ACHIEVEMENTS,     NO_ACH_TARGET,         25,           6},

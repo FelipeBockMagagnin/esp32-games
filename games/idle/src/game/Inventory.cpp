@@ -117,19 +117,6 @@ uint8_t Inventory::countOwnedItems() const
     return total;
 }
 
-uint8_t Inventory::getHighestItemLevel() const
-{
-    uint8_t best = 0;
-    for (uint8_t i = 0; i < ITEM_COUNT; i++)
-    {
-        if (itemLevels[i] > best)
-        {
-            best = itemLevels[i];
-        }
-    }
-    return best;
-}
-
 uint8_t Inventory::countItemsForSlot(EquipSlot slot) const
 {
     uint8_t total = 0;
@@ -143,18 +130,22 @@ uint8_t Inventory::countItemsForSlot(EquipSlot slot) const
     return total;
 }
 
+// By tier, then table order, so a tool listed at the end of the table sits with its tier
 int8_t Inventory::itemForSlotAt(EquipSlot slot, uint8_t index) const
 {
     uint8_t seen = 0;
-    for (uint8_t i = 0; i < ITEM_COUNT; i++)
+    for (uint8_t tier = 0; tier < ITEM_TIER_COUNT; tier++)
     {
-        if (ITEMS[i].slot == slot && itemLevels[i] > 0)
+        for (uint8_t i = 0; i < ITEM_COUNT; i++)
         {
-            if (seen == index)
+            if (ITEMS[i].slot == slot && ITEMS[i].tier == tier && itemLevels[i] > 0)
             {
-                return (int8_t)i;
+                if (seen == index)
+                {
+                    return (int8_t)i;
+                }
+                seen++;
             }
-            seen++;
         }
     }
     return NO_ITEM;
@@ -195,56 +186,33 @@ Stats Inventory::getEquippedStats() const
     return total;
 }
 
-uint32_t Inventory::getGoldProductionBonusPercent() const
+// Summed over everything worn, uncapped: each consumer applies its own cap
+uint32_t Inventory::getPerkPercent(ItemPerk perk) const
 {
     uint32_t total = 0;
     for (uint8_t slot = 0; slot < EQUIP_SLOT_COUNT; slot++)
     {
-        if (equipped[slot] != NO_ITEM)
+        if (equipped[slot] == NO_ITEM)
         {
-            uint8_t id = (uint8_t)equipped[slot];
-            total += scaleItemStat(ITEMS[id].goldProductionBonusPercent, itemLevels[id]);
+            continue;
         }
+        total += getItemPerk((uint8_t)equipped[slot], perk);
     }
     return total;
 }
 
-uint32_t Inventory::getClickBonusPercent() const
+uint32_t Inventory::getItemPerk(uint8_t itemId, ItemPerk perk) const
 {
-    uint32_t total = 0;
-    for (uint8_t slot = 0; slot < EQUIP_SLOT_COUNT; slot++)
+    if (itemId >= ITEM_COUNT)
     {
-        if (equipped[slot] != NO_ITEM)
-        {
-            uint8_t id = (uint8_t)equipped[slot];
-            total += scaleItemStat(ITEMS[id].clickBonusPercent, itemLevels[id]);
-        }
+        return 0;
     }
-    return total;
-}
-
-uint32_t Inventory::getDropChanceBonusPercent() const
-{
     uint32_t total = 0;
-    for (uint8_t slot = 0; slot < EQUIP_SLOT_COUNT; slot++)
+    for (const PerkValue &p : ITEMS[itemId].perks)
     {
-        if (equipped[slot] != NO_ITEM)
+        if (p.kind == perk)
         {
-            uint8_t id = (uint8_t)equipped[slot];
-            total += scaleItemStat(ITEMS[id].dropChanceBonusPercent, itemLevels[id]);
-        }
-    }
-    return total;
-}
-
-uint32_t Inventory::getRespawnCutPercent() const
-{
-    uint32_t total = 0;
-    for (uint8_t slot = 0; slot < EQUIP_SLOT_COUNT; slot++)
-    {
-        if (equipped[slot] != NO_ITEM)
-        {
-            total += ITEMS[(uint8_t)equipped[slot]].respawnCutPercent;
+            total += perk == ItemPerk::RESPAWN_CUT ? p.value : scaleItemStat(p.value, itemLevels[itemId]);
         }
     }
     return total;

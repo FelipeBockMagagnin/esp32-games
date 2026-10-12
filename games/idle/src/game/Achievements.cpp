@@ -57,8 +57,6 @@ uint64_t Achievements::getProgress(const AchievementDef &def, const GameState &g
         return combat.getZoneKills(def.target);
     case AchKind::ITEMS_OWNED:
         return inventory.countOwnedItems();
-    case AchKind::ITEM_LEVEL:
-        return inventory.getHighestItemLevel();
     case AchKind::ACHIEVEMENTS:
         return unlockedCount;
     case AchKind::VEINS_CAUGHT:
@@ -69,7 +67,7 @@ uint64_t Achievements::getProgress(const AchievementDef &def, const GameState &g
         for (uint8_t i = 0; i < ITEM_COUNT; i++)
         {
             const ItemDef &item = ITEMS[i];
-            if (item.tier == def.target && isGearSlot(item.slot) && inventory.getItemLevel(i) >= ITEM_MAX_LEVEL)
+            if (item.tier == def.target && isSetPiece(item) && inventory.getItemLevel(i) >= ITEM_MAX_LEVEL)
             {
                 maxed++;
             }

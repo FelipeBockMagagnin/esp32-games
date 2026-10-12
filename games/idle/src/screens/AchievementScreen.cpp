@@ -75,8 +75,6 @@ static const uint16_t *iconFor(const AchievementDef &def)
         return image_award_skull_pixels;
     case AchKind::ITEMS_OWNED:
         return image_armor_01b_pixels;
-    case AchKind::ITEM_LEVEL:
-        return image_building_rune_forge_pixels;
     case AchKind::ACHIEVEMENTS:
         return image_award_trophy_pixels;
     case AchKind::VEINS_CAUGHT:

@@ -186,7 +186,7 @@ void CombatState::startFight(unsigned long now)
     enemyAttackAt = now + getEnemy().attackIntervalMs;
 }
 
-// Talents that pay the same kind of bonus as an award add to it
+// Talents and item perks that pay the same kind of bonus as an award add to it
 uint32_t CombatState::getReward(AchReward reward) const
 {
     uint32_t percent = game.getAchievements().getRewardPercent(reward);
@@ -196,7 +196,7 @@ uint32_t CombatState::getReward(AchReward reward) const
     }
     else if (reward == AchReward::KILL_GOLD)
     {
-        percent += game.getAscension().getPercent(TalentEffect::KILL_GOLD);
+        percent += game.getAscension().getPercent(TalentEffect::KILL_GOLD) + inventory.getPerkPercent(ItemPerk::KILL_GOLD);
     }
     return percent;
 }
@@ -226,7 +226,7 @@ unsigned long CombatState::getSpellCooldownMs(const SpellDef &spell) const
 
 uint16_t CombatState::getDropChanceBp(const DropDef &drop) const
 {
-    uint32_t bonus = getReward(AchReward::DROP_CHANCE) + inventory.getDropChanceBonusPercent();
+    uint32_t bonus = getReward(AchReward::DROP_CHANCE) + inventory.getPerkPercent(ItemPerk::DROP);
     uint32_t chance = (uint32_t)drop.chanceBp * (100 + bonus) / 100;
     return chance < 10000 ? (uint16_t)chance : 10000;
 }
@@ -234,7 +234,7 @@ uint16_t CombatState::getDropChanceBp(const DropDef &drop) const
 void CombatState::startRespawn(unsigned long now)
 {
     phase = RESPAWNING;
-    uint32_t cut = inventory.getRespawnCutPercent() + getReward(AchReward::RESPAWN_CUT);
+    uint32_t cut = inventory.getPerkPercent(ItemPerk::RESPAWN_CUT) + getReward(AchReward::RESPAWN_CUT);
     respawnAt = now + cutBy(RESPAWN_MS, cut < MAX_RESPAWN_CUT_PERCENT ? cut : MAX_RESPAWN_CUT_PERCENT);
 }
 
@@ -345,7 +345,8 @@ void CombatState::onEnemyKilled(unsigned long now)
     for (uint8_t i = 0; i < enemy.dropCount; i++)
     {
         const DropDef &drop = enemy.drops[i];
-        if (!canDrop(drop.itemId))
+        // A maxed item has nothing left to gain, so it would only show a false level-up
+        if (!canDrop(drop.itemId) || inventory.getItemLevel(drop.itemId) >= ITEM_MAX_LEVEL)
         {
             continue;
         }

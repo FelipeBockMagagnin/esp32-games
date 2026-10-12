@@ -104,146 +104,166 @@ struct ZoneDef
     uint8_t reqDelveLevel;      // Deep Delver levels needed; left off the first zones' rows
 };
 
-// Drops get rarer the longer a zone lasts, so each zone's set is found early but only
-// levelled up over the whole stay: with N enemies picked at random, an item on k of them at
-// chance c drops at k*c/N per kill. The boss of each zone carries its ring and amulet.
+// Drop chances are fixed; only equipped items, awards and talents raise them. A repeat
+// drop is one level of a hundred, so a zone's chances are set for its set to be found in
+// minutes and stand around level 30-60 when the next zone opens, which keeps the arrival
+// stats the enemy tables below are tuned for. They fall from zone to zone, so the early
+// zones rain items and the late ones are a long farm across ascensions. With N enemies
+// picked at random, an item on k of them at chance c drops at k*c/N per kill. The boss of
+// each zone carries its ring and amulet; a zone's tools drop a little less than its set.
 static constexpr DropDef SMALL_RAT_DROPS[] = {
-    {ITEM_DULL_STICK, 550},
-    {ITEM_RAG_GLOVES, 550},
+    {ITEM_DULL_STICK, 1400},
+    {ITEM_RAG_GLOVES, 1400},
+    {ITEM_RUSTY_PICK, 800},
 };
 static constexpr DropDef SLIME_DROPS[] = {
-    {ITEM_FIG_LEAF, 550},
-    {ITEM_WORN_BOOTS, 550},
+    {ITEM_FIG_LEAF, 1400},
+    {ITEM_WORN_BOOTS, 1400},
+    {ITEM_LUCKY_BOOTS, 1400},
 };
 static constexpr DropDef FROG_DROPS[] = {
-    {ITEM_LEAF_HAT, 550},
-    {ITEM_CLOTH_VEST, 550},
+    {ITEM_LEAF_HAT, 1400},
+    {ITEM_CLOTH_VEST, 1400},
 };
 static constexpr DropDef SAD_FROG_DROPS[] = {
-    {ITEM_DULL_STICK, 550},
-    {ITEM_FIG_LEAF, 550},
-    {ITEM_WOOD_SHIELD, 350},
+    {ITEM_DULL_STICK, 1400},
+    {ITEM_FIG_LEAF, 1400},
+    {ITEM_WOOD_SHIELD, 900},
 };
 static constexpr DropDef BIG_BAD_RAT_DROPS[] = {
-    {ITEM_RAG_GLOVES, 550},
-    {ITEM_WORN_BOOTS, 550},
-    {ITEM_CLOTH_VEST, 550},
+    {ITEM_RAG_GLOVES, 1400},
+    {ITEM_WORN_BOOTS, 1400},
+    {ITEM_CLOTH_VEST, 1400},
+    {ITEM_RUSTY_PICK, 800},
 };
 static constexpr DropDef FROG_WIZARD_DROPS[] = {
-    {ITEM_LEAF_HAT, 550},
-    {ITEM_WOOD_SHIELD, 350},
-    {ITEM_TIN_RING, 250},
+    {ITEM_LEAF_HAT, 1400},
+    {ITEM_WOOD_SHIELD, 900},
+    {ITEM_TIN_RING, 1000},
 };
 static constexpr DropDef GAMER_MOUSE_DROPS[] = {
-    {ITEM_TIN_RING, 450},
-    {ITEM_WILSON, 450},
-    {ITEM_WOOD_SHIELD, 350},
-    {ITEM_TRADER_COIN, 80},
+    {ITEM_TIN_RING, 1000},
+    {ITEM_WILSON, 1800},
+    {ITEM_WOOD_SHIELD, 900},
+    {ITEM_TRADER_COIN, 300},
 };
 
 static constexpr DropDef SPIDER_DROPS[] = {
-    {ITEM_LEATHER_CAP, 350},
-    {ITEM_IRON_GLOVES, 350},
+    {ITEM_LEATHER_CAP, 420},
+    {ITEM_IRON_GLOVES, 420},
+    {ITEM_LOOT_GLOVES, 350},
 };
 static constexpr DropDef GNOME_DROPS[] = {
-    {ITEM_GOOD_STICK, 350},
-    {ITEM_IRON_MAIL, 350},
+    {ITEM_GOOD_STICK, 420},
+    {ITEM_IRON_MAIL, 420},
+    {ITEM_IRON_PICK, 350},
 };
 static constexpr DropDef BARD_GNOME_DROPS[] = {
-    {ITEM_LOINCLOTH, 350},
-    {ITEM_IRON_BOOTS, 350},
-    {ITEM_LEATHER_CAP, 350},
+    {ITEM_LOINCLOTH, 420},
+    {ITEM_IRON_BOOTS, 420},
+    {ITEM_LEATHER_CAP, 420},
+    {ITEM_MINER_HELM, 350},
 };
 static constexpr DropDef GOBLIN_DROPS[] = {
-    {ITEM_GOOD_STICK, 350},
-    {ITEM_IRON_GLOVES, 350},
+    {ITEM_GOOD_STICK, 420},
+    {ITEM_IRON_GLOVES, 420},
     {ITEM_IRON_SHIELD, 250},
 };
 static constexpr DropDef ZOMBIE_DROPS[] = {
-    {ITEM_IRON_MAIL, 350},
-    {ITEM_LOINCLOTH, 350},
-    {ITEM_IRON_BOOTS, 350},
+    {ITEM_IRON_MAIL, 420},
+    {ITEM_LOINCLOTH, 420},
+    {ITEM_IRON_BOOTS, 420},
 };
 static constexpr DropDef GNOME_BAND_DROPS[] = {
     {ITEM_IRON_SHIELD, 250},
-    {ITEM_GOLD_RING, 250},
-    {ITEM_JADE_AMULET, 250},
+    {ITEM_GOLD_RING, 400},
+    {ITEM_JADE_AMULET, 400},
     {ITEM_TIME_CANDLE, 150},
 };
 
 static constexpr DropDef BONE_DIGGER_DROPS[] = {
-    {ITEM_STEEL_HELM, 120},
-    {ITEM_STEEL_GRIPS, 120},
-    {ITEM_GREAT_STICK, 120},
+    {ITEM_STEEL_HELM, 135},
+    {ITEM_STEEL_GRIPS, 135},
+    {ITEM_GREAT_STICK, 135},
+    {ITEM_STEEL_PICK, 80},
+    {ITEM_GRAVE_HOOD, 80},
+    {ITEM_COIN_RING, 80},
 };
 static constexpr DropDef CRYPT_GHOUL_DROPS[] = {
-    {ITEM_STEEL_PLATE, 120},
-    {ITEM_STEEL_LEGS, 120},
-    {ITEM_STEEL_BOOTS, 120},
-    {ITEM_STEEL_GUARD, 100},
-    {ITEM_RUBY_RING, 50},
-    {ITEM_GOLD_AMULET, 50},
-    {ITEM_ELDER_BONE, 50},
+    {ITEM_STEEL_PLATE, 135},
+    {ITEM_STEEL_LEGS, 135},
+    {ITEM_STEEL_BOOTS, 135},
+    {ITEM_STEEL_GUARD, 110},
+    {ITEM_RUBY_RING, 60},
+    {ITEM_GOLD_AMULET, 60},
+    {ITEM_ELDER_BONE, 40},
 };
 
 static constexpr DropDef DEEP_LURKER_DROPS[] = {
-    {ITEM_RUNE_HELM, 80},
-    {ITEM_RUNE_GRIPS, 80},
-    {ITEM_RUNE_BLADE, 80},
+    {ITEM_RUNE_HELM, 36},
+    {ITEM_RUNE_GRIPS, 36},
+    {ITEM_RUNE_BLADE, 36},
+    {ITEM_RUNE_PICK, 20},
 };
 static constexpr DropDef ABYSS_WORM_DROPS[] = {
-    {ITEM_RUNE_PLATE, 80},
-    {ITEM_RUNE_LEGS, 80},
-    {ITEM_RUNE_BOOTS, 80},
-    {ITEM_RUNE_AEGIS, 50},
+    {ITEM_RUNE_PLATE, 36},
+    {ITEM_RUNE_LEGS, 36},
+    {ITEM_RUNE_BOOTS, 36},
+    {ITEM_RUNE_AEGIS, 28},
+    {ITEM_SCOUT_BOOTS, 20},
 };
 
 static constexpr DropDef MAGMA_HOUND_DROPS[] = {
-    {ITEM_RUNE_BLADE, 80},
-    {ITEM_RUNE_AEGIS, 60},
+    {ITEM_RUNE_BLADE, 40},
+    {ITEM_RUNE_AEGIS, 30},
     {ITEM_MINER_RING, 30},
+    {ITEM_GILT_SHIELD, 40},
 };
 static constexpr DropDef CORE_GOLEM_DROPS[] = {
-    {ITEM_RUNE_PLATE, 80},
-    {ITEM_RUNE_HELM, 80},
+    {ITEM_RUNE_PLATE, 40},
+    {ITEM_RUNE_HELM, 40},
     {ITEM_MINER_RING, 30},
-    {ITEM_CORE_SIGIL, 30},
+    {ITEM_CORE_SIGIL, 60},
     {ITEM_GOLEM_HEART, 30},
 };
 
 // The Mythic set drops in both deep zones; the Star Forge levels it faster
 static constexpr DropDef RIFT_STALKER_DROPS[] = {
-    {ITEM_EMBER_HELM, 80},
-    {ITEM_EMBER_GRIPS, 80},
-    {ITEM_EMBER_BLADE, 80},
+    {ITEM_EMBER_HELM, 12},
+    {ITEM_EMBER_GRIPS, 12},
+    {ITEM_EMBER_BLADE, 12},
 };
 static constexpr DropDef VOID_WRAITH_DROPS[] = {
-    {ITEM_EMBER_MAIL, 80},
-    {ITEM_EMBER_LEGS, 80},
-    {ITEM_EMBER_BOOTS, 80},
-    {ITEM_EMBER_GUARD, 60},
+    {ITEM_EMBER_MAIL, 12},
+    {ITEM_EMBER_LEGS, 12},
+    {ITEM_EMBER_BOOTS, 12},
+    {ITEM_EMBER_GUARD, 10},
 };
 static constexpr DropDef VOID_MAW_DROPS[] = {
-    {ITEM_EMBER_BLADE, 80},
-    {ITEM_EMBER_GUARD, 80},
-    {ITEM_EMBER_RING, 30},
-    {ITEM_EMBER_CHARM, 30},
+    {ITEM_EMBER_BLADE, 12},
+    {ITEM_EMBER_GUARD, 12},
+    {ITEM_EMBER_RING, 6},
+    {ITEM_EMBER_CHARM, 6},
+    {ITEM_VOID_PICK, 6},
 };
 static constexpr DropDef STAR_SMITH_DROPS[] = {
-    {ITEM_EMBER_HELM, 80},
-    {ITEM_EMBER_GRIPS, 80},
-    {ITEM_EMBER_BLADE, 80},
-    {ITEM_EMBER_GUARD, 60},
+    {ITEM_EMBER_HELM, 20},
+    {ITEM_EMBER_GRIPS, 20},
+    {ITEM_EMBER_BLADE, 20},
+    {ITEM_EMBER_GUARD, 16},
+    {ITEM_VOID_PICK, 8},
 };
 static constexpr DropDef NOVA_GOLEM_DROPS[] = {
-    {ITEM_EMBER_MAIL, 80},
-    {ITEM_EMBER_LEGS, 80},
-    {ITEM_EMBER_BOOTS, 80},
+    {ITEM_EMBER_MAIL, 20},
+    {ITEM_EMBER_LEGS, 20},
+    {ITEM_EMBER_BOOTS, 20},
+    {ITEM_STAR_CROWN, 8},
 };
 static constexpr DropDef SUN_EATER_DROPS[] = {
-    {ITEM_EMBER_RING, 50},
-    {ITEM_EMBER_CHARM, 30},
-    {ITEM_GOLEM_HEART, 30},
+    {ITEM_EMBER_RING, 10},
+    {ITEM_EMBER_CHARM, 8},
+    {ITEM_GOLEM_HEART, 15},
+    {ITEM_STAR_CROWN, 8},
 };
 
 // Until the deeper zones get their own art
@@ -255,25 +275,25 @@ static constexpr DropDef SUN_EATER_DROPS[] = {
 // (the previous zone's set part-levelled, plus the combat upgrades bought by then),
 // measured with tools/sim rather than assumed:
 //
-//   arrival (atk / def / hp):  Sewers 10/5/90 (starting kit)   Forest 30/48/260
-//                              Crypt 100-125/220/450   Depths 270-370/800/2200
-//                              Molten Core 1100-1400/2100/5900
-//                              Void Rift 2050-2500/3100-4400/6900-8800
+//   arrival (atk / def / hp):  Sewers 10/5/90 (starting kit)   Forest 21-22/30-36/230
+//                              Crypt 92-110/205-235/440-475   Depths 275-420/650-1015/1750-2600
+//                              Molten Core 1040-1380/2030-2500/5200-6200
+//                              Void Rift 2000-2850/3100-5200/5900-9400
 //                              Star Forge 3700-5500/4600-9800/10800-21000
 //
-// Defense sits at 1.2-1.4x that attack, so the auto-attack is blocked on arrival while the
+// Defense sits at 1.2-1.5x that attack, so the auto-attack is blocked on arrival while the
 // strike gets through. A hit costs 3-5% of max HP (8% for a boss), so a timed guard keeps
 // a fresh arrival alive. Health makes an arrival fight last about four or five strikes.
 // The zone's own drops are what make it idle-farmable.
 //
 // The run the tables are tuned for (tools/sim, a player checking in hourly while awake):
-// Sewers from minute 5, Forest at 1-2 h, Crypt at 9 h, Depths at 24 h, Molten Core with
-// the Transmuter at ~57 h; each zone farms itself 2-8 h after it opens, the Core only on
-// day 5. The kill gates (150 / 500 / 1500 / 1000) keep a zone from opening before the
+// Sewers from minute 5, Forest at 1-2 h, Crypt at 9-10 h, Depths at 24 h, Molten Core with
+// the Transmuter at 53-58 h; each zone farms itself 0-10 h after it opens (the Crypt at
+// once when Honed Steel lands with it), the Core around day 4. The kill gates (150 / 500 / 1500 / 1000) keep a zone from opening before the
 // one before it has been fought for a while.
 //
 // The two zones past the Core are for later runs: Deep Delver's two levels open them around
-// days 25 and 55 of ascending every three days (tools/sim --runs 30). The Void Rift farms
+// days 20 and 55 of ascending every three days (tools/sim --runs 20). The Void Rift farms
 // itself 4-19 h after it opens, once a few Mythic pieces have dropped.
 //
 // The Sewers are set by hand: fought with the starting kit, they cost about 40% of health
@@ -298,20 +318,20 @@ static constexpr EnemyDef SEWER_ENEMIES[] = {
     {"Gamer Mouse",   55,     13,   15,   2600,     90,        &sprite_gamer_mouse,  DROPS(GAMER_MOUSE_DROPS), true},
 };
 static constexpr EnemyDef FOREST_ENEMIES[] = {
-    {"Spider",        90,     56,   32,   2300,     15000,     &sprite_spider,       DROPS(SPIDER_DROPS)},
-    {"Gnome",         93,     58,   33,   2500,     17000,     &sprite_gnome,        DROPS(GNOME_DROPS)},
-    {"Bard Gnome",    95,     60,   35,   2600,     19000,     &sprite_bard_gnome,   DROPS(BARD_GNOME_DROPS)},
-    {"Goblin",        98,     61,   36,   2400,     22000,     &sprite_goblin,       DROPS(GOBLIN_DROPS)},
-    {"Zombie",        105,    63,   37,   2800,     26000,     &sprite_zombie,       DROPS(ZOMBIE_DROPS)},
-    {"Gnome Band",    154,    69,   39,   2600,     70000,     &sprite_gnome_band,   DROPS(GNOME_BAND_DROPS), true},
+    {"Spider",        90,     50,   26,   2300,     15000,     &sprite_spider,       DROPS(SPIDER_DROPS)},
+    {"Gnome",         93,     52,   27,   2500,     17000,     &sprite_gnome,        DROPS(GNOME_DROPS)},
+    {"Bard Gnome",    95,     54,   28,   2600,     19000,     &sprite_bard_gnome,   DROPS(BARD_GNOME_DROPS)},
+    {"Goblin",        98,     55,   29,   2400,     22000,     &sprite_goblin,       DROPS(GOBLIN_DROPS)},
+    {"Zombie",        105,    57,   30,   2800,     26000,     &sprite_zombie,       DROPS(ZOMBIE_DROPS)},
+    {"Gnome Band",    154,    62,   32,   2600,     70000,     &sprite_gnome_band,   DROPS(GNOME_BAND_DROPS), true},
 };
 static constexpr EnemyDef CRYPT_ENEMIES[] = {
     {"Bone Digger",   300,    180,  124,  2400,     1200000,   PLACEHOLDER_SPRITE,   DROPS(BONE_DIGGER_DROPS)},
     {"Crypt Ghoul",   320,    184,  135,  2600,     1800000,   PLACEHOLDER_SPRITE,   DROPS(CRYPT_GHOUL_DROPS)},
 };
 static constexpr EnemyDef DEPTH_ENEMIES[] = {
-    {"Deep Lurker",   1100,   471,  420,  2400,     20000000,  PLACEHOLDER_SPRITE,   DROPS(DEEP_LURKER_DROPS)},
-    {"Abyss Worm",    1200,   484,  460,  2600,     32000000,  PLACEHOLDER_SPRITE,   DROPS(ABYSS_WORM_DROPS)},
+    {"Deep Lurker",   1100,   471,  400,  2400,     20000000,  PLACEHOLDER_SPRITE,   DROPS(DEEP_LURKER_DROPS)},
+    {"Abyss Worm",    1200,   484,  430,  2600,     32000000,  PLACEHOLDER_SPRITE,   DROPS(ABYSS_WORM_DROPS)},
 };
 static constexpr EnemyDef CORE_ENEMIES[] = {
     {"Magma Hound",   4600,   2220, 1750, 2400,     480000000, PLACEHOLDER_SPRITE,   DROPS(MAGMA_HOUND_DROPS)},

@@ -38,6 +38,10 @@ public:
     uint32_t mine(bool &leveledUp, unsigned long now);
     uint32_t getComboPercent(unsigned long now) const; // Bonus the next click would get
     uint32_t getXpPerClick() const;
+    uint32_t getDoubleMinePercent() const; // Capped chances from the items worn
+    uint32_t getDoubleXpPercent() const;
+    bool wasLastMineDoubled() const { return lastMineDoubled; }
+    uint32_t getUpgradeDiscountPercent() const;
     bool buyBuilding(uint8_t id);
     bool buyGoldUpgrade(uint8_t id);
     void addGold(uint64_t amount); // Whole units; used by combat rewards
@@ -141,6 +145,7 @@ private:
 
     unsigned long lastMineAt;
     uint16_t comboCount; // Clicks in the current streak, runtime only
+    bool lastMineDoubled;
 
     bool veinVisible;
     unsigned long veinAt; // Next vein while none is up, else when the visible one goes

@@ -3,6 +3,12 @@
 #include "Achievements.h"
 #include "Ascension.h"
 
+// No roll at all without the perk, so the random sequence of a run without it is unchanged
+static bool rollPercent(uint32_t percent)
+{
+    return percent > 0 && (uint32_t)random(100) < percent;
+}
+
 GameState::GameState(Inventory &inventory, Achievements &achievements, const Ascension &ascension)
     : inventory(inventory),
       achievements(achievements),
@@ -18,6 +24,7 @@ GameState::GameState(Inventory &inventory, Achievements &achievements, const Asc
       seenAscensionRevision(0),
       lastMineAt(0),
       comboCount(0),
+      lastMineDoubled(false),
       veinVisible(false),
       veinAt(0),
       buff(VeinEffect::NONE),
@@ -81,6 +88,11 @@ uint32_t GameState::mine(bool &leveledUp, unsigned long now)
     lastMineAt = now;
 
     uint64_t gained = (uint64_t)getClickAmount() * (100 + getComboPercent(now)) / 100;
+    lastMineDoubled = rollPercent(getDoubleMinePercent());
+    if (lastMineDoubled)
+    {
+        gained *= 2;
+    }
     if (gained > UINT32_MAX)
     {
         gained = UINT32_MAX;
@@ -89,7 +101,7 @@ uint32_t GameState::mine(bool &leveledUp, unsigned long now)
     totalClicks++;
 
     leveledUp = false;
-    miningXp += getXpPerClick();
+    miningXp += getXpPerClick() * (rollPercent(getDoubleXpPercent()) ? 2 : 1);
     while (miningXp >= getXpToNextLevel())
     {
         miningXp -= getXpToNextLevel();
@@ -115,6 +127,25 @@ uint32_t GameState::getComboPercent(unsigned long now) const
 uint32_t GameState::getXpPerClick() const
 {
     return MINE_XP + ascension.getPercent(TalentEffect::MINING_XP);
+}
+
+uint32_t GameState::getDoubleMinePercent() const
+{
+    uint32_t percent = inventory.getPerkPercent(ItemPerk::DOUBLE_MINE);
+    return percent < MAX_DOUBLE_MINE_PERCENT ? percent : MAX_DOUBLE_MINE_PERCENT;
+}
+
+uint32_t GameState::getDoubleXpPercent() const
+{
+    uint32_t percent = inventory.getPerkPercent(ItemPerk::MINE_XP);
+    return percent < MAX_MINE_XP_PERCENT ? percent : MAX_MINE_XP_PERCENT;
+}
+
+uint32_t GameState::getUpgradeDiscountPercent() const
+{
+    uint32_t percent = inventory.getRelicPercent(RelicEffect::UPGRADE_DISCOUNT) +
+                       inventory.getPerkPercent(ItemPerk::UPGRADE_DISCOUNT);
+    return percent < MAX_UPGRADE_DISCOUNT_PERCENT ? percent : MAX_UPGRADE_DISCOUNT_PERCENT;
 }
 
 // Raises the first buildings to Heirloom's floor; never takes any away
@@ -337,9 +368,8 @@ uint64_t GameState::getGoldUpgradeCost(uint8_t id) const
     {
         return 0;
     }
-    uint32_t discount = inventory.getRelicPercent(RelicEffect::UPGRADE_DISCOUNT);
     uint64_t cost = GOLD_UPGRADES[id].cost;
-    return discount >= 100 ? 0 : cost - cost * discount / 100;
+    return cost - cost * getUpgradeDiscountPercent() / 100;
 }
 
 uint32_t GameState::getBonusPercent(UpgradeTarget target) const
@@ -358,13 +388,13 @@ uint32_t GameState::getBonusPercent(UpgradeTarget target) const
 uint32_t GameState::getProductionBonusPercent() const
 {
     return getBonusPercent(UpgradeTarget::PRODUCTION) +
-           inventory.getGoldProductionBonusPercent() +
+           inventory.getPerkPercent(ItemPerk::GOLD) +
            achievements.getProductionBonusPercent() * (100 + inventory.getRelicPercent(RelicEffect::AWARD_BOOST)) / 100;
 }
 
 uint32_t GameState::getClickBonusPercent() const
 {
-    return getBonusPercent(UpgradeTarget::CLICK) + inventory.getClickBonusPercent() +
+    return getBonusPercent(UpgradeTarget::CLICK) + inventory.getPerkPercent(ItemPerk::CLICK) +
            ascension.getPercent(TalentEffect::CLICK);
 }
 
