@@ -105,8 +105,9 @@ void ActionPanel::refreshCooldown(ActionRow &row, unsigned long left, unsigned l
     bool blocked = fighting && damage == 0;
     bool ready = fighting && !blocked && left == 0;
 
-    // Cooldowns keep running between enemies, so the ring shows them even then
-    row.ring.setProgress(left == 0 ? 1000 : (uint16_t)(1000 - left * 1000 / total));
+    // Cooldowns keep running between enemies, so the ring shows them even then. A cooldown
+    // cut equipped mid-wait can leave more time than the new total.
+    row.ring.setProgress(left == 0 ? 1000 : left >= total ? 0 : (uint16_t)(1000 - left * 1000 / total));
     row.ring.setRingColor(ready ? CombatStyle::READY : Theme::TEXT_DIM);
     row.ring.setOutline(ready);
     row.ring.setCapDimmed(!fighting || blocked);

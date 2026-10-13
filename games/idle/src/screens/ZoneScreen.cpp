@@ -313,13 +313,9 @@ void ZoneScreen::update(unsigned long now)
     }
 
     Stats total = resolvePlayerStats(game, inventory);
-    char buf[12];
-    snprintf(buf, sizeof(buf), "%u", (unsigned)total.attack);
-    attackText.setText(buf);
-    snprintf(buf, sizeof(buf), "%u", (unsigned)total.defense);
-    defenseText.setText(buf);
-    snprintf(buf, sizeof(buf), "%u", (unsigned)total.maxHp);
-    hpText.setText(buf);
+    attackText.setText(formatCompact(total.attack));
+    defenseText.setText(formatCompact(total.defense));
+    hpText.setText(formatCompact(total.maxHp));
 
     refreshRows(total);
     refreshPanel(total);

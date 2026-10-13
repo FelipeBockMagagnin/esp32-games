@@ -315,7 +315,7 @@ void MiningScreen::onConfirmPress()
 {
     bool leveledUp;
     unsigned long now = millis();
-    uint32_t gained = game.mine(leveledUp, now);
+    uint64_t gained = game.mine(leveledUp, now);
 
     oreDisplay.shake();
     oreDisplay.burst(MINE_CHIPS, false);

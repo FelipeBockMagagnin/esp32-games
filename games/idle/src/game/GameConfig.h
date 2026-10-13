@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include "../assets/Assets.h"
 
-// Gold is stored in thousandths so fractional production (e.g. 0.1/s) stays exact
+// Production is counted in thousandths so fractional rates (e.g. 0.1/s) stay exact
 static const uint32_t GOLD_SCALE = 1000;
 
 // Manual mining
@@ -98,9 +98,8 @@ enum BuildingId : uint8_t
 // checking in hourly and catching the gold veins that show while they are there:
 // Excavator ~15 min, Ore Mill 1 h, Smelter 4 h, Deep Shaft 8 h, Rune Forge 15 h, Ore
 // Barge 31 h, Transmuter ~57 h. A player who checks in for less sees fewer veins and
-// takes closer to four days. A balance caps near 1.8e16 gold (64-bit
-// thousandths) and a boost costs up to 1e6x its building's base, which is why the last
-// base cost stays near a trillion.
+// takes closer to four days. A boost costs up to 1e6x its building's base, which kept
+// the last base cost near a trillion while a balance capped at 1.8e16 (it now holds 1.8e19).
 static constexpr BuildingsDef BUILDINGS[] = {
     //  name         gold/s          cost              growth%  icon
     {"Pickaxe",      100,            15,               115,     image_building_pickaxe_pixels},

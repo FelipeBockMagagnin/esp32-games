@@ -47,7 +47,7 @@ public:
     void onAttack();
     void stopAnimations();
     void animate(unsigned long now);
-    void showDrop(uint8_t itemId, bool isNew, uint8_t level, unsigned long until);
+    void showDrop(uint8_t itemId, bool isNew, uint8_t level, uint8_t others, unsigned long until);
     void refresh(unsigned long now);
 };
 

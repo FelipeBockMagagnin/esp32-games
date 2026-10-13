@@ -703,7 +703,7 @@ int main(int argc, char **argv)
         if (inventory.countOwnedItems() != itemsSeen)
         {
             itemsSeen = inventory.countOwnedItems();
-            event("item     found #" + std::to_string(itemsSeen) + " " + ITEMS[combat.getLastDrop()].name);
+            event("item     found #" + std::to_string(itemsSeen) + " " + ITEMS[combat.getLastDrops().itemId].name);
         }
         bool dead = combat.getPhase() == CombatState::DEAD;
         deaths += dead && !wasDead;

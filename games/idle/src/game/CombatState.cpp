@@ -57,9 +57,7 @@ CombatState::CombatState(GameState &game, Inventory &inventory)
       lastHurtDamage(0),
       lastHurtGuarded(false),
       dropEvents(0),
-      lastDrop(NO_ITEM),
-      lastDropWasNew(false),
-      lastDropLevel(0),
+      lastDrops(),
       secondWindReadyAt(0),
       secondWindEvents(0)
 {
@@ -355,6 +353,7 @@ void CombatState::onEnemyKilled(unsigned long now)
     killEvents++;
 
     uint32_t twinChance = game.getAscension().getPercent(TalentEffect::TWIN_DROP);
+    KillDrops drops = {};
     for (uint8_t i = 0; i < enemy.dropCount; i++)
     {
         const DropDef &drop = enemy.drops[i];
@@ -365,15 +364,27 @@ void CombatState::onEnemyKilled(unsigned long now)
         }
         if ((uint16_t)random(10000) < getDropChanceBp(drop))
         {
-            lastDropWasNew = inventory.addDrop(drop.itemId);
+            bool isNew = inventory.addDrop(drop.itemId);
             if (twinChance > 0 && (uint32_t)random(100) < twinChance)
             {
                 inventory.addDrop(drop.itemId);
             }
-            lastDrop = (int8_t)drop.itemId;
-            lastDropLevel = inventory.getItemLevel(drop.itemId);
-            dropEvents++;
+            uint8_t tier = ITEMS[drop.itemId].tier;
+            if (drops.count == 0 || tier > ITEMS[drops.itemId].tier ||
+                (tier == ITEMS[drops.itemId].tier && isNew && !drops.isNew))
+            {
+                drops.itemId = drop.itemId;
+                drops.isNew = isNew;
+                drops.level = inventory.getItemLevel(drop.itemId);
+            }
+            drops.count++;
+            drops.anyNew = drops.anyNew || isNew;
         }
+    }
+    if (drops.count > 0)
+    {
+        lastDrops = drops;
+        dropEvents++;
     }
 
     startRespawn(now);

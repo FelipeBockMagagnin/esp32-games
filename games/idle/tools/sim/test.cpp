@@ -12,6 +12,7 @@
 #include "../../src/game/Unlocks.h"
 #include "../../src/game/Ascension.h"
 #include "../../src/game/SaveGame.h"
+#include "../../src/game/Format.h"
 
 static unsigned long simNow = 0;
 static std::mt19937 rng(1);
@@ -241,6 +242,56 @@ static void testNextPointSaturates()
     CHECK(ascension.getRunGoldForNextPoint(0) > 0);
 }
 
+static void testGoldPastThousandthsCap()
+{
+    puts("gold goes past 1.8e16 and saturates at the top");
+    World w;
+    const uint64_t oldCap = UINT64_MAX / GOLD_SCALE;
+    w.game.addGold(oldCap);
+    w.game.addGold(oldCap);
+    CHECK(w.game.getGold() == oldCap * 2);
+    CHECK(w.game.getTotalGoldEarned() == oldCap * 2);
+    w.game.addGold(UINT64_MAX);
+    CHECK(w.game.getGold() == UINT64_MAX);
+    CHECK(w.game.getTotalGoldEarned() == UINT64_MAX);
+}
+
+static void testThousandthsSaveMigrates()
+{
+    puts("a version 7 save, gold in thousandths, loads in whole units");
+    Preferences::store.clear();
+    eraseSave();
+
+    World w;
+    SaveBlob old, read;
+    w.capture(old);
+    old.version = 7;
+    old.game.gold = 77 * GOLD_SCALE + 500;
+    old.game.totalGoldEarned = 90 * GOLD_SCALE;
+    CHECK(saveGame(old));
+
+    CHECK(loadGame(read));
+    CHECK(read.version == SAVE_VERSION);
+    CHECK(read.game.gold == 77);
+    CHECK(read.game.totalGoldEarned == 90);
+}
+
+static void testCompactFormat()
+{
+    puts("stat card numbers stay within 4 chars");
+    CHECK(strcmp(formatCompact(9999).c_str(), "9999") == 0);
+    CHECK(strcmp(formatCompact(10000).c_str(), "10K") == 0);
+    CHECK(strcmp(formatCompact(24464).c_str(), "24K") == 0);
+    CHECK(strcmp(formatCompact(999999).c_str(), "999K") == 0);
+    CHECK(strcmp(formatCompact(1250000).c_str(), "1.2M") == 0);
+    CHECK(strcmp(formatAmount(UINT64_MAX).c_str(), "18.4Qi") == 0);
+    for (uint64_t v = 1; v <= UINT32_MAX; v = v * 3 + 1)
+    {
+        CHECK(strlen(formatCompact((uint32_t)v).c_str()) <= 4);
+    }
+    CHECK(strlen(formatCompact(UINT32_MAX).c_str()) <= 4);
+}
+
 int main()
 {
     testSaveRoundTrip();
@@ -249,6 +300,9 @@ int main()
     testLegacySaveMigrates();
     testZoneHopKeepsHealth();
     testNextPointSaturates();
+    testGoldPastThousandthsCap();
+    testThousandthsSaveMigrates();
+    testCompactFormat();
     printf(failures == 0 ? "all passed\n" : "%d failed\n", failures);
     return failures == 0 ? 0 : 1;
 }

@@ -1,4 +1,5 @@
 #include "UpgradeScreen.h"
+#include "../game/SatMath.h"
 #include "../game/Format.h"
 #include "../game/CombatConfig.h" // ZONES, for the zone an unlock opens
 
@@ -195,7 +196,7 @@ void UpgradeScreen::formatEffect(const GoldUpgradeDef &def, char *buf, size_t si
                      (unsigned long)(bonus + def.bonusPercent));
             return;
         }
-        uint64_t after = now * (100 + bonus + def.bonusPercent) / (100 + bonus);
+        uint64_t after = mulDiv(now, 100 + bonus + def.bonusPercent, 100 + bonus);
         snprintf(buf, size, "Income %s > %s", formatPerSecond(now).c_str(), formatPerSecond(after).c_str());
         return;
     }
@@ -206,9 +207,9 @@ void UpgradeScreen::formatEffect(const GoldUpgradeDef &def, char *buf, size_t si
         // share of production per second
         uint64_t added = def.target == UpgradeTarget::CLICK
                              ? (uint64_t)ORE_TIERS[game.getOreTier()].clickAmount * def.bonusPercent / 100
-                             : game.getProductionPerSecond() * def.bonusPercent / 100 / GOLD_SCALE;
+                             : mulDiv(game.getProductionPerSecond(), def.bonusPercent, 100 * GOLD_SCALE);
         uint64_t now = game.getClickAmount();
-        snprintf(buf, size, "Per click +%s > +%s", formatAmount(now).c_str(), formatAmount(now + added).c_str());
+        snprintf(buf, size, "Per click +%s > +%s", formatAmount(now).c_str(), formatAmount(satAdd(now, added)).c_str());
         return;
     }
     case UpgradeTarget::ATTACK:
@@ -249,7 +250,7 @@ void UpgradeScreen::formatEffect(const GoldUpgradeDef &def, char *buf, size_t si
     {
         uint64_t now = game.getBuildingProduction(def.reqBuilding);
         snprintf(buf, size, "%s %s > %s", BUILDINGS[def.reqBuilding].name, formatPerSecond(now).c_str(),
-                 formatPerSecond(now * 2).c_str());
+                 formatPerSecond(satMul(now, 2)).c_str());
         return;
     }
     }
@@ -309,7 +310,7 @@ void UpgradeScreen::refreshDetails()
     uint64_t gold = game.getGold();
     bool affordable = game.canAffordGoldUpgrade(id);
     uint64_t cost = game.getGoldUpgradeCost(id);
-    uint32_t percent = (affordable || cost == 0) ? 100 : (uint32_t)(gold * 100 / cost);
+    uint32_t percent = (affordable || cost == 0) ? 100 : (uint32_t)mulDiv(gold, 100, cost);
     savingsBar.setProgress(percent, 100);
     savingsBar.setFillColor(affordable ? READY_FILL : SAVINGS_COLOR);
     if (affordable)

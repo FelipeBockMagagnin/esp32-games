@@ -2,6 +2,7 @@
 #include "Inventory.h"
 #include "Achievements.h"
 #include "Ascension.h"
+#include "SatMath.h"
 
 // No roll at all without the perk, so the random sequence of a run without it is unchanged
 static bool rollPercent(uint32_t percent)
@@ -9,27 +10,18 @@ static bool rollPercent(uint32_t percent)
     return percent > 0 && (uint32_t)random(100) < percent;
 }
 
-// a * b / c, dividing first and then saturating once the product would not fit
-static uint64_t mulDiv(uint64_t a, uint64_t b, uint64_t c)
-{
-    if (b == 0 || a <= UINT64_MAX / b)
-    {
-        return a * b / c;
-    }
-    uint64_t quotient = a / c;
-    return quotient > UINT64_MAX / b ? UINT64_MAX : quotient * b;
-}
-
 GameState::GameState(Inventory &inventory, Achievements &achievements, const Ascension &ascension)
     : inventory(inventory),
       achievements(achievements),
       ascension(ascension),
       gold(0),
+      goldFraction(0),
       productionRemainder(0),
       miningLevel(1),
       miningXp(0),
       totalClicks(0),
       totalGoldEarned(0),
+      totalGoldFraction(0),
       revision(0),
       cachedProductionSignature(UINT32_MAX),
       cachedBaseProduction(0),
@@ -90,28 +82,25 @@ void GameState::update(unsigned long now)
     }
 
     // perSecond is GOLD_SCALE units per 1000 ms, so keep the sub-unit remainder between frames
-    uint64_t scaled = perSecond * elapsed + productionRemainder;
-    creditGold(scaled / 1000);
+    uint64_t scaled = satAdd(satMul(perSecond, elapsed), productionRemainder);
+    uint64_t thousandths = scaled / 1000;
+    creditGold(thousandths / GOLD_SCALE, (uint32_t)(thousandths % GOLD_SCALE));
     productionRemainder = scaled % 1000;
 }
 
-uint32_t GameState::mine(bool &leveledUp, unsigned long now)
+uint64_t GameState::mine(bool &leveledUp, unsigned long now)
 {
     bool streak = comboCount > 0 && now - lastMineAt <= COMBO_WINDOW_MS;
     comboCount = streak ? (comboCount < UINT16_MAX ? comboCount + 1 : comboCount) : 1;
     lastMineAt = now;
 
-    uint64_t gained = (uint64_t)getClickAmount() * (100 + getComboPercent(now)) / 100;
+    uint64_t gained = mulDiv(getClickAmount(), 100 + getComboPercent(now), 100);
     lastMineDoubled = rollPercent(getDoubleMinePercent());
     if (lastMineDoubled)
     {
-        gained *= 2;
+        gained = satMul(gained, 2);
     }
-    if (gained > UINT32_MAX)
-    {
-        gained = UINT32_MAX;
-    }
-    creditGold(gained * GOLD_SCALE);
+    creditGold(gained);
     totalClicks++;
 
     leveledUp = false;
@@ -122,7 +111,7 @@ uint32_t GameState::mine(bool &leveledUp, unsigned long now)
         miningLevel++;
         leveledUp = true;
     }
-    return (uint32_t)gained;
+    return gained;
 }
 
 // The combo's bonus on the next click: a step per click in the streak beyond the first,
@@ -184,7 +173,7 @@ bool GameState::buyBuilding(uint8_t id)
         return false;
     }
 
-    gold -= getBuildingCost(id) * GOLD_SCALE;
+    gold -= getBuildingCost(id);
     buildingLevels[id]++;
     revision++;
     return true;
@@ -197,7 +186,7 @@ bool GameState::buyGoldUpgrade(uint8_t id)
         return false;
     }
 
-    gold -= getGoldUpgradeCost(id) * GOLD_SCALE;
+    gold -= getGoldUpgradeCost(id);
     goldUpgradesBought[id] = true;
     revision++;
     return true;
@@ -205,26 +194,33 @@ bool GameState::buyGoldUpgrade(uint8_t id)
 
 void GameState::addGold(uint64_t amount)
 {
-    creditGold(amount * GOLD_SCALE);
+    creditGold(amount);
 }
 
-// Saturates rather than wrapping: a 64-bit balance in thousandths tops out near 1.8e16 gold
-void GameState::creditGold(uint64_t scaledAmount)
+static void addGoldTo(uint64_t &whole, uint16_t &fraction, uint64_t addWhole, uint32_t addThousandths)
 {
-    gold = gold > UINT64_MAX - scaledAmount ? UINT64_MAX : gold + scaledAmount;
-    totalGoldEarned = totalGoldEarned > UINT64_MAX - scaledAmount ? UINT64_MAX : totalGoldEarned + scaledAmount;
+    uint32_t thousandths = fraction + addThousandths;
+    whole = satAdd(satAdd(whole, addWhole), thousandths / GOLD_SCALE);
+    fraction = (uint16_t)(thousandths % GOLD_SCALE);
+}
+
+// thousandths stays below GOLD_SCALE
+void GameState::creditGold(uint64_t whole, uint32_t thousandths)
+{
+    addGoldTo(gold, goldFraction, whole, thousandths);
+    addGoldTo(totalGoldEarned, totalGoldFraction, whole, thousandths);
 }
 
 uint64_t GameState::getGold() const
 {
-    return gold / GOLD_SCALE;
+    return gold;
 }
 
 // A running frenzy multiplies everything the buildings make, on screen as well
 uint64_t GameState::getProductionPerSecond() const
 {
     uint64_t base = getBaseProductionPerSecond();
-    return buff == VeinEffect::FRENZY ? base * VEIN_FRENZY_MULTIPLIER : base;
+    return buff == VeinEffect::FRENZY ? satMul(base, VEIN_FRENZY_MULTIPLIER) : base;
 }
 
 // Everything production depends on, as a sum of counters that only grow during a run, so
@@ -248,7 +244,7 @@ uint64_t GameState::getBaseProductionPerSecond() const
     uint64_t total = 0;
     for (uint8_t i = 0; i < BUILDING_COUNT; i++)
     {
-        total += getBuildingBaseOutput(i, boosts) * buildingLevels[i];
+        total = satAdd(total, satMul(getBuildingBaseOutput(i, boosts), buildingLevels[i]));
     }
     cachedBaseProduction = applyProductionBonus(total);
     cachedProductionSignature = signature;
@@ -263,7 +259,7 @@ uint64_t GameState::getBuildingBaseOutput(uint8_t id, const uint8_t *boosts) con
     uint32_t synergy = ascension.getPercent(TalentEffect::SYNERGY);
     if (id > 0 && synergy > 0)
     {
-        output = output * (100 + synergy * buildingLevels[id - 1]) / 100;
+        output = mulDiv(output, 100 + synergy * buildingLevels[id - 1], 100);
     }
     return output;
 }
@@ -272,8 +268,8 @@ uint64_t GameState::getBuildingBaseOutput(uint8_t id, const uint8_t *boosts) con
 // as much late in a run, when the upgrades and awards have stacked up, as early on
 uint64_t GameState::applyProductionBonus(uint64_t production) const
 {
-    production = production * (100 + getProductionBonusPercent()) / 100;
-    return production * (100 + getAscensionProductionPercent()) / 100;
+    production = mulDiv(production, 100 + getProductionBonusPercent(), 100);
+    return mulDiv(production, 100 + getAscensionProductionPercent(), 100);
 }
 
 uint32_t GameState::getAscensionProductionPercent() const
@@ -308,7 +304,7 @@ uint32_t GameState::getBuildingMultiplier(uint8_t id) const
 
 uint64_t GameState::getBuildingProduction(uint8_t id) const
 {
-    return getBuildingProductionPerLevel(id) * getBuildingLevel(id);
+    return satMul(getBuildingProductionPerLevel(id), getBuildingLevel(id));
 }
 
 uint64_t GameState::getBuildingProductionPerLevel(uint8_t id) const
@@ -322,16 +318,11 @@ uint64_t GameState::getBuildingProductionPerLevel(uint8_t id) const
     return applyProductionBonus(getBuildingBaseOutput(id, boosts));
 }
 
-uint32_t GameState::getClickAmount() const
+uint64_t GameState::getClickAmount() const
 {
-    uint64_t amount = ORE_TIERS[getOreTier()].clickAmount;
-    amount = amount * (100 + getClickBonusPercent()) / 100;
-    amount += getProductionPerSecond() * getClickProductionPercent() / 100 / GOLD_SCALE;
-    if (buff == VeinEffect::CLICK_FRENZY)
-    {
-        amount *= VEIN_CLICK_MULTIPLIER;
-    }
-    return amount > UINT32_MAX ? UINT32_MAX : (uint32_t)amount;
+    uint64_t amount = mulDiv(ORE_TIERS[getOreTier()].clickAmount, 100 + getClickBonusPercent(), 100);
+    amount = satAdd(amount, mulDiv(getProductionPerSecond(), getClickProductionPercent(), 100 * GOLD_SCALE));
+    return buff == VeinEffect::CLICK_FRENZY ? satMul(amount, VEIN_CLICK_MULTIPLIER) : amount;
 }
 
 uint16_t GameState::getBuildingLevel(uint8_t id) const
@@ -350,14 +341,14 @@ uint64_t GameState::getBuildingCost(uint8_t id) const
     uint64_t cost = def.baseCost;
     for (uint16_t level = 0; level < buildingLevels[id]; level++)
     {
-        cost = cost * def.costGrowthPercent / 100;
-        if (cost >= UINT64_MAX / GOLD_SCALE)
+        cost = mulDiv(cost, def.costGrowthPercent, 100);
+        if (cost == UINT64_MAX)
         {
-            return UINT64_MAX / GOLD_SCALE; // Past what a balance can hold
+            return UINT64_MAX; // Past what a balance can hold
         }
     }
     uint32_t discount = ascension.getPercent(TalentEffect::BUILDING_DISCOUNT);
-    return discount >= 100 ? 0 : cost - cost * discount / 100;
+    return discount >= 100 ? 0 : cost - mulDiv(cost, discount, 100);
 }
 
 bool GameState::canAffordBuilding(uint8_t id) const
@@ -402,7 +393,7 @@ uint64_t GameState::getGoldUpgradeCost(uint8_t id) const
         return 0;
     }
     uint64_t cost = GOLD_UPGRADES[id].cost;
-    return cost - cost * getUpgradeDiscountPercent() / 100;
+    return cost - mulDiv(cost, getUpgradeDiscountPercent(), 100);
 }
 
 uint32_t GameState::getBonusPercent(UpgradeTarget target) const
@@ -511,10 +502,9 @@ VeinEffect GameState::catchVein(unsigned long now)
         // A share of the balance, capped by minutes of production, so it pays to bank
         // gold before catching one but never more than the cap
         uint64_t fromBank = mulDiv(gold, VEIN_LUCKY_BANK_PERCENT, 100);
-        uint64_t cap = mulDiv(getBaseProductionPerSecond(), (uint64_t)VEIN_LUCKY_SECONDS * power, 100);
-        uint64_t scaled = (fromBank < cap ? fromBank : cap) + (uint64_t)getClickAmount() * VEIN_LUCKY_CLICKS * GOLD_SCALE;
-        creditGold(scaled);
-        lastLuckyGold = scaled / GOLD_SCALE;
+        uint64_t cap = mulDiv(getBaseProductionPerSecond(), (uint64_t)VEIN_LUCKY_SECONDS * power, 100 * GOLD_SCALE);
+        lastLuckyGold = satAdd(fromBank < cap ? fromBank : cap, satMul(getClickAmount(), VEIN_LUCKY_CLICKS));
+        creditGold(lastLuckyGold);
         return VeinEffect::LUCKY;
     }
 
@@ -562,7 +552,7 @@ bool GameState::isZoneUnlockedByUpgrade(uint8_t zoneId) const
 
 uint64_t GameState::getTotalGoldEarned() const
 {
-    return totalGoldEarned / GOLD_SCALE;
+    return totalGoldEarned;
 }
 
 uint32_t GameState::getTotalBuildingLevels() const
@@ -620,11 +610,13 @@ void GameState::save(Snapshot &out) const
 void GameState::load(const Snapshot &in)
 {
     gold = in.gold;
+    goldFraction = 0;
     productionRemainder = in.productionRemainder;
     miningLevel = in.miningLevel > 0 ? in.miningLevel : 1;
     miningXp = in.miningXp;
     totalClicks = in.totalClicks;
     totalGoldEarned = in.totalGoldEarned;
+    totalGoldFraction = 0;
     veinsCaught = in.veinsCaught;
     for (uint8_t i = 0; i < BUILDING_COUNT; i++)
     {

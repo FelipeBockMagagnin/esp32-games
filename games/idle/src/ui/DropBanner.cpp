@@ -6,6 +6,7 @@ static const int16_t CAPTION_DY = 8;
 static const int16_t ICON_DY = 30;
 static const int16_t NAME_DY = 98;
 static const int16_t SUB_DY = 117;
+static const int16_t OTHERS_GAP = 6;
 
 static uint16_t swapBytes(uint16_t color)
 {
@@ -54,10 +55,19 @@ void DropBanner::draw(TFT_eSPI &tft)
         tft.endWrite();
     }
 
+    char buf[32];
+    if (others > 0)
+    {
+        snprintf(buf, sizeof(buf), "+%u", (unsigned)others);
+        tft.setTextDatum(ML_DATUM);
+        tft.setTextColor(Theme::GOLD);
+        tft.drawString(buf, cx + 16 * ICON_SCALE / 2 + OTHERS_GAP, y + ICON_DY + 16 * ICON_SCALE / 2);
+        tft.setTextDatum(TC_DATUM);
+    }
+
     tft.setTextColor(rarity);
     tft.drawString(def.name, cx, y + NAME_DY);
 
-    char buf[32];
     if (isNew)
     {
         snprintf(buf, sizeof(buf), "%s %s", ITEM_TIER_NAMES[def.tier], EQUIP_SLOT_NAMES[(uint8_t)def.slot]);

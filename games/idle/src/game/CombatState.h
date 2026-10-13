@@ -122,10 +122,17 @@ public:
     uint32_t getHurtEvents() const { return hurtEvents; }
     uint32_t getLastHurtDamage() const { return lastHurtDamage; }
     bool wasLastHurtGuarded() const { return lastHurtGuarded; }
+    // One event per kill that dropped anything, summed up by its rarest drop
+    struct KillDrops
+    {
+        uint8_t itemId; // The rarest; a new item wins a tie
+        bool isNew;
+        uint8_t level;  // Level that item reached with the drop
+        uint8_t count;  // Items dropped by the kill, that one included
+        bool anyNew;
+    };
     uint32_t getDropEvents() const { return dropEvents; }
-    int8_t getLastDrop() const { return lastDrop; }
-    bool wasLastDropNew() const { return lastDropWasNew; }
-    uint8_t getLastDropLevel() const { return lastDropLevel; }
+    const KillDrops &getLastDrops() const { return lastDrops; }
 
     void save(Snapshot &out) const;
     void load(const Snapshot &in);
@@ -183,9 +190,7 @@ private:
     uint32_t lastHurtDamage;
     bool lastHurtGuarded;
     uint32_t dropEvents;
-    int8_t lastDrop;
-    bool lastDropWasNew;
-    uint8_t lastDropLevel; // Level the item reached with that drop
+    KillDrops lastDrops;
     unsigned long secondWindReadyAt; // 0 until the first one is used
     uint32_t secondWindEvents;
 };

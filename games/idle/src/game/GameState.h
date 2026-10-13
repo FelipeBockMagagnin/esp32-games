@@ -14,7 +14,7 @@ class GameState
 {
 public:
     // Persistent fields only, all POD so the whole struct can be written to flash as-is.
-    // Runtime timing (lastUpdate/started) is deliberately left out.
+    // Runtime timing (lastUpdate/started) and the fraction of a gold are left out.
     struct Snapshot
     {
         uint64_t gold;
@@ -35,7 +35,7 @@ public:
 
     // Actions
     // Returns the gold gained (whole units); leveledUp is set on a level-up
-    uint32_t mine(bool &leveledUp, unsigned long now);
+    uint64_t mine(bool &leveledUp, unsigned long now);
     uint32_t getComboPercent(unsigned long now) const; // Bonus the next click would get
     uint32_t getXpPerClick() const;
     uint32_t getDoubleMinePercent() const; // Capped chances from the items worn
@@ -55,7 +55,7 @@ public:
     uint64_t getBuildingProduction(uint8_t id) const;      // GOLD_SCALE units
     uint64_t getBuildingProductionPerLevel(uint8_t id) const; // GOLD_SCALE units
     uint32_t getBuildingMultiplier(uint8_t id) const; // From its BUILDING_BOOST upgrades: 1, 2, 4...
-    uint32_t getClickAmount() const; // Whole units gained by the next mine(): ore tier, click upgrades, share of production
+    uint64_t getClickAmount() const; // Whole units gained by the next mine(): ore tier, click upgrades, share of production
 
     // Buildings
     uint16_t getBuildingLevel(uint8_t id) const;
@@ -123,13 +123,16 @@ private:
     void applyHeadStart();
     void updateVeins(unsigned long now);
     void scheduleVein(unsigned long now);
-    void creditGold(uint64_t scaledAmount); // Single place where gold comes in
+    void creditGold(uint64_t whole, uint32_t thousandths = 0); // Single place where gold comes in
 
     Inventory &inventory;
     Achievements &achievements;
     const Ascension &ascension;
 
-    uint64_t gold;                // GOLD_SCALE units
+    // Whole units with the GOLD_SCALE fraction beside them: a balance in thousandths would
+    // top out at 1.8e16, which a late run reaches
+    uint64_t gold;
+    uint16_t goldFraction;
     uint32_t productionRemainder; // Leftover (units * ms) below one GOLD_SCALE step
     uint16_t buildingLevels[BUILDING_COUNT];
     bool goldUpgradesBought[GOLD_UPGRADE_COUNT];
@@ -138,7 +141,8 @@ private:
     uint32_t miningXp;
 
     uint32_t totalClicks;
-    uint64_t totalGoldEarned; // GOLD_SCALE units, never spent down
+    uint64_t totalGoldEarned; // Whole units, never spent down
+    uint16_t totalGoldFraction;
 
     uint32_t revision; // Bumped by anything here that changes production
     mutable uint32_t cachedProductionSignature;

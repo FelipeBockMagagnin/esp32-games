@@ -1,4 +1,5 @@
 #include "AchievementScreen.h"
+#include "../game/SatMath.h"
 #include "../game/GameConfig.h"
 #include "../game/Format.h"
 
@@ -247,7 +248,7 @@ void AchievementScreen::update(unsigned long now)
         else
         {
             uint64_t progress = achievements.getProgress(def, game, inventory, combat);
-            uint32_t percent = def.amount == 0 ? 0 : (uint32_t)(progress * 100 / def.amount);
+            uint32_t percent = def.amount == 0 ? 0 : (uint32_t)mulDiv(progress, 100, def.amount);
             snprintf(buf, sizeof(buf), "%lu%%", (unsigned long)(percent > 99 ? 99 : percent));
             row.setValueSub(buf);
         }
@@ -305,7 +306,7 @@ void AchievementScreen::updateDetail()
 
     uint64_t progress = achievements.getProgress(def, game, inventory, combat);
     // Progress can only pass the amount between two evaluate() passes; cap it meanwhile
-    uint32_t percent = (def.amount == 0 || progress >= def.amount) ? 100 : (uint32_t)(progress * 100 / def.amount);
+    uint32_t percent = (def.amount == 0 || progress >= def.amount) ? 100 : (uint32_t)mulDiv(progress, 100, def.amount);
     progressBar.setProgress(percent, 100);
     progressBar.setFillColor(BAR_COLOR);
     snprintf(buf, sizeof(buf), "%s / %s  (%lu%%)", formatAmount(progress).c_str(), formatAmount(def.amount).c_str(),

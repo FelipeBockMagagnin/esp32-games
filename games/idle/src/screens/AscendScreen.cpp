@@ -1,4 +1,5 @@
 #include "AscendScreen.h"
+#include "../game/SatMath.h"
 #include "../game/Format.h"
 #include "../game/Achievements.h"
 #include "../game/CombatConfig.h"
@@ -144,7 +145,7 @@ void AscendScreen::update(unsigned long now)
 
     // Progress of this run's gold toward the next point it would bank
     uint64_t target = ascension.getRunGoldForNextPoint(runGold);
-    uint32_t percent = target == 0 ? 100 : (uint32_t)(runGold >= target ? 100 : runGold * 100 / target);
+    uint32_t percent = target == 0 ? 100 : (uint32_t)(runGold >= target ? 100 : mulDiv(runGold, 100, target));
     nextPointBar.setProgress(percent, 100);
     snprintf(buf, sizeof(buf), "Next pt %s / %s", formatAmount(runGold).c_str(), formatAmount(target).c_str());
     nextPointBar.setLabel(buf);

@@ -1,4 +1,5 @@
 #include "BuildingScreen.h"
+#include "../game/SatMath.h"
 #include "../game/Format.h"
 
 // Values change every frame while producing, so only rebuild the texts a few times per second
@@ -175,7 +176,7 @@ void BuildingScreen::updateDetail()
 
     uint64_t produced = game.getBuildingProduction(id);
     uint64_t total = game.getProductionPerSecond();
-    uint32_t share = total > 0 ? (uint32_t)(produced * 100 / total) : 0;
+    uint32_t share = total > 0 ? (uint32_t)mulDiv(produced, 100, total) : 0;
     if (share > 100)
     {
         share = 100; // Per-building rounding can land a hair above the total

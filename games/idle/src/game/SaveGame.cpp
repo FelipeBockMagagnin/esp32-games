@@ -80,9 +80,23 @@ void applySave(const SaveBlob &blob, GameState &game, Inventory &inventory, Comb
     combat.load(blob.combat);
 }
 
-static bool isUsable(const SaveBlob &blob)
+// Version 7 has the same layout but counts the gold in thousandths
+static const uint16_t SAVE_VERSION_GOLD_THOUSANDTHS = 7;
+
+// Brings an older save up to date in place; false when it cannot be read
+static bool makeUsable(SaveBlob &blob)
 {
-    return blob.version == SAVE_VERSION && blob.layout == layoutFingerprint();
+    if (blob.layout != layoutFingerprint())
+    {
+        return false;
+    }
+    if (blob.version == SAVE_VERSION_GOLD_THOUSANDTHS)
+    {
+        blob.game.gold /= GOLD_SCALE;
+        blob.game.totalGoldEarned /= GOLD_SCALE;
+        blob.version = SAVE_VERSION;
+    }
+    return blob.version == SAVE_VERSION;
 }
 
 bool saveGame(const SaveBlob &blob)
@@ -136,7 +150,7 @@ bool loadGame(SaveBlob &blob)
         {
             lastSequence = stored.sequence;
         }
-        if (isUsable(stored.blob) && (!found || stored.sequence > foundSequence))
+        if (makeUsable(stored.blob) && (!found || stored.sequence > foundSequence))
         {
             blob = stored.blob;
             found = true;
@@ -150,7 +164,7 @@ bool loadGame(SaveBlob &blob)
     {
         found = prefs.getBytesLength(KEY_LEGACY_BLOB) == sizeof(blob) &&
                 prefs.getBytes(KEY_LEGACY_BLOB, &blob, sizeof(blob)) == sizeof(blob) &&
-                prefs.getUInt(KEY_LEGACY_CRC, 0) == checksum(&blob, sizeof(blob)) && isUsable(blob);
+                prefs.getUInt(KEY_LEGACY_CRC, 0) == checksum(&blob, sizeof(blob)) && makeUsable(blob);
     }
     prefs.end();
     return found;

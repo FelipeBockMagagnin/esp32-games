@@ -186,20 +186,16 @@ void CombatScreen::handleEvents(unsigned long now)
     if (dropped)
     {
         seenDrops = combat.getDropEvents();
-        int8_t itemId = combat.getLastDrop();
-        if (itemId != NO_ITEM)
+        const CombatState::KillDrops &drops = combat.getLastDrops();
+        enemyPanel.showDrop(drops.itemId, drops.isNew, drops.level, drops.count - 1,
+                            now + (drops.anyNew ? NEW_DROP_MS : LEVEL_DROP_MS));
+        if (drops.anyNew)
         {
-            bool isNew = combat.wasLastDropNew();
-            enemyPanel.showDrop((uint8_t)itemId, isNew, combat.getLastDropLevel(),
-                                now + (isNew ? NEW_DROP_MS : LEVEL_DROP_MS));
-            if (isNew)
-            {
-                sound.playDrop();
-            }
-            else
-            {
-                sound.playBuy();
-            }
+            sound.playDrop();
+        }
+        else
+        {
+            sound.playBuy();
         }
     }
     else if (killed)
@@ -265,10 +261,8 @@ void CombatScreen::refreshPlayer(unsigned long now)
     char buf[24];
     const Stats &player = combat.getPlayerStats();
 
-    snprintf(buf, sizeof(buf), "%u", (unsigned)player.attack);
-    atkValue.setText(buf);
-    snprintf(buf, sizeof(buf), "%u", (unsigned)player.defense);
-    defValue.setText(buf);
+    atkValue.setText(formatCompact(player.attack));
+    defValue.setText(formatCompact(player.defense));
     snprintf(buf, sizeof(buf), "%u.%u/s", (unsigned)(player.regen / 10), (unsigned)(player.regen % 10));
     regenValue.setText(buf);
 

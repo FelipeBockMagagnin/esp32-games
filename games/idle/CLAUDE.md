@@ -70,7 +70,7 @@ A big screen can group elements into a plain class with `addTo(Screen &)`/`setVi
 **Every UI colour comes from `src/ui/Theme.h`.** Local aliases are fine; raw RGB565 literals are not. Exceptions are art: ore palettes in `GameConfig.h` and `0x0000` as the transparent key of RGB565 icons, which every icon on a non-black surface must pass.
 
 ### Game state
-- **`GameState`** — gold (fixed-point thousandths, `GOLD_SCALE`; `uint64_t` production), buildings, upgrades, mining level, gold veins. Every income path goes through `creditGold()` so lifetime totals cannot drift. Display numbers only through `src/game/Format.h`.
+- **`GameState`** — gold (`uint64_t` whole units plus a thousandths fraction; production in `GOLD_SCALE` thousandths; all gold math saturates via `SatMath.h`), buildings, upgrades, mining level, gold veins. Every income path goes through `creditGold()` so lifetime totals cannot drift. Display numbers only through `src/game/Format.h`.
 - **`Inventory`** — one byte per item (0 = not owned, else level; duplicates level up) plus the equipped item per slot.
 - **`CombatState`** — current zone, HP, cooldowns, kills, drops, spells.
 - **`Ascension`** — what survives an ascension besides awards and items: the past runs' gold (points are `cbrt` of the lifetime total, see `AscensionConfig.h`) and the talent levels. Its production share multiplies the other production bonuses (`GameState::applyProductionBonus`).

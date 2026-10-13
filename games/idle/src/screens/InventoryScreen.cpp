@@ -1,5 +1,6 @@
 #include "InventoryScreen.h"
 #include "../game/CombatConfig.h" // spellForItem
+#include "../game/Format.h"
 
 
 static const uint16_t CARD_BORDER = Theme::FRAME;   // Dark slate: the player's side, not the gold cards
@@ -490,14 +491,9 @@ void InventoryScreen::refreshRows()
 void InventoryScreen::refreshTotals()
 {
     Stats total = resolvePlayerStats(game, inventory);
-    char buf[12];
-
-    snprintf(buf, sizeof(buf), "%u", (unsigned)total.attack);
-    attackText.setText(buf);
-    snprintf(buf, sizeof(buf), "%u", (unsigned)total.defense);
-    defenseText.setText(buf);
-    snprintf(buf, sizeof(buf), "%u", (unsigned)total.maxHp);
-    hpText.setText(buf);
+    attackText.setText(formatCompact(total.attack));
+    defenseText.setText(formatCompact(total.defense));
+    hpText.setText(formatCompact(total.maxHp));
 }
 
 void InventoryScreen::hideStats()

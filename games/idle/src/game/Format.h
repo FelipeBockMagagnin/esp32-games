@@ -15,6 +15,9 @@ struct FormattedText
     operator const char *() const { return text; }
 };
 
+// At most 4 chars, for the stat cards' size-2 numbers: "9999", "14K", "1.2M"
+FormattedText formatCompact(uint32_t value);
+
 // "+0.1 gold/s" from a rate in GOLD_SCALE units per second
 FormattedText formatRate(uint64_t perSecond);
 

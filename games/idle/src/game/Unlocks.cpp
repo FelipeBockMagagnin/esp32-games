@@ -1,4 +1,5 @@
 #include "Unlocks.h"
+#include "SatMath.h"
 #include "GameState.h"
 #include "Inventory.h"
 #include "CombatState.h"
@@ -181,7 +182,7 @@ void Unlocks::refreshGoal(const GameState &game, const Inventory &inventory, con
         {
             const AchievementDef &def = ACHIEVEMENTS[i];
             uint64_t progress = achievements.getProgress(def, game, inventory, combat);
-            uint32_t percent = progress >= def.amount ? 100 : (uint32_t)(progress * 100 / def.amount);
+            uint32_t percent = progress >= def.amount ? 100 : (uint32_t)mulDiv(progress, 100, def.amount);
             if (percent > best)
             {
                 best = percent;
