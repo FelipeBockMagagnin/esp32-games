@@ -11,6 +11,7 @@
 #include "game/CombatState.h"
 #include "game/Ascension.h"
 #include "game/SaveGame.h"
+#include "game/Format.h"
 #include "managers/SoundManager.h"
 #include "screens/InventoryScreen.h"
 #include "screens/MiningScreen.h"
@@ -132,6 +133,63 @@ void checkResetGesture(unsigned long now)
     }
 }
 
+// A gold vein can be caught from any screen by holding Up; on Mining a tap does it. Like the
+// reset gesture, the first touch still reaches the screen as an ordinary press.
+static const unsigned long VEIN_HOLD_MS = 600;
+static const unsigned long VEIN_RESULT_MS = 3000;
+unsigned long veinHoldStart = 0;
+bool veinHolding = false;
+bool veinHoldFired = false;
+uint32_t seenVeinSpawns = 0;
+// What a vein caught off the Mining screen gave, shown in the header
+const char *veinResultCaption = nullptr;
+char veinResult[24];
+unsigned long veinResultUntil = 0;
+
+void checkVeinGesture(unsigned long now)
+{
+    if (!upButton.isDown() || downButton.isDown())
+    {
+        veinHolding = false;
+        veinHoldFired = false;
+        return;
+    }
+    if (!veinHolding)
+    {
+        veinHolding = true;
+        veinHoldStart = now;
+    }
+    if (veinHoldFired || now - veinHoldStart < VEIN_HOLD_MS || screenManager.hasModal() ||
+        screenManager.getCurrentScreen() == &miningScreen)
+    {
+        return;
+    }
+    veinHoldFired = true;
+
+    VeinEffect effect = game.catchVein(now);
+    switch (effect)
+    {
+    case VeinEffect::NONE:
+        return;
+    case VeinEffect::LUCKY:
+        veinResultCaption = "LUCKY!";
+        snprintf(veinResult, sizeof(veinResult), "+%s gold", formatAmount(game.getLastLuckyGold()).c_str());
+        break;
+    case VeinEffect::FRENZY:
+        veinResultCaption = "FRENZY!";
+        snprintf(veinResult, sizeof(veinResult), "Gold/s x%u %lus", (unsigned)VEIN_FRENZY_MULTIPLIER,
+                 (game.getBuffRemaining(now) + 999) / 1000);
+        break;
+    case VeinEffect::CLICK_FRENZY:
+        veinResultCaption = "CLICK FRENZY!";
+        snprintf(veinResult, sizeof(veinResult), "Clicks x%u %lus", (unsigned)VEIN_CLICK_MULTIPLIER,
+                 (game.getBuffRemaining(now) + 999) / 1000);
+        break;
+    }
+    veinResultUntil = now + VEIN_RESULT_MS;
+    sound.playDrop();
+}
+
 // Holding Up and Down while the board powers on wipes the save and starts a new game.
 // True when a save was loaded into saveBuffer.
 bool loadOrReset()
@@ -183,6 +241,7 @@ void setup()
     // Before the screens and counters below take their first look at the state
     bool loaded = loadOrReset();
     seenAchievements = achievements.getUnlockedCount();
+    seenVeinSpawns = game.getVeinSpawns();
     autoSaver.begin(millis(), loaded ? &saveBuffer : nullptr);
 
     tft.init();
@@ -214,6 +273,7 @@ void loop()
     leftButton.loop();
 
     checkResetGesture(now);
+    checkVeinGesture(now);
 
     if (rightButton.wasPressed() && !screenManager.hasModal())
     {
@@ -274,6 +334,12 @@ void loop()
     }
     shownUnlockNotice = unlockNotice;
 
+    if (game.getVeinSpawns() != seenVeinSpawns)
+    {
+        seenVeinSpawns = game.getVeinSpawns();
+        sound.playUnlock();
+    }
+
     Screen *current = screenManager.getCurrentScreen();
     if (current != nullptr)
     {
@@ -281,9 +347,21 @@ void loop()
         {
             current->applyNotice("NEW SCREEN - PRESS RIGHT >", unlockNotice, UNLOCK_ACCENT);
         }
-        else
+        else if (achievementNotice != nullptr)
         {
             current->applyNotice("ACHIEVEMENT", achievementNotice, Theme::GOLD);
+        }
+        else if ((long)(now - veinResultUntil) < 0)
+        {
+            current->applyNotice(veinResultCaption, veinResult, Theme::GOLD);
+        }
+        else if (game.isVeinVisible() && current != &miningScreen && !screenManager.hasModal())
+        {
+            current->applyNotice("HOLD UP TO CATCH IT", "GOLD VEIN!", Theme::GOLD);
+        }
+        else
+        {
+            current->applyNotice(nullptr, nullptr, Theme::GOLD);
         }
     }
 

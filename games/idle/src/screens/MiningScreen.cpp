@@ -120,7 +120,6 @@ MiningScreen::MiningScreen(GameState &game, const Unlocks &unlocks, SoundManager
       sound(sound),
       shownTier(0),
       prompting(false),
-      seenVeinSpawns(0),
       veinMessageUntil(0),
       veinMessage(""),
       veinMessageColor(Theme::GOLD),
@@ -187,8 +186,6 @@ void MiningScreen::applyOreTier(uint8_t tier)
 
 void MiningScreen::onEnter(TFT_eSPI &tft)
 {
-    // A vein that appeared while the player was elsewhere is shown without the chime
-    seenVeinSpawns = game.getVeinSpawns();
     shownGold = game.getGold();
     heldGold = 0;
     heldCoins = 0;
@@ -198,17 +195,12 @@ void MiningScreen::onEnter(TFT_eSPI &tft)
 }
 
 // The vein beside the ore follows the game's state every frame (it can appear or be missed
-// at any moment); the side alternates from one vein to the next
+// at any moment); the side alternates from one vein to the next. The main loop chimes it.
 void MiningScreen::refreshVein(unsigned long now)
 {
-    if (game.getVeinSpawns() != seenVeinSpawns)
-    {
-        seenVeinSpawns = game.getVeinSpawns();
-        sound.playUnlock();
-    }
     if (game.isVeinVisible())
     {
-        oreDisplay.setVein(image_icon_gold_vein_pixels, seenVeinSpawns % 2 == 0,
+        oreDisplay.setVein(image_icon_gold_vein_pixels, game.getVeinSpawns() % 2 == 0,
                            game.getVeinRemaining(now) < VEIN_FADE_MS);
     }
     else

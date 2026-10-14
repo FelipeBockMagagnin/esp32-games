@@ -50,7 +50,6 @@ private:
     bool prompting;    // The next-ore line is showing a prompt or message instead
 
     // Gold veins: the Mining screen is where they show and where Up catches them
-    uint32_t seenVeinSpawns;       // So a vein chimes once, when it appears
     unsigned long veinMessageUntil; // What the last caught vein gave stays on the line until then
     String veinMessage;
     uint16_t veinMessageColor;
