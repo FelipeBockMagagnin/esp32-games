@@ -11,6 +11,8 @@ static const unsigned long KILL_MESSAGE_MS = 1500;
 // even when the eyes are elsewhere
 static const unsigned long HIT_TEXT_MS = 800;
 static const unsigned long HURT_FLASH_MS = 300;
+// Outlasts one 10 Hz refresh, so every hit shows it
+static const unsigned long ENEMY_FLASH_MS = 130;
 static const unsigned long HEAL_GLOW_MS = 450;
 // Enough warning to see the enemy's hit coming and press Down in time
 static const unsigned long WARN_MS = 600;
@@ -73,7 +75,8 @@ CombatScreen::CombatScreen(CombatState &combat, SoundManager &sound)
       enemyHitUntil(0),
       playerHitUntil(0),
       playerFlashUntil(0),
-      playerHealUntil(0)
+      playerHealUntil(0),
+      enemyFlashUntil(0)
 {
     addElement(&header);
     setHeader(&header);
@@ -111,6 +114,7 @@ void CombatScreen::onEnter(TFT_eSPI &tft)
     playerHitUntil = 0;
     playerFlashUntil = 0;
     playerHealUntil = 0;
+    enemyFlashUntil = 0;
     forceRefresh();
     enemyPanel.hideBanner();
     enemyPanel.stopAnimations();
@@ -153,6 +157,8 @@ void CombatScreen::handleEvents(unsigned long now)
         enemyHitText.setText(buf);
         enemyHitUntil = now + HIT_TEXT_MS;
         enemyPanel.onHit(combat.getLastHitDamage(), combat.getLastHitKind() == CombatState::HIT_STRIKE);
+        enemyFlashUntil = now + ENEMY_FLASH_MS;
+        forceRefresh();
     }
 
     if (combat.getHurtEvents() != seenHurts)
@@ -203,7 +209,7 @@ void CombatScreen::handleEvents(unsigned long now)
     }
     else if (killed)
     {
-        sound.playLevelUp();
+        sound.playKill();
     }
 }
 
@@ -344,6 +350,9 @@ void CombatScreen::update(unsigned long now)
 
     char buf[24];
     enemyHpBar.setProgress((int32_t)combat.getEnemyHp(), (int32_t)enemy.maxHp);
+    bool enemyFlash = (long)(now - enemyFlashUntil) < 0;
+    enemyHpBar.setFillColor(enemyFlash ? Theme::TEXT : ENEMY_HP_COLOR);
+    enemyHpBar.setBorderColor(enemyFlash ? Theme::TEXT : ENEMY_HP_BORDER);
     snprintf(buf, sizeof(buf), "%u/%u", (unsigned)combat.getEnemyHp(), (unsigned)enemy.maxHp);
     enemyHpBar.setLabel(buf);
 

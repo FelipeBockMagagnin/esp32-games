@@ -58,8 +58,21 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_G5, 25);
-        tone(pin, NOTE_C5, 45);
+        // A semitone either way at random, so a run of strikes does not drone
+        float shift = powf(2.0f, (random(3) - 1) / 12.0f);
+        tone(pin, (unsigned int)(NOTE_G5 * shift), 25);
+        tone(pin, (unsigned int)(NOTE_C5 * shift), 45);
+    }
+
+    // A thud and a ring for a kill without a drop, shorter than the level-up arpeggio
+    void playKill()
+    {
+        if (!allowed(false))
+        {
+            return;
+        }
+        tone(pin, NOTE_E5, 35);
+        tone(pin, NOTE_B6, 110);
     }
 
     // Rising arpeggio; the ESP32 core queues tone() calls, so the notes play in sequence without blocking

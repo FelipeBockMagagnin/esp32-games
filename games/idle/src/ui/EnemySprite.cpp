@@ -15,6 +15,9 @@ static const uint8_t HEAVY_STEPS = sizeof(HEAVY_SHAKE);
 static const unsigned long LIGHT_FLASH_MS = 70;
 static const unsigned long HEAVY_FLASH_MS = 110;
 static const uint8_t HIT_FLASH_ALPHA = 170;
+// A strike freezes the enemy, lit up, for a beat before it shakes, so the blow lands
+static const unsigned long HIT_STOP_MS = 70;
+static const uint8_t HIT_STOP_ALPHA = 230;
 
 static const unsigned long DEATH_FLASH_MS = 90;
 static const unsigned long DEATH_MS = 520;
@@ -194,6 +197,7 @@ void EnemySprite::kill()
     deathStart = now;
     hitting = false;
     lastFrame = 0;
+    cast(Theme::GOLD, false);
 }
 
 void EnemySprite::spawn()
@@ -240,7 +244,7 @@ void EnemySprite::update(unsigned long time)
     {
         dyingSprite = nullptr;
     }
-    unsigned long hitMs = hitHeavy ? SHAKE_STEP_MS * HEAVY_STEPS : SHAKE_STEP_MS * LIGHT_STEPS;
+    unsigned long hitMs = hitHeavy ? HIT_STOP_MS + SHAKE_STEP_MS * HEAVY_STEPS : SHAKE_STEP_MS * LIGHT_STEPS;
     if (hitting && now - hitStart >= hitMs)
     {
         hitting = false;
@@ -282,7 +286,7 @@ void EnemySprite::update(unsigned long time)
     }
 
     uint8_t newBob = sprite != nullptr && dyingSprite == nullptr ? (now / BOB_MS) % 2 : 0;
-    if (bob != newBob)
+    if (bob != newBob && !(hitting && hitHeavy))
     {
         bob = newBob;
         markDirty();
@@ -413,18 +417,24 @@ void EnemySprite::draw(TFT_eSPI &tft)
     else if (hitting)
     {
         unsigned long age = now - hitStart;
-        uint8_t step = age / SHAKE_STEP_MS;
-        if (hitHeavy)
+        if (hitHeavy && age < HIT_STOP_MS)
         {
+            style.tintAlpha = HIT_STOP_ALPHA;
+        }
+        else if (hitHeavy)
+        {
+            age -= HIT_STOP_MS;
+            uint8_t step = age / SHAKE_STEP_MS;
             style.dx = step < HEAVY_STEPS ? HEAVY_SHAKE[step] : 0;
         }
         else
         {
+            uint8_t step = age / SHAKE_STEP_MS;
             style.dx = step < LIGHT_STEPS ? LIGHT_SHAKE[step] : 0;
         }
         if (age < (hitHeavy ? HEAVY_FLASH_MS : LIGHT_FLASH_MS))
         {
-            style.tintAlpha = HIT_FLASH_ALPHA;
+            style.tintAlpha = style.tintAlpha > HIT_FLASH_ALPHA ? style.tintAlpha : HIT_FLASH_ALPHA;
         }
     }
     else if (spawning)

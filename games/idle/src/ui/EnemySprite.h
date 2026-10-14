@@ -11,9 +11,10 @@
 // the enemy never flickers. A countdown is painted into the same draw, over the frame,
 // since a separate Text could only erase it with a hole in the art.
 //
-// The enemy bobs while idle, flashes and shakes when hit, fades out when killed, drops in
-// when it spawns, a spell's ring sweeps over it, and damage numbers float up over it. All of it is painted into the same line buffer, in
-// frame pixels, so the animations cost one blit per frame and never flicker either.
+// The enemy bobs while idle, flashes and shakes when hit (a strike freezes it first), fades
+// out in a gold ring when killed, drops in when it spawns, a spell's ring sweeps over it, and
+// damage numbers float up over it. All of it is painted into the same line buffer, in frame
+// pixels, so the animations cost one blit per frame and never flicker either.
 class EnemySprite : public UI
 {
 public:

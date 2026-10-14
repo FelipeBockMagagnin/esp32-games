@@ -50,6 +50,7 @@ private:
     unsigned long playerHitUntil;
     unsigned long playerFlashUntil;
     unsigned long playerHealUntil;
+    unsigned long enemyFlashUntil;
 
     void showFightElements(bool visible);
     void showMessage(unsigned long now, const char *text, uint16_t color, unsigned long durationMs);
