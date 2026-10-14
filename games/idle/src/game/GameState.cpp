@@ -278,6 +278,12 @@ uint32_t GameState::getAscensionProductionPercent() const
            ascension.getPercent(TalentEffect::PRODUCTION_PER_AWARD) * achievements.getUnlockedCount();
 }
 
+uint32_t GameState::getAscendGainPercent() const
+{
+    uint64_t gain = (uint64_t)ascension.getPendingPoints(totalGoldEarned) * ASCEND_PRODUCTION_PER_POINT;
+    return (uint32_t)mulDiv(gain, 100, 100 + getAscensionProductionPercent());
+}
+
 // Bought BUILDING_BOOST upgrades per building; each one doubles that building's output
 void GameState::countBoosts(uint8_t *boosts) const
 {

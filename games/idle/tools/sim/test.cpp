@@ -292,6 +292,65 @@ static void testCompactFormat()
     CHECK(strlen(formatCompact(UINT32_MAX).c_str()) <= 4);
 }
 
+static int16_t upgradeIndex(const char *name)
+{
+    for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
+    {
+        if (strcmp(GOLD_UPGRADES[i].name, name) == 0)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// With every screen open, the bar names the next building, then the next zone
+static void testLateGoals()
+{
+    puts("late goals point at the next building and zone");
+    World w;
+    Unlocks::Snapshot open = {};
+    for (uint8_t i = 0; i < FEATURE_COUNT; i++)
+    {
+        open.unlocked[i] = true;
+    }
+    w.unlocks.load(open);
+
+    GameState::Snapshot game = {};
+    game.miningLevel = 1;
+    for (uint8_t i = 0; i + 1 < BUILDING_COUNT; i++)
+    {
+        game.buildingLevels[i] = 1;
+    }
+    game.gold = BUILDINGS[BUILDING_TRANSMUTER].baseCost / 2;
+    w.game.load(game);
+    simNow += 1000;
+    w.unlocks.evaluate(simNow, w.game, w.inventory, w.combat, w.achievements, false);
+    const Unlocks::Goal *goal = w.unlocks.getGoal();
+    CHECK(goal != nullptr);
+    CHECK(strcmp(goal->label, "Buy a Transmuter") == 0);
+    // Past 32 bits the progress is in thousandths
+    CHECK(goal->target == 1000);
+    CHECK(goal->done == 500);
+
+    game.buildingLevels[BUILDING_TRANSMUTER] = 1;
+    w.game.load(game);
+    simNow += 1000;
+    w.unlocks.evaluate(simNow, w.game, w.inventory, w.combat, w.achievements, false);
+    CHECK(strcmp(w.unlocks.getGoal()->label, "Buy Forest Maps to open Forest") == 0);
+
+    game.goldUpgradesBought[upgradeIndex("Forest Maps")] = true;
+    w.game.load(game);
+    CombatState::Snapshot combat = {};
+    combat.zoneKills[0] = 10;
+    w.combat.load(combat);
+    simNow += 1000;
+    w.unlocks.evaluate(simNow, w.game, w.inventory, w.combat, w.achievements, false);
+    goal = w.unlocks.getGoal();
+    CHECK(strcmp(goal->label, "Fight in Sewers to open Forest") == 0);
+    CHECK(goal->done == 10 && goal->target == ZONES[1].reqPrevZoneKills);
+}
+
 int main()
 {
     testSaveRoundTrip();
@@ -303,6 +362,7 @@ int main()
     testGoldPastThousandthsCap();
     testThousandthsSaveMigrates();
     testCompactFormat();
+    testLateGoals();
     printf(failures == 0 ? "all passed\n" : "%d failed\n", failures);
     return failures == 0 ? 0 : 1;
 }

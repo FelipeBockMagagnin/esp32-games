@@ -114,10 +114,58 @@ void Unlocks::evaluate(unsigned long now, const GameState &game, const Inventory
     }
 }
 
-// Progress values are capped to 32 bits for the bar; the goals are all small numbers
-static uint32_t clampProgress(uint64_t value)
+// Past 32 bits the bar shows thousandths of the way instead, which it draws the same
+static void setProgress(Unlocks::Goal &goal, uint64_t done, uint64_t target)
 {
-    return value > 0xFFFFFFFFULL ? 0xFFFFFFFFUL : (uint32_t)value;
+    if (done > target)
+    {
+        done = target;
+    }
+    if (target > 0xFFFFFFFFULL)
+    {
+        goal.done = (uint32_t)mulDiv(done, 1000, target);
+        goal.target = 1000;
+        return;
+    }
+    goal.done = (uint32_t)done;
+    goal.target = (uint32_t)target;
+}
+
+// The locked achievement closest to done, as a percentage, since they count different things;
+// -1 when every one is unlocked
+static int16_t closestAchievement(const Achievements &achievements, const GameState &game,
+                                  const Inventory &inventory, const CombatState &combat, uint32_t &percent)
+{
+    int16_t best = -1;
+    percent = 0;
+    for (uint8_t i = 0; i < ACHIEVEMENT_COUNT; i++)
+    {
+        if (achievements.isUnlocked(i))
+        {
+            continue;
+        }
+        const AchievementDef &def = ACHIEVEMENTS[i];
+        uint64_t progress = achievements.getProgress(def, game, inventory, combat);
+        uint32_t p = progress >= def.amount ? 100 : (uint32_t)mulDiv(progress, 100, def.amount);
+        if (best < 0 || p > percent)
+        {
+            best = i;
+            percent = p;
+        }
+    }
+    return best;
+}
+
+static int16_t zoneMapUpgrade(uint8_t zoneId)
+{
+    for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
+    {
+        if (GOLD_UPGRADES[i].target == UpgradeTarget::UNLOCK_ZONE && GOLD_UPGRADES[i].bonusPercent == zoneId)
+        {
+            return i;
+        }
+    }
+    return -1;
 }
 
 void Unlocks::refreshGoal(const GameState &game, const Inventory &inventory, const CombatState &combat,
@@ -132,9 +180,10 @@ void Unlocks::refreshGoal(const GameState &game, const Inventory &inventory, con
             break;
         }
     }
-    hasGoal = next >= 0;
-    if (!hasGoal)
+    hasGoal = true;
+    if (next < 0)
     {
+        refreshLateGoal(game, inventory, combat, achievements);
         return;
     }
 
@@ -145,16 +194,14 @@ void Unlocks::refreshGoal(const GameState &game, const Inventory &inventory, con
     {
     case Feature::BUILDINGS:
         snprintf(label, size, "Earn %lu gold to open Buildings", (unsigned long)BUILDINGS[0].baseCost);
-        goal.done = clampProgress(game.getTotalGoldEarned());
-        goal.target = (uint32_t)BUILDINGS[0].baseCost;
+        setProgress(goal, game.getTotalGoldEarned(), BUILDINGS[0].baseCost);
         break;
 
     case Feature::UPGRADES:
         if (game.getTotalBuildingLevels() < UPGRADES_MIN_BUILDINGS)
         {
             snprintf(label, size, "Own %lu buildings to open Upgrade", (unsigned long)UPGRADES_MIN_BUILDINGS);
-            goal.done = game.getTotalBuildingLevels();
-            goal.target = UPGRADES_MIN_BUILDINGS;
+            setProgress(goal, game.getTotalBuildingLevels(), UPGRADES_MIN_BUILDINGS);
         }
         else
         {
@@ -169,35 +216,22 @@ void Unlocks::refreshGoal(const GameState &game, const Inventory &inventory, con
                 }
             }
             snprintf(label, size, "Save gold to open Upgrade");
-            goal.done = clampProgress(game.getGold());
-            goal.target = clampProgress(cheapest);
+            setProgress(goal, game.getGold(), cheapest);
         }
         break;
 
     case Feature::AWARDS:
     {
-        // Whichever achievement is closest, as a percentage, since they count different things
-        uint32_t best = 0;
-        for (uint8_t i = 0; i < ACHIEVEMENT_COUNT; i++)
-        {
-            const AchievementDef &def = ACHIEVEMENTS[i];
-            uint64_t progress = achievements.getProgress(def, game, inventory, combat);
-            uint32_t percent = progress >= def.amount ? 100 : (uint32_t)mulDiv(progress, 100, def.amount);
-            if (percent > best)
-            {
-                best = percent;
-            }
-        }
+        uint32_t percent;
+        closestAchievement(achievements, game, inventory, combat, percent);
         snprintf(label, size, "Earn an achievement: Awards");
-        goal.done = best;
-        goal.target = 100;
+        setProgress(goal, percent, 100);
         break;
     }
 
     case Feature::COMBAT:
         snprintf(label, size, "Build a Drill to open Combat");
-        goal.done = clampProgress(game.getGold());
-        goal.target = clampProgress(game.getBuildingCost(BUILDING_DRILL));
+        setProgress(goal, game.getGold(), game.getBuildingCost(BUILDING_DRILL));
         break;
 
     case Feature::INVENTORY:
@@ -215,10 +249,84 @@ void Unlocks::refreshGoal(const GameState &game, const Inventory &inventory, con
 
     case Feature::ASCEND:
         snprintf(label, size, "Earn %s gold to open Ascend", formatAmount(ASCEND_GOLD_PER_POINT).c_str());
-        goal.done = clampProgress(game.getAscension().getLifetimeGold(game.getTotalGoldEarned()));
-        goal.target = clampProgress(ASCEND_GOLD_PER_POINT);
+        setProgress(goal, game.getAscension().getLifetimeGold(game.getTotalGoldEarned()), ASCEND_GOLD_PER_POINT);
         break;
     }
+}
+
+// Once every screen is open the bar keeps pointing at the next step, the first that applies
+void Unlocks::refreshLateGoal(const GameState &game, const Inventory &inventory, const CombatState &combat,
+                              const Achievements &achievements)
+{
+    char *label = goal.label;
+    const size_t size = sizeof(goal.label);
+
+    for (uint8_t i = 0; i < BUILDING_COUNT; i++)
+    {
+        if (game.getBuildingLevel(i) == 0)
+        {
+            snprintf(label, size, "Buy a %s", BUILDINGS[i].name);
+            setProgress(goal, game.getGold(), game.getBuildingCost(i));
+            return;
+        }
+    }
+
+    for (uint8_t z = 1; z < ZONE_COUNT; z++)
+    {
+        if (combat.isZoneUnlocked(z))
+        {
+            continue;
+        }
+        const ZoneDef &zone = ZONES[z];
+        if (zone.reqDelveLevel > game.getAscension().getEffectLevel(TalentEffect::DEEP_ZONES))
+        {
+            break;
+        }
+        if (zone.requiresUnlockUpgrade && !game.isZoneUnlockedByUpgrade(z))
+        {
+            int16_t map = zoneMapUpgrade(z);
+            if (map >= 0 && game.isGoldUpgradeUnlocked(map))
+            {
+                snprintf(label, size, "Buy %s to open %s", GOLD_UPGRADES[map].name, zone.name);
+                setProgress(goal, game.getGold(), game.getGoldUpgradeCost(map));
+                return;
+            }
+            break;
+        }
+        snprintf(label, size, "Fight in %s to open %s", ZONES[z - 1].name, zone.name);
+        setProgress(goal, combat.getZoneKills(z - 1), zone.reqPrevZoneKills);
+        return;
+    }
+
+    uint64_t runGold = game.getTotalGoldEarned();
+    const Ascension &ascension = game.getAscension();
+    if (game.getAscendGainPercent() >= ASCEND_SUGGEST_GAIN_PERCENT)
+    {
+        snprintf(label, size, "Ascend for +%lu points", (unsigned long)ascension.getPendingPoints(runGold));
+        setProgress(goal, 1, 1);
+        return;
+    }
+
+    uint8_t tier = game.getOreTier();
+    if (tier + 1 < ORE_TIER_COUNT)
+    {
+        const OreTierDef &ore = ORE_TIERS[tier + 1];
+        snprintf(label, size, "Mine to Lv %u for %s", (unsigned)ore.minLevel, ore.name);
+        setProgress(goal, game.getMiningLevel(), ore.minLevel);
+        return;
+    }
+
+    uint32_t percent;
+    int16_t award = closestAchievement(achievements, game, inventory, combat, percent);
+    if (award >= 0 && percent > 0)
+    {
+        snprintf(label, size, "Award: %s", ACHIEVEMENTS[award].name);
+        setProgress(goal, percent, 100);
+        return;
+    }
+
+    snprintf(label, size, "Next ascension point");
+    setProgress(goal, runGold, ascension.getRunGoldForNextPoint(runGold));
 }
 
 const char *Unlocks::getNotice(unsigned long now) const

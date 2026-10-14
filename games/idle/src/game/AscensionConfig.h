@@ -20,6 +20,10 @@ static const uint64_t ASCEND_GOLD_PER_POINT = 4000000000ULL;
 // Clicker's prestige levels do. It and the production talents multiply the other bonuses.
 static const uint32_t ASCEND_PRODUCTION_PER_POINT = 1;
 
+// Ascending is suggested once the new points would raise that share by this much. Points
+// shrink run after run (the cube root), so "until it doubles" would never come round.
+static const uint32_t ASCEND_SUGGEST_GAIN_PERCENT = 10;
+
 // Most effects add a percentage; the rest change a mechanic, and their per-level value
 // means what the comment says
 enum class TalentEffect : uint8_t
