@@ -199,8 +199,8 @@ static constexpr GoldUpgradeDef GOLD_UPGRADES[] = {
     {"Titan Grip",      "Each click also earns 2% of your gold/s",    AT(BUILDING_SMELTER, 3),      2,       UpgradeTarget::CLICK_PRODUCTION,  BUILDING_SMELTER,     1,   0},
     {"Earthshaker",     "Each click also earns 3% of your gold/s",    AT(BUILDING_RUNE_FORGE, 3),   3,       UpgradeTarget::CLICK_PRODUCTION,  BUILDING_RUNE_FORGE,  1,   0},
 
-    {"Tempered Edge",   "Attack is increased by 50%",                 AT(BUILDING_DRILL, 2),        50,      UpgradeTarget::ATTACK,            BUILDING_DRILL,       5,   0},
-    {"Plated Guard",    "Defense is increased by 50%",                AT(BUILDING_DRILL, 3),        50,      UpgradeTarget::DEFENSE,           BUILDING_DRILL,       5,   0},
+    {"Tempered Edge",   "Attack is increased by 50%",                 AT(BUILDING_ORE_MILL, 1),     50,      UpgradeTarget::ATTACK,            BUILDING_ORE_MILL,    1,   0},
+    {"Plated Guard",    "Defense is increased by 50%",                AT(BUILDING_ORE_MILL, 2),     50,      UpgradeTarget::DEFENSE,           BUILDING_ORE_MILL,    1,   0},
     {"Miners Vigor",    "Maximum health is increased by 100%",        AT(BUILDING_ORE_MILL, 2),     100,     UpgradeTarget::MAX_HP,            BUILDING_ORE_MILL,    1,   0},
     {"Honed Steel",     "Attack is increased by 100%",                AT(BUILDING_SMELTER, 2),      100,     UpgradeTarget::ATTACK,            BUILDING_SMELTER,     1,   0},
     {"Bulwark",         "Defense is increased by 100%",               AT(BUILDING_DEEP_SHAFT, 2),   100,     UpgradeTarget::DEFENSE,           BUILDING_DEEP_SHAFT,  1,   0},
