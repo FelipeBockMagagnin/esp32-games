@@ -170,6 +170,30 @@ bool loadGame(SaveBlob &blob)
     return found;
 }
 
+static const char *const KEY_SETTINGS = "settings";
+
+bool loadSettings(Settings &out)
+{
+    Preferences prefs;
+    if (!prefs.begin(NAMESPACE, true))
+    {
+        return false;
+    }
+    bool ok = prefs.getBytesLength(KEY_SETTINGS) == sizeof(out) && prefs.getBytes(KEY_SETTINGS, &out, sizeof(out)) == sizeof(out);
+    prefs.end();
+    return ok;
+}
+
+void saveSettings(const Settings &in)
+{
+    Preferences prefs;
+    if (prefs.begin(NAMESPACE, false))
+    {
+        prefs.putBytes(KEY_SETTINGS, &in, sizeof(in));
+        prefs.end();
+    }
+}
+
 void eraseSave()
 {
     Preferences prefs;

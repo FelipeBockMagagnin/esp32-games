@@ -141,6 +141,19 @@ void ScreenManager::closeModal()
     }
 }
 
+void ScreenManager::replaceModal(Screen *screen)
+{
+    if (modal == nullptr || screen == nullptr)
+    {
+        openModal(screen);
+        return;
+    }
+    modal->onExit();
+    modal = screen;
+    modal->setNavLabels("", "");
+    modal->onEnter(tft);
+}
+
 Screen *ScreenManager::getCurrentScreen() const
 {
     if (modal != nullptr)

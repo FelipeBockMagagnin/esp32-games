@@ -30,6 +30,16 @@ struct SaveBlob
     Ascension::Snapshot ascension;
 };
 
+// Player preferences, under a key of their own so changing one never touches the save's
+// version or layout. Erasing the save clears them too.
+struct Settings
+{
+    uint8_t sound;  // SoundMode
+    uint8_t dimAfter; // Index into DIM_OPTIONS (main.cpp)
+};
+bool loadSettings(Settings &out);
+void saveSettings(const Settings &in);
+
 // Fills a blob from the live state. Zeroes it first, so padding bytes are stable and the
 // checksum (and the unchanged-save check) only see real data.
 void captureSave(SaveBlob &blob, const GameState &game, const Inventory &inventory,

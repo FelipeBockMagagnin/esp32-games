@@ -22,6 +22,7 @@
 #include "screens/AchievementScreen.h"
 #include "screens/AscendScreen.h"
 #include "screens/ConfirmScreen.h"
+#include "screens/SettingsScreen.h"
 
 // The buttons form a D-pad: Confirm in the middle, Up/Down for in-screen actions,
 // Right/Left to step forward/backward through the screens
@@ -59,8 +60,10 @@ ZoneScreen zoneScreen(game, inventory, combat, sound, screenManager);
 AchievementScreen achievementScreen(achievements, game, inventory, combat, sound);
 
 // Not in the rotation: modals, the first opened by holding Up and Down (see checkResetGesture)
+// or from Settings, which holding Left opens (see checkSettingsGesture)
 void resetGame();
 void ascendGame();
+void applySettings();
 ConfirmScreen resetScreen({"Reset", "Reset game?", "All progress will be lost,", "ascension and awards too.",
                            "Erase the save and restart", "Resetting..."},
                           Theme::BAD, resetGame, screenManager, sound);
@@ -68,6 +71,8 @@ ConfirmScreen ascendConfirm({"Ascend", "Ascend now?", "Gold, buildings and upgra
                             "Awards, items and talents stay.", "Restart with the points", "Ascending..."},
                            Theme::EPIC, ascendGame, screenManager, sound, true);
 AscendScreen ascendScreen(game, ascension, sound, screenManager, ascendConfirm);
+Settings settings = {(uint8_t)SoundMode::ON, DIM_DEFAULT};
+SettingsScreen settingsScreen(settings, applySettings, screenManager, sound, resetScreen);
 
 static const uint16_t UNLOCK_ACCENT = Theme::INFO; // Cyan, so a new screen never reads as an achievement
 
@@ -81,6 +86,49 @@ const char *shownUnlockNotice = nullptr;
 AutoSaver autoSaver(game, inventory, combat, achievements, unlocks, ascension);
 // Holds the save read at boot, and the one an ascension writes
 SaveBlob saveBuffer;
+
+// tone() drives LEDC channel 0, and channel 1 shares its timer
+static const uint8_t BACKLIGHT_CHANNEL = 4;
+static const uint8_t BACKLIGHT_FULL = 255;
+static const uint8_t BACKLIGHT_DIM = 20;
+unsigned long lastInputAt = 0;
+bool dimmed = false;
+
+void applySettings()
+{
+    if (settings.sound >= (uint8_t)SoundMode::COUNT)
+    {
+        settings.sound = (uint8_t)SoundMode::ON;
+    }
+    if (settings.dimAfter >= DIM_OPTION_COUNT)
+    {
+        settings.dimAfter = DIM_DEFAULT;
+    }
+    sound.setMode((SoundMode)settings.sound);
+    saveSettings(settings);
+}
+
+// True when the press only woke the screen, so it must not reach the game
+bool wakeOnInput(unsigned long now, bool pressed, bool held)
+{
+    if (pressed || held)
+    {
+        lastInputAt = now;
+    }
+    if (dimmed && pressed)
+    {
+        dimmed = false;
+        ledcWrite(BACKLIGHT_CHANNEL, BACKLIGHT_FULL);
+        return true;
+    }
+    unsigned long dimAfter = DIM_AFTER_MS[settings.dimAfter];
+    if (!dimmed && dimAfter > 0 && now - lastInputAt >= dimAfter)
+    {
+        dimmed = true;
+        ledcWrite(BACKLIGHT_CHANNEL, BACKLIGHT_DIM);
+    }
+    return false;
+}
 
 void resetGame()
 {
@@ -130,6 +178,32 @@ void checkResetGesture(unsigned long now)
         resetHoldFired = true;
         sound.playMenu();
         screenManager.openModal(&resetScreen);
+    }
+}
+
+static const unsigned long SETTINGS_HOLD_MS = 1500;
+unsigned long settingsHoldStart = 0;
+bool settingsHolding = false;
+bool settingsHoldFired = false;
+
+void checkSettingsGesture(unsigned long now)
+{
+    if (!leftButton.isDown() || upButton.isDown() || downButton.isDown())
+    {
+        settingsHolding = false;
+        settingsHoldFired = false;
+        return;
+    }
+    if (!settingsHolding)
+    {
+        settingsHolding = true;
+        settingsHoldStart = now;
+    }
+    if (!settingsHoldFired && now - settingsHoldStart >= SETTINGS_HOLD_MS && !screenManager.hasModal())
+    {
+        settingsHoldFired = true;
+        sound.playMenu();
+        screenManager.openModal(&settingsScreen);
     }
 }
 
@@ -240,6 +314,8 @@ void setup()
 
     // Before the screens and counters below take their first look at the state
     bool loaded = loadOrReset();
+    loadSettings(settings);
+    applySettings();
     seenAchievements = achievements.getUnlockedCount();
     seenVeinSpawns = game.getVeinSpawns();
     autoSaver.begin(millis(), loaded ? &saveBuffer : nullptr);
@@ -247,6 +323,9 @@ void setup()
     tft.init();
     tft.setRotation(2);
     tft.fillScreen(Theme::BG);
+    ledcSetup(BACKLIGHT_CHANNEL, 5000, 8);
+    ledcAttachPin(TFT_BL, BACKLIGHT_CHANNEL);
+    ledcWrite(BACKLIGHT_CHANNEL, BACKLIGHT_FULL);
 
     // This order is the navigation order. Every screen but Mining starts locked and joins
     // the rotation as the player progresses (see Unlocks); the header labels follow.
@@ -272,31 +351,44 @@ void loop()
     downButton.loop();
     leftButton.loop();
 
+    bool right = rightButton.wasPressed();
+    bool confirm = confirmButton.wasPressed();
+    bool up = upButton.wasPressed();
+    bool down = downButton.wasPressed();
+    bool left = leftButton.wasPressed();
+    bool held = rightButton.isDown() || confirmButton.isDown() || upButton.isDown() || downButton.isDown() ||
+                leftButton.isDown();
+    if (wakeOnInput(now, right || confirm || up || down || left, held))
+    {
+        right = confirm = up = down = left = false;
+    }
+
     checkResetGesture(now);
     checkVeinGesture(now);
+    checkSettingsGesture(now);
 
-    if (rightButton.wasPressed() && !screenManager.hasModal())
+    if (right && !screenManager.hasModal())
     {
         sound.playMenu();
         screenManager.nextScreen();
     }
 
-    if (confirmButton.wasPressed())
+    if (confirm)
     {
         screenManager.handleConfirmPress();
     }
 
-    if (upButton.wasPressed())
+    if (up)
     {
         screenManager.handleUpPress();
     }
 
-    if (downButton.wasPressed())
+    if (down)
     {
         screenManager.handleDownPress();
     }
 
-    if (leftButton.wasPressed())
+    if (left)
     {
         if (!screenManager.handleBackPress())
         {

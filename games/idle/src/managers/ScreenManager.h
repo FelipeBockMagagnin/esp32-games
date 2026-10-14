@@ -34,6 +34,8 @@ public:
     // meanwhile. Closing re-enters the screen underneath, which repaints it whole.
     void openModal(Screen *screen);
     void closeModal();
+    // Swaps the open modal for another without showing the screen underneath in between
+    void replaceModal(Screen *screen);
     bool hasModal() const { return modal != nullptr; }
 
     Screen *getCurrentScreen() const;
