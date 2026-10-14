@@ -97,7 +97,7 @@ enum BuildingId : uint8_t
 // and takes 2-3x as long to pay for itself. First of each, for a player checking in hourly
 // and catching the gold veins that show while they are there: Ore Mill ~25 min, Smelter
 // 1-2 h, Deep Shaft 3-4 h, Rune Forge 6 h, Ore Barge 12 h, Transmuter 24 h, Void Pit ~2
-// days, Time Mine ~4, Star Mine ~5.5, about when Cookie Clicker's Factory to Antimatter
+// days, Time Mine ~3.5, Star Mine ~5, about when Cookie Clicker's Factory to Antimatter
 // Condenser land. Past the Star Mine the run slows down, which is the cue to ascend.
 // The last tier is as dear as the balance allows: its fifth boost has to fit in 64 bits.
 static constexpr BuildingsDef BUILDINGS[] = {

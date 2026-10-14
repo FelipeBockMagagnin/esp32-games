@@ -67,8 +67,9 @@ struct AchievementDef
 };
 
 // Clicks, veins, kills, levels and run gold restart with each ascension, so their top tiers
-// are sized for a run of about six days; the "Own 50" rows and the item ones are the goals
-// that take several runs (tools/sim --days 6 --runs 15 unlocks the last around day 66).
+// are sized for a run of about six days; the item rows take several runs (tools/sim --days 6
+// --runs 15 unlocks the last around day 58). The simulated player buys buildings by payback
+// and never reaches the 150 and 200 rows: they are for a late run's spare gold.
 static constexpr AchievementDef ACHIEVEMENTS[] = {
     //  name             description                          kind                        target                 amount        bonus%
     {"Handy Miner",  "Mine ore by hand 100 times",        AchKind::TOTAL_CLICKS,     NO_ACH_TARGET,         100,          1},
@@ -100,39 +101,103 @@ static constexpr AchievementDef ACHIEVEMENTS[] = {
     {"Deep Dominion", "Own 900 buildings",                 AchKind::TOTAL_BUILDINGS,  NO_ACH_TARGET,         900,          8},
     {"Earth Eater",   "Own 1000 buildings",                AchKind::TOTAL_BUILDINGS,  NO_ACH_TARGET,         1000,         10},
 
+    {"Tool Time",    "Own 1 Pickaxe",                     AchKind::BUILDING_LEVEL,   BUILDING_PICKAXE,      1,            1},
+    {"Pick Squad",   "Own 10 Pickaxes",                   AchKind::BUILDING_LEVEL,   BUILDING_PICKAXE,      10,           1},
     {"Pick Army",    "Own 25 Pickaxes",                   AchKind::BUILDING_LEVEL,   BUILDING_PICKAXE,      25,           2},
-    {"Cart Fleet",   "Own 25 Minecarts",                  AchKind::BUILDING_LEVEL,   BUILDING_MINECART,     25,           2},
-    {"Drill Team",   "Own 25 Drills",                     AchKind::BUILDING_LEVEL,   BUILDING_DRILL,        25,           3},
-    {"Big Diggers",  "Own 25 Excavators",                 AchKind::BUILDING_LEVEL,   BUILDING_EXCAVATOR,    25,           3},
-    {"Mill Works",   "Own 25 Ore Mills",                  AchKind::BUILDING_LEVEL,   BUILDING_ORE_MILL,     25,           4},
-    {"Smelt Shop",    "Own 25 Smelters",                   AchKind::BUILDING_LEVEL,   BUILDING_SMELTER,      25,           2},
-    {"Deep Industry", "Own 25 Deep Shafts",               AchKind::BUILDING_LEVEL,   BUILDING_DEEP_SHAFT,   25,           5},
-    {"Rune Guild",    "Own 25 Rune Forges",                AchKind::BUILDING_LEVEL,   BUILDING_RUNE_FORGE,   25,           3},
-    {"Barge Fleet",   "Own 25 Ore Barges",                 AchKind::BUILDING_LEVEL,   BUILDING_ORE_BARGE,    25,           3},
-    {"Alchemist",     "Own 25 Transmuters",                AchKind::BUILDING_LEVEL,   BUILDING_TRANSMUTER,   25,           3},
-    {"Void Gazer",    "Own 25 Void Pits",                  AchKind::BUILDING_LEVEL,   BUILDING_VOID_PIT,     25,           3},
-    {"Timekeeper",    "Own 25 Time Mines",                 AchKind::BUILDING_LEVEL,   BUILDING_TIME_MINE,    25,           4},
-    {"Stargazer",     "Own 25 Star Mines",                 AchKind::BUILDING_LEVEL,   BUILDING_STAR_MINE,    25,           4},
-    {"Pick Legion",   "Own 50 Pickaxes",                   AchKind::BUILDING_LEVEL,   BUILDING_PICKAXE,      50,           1},
-    {"Cart Empire",   "Own 50 Minecarts",                  AchKind::BUILDING_LEVEL,   BUILDING_MINECART,     50,           1},
-    {"Drill Corps",   "Own 50 Drills",                     AchKind::BUILDING_LEVEL,   BUILDING_DRILL,        50,           2},
-    {"Earthmovers",   "Own 50 Excavators",                 AchKind::BUILDING_LEVEL,   BUILDING_EXCAVATOR,    50,           2},
-    {"Mill Town",     "Own 50 Ore Mills",                  AchKind::BUILDING_LEVEL,   BUILDING_ORE_MILL,     50,           2},
-    {"Foundry",       "Own 50 Smelters",                   AchKind::BUILDING_LEVEL,   BUILDING_SMELTER,      50,           2},
-    {"Hollow Earth",  "Own 50 Deep Shafts",                AchKind::BUILDING_LEVEL,   BUILDING_DEEP_SHAFT,   50,           2},
-    {"Runesmith",     "Own 50 Rune Forges",                AchKind::BUILDING_LEVEL,   BUILDING_RUNE_FORGE,   50,           2},
-    {"Armada",        "Own 50 Ore Barges",                 AchKind::BUILDING_LEVEL,   BUILDING_ORE_BARGE,    50,           3},
-    {"Philosopher",   "Own 50 Transmuters",                AchKind::BUILDING_LEVEL,   BUILDING_TRANSMUTER,   50,           3},
-    {"Void Walker",   "Own 50 Void Pits",                  AchKind::BUILDING_LEVEL,   BUILDING_VOID_PIT,     50,           3},
-    {"Epoch Master",  "Own 50 Time Mines",                 AchKind::BUILDING_LEVEL,   BUILDING_TIME_MINE,    50,           3},
-    {"Constellation", "Own 50 Star Mines",                 AchKind::BUILDING_LEVEL,   BUILDING_STAR_MINE,    50,           4},
+    {"Pick Legion",  "Own 50 Pickaxes",                   AchKind::BUILDING_LEVEL,   BUILDING_PICKAXE,      50,           2},
+    {"Pick Horde",   "Own 100 Pickaxes",                  AchKind::BUILDING_LEVEL,   BUILDING_PICKAXE,      100,          3},
+    {"Pick Swarm",   "Own 150 Pickaxes",                  AchKind::BUILDING_LEVEL,   BUILDING_PICKAXE,      150,          4},
+    {"Pick Nation",  "Own 200 Pickaxes",                  AchKind::BUILDING_LEVEL,   BUILDING_PICKAXE,      200,          5},
 
-    {"Shopper",      "Buy 5 upgrades",                    AchKind::UPGRADES_BOUGHT,  NO_ACH_TARGET,         5,            1},
-    {"Collector",    "Buy 15 upgrades",                   AchKind::UPGRADES_BOUGHT,  NO_ACH_TARGET,         15,           3},
-    {"Big Spender",  "Buy 35 upgrades",                   AchKind::UPGRADES_BOUGHT,  NO_ACH_TARGET,         35,           5},
-    {"Completionist", "Buy 60 upgrades",                  AchKind::UPGRADES_BOUGHT,  NO_ACH_TARGET,         60,           8},
-    {"Connoisseur",   "Buy 80 upgrades",                   AchKind::UPGRADES_BOUGHT,  NO_ACH_TARGET,         80,           5},
-    {"Shopaholic",    "Buy 90 upgrades",                   AchKind::UPGRADES_BOUGHT,  NO_ACH_TARGET,         90,           6},
+    {"First Cart",   "Own 1 Minecart",                    AchKind::BUILDING_LEVEL,   BUILDING_MINECART,     1,            1},
+    {"Cart Train",   "Own 10 Minecarts",                  AchKind::BUILDING_LEVEL,   BUILDING_MINECART,     10,           1},
+    {"Cart Fleet",   "Own 25 Minecarts",                  AchKind::BUILDING_LEVEL,   BUILDING_MINECART,     25,           2},
+    {"Cart Empire",  "Own 50 Minecarts",                  AchKind::BUILDING_LEVEL,   BUILDING_MINECART,     50,           2},
+    {"Rail Baron",   "Own 100 Minecarts",                 AchKind::BUILDING_LEVEL,   BUILDING_MINECART,     100,          3},
+    {"Rail Network", "Own 150 Minecarts",                 AchKind::BUILDING_LEVEL,   BUILDING_MINECART,     150,          4},
+    {"Rail Kingdom", "Own 200 Minecarts",                 AchKind::BUILDING_LEVEL,   BUILDING_MINECART,     200,          5},
+
+    {"Bore Hole",    "Own 1 Drill",                       AchKind::BUILDING_LEVEL,   BUILDING_DRILL,        1,            1},
+    {"Drill Crew",   "Own 10 Drills",                     AchKind::BUILDING_LEVEL,   BUILDING_DRILL,        10,           1},
+    {"Drill Team",   "Own 25 Drills",                     AchKind::BUILDING_LEVEL,   BUILDING_DRILL,        25,           2},
+    {"Drill Corps",  "Own 50 Drills",                     AchKind::BUILDING_LEVEL,   BUILDING_DRILL,        50,           2},
+    {"Drill Army",   "Own 100 Drills",                    AchKind::BUILDING_LEVEL,   BUILDING_DRILL,        100,          3},
+    {"Bedrock Bore", "Own 150 Drills",                    AchKind::BUILDING_LEVEL,   BUILDING_DRILL,        150,          4},
+    {"Core Driller", "Own 200 Drills",                    AchKind::BUILDING_LEVEL,   BUILDING_DRILL,        200,          5},
+
+    {"Dig Site",     "Own 1 Excavator",                   AchKind::BUILDING_LEVEL,   BUILDING_EXCAVATOR,    1,            1},
+    {"Dig Crew",     "Own 10 Excavators",                 AchKind::BUILDING_LEVEL,   BUILDING_EXCAVATOR,    10,           1},
+    {"Big Diggers",  "Own 25 Excavators",                 AchKind::BUILDING_LEVEL,   BUILDING_EXCAVATOR,    25,           2},
+    {"Earthmovers",  "Own 50 Excavators",                 AchKind::BUILDING_LEVEL,   BUILDING_EXCAVATOR,    50,           2},
+    {"Quarry King",  "Own 100 Excavators",                AchKind::BUILDING_LEVEL,   BUILDING_EXCAVATOR,    100,          3},
+    {"Mountain Gone", "Own 150 Excavators",                AchKind::BUILDING_LEVEL,   BUILDING_EXCAVATOR,    150,          4},
+    {"Flatlands",    "Own 200 Excavators",                AchKind::BUILDING_LEVEL,   BUILDING_EXCAVATOR,    200,          5},
+
+    {"First Mill",   "Own 1 Ore Mill",                    AchKind::BUILDING_LEVEL,   BUILDING_ORE_MILL,     1,            1},
+    {"Mill Row",     "Own 10 Ore Mills",                  AchKind::BUILDING_LEVEL,   BUILDING_ORE_MILL,     10,           1},
+    {"Mill Works",   "Own 25 Ore Mills",                  AchKind::BUILDING_LEVEL,   BUILDING_ORE_MILL,     25,           2},
+    {"Mill Town",    "Own 50 Ore Mills",                  AchKind::BUILDING_LEVEL,   BUILDING_ORE_MILL,     50,           2},
+    {"Mill City",    "Own 100 Ore Mills",                 AchKind::BUILDING_LEVEL,   BUILDING_ORE_MILL,     100,          3},
+    {"Grindstone",   "Own 150 Ore Mills",                 AchKind::BUILDING_LEVEL,   BUILDING_ORE_MILL,     150,          4},
+    {"Mill Empire",  "Own 200 Ore Mills",                 AchKind::BUILDING_LEVEL,   BUILDING_ORE_MILL,     200,          5},
+
+    {"First Melt",   "Own 1 Smelter",                     AchKind::BUILDING_LEVEL,   BUILDING_SMELTER,      1,            1},
+    {"Hot Shop",     "Own 10 Smelters",                   AchKind::BUILDING_LEVEL,   BUILDING_SMELTER,      10,           1},
+    {"Smelt Shop",   "Own 25 Smelters",                   AchKind::BUILDING_LEVEL,   BUILDING_SMELTER,      25,           2},
+    {"Foundry",      "Own 50 Smelters",                   AchKind::BUILDING_LEVEL,   BUILDING_SMELTER,      50,           2},
+    {"Blast Works",  "Own 100 Smelters",                  AchKind::BUILDING_LEVEL,   BUILDING_SMELTER,      100,          3},
+    {"Molten Tide",  "Own 150 Smelters",                  AchKind::BUILDING_LEVEL,   BUILDING_SMELTER,      150,          4},
+    {"Forge World",  "Own 200 Smelters",                  AchKind::BUILDING_LEVEL,   BUILDING_SMELTER,      200,          5},
+
+    {"Going Down",   "Own 1 Deep Shaft",                  AchKind::BUILDING_LEVEL,   BUILDING_DEEP_SHAFT,   1,            1},
+    {"Shaft Crew",   "Own 10 Deep Shafts",                AchKind::BUILDING_LEVEL,   BUILDING_DEEP_SHAFT,   10,           1},
+    {"Deep Industry", "Own 25 Deep Shafts",                AchKind::BUILDING_LEVEL,   BUILDING_DEEP_SHAFT,   25,           2},
+    {"Hollow Earth", "Own 50 Deep Shafts",                AchKind::BUILDING_LEVEL,   BUILDING_DEEP_SHAFT,   50,           2},
+    {"Abyss Diver",  "Own 100 Deep Shafts",               AchKind::BUILDING_LEVEL,   BUILDING_DEEP_SHAFT,   100,          3},
+    {"Bottomless",   "Own 150 Deep Shafts",               AchKind::BUILDING_LEVEL,   BUILDING_DEEP_SHAFT,   150,          4},
+
+    {"First Rune",   "Own 1 Rune Forge",                  AchKind::BUILDING_LEVEL,   BUILDING_RUNE_FORGE,   1,            1},
+    {"Rune Circle",  "Own 10 Rune Forges",                AchKind::BUILDING_LEVEL,   BUILDING_RUNE_FORGE,   10,           1},
+    {"Rune Guild",   "Own 25 Rune Forges",                AchKind::BUILDING_LEVEL,   BUILDING_RUNE_FORGE,   25,           2},
+    {"Runesmith",    "Own 50 Rune Forges",                AchKind::BUILDING_LEVEL,   BUILDING_RUNE_FORGE,   50,           2},
+    {"Rune Order",   "Own 100 Rune Forges",               AchKind::BUILDING_LEVEL,   BUILDING_RUNE_FORGE,   100,          3},
+    {"Runic Empire", "Own 150 Rune Forges",               AchKind::BUILDING_LEVEL,   BUILDING_RUNE_FORGE,   150,          4},
+
+    {"Set Sail",     "Own 1 Ore Barge",                   AchKind::BUILDING_LEVEL,   BUILDING_ORE_BARGE,    1,            1},
+    {"Barge Line",   "Own 10 Ore Barges",                 AchKind::BUILDING_LEVEL,   BUILDING_ORE_BARGE,    10,           1},
+    {"Barge Fleet",  "Own 25 Ore Barges",                 AchKind::BUILDING_LEVEL,   BUILDING_ORE_BARGE,    25,           2},
+    {"Armada",       "Own 50 Ore Barges",                 AchKind::BUILDING_LEVEL,   BUILDING_ORE_BARGE,    50,           2},
+    {"Ore Navy",     "Own 100 Ore Barges",                AchKind::BUILDING_LEVEL,   BUILDING_ORE_BARGE,    100,          3},
+    {"Sea of Ore",   "Own 150 Ore Barges",                AchKind::BUILDING_LEVEL,   BUILDING_ORE_BARGE,    150,          4},
+
+    {"Lead to Gold", "Own 1 Transmuter",                  AchKind::BUILDING_LEVEL,   BUILDING_TRANSMUTER,   1,            1},
+    {"Alchemy Lab",  "Own 10 Transmuters",                AchKind::BUILDING_LEVEL,   BUILDING_TRANSMUTER,   10,           1},
+    {"Alchemist",    "Own 25 Transmuters",                AchKind::BUILDING_LEVEL,   BUILDING_TRANSMUTER,   25,           2},
+    {"Philosopher",  "Own 50 Transmuters",                AchKind::BUILDING_LEVEL,   BUILDING_TRANSMUTER,   50,           2},
+    {"Grand Magus",  "Own 100 Transmuters",               AchKind::BUILDING_LEVEL,   BUILDING_TRANSMUTER,   100,          3},
+
+    {"Stare Into It", "Own 1 Void Pit",                    AchKind::BUILDING_LEVEL,   BUILDING_VOID_PIT,     1,            1},
+    {"Void Circle",  "Own 10 Void Pits",                  AchKind::BUILDING_LEVEL,   BUILDING_VOID_PIT,     10,           1},
+    {"Void Gazer",   "Own 25 Void Pits",                  AchKind::BUILDING_LEVEL,   BUILDING_VOID_PIT,     25,           2},
+    {"Void Walker",  "Own 50 Void Pits",                  AchKind::BUILDING_LEVEL,   BUILDING_VOID_PIT,     50,           2},
+    {"Void Lord",    "Own 100 Void Pits",                 AchKind::BUILDING_LEVEL,   BUILDING_VOID_PIT,     100,          3},
+
+    {"Borrowed Time", "Own 1 Time Mine",                   AchKind::BUILDING_LEVEL,   BUILDING_TIME_MINE,    1,            1},
+    {"Clockwork",    "Own 10 Time Mines",                 AchKind::BUILDING_LEVEL,   BUILDING_TIME_MINE,    10,           1},
+    {"Timekeeper",   "Own 25 Time Mines",                 AchKind::BUILDING_LEVEL,   BUILDING_TIME_MINE,    25,           2},
+    {"Epoch Master", "Own 50 Time Mines",                 AchKind::BUILDING_LEVEL,   BUILDING_TIME_MINE,    50,           2},
+
+    {"Starstruck",   "Own 1 Star Mine",                   AchKind::BUILDING_LEVEL,   BUILDING_STAR_MINE,    1,            1},
+    {"Star Chart",   "Own 10 Star Mines",                 AchKind::BUILDING_LEVEL,   BUILDING_STAR_MINE,    10,           1},
+    {"Stargazer",    "Own 25 Star Mines",                 AchKind::BUILDING_LEVEL,   BUILDING_STAR_MINE,    25,           2},
+    {"Constellation", "Own 50 Star Mines",                 AchKind::BUILDING_LEVEL,   BUILDING_STAR_MINE,    50,           2},
+
+    {"Shopper",      "Buy 10 upgrades",                   AchKind::UPGRADES_BOUGHT,  NO_ACH_TARGET,         10,           1},
+    {"Collector",    "Buy 25 upgrades",                   AchKind::UPGRADES_BOUGHT,  NO_ACH_TARGET,         25,           2},
+    {"Big Spender",  "Buy 50 upgrades",                   AchKind::UPGRADES_BOUGHT,  NO_ACH_TARGET,         50,           4},
+    {"Connoisseur",  "Buy 75 upgrades",                   AchKind::UPGRADES_BOUGHT,  NO_ACH_TARGET,         75,           5},
+    {"Shopaholic",   "Buy 100 upgrades",                  AchKind::UPGRADES_BOUGHT,  NO_ACH_TARGET,         100,          6},
+    {"Completionist", "Buy every upgrade",                 AchKind::UPGRADES_BOUGHT,  NO_ACH_TARGET,         GOLD_UPGRADE_COUNT, 10},
 
     {"Apprentice",   "Reach mining level 10",             AchKind::MINING_LEVEL,     NO_ACH_TARGET,         10,           1},
     {"Journeyman",   "Reach mining level 25",             AchKind::MINING_LEVEL,     NO_ACH_TARGET,         25,           3},
@@ -196,8 +261,25 @@ static constexpr AchievementDef ACHIEVEMENTS[] = {
     {"Hall of Fame", "Unlock 25 achievements",            AchKind::ACHIEVEMENTS,     NO_ACH_TARGET,         25,           6},
     {"Laureate",      "Unlock 50 achievements",            AchKind::ACHIEVEMENTS,     NO_ACH_TARGET,         50,           4},
     {"Immortal",      "Unlock 75 achievements",            AchKind::ACHIEVEMENTS,     NO_ACH_TARGET,         75,           5},
+    {"Pantheon",      "Unlock 100 achievements",           AchKind::ACHIEVEMENTS,     NO_ACH_TARGET,         100,          6},
 };
 static constexpr uint8_t ACHIEVEMENT_COUNT = sizeof(ACHIEVEMENTS) / sizeof(ACHIEVEMENTS[0]);
+
+static constexpr double costAfter(double cost, uint16_t growthPercent, uint64_t levels)
+{
+    return levels == 0 ? cost : costAfter(cost * growthPercent / 100, growthPercent, levels - 1);
+}
+
+static constexpr bool buildingAwardsAffordable(uint8_t i = 0)
+{
+    return i >= ACHIEVEMENT_COUNT ||
+           ((ACHIEVEMENTS[i].kind != AchKind::BUILDING_LEVEL ||
+             costAfter(BUILDINGS[ACHIEVEMENTS[i].target].baseCost, BUILDINGS[ACHIEVEMENTS[i].target].costGrowthPercent,
+                       ACHIEVEMENTS[i].amount - 1) < 1.8e19) &&
+            buildingAwardsAffordable(i + 1));
+}
+// A building's award tiers stop at the last one whose price still fits in 64 bits
+static_assert(buildingAwardsAffordable(), "a building award needs a building the balance cannot pay for");
 
 // How long a freshly unlocked achievement takes over the header of whatever screen is open
 static const unsigned long ACHIEVEMENT_NOTICE_MS = 3500;

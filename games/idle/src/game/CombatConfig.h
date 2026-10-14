@@ -299,7 +299,7 @@ static constexpr DropDef SUN_EATER_DROPS[] = {
 // before the one before it has been fought for a while.
 //
 // The two zones past the Core are for later runs: Deep Delver's two levels open them around
-// days 19 and 31 of ascending every six days (tools/sim --days 6 --runs 10). The Void Rift
+// days 19 and 26 of ascending every six days (tools/sim --days 6 --runs 10). The Void Rift
 // farms itself 15-45 h after it first opens, once a few Mythic pieces have dropped. The Star
 // Forge opens with the Mythic set around Lv 40, and nothing it drops raises attack: it turns
 // idle on its fourth run, with the set near its cap, and its auto-attack kills stay slow.

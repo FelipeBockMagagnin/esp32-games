@@ -10,9 +10,8 @@
 // lifetime total is floor(cbrt(lifetime gold / ASCEND_GOLD_PER_POINT)), and ascending
 // banks whatever that total has gained, so ascending early never costs points.
 // Tuned for months of play, measured with tools/sim --days 6 --runs 15 (an ascension every
-// six days, once the run slows past the Star Mine): 39-50 points a run for the first five
-// weeks, the same points a day as before the ladder grew to thirteen buildings, and Deep
-// Delver's zones around days 19 and 31. Later runs reach the Star Mine within two days and
+// six days, once the run slows past the Star Mine): 44-76 points a run for the first five
+// weeks, and Deep Delver's zones around days 19 and 26. Later runs reach the Star Mine within two days and
 // bank 100-220; the talent prices grow geometrically, so that buys a few more levels of
 // each rather than the deep ones.
 static const uint64_t ASCEND_GOLD_PER_POINT = 20000000000ULL;
