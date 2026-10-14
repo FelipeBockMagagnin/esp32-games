@@ -20,6 +20,7 @@ static const char *const FEATURE_NAMES[FEATURE_COUNT] = {
 
 Unlocks::Unlocks()
     : revision(0),
+      awardsBaseline(-1),
       lastCheck(0),
       pendingNotice(-1),
       noticeName(nullptr),
@@ -57,7 +58,7 @@ bool Unlocks::isConditionMet(Feature feature, const GameState &game, const Inven
         return false;
 
     case Feature::AWARDS:
-        return achievements.getUnlockedCount() > 0;
+        return awardsBaseline >= 0 && achievements.getUnlockedCount() > awardsBaseline;
 
     case Feature::COMBAT:
         return game.getBuildingLevel(BUILDING_DRILL) > 0;
@@ -103,6 +104,10 @@ void Unlocks::evaluate(unsigned long now, const GameState &game, const Inventory
         if (unlocked[i])
         {
             continue;
+        }
+        if ((Feature)i == Feature::AWARDS && awardsBaseline < 0)
+        {
+            awardsBaseline = (int16_t)achievements.getUnlockedCount();
         }
         if (isConditionMet((Feature)i, game, inventory, combat, achievements))
         {
@@ -353,6 +358,7 @@ void Unlocks::load(const Snapshot &in)
         unlocked[i] = in.unlocked[i];
     }
     revision++;
+    awardsBaseline = -1;
 
     // Loading is not earning: no notice for screens the player already had
     pendingNotice = -1;

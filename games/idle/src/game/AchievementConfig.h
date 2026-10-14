@@ -72,7 +72,7 @@ struct AchievementDef
 // and never reaches the 150 and 200 rows: they are for a late run's spare gold.
 static constexpr AchievementDef ACHIEVEMENTS[] = {
     //  name             description                          kind                        target                 amount        bonus%
-    {"Handy Miner",  "Mine ore by hand 100 times",        AchKind::TOTAL_CLICKS,     NO_ACH_TARGET,         100,          1},
+    {"Handy Miner",  "Mine ore by hand 200 times",        AchKind::TOTAL_CLICKS,     NO_ACH_TARGET,         200,          1},
     {"Pickaxe Pro",  "Mine ore by hand 1000 times",       AchKind::TOTAL_CLICKS,     NO_ACH_TARGET,         1000,         3},
     {"Blistered",    "Mine ore by hand 10000 times",      AchKind::TOTAL_CLICKS,     NO_ACH_TARGET,         10000,        5},
     {"Carpal Tunnel", "Mine ore by hand 40000 times",      AchKind::TOTAL_CLICKS,     NO_ACH_TARGET,         40000,        3},
@@ -86,7 +86,6 @@ static constexpr AchievementDef ACHIEVEMENTS[] = {
     {"Gold Mountain", "Earn 1Q gold in total",             AchKind::TOTAL_GOLD,       NO_ACH_TARGET,         1000000000000000ULL, 5},
     {"Dragon Hoard",  "Earn 10Q gold in total",            AchKind::TOTAL_GOLD,       NO_ACH_TARGET,         10000000000000000ULL, 6},
 
-    {"First Claim",   "Own 1 building",                    AchKind::TOTAL_BUILDINGS,  NO_ACH_TARGET,         1,            1},
     {"Small Mine",    "Own 10 buildings",                  AchKind::TOTAL_BUILDINGS,  NO_ACH_TARGET,         10,           1},
     {"Hamlet",        "Own 25 buildings",                  AchKind::TOTAL_BUILDINGS,  NO_ACH_TARGET,         25,           1},
     {"Mining Co.",    "Own 50 buildings",                  AchKind::TOTAL_BUILDINGS,  NO_ACH_TARGET,         50,           2},
@@ -101,7 +100,6 @@ static constexpr AchievementDef ACHIEVEMENTS[] = {
     {"Deep Dominion", "Own 900 buildings",                 AchKind::TOTAL_BUILDINGS,  NO_ACH_TARGET,         900,          8},
     {"Earth Eater",   "Own 1000 buildings",                AchKind::TOTAL_BUILDINGS,  NO_ACH_TARGET,         1000,         10},
 
-    {"Tool Time",    "Own 1 Pickaxe",                     AchKind::BUILDING_LEVEL,   BUILDING_PICKAXE,      1,            1},
     {"Pick Squad",   "Own 10 Pickaxes",                   AchKind::BUILDING_LEVEL,   BUILDING_PICKAXE,      10,           1},
     {"Pick Army",    "Own 25 Pickaxes",                   AchKind::BUILDING_LEVEL,   BUILDING_PICKAXE,      25,           2},
     {"Pick Legion",  "Own 50 Pickaxes",                   AchKind::BUILDING_LEVEL,   BUILDING_PICKAXE,      50,           2},

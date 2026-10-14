@@ -16,7 +16,7 @@ enum class Feature : uint8_t
 {
     BUILDINGS, // Enough gold earned to buy the first building
     UPGRADES,  // A few buildings owned and an upgrade affordable
-    AWARDS,    // First achievement earned
+    AWARDS,    // An achievement earned after Upgrade opened, not one already held
     COMBAT,    // A Drill owned; opens the Zones and Combat screens together
     INVENTORY, // First item dropped beyond the starting kit
     ASCEND     // Enough lifetime gold for the first ascension point
@@ -71,6 +71,9 @@ private:
 
     bool unlocked[FEATURE_COUNT];
     uint8_t revision;
+    // Award count when Awards became the next to open, or -1. Not saved: after a boot the
+    // player just needs one more award from there.
+    int16_t awardsBaseline;
 
     unsigned long lastCheck;
     int8_t pendingNotice; // Feature whose notice is waiting for the header, or -1

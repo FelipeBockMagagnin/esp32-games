@@ -441,6 +441,38 @@ static void testNextGain()
     CHECK(strcmp(buf, "Click gold +1% in 9 lv") == 0);
 }
 
+// Awards that came before Upgrade opened do not open Awards right behind it
+static void testAwardsWaitForANewAward()
+{
+    puts("awards opens on an award earned after upgrade");
+    World w;
+    Unlocks::Snapshot open = {};
+    open.unlocked[(uint8_t)Feature::BUILDINGS] = true;
+    open.unlocked[(uint8_t)Feature::UPGRADES] = true;
+    w.unlocks.load(open);
+
+    Achievements::Snapshot awards = {};
+    awards.unlocked[0] = true;
+    awards.unlocked[1] = true;
+    w.achievements.load(awards);
+
+    GameState::Snapshot game = {};
+    game.miningLevel = 1;
+    w.game.load(game);
+    for (int i = 0; i < 20; i++)
+    {
+        simNow += 1000;
+        w.unlocks.evaluate(simNow, w.game, w.inventory, w.combat, w.achievements, false);
+    }
+    CHECK(!w.unlocks.isUnlocked(Feature::AWARDS));
+
+    awards.unlocked[2] = true;
+    w.achievements.load(awards);
+    simNow += 1000;
+    w.unlocks.evaluate(simNow, w.game, w.inventory, w.combat, w.achievements, false);
+    CHECK(w.unlocks.isUnlocked(Feature::AWARDS));
+}
+
 int main()
 {
     testSaveRoundTrip();
@@ -457,6 +489,7 @@ int main()
     testLateGoals();
     testAwardProduction();
     testNextGain();
+    testAwardsWaitForANewAward();
     printf(failures == 0 ? "all passed\n" : "%d failed\n", failures);
     return failures == 0 ? 0 : 1;
 }
