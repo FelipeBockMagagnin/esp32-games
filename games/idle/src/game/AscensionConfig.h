@@ -10,8 +10,8 @@
 // lifetime total is floor(cbrt(lifetime gold / ASCEND_GOLD_PER_POINT)), and ascending
 // banks whatever that total has gained, so ascending early never costs points.
 // Tuned for months of play, measured with tools/sim --runs 30 (an ascension every three
-// days): 12-24 points a run for the first month, still about 14 by day 90, and Deep Delver's
-// zones around days 20 and 40. A run banks fewer points the more came before it, since
+// days): 18-29 points a run for the first month, still about 18 by day 90, and Deep Delver's
+// zones around days 16 and 31. A run banks fewer points the more came before it, since
 // holding steady would need its gold to grow with the square of the points, so the deep
 // talent levels stay out of reach for good.
 static const uint64_t ASCEND_GOLD_PER_POINT = 4000000000ULL;

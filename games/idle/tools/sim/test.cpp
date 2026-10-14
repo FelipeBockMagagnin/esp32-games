@@ -351,6 +351,26 @@ static void testLateGoals()
     CHECK(goal->done == 10 && goal->target == ZONES[1].reqPrevZoneKills);
 }
 
+static void testAwardProduction()
+{
+    puts("award upgrades pay per achievement unlocked");
+    World w;
+    GameState::Snapshot game = {};
+    game.miningLevel = 1;
+    game.goldUpgradesBought[upgradeIndex("Trophy Shelf")] = true;
+    w.game.load(game);
+    uint32_t before = w.game.getProductionBonusPercent();
+
+    Achievements::Snapshot awards = {};
+    for (uint8_t i = 0; i < 10; i++)
+    {
+        awards.unlocked[i] = true;
+    }
+    w.achievements.load(awards);
+    uint32_t awardsOwn = w.achievements.getProductionBonusPercent();
+    CHECK(w.game.getProductionBonusPercent() - before == 10 + awardsOwn);
+}
+
 int main()
 {
     testSaveRoundTrip();
@@ -363,6 +383,7 @@ int main()
     testThousandthsSaveMigrates();
     testCompactFormat();
     testLateGoals();
+    testAwardProduction();
     printf(failures == 0 ? "all passed\n" : "%d failed\n", failures);
     return failures == 0 ? 0 : 1;
 }

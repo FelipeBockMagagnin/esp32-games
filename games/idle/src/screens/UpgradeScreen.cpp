@@ -37,6 +37,7 @@ static const CategoryStyle CATEGORY_STYLES[] = {
     {"BUILDING", Theme::INFO, image_upgrade_production_pixels}, // BUILDING_BOOST, icon per building
     {"GOLD VEIN", Theme::GOLD, image_icon_gold_vein_pixels},    // VEIN_FREQUENCY
     {"GOLD VEIN", Theme::GOLD, image_icon_gold_vein_pixels},    // VEIN_POWER
+    {"AWARDS", Theme::GOLD, image_award_trophy_pixels},         // AWARD_PRODUCTION
 };
 
 static const CategoryStyle &styleFor(UpgradeTarget target)

@@ -418,6 +418,7 @@ uint32_t GameState::getBonusPercent(UpgradeTarget target) const
 uint32_t GameState::getProductionBonusPercent() const
 {
     return getBonusPercent(UpgradeTarget::PRODUCTION) +
+           getBonusPercent(UpgradeTarget::AWARD_PRODUCTION) * achievements.getUnlockedCount() +
            inventory.getPerkPercent(ItemPerk::GOLD) +
            achievements.getProductionBonusPercent() * (100 + inventory.getRelicPercent(RelicEffect::AWARD_BOOST)) / 100;
 }

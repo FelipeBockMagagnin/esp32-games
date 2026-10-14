@@ -97,7 +97,7 @@ enum BuildingId : uint8_t
 // itself a bit over twice as slowly as the one before it. First of each, for a player
 // checking in hourly and catching the gold veins that show while they are there:
 // Excavator ~15 min, Ore Mill 1 h, Smelter 4 h, Deep Shaft 8 h, Rune Forge 15 h, Ore
-// Barge 31 h, Transmuter ~57 h. A player who checks in for less sees fewer veins and
+// Barge 31 h, Transmuter ~55 h (the award upgrades fill the waits before the last two). A player who checks in for less sees fewer veins and
 // takes closer to four days. A boost costs up to 1e6x its building's base, which kept
 // the last base cost near a trillion while a balance capped at 1.8e16 (it now holds 1.8e19).
 static constexpr BuildingsDef BUILDINGS[] = {
@@ -131,7 +131,8 @@ enum class UpgradeTarget : uint8_t
     CLICK_PRODUCTION, // Each click also earns bonusPercent of the gold produced per second
     BUILDING_BOOST,   // Doubles the output of BUILDINGS[reqBuilding]; boosts multiply together
     VEIN_FREQUENCY,   // Gold veins come bonusPercent more often
-    VEIN_POWER        // Vein bonuses last longer and Lucky pays more, by bonusPercent
+    VEIN_POWER,       // Vein bonuses last longer and Lucky pays more, by bonusPercent
+    AWARD_PRODUCTION  // Gold production +bonusPercent for every achievement unlocked
 };
 
 static const uint8_t NO_BUILDING_REQ = 0xFF;
@@ -213,6 +214,13 @@ static constexpr GoldUpgradeDef GOLD_UPGRADES[] = {
     {"Serendipity",     "Gold veins appear twice as often",           AT(BUILDING_DEEP_SHAFT, 5),   100,     UpgradeTarget::VEIN_FREQUENCY,    BUILDING_DEEP_SHAFT,  1,   0},
     {"Get Lucky",       "Gold vein bonuses are twice as strong",      AT(BUILDING_RUNE_FORGE, 5),   100,     UpgradeTarget::VEIN_POWER,        BUILDING_RUNE_FORGE,  1,   0},
     {"Gold Fever",      "Gold veins appear twice as often",           AT(BUILDING_ORE_BARGE, 5),    100,     UpgradeTarget::VEIN_FREQUENCY,    BUILDING_ORE_BARGE,   1,   0},
+
+    // Kitten-style: worth more the more awards are in. Gated by levels of the older
+    // buildings so they land in the long waits for the next tier (~20, 36, 50 and 66 h).
+    {"Trophy Shelf",    "Gold/s +1% for every achievement",          AT(BUILDING_DEEP_SHAFT, 40),  1,       UpgradeTarget::AWARD_PRODUCTION,  BUILDING_SMELTER,     25,  0},
+    {"Hall of Ores",    "Gold/s +1% for every achievement",          AT(BUILDING_RUNE_FORGE, 40),  1,       UpgradeTarget::AWARD_PRODUCTION,  BUILDING_DEEP_SHAFT,  25,  0},
+    {"Gilded Plaque",   "Gold/s +1% for every achievement",          AT(BUILDING_ORE_BARGE, 10),   1,       UpgradeTarget::AWARD_PRODUCTION,  BUILDING_RUNE_FORGE,  20,  0},
+    {"Museum Wing",     "Gold/s +1% for every achievement",          AT(BUILDING_TRANSMUTER, 2),   1,       UpgradeTarget::AWARD_PRODUCTION,  BUILDING_ORE_BARGE,   15,  0},
 
     {"Alchemic Edge",   "Attack is increased by 100%",                AT(BUILDING_TRANSMUTER, 5),   100,     UpgradeTarget::ATTACK,            BUILDING_TRANSMUTER,  5,   0},
 

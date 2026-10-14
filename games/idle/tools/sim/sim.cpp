@@ -196,6 +196,9 @@ static double upgradeGain(uint8_t id)
         return ORE_TIERS[game.getOreTier()].clickAmount * def.bonusPercent / 100.0 * averageClickRate();
     case UpgradeTarget::CLICK_PRODUCTION:
         return gps * def.bonusPercent / 100.0 * averageClickRate();
+    case UpgradeTarget::AWARD_PRODUCTION:
+        return gps * def.bonusPercent * game.getAchievements().getUnlockedCount() /
+               (100.0 + game.getProductionBonusPercent());
     default:
         return 0;
     }
