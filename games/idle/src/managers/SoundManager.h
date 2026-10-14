@@ -151,6 +151,23 @@ public:
         tone(pin, NOTE_A3, 70);
     }
 
+    // Boot jingle under the splash logo, about 1.2 s, ending inside its time on screen
+    void playJingle()
+    {
+        if (!allowed(false))
+        {
+            return;
+        }
+        tone(pin, NOTE_C5, 90);
+        tone(pin, NOTE_G5, 90);
+        tone(pin, NOTE_C6, 90);
+        tone(pin, NOTE_G5, 90);
+        tone(pin, NOTE_E6, 180);
+        tone(pin, NOTE_D6, 90);
+        tone(pin, NOTE_E6, 90);
+        tone(pin, NOTE_G6, 380);
+    }
+
     // Low note when the player can't afford the upgrade
     void playError()
     {

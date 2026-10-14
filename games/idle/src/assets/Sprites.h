@@ -4,7 +4,8 @@
 
 #include <Arduino.h>
 
-// An enemy sprite or zone background: the opaque box inside its 64x64 frame, a palette,
+// An enemy sprite or zone background: the opaque box inside its 64x64 frame (splash art:
+// inside its own canvas), a palette,
 // and each row of the box as (length, index) byte pairs. Index 0 is transparent; index i
 // is palette[i - 1].
 struct SpriteDef
@@ -36,6 +37,11 @@ extern const SpriteDef sprite_zombie;
 // Backgrounds
 extern const SpriteDef background_sewers;
 extern const SpriteDef background_stone;
+
+// Splash
+extern const SpriteDef splash_dotcompany_0;
+extern const SpriteDef splash_dotcompany_1;
+extern const SpriteDef splash_dotcompany_wordmark;
 
 // Items
 extern const uint16_t image_item_dull_stick_pixels[]; // 16x16

@@ -9,6 +9,9 @@ RGB565 and keeps every colour the artist used. EnemySprite draws it at 2x.
 Backgrounds (backgrounds/*.png, 64x64 and fully opaque) use the same format and are drawn
 behind the enemy of the zone that names them.
 
+Splash art (splash/*.png, any size up to 255x255) uses the same format too, the box measured
+inside its own canvas so the frames of an animation stay aligned.
+
 Icons (icons/*.png, already 16x16) become the same kind of icon unscaled.
 
 Items (items/*.png) are cropped to their opaque area and box-filtered down to the 16x16
@@ -48,10 +51,10 @@ def load(path):
     return im
 
 
-def convert_sprite(name, path):
+def convert_sprite(name, path, frame=FRAME):
     im = load(path)
-    if im.size != (FRAME, FRAME):
-        sys.exit(f"{path}: expected {FRAME}x{FRAME}, got {im.size}")
+    if frame is not None and im.size != (frame, frame):
+        sys.exit(f"{path}: expected {frame}x{frame}, got {im.size}")
     # Drop the soft edge before measuring, so the box only covers what is drawn
     alpha = im.getchannel("A").point(lambda a: 255 if a >= ALPHA_CUTOFF else 0)
     x0, y0, x1, y1 = alpha.getbbox()
@@ -134,7 +137,8 @@ def main():
         "",
         "#include <Arduino.h>",
         "",
-        "// An enemy sprite or zone background: the opaque box inside its 64x64 frame, a palette,",
+        "// An enemy sprite or zone background: the opaque box inside its 64x64 frame (splash art:",
+        "// inside its own canvas), a palette,",
         "// and each row of the box as (length, index) byte pairs. Index 0 is transparent; index i",
         "// is palette[i - 1].",
         "struct SpriteDef",
@@ -159,12 +163,14 @@ def main():
     for kind, convert, decl in (
         ("enemies", convert_sprite, "extern const SpriteDef sprite_{};"),
         ("backgrounds", convert_sprite, "extern const SpriteDef background_{};"),
+        ("splash", lambda name, path: convert_sprite(name, path, None), "extern const SpriteDef splash_{};"),
         ("items", convert_item, "extern const uint16_t image_item_{}_pixels[]; // 16x16"),
         ("icons", convert_icon, "extern const uint16_t image_icon_{}_pixels[]; // 16x16"),
     ):
         header.append(f"// {kind.capitalize()}")
         for path in sorted((SRC / kind).glob("*.png")):
             name = {"enemies": f"sprite_{path.stem}", "backgrounds": f"background_{path.stem}",
+                    "splash": f"splash_{path.stem}",
                     "items": f"image_item_{path.stem}_pixels", "icons": f"image_icon_{path.stem}_pixels"}[kind]
             body, cost = convert(name, path)
             total += cost

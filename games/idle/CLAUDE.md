@@ -55,7 +55,7 @@ Only the visible screen updates, so screens that react to background events diff
 
 A big screen can group elements into a plain class with `addTo(Screen &)`/`setVisible`/`refresh` (`src/screens/combat/EnemyPanel`, `ActionPanel`). `addTo` order still decides render order.
 
-**Modals:** `ScreenManager::openModal(screen)` shows a screen outside the rotation (the `ConfirmScreen`s for reset and ascend, `SettingsScreen`; `replaceModal()` swaps one for another) until `closeModal()`. Meanwhile `getCurrentScreen()` returns it, so update, input and notices go to it, and Right/Left navigation is suppressed. Closing re-enters the screen underneath, which repaints it whole.
+**Modals:** `ScreenManager::openModal(screen)` shows a screen outside the rotation (the boot `SplashScreen`, the `ConfirmScreen`s for reset and ascend, `SettingsScreen`; `replaceModal()` swaps one for another) until `closeModal()`. Meanwhile `getCurrentScreen()` returns it, so update, input and notices go to it, and Right/Left navigation is suppressed. Closing re-enters the screen underneath, which repaints it whole.
 
 **Notifications go through the `Header`:** the main loop calls `getCurrentScreen()->applyNotice(...)` with achievements (gold) or screen unlocks (cyan, waits for an achievement notice), and the header paints it over its whole bar.
 
@@ -108,7 +108,7 @@ Adding content is adding a row to a `static constexpr` table (`*_COUNT` derived 
 **`BuildingId` and `ItemId` must stay in the same order as their tables**, and so must `UpgradeScreen`'s `CATEGORY_STYLES` with `UpgradeTarget`. Name length limits are in the per-field comments of each table.
 
 ### Assets
-**Flash is the binding constraint on art** (a 16x16 RGB565 icon is 512 B). `src/assets/Assets.cpp` holds `PROGMEM` arrays, declared in `Assets.h`, byte-swapped RGB565 with black as transparent. Artist PNGs in `src/assets/png/sprites/` go through `tools/convert_sprites.py`, which regenerates `Sprites.{h,cpp}` (never edit by hand): enemies and zone backgrounds as run-length-encoded palettes, items as 16x16 icons. `src/assets/png/icons/` is an uncompiled source library.
+**Flash is the binding constraint on art** (a 16x16 RGB565 icon is 512 B). `src/assets/Assets.cpp` holds `PROGMEM` arrays, declared in `Assets.h`, byte-swapped RGB565 with black as transparent. Artist PNGs in `src/assets/png/sprites/` go through `tools/convert_sprites.py`, which regenerates `Sprites.{h,cpp}` (never edit by hand): enemies, zone backgrounds and splash art as run-length-encoded palettes, items as 16x16 icons. `src/assets/png/icons/` is an uncompiled source library, and so is `src/assets/png/brand/`, the dotcompany logo as delivered; `sprites/splash/` holds it redrawn at its native pixel size (the character's two frames, the wordmark), which `SplashArt` scales back up.
 
 ## Performance
 Avoid `String` concatenation in refresh paths: use `char buf[N]` + `snprintf` + `setText(const char *)`. For fields constant per list item, track which item each row shows and skip rebuilding (`BuildingScreen::rowBuilding[]`).

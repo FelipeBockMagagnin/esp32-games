@@ -23,6 +23,7 @@
 #include "screens/AscendScreen.h"
 #include "screens/ConfirmScreen.h"
 #include "screens/SettingsScreen.h"
+#include "screens/SplashScreen.h"
 #include "ui/Themes.h"
 
 // The buttons form a D-pad: Confirm in the middle, Up/Down for in-screen actions,
@@ -74,6 +75,7 @@ ConfirmScreen ascendConfirm({"Ascend", "Ascend now?", "Gold, buildings and upgra
 AscendScreen ascendScreen(game, ascension, sound, screenManager, ascendConfirm);
 Settings settings = {(uint8_t)SoundMode::ON, DIM_DEFAULT, 0};
 SettingsScreen settingsScreen(settings, applySettings, ascension, screenManager, sound, resetScreen);
+SplashScreen splashScreen(screenManager, sound);
 
 static constexpr Color UNLOCK_ACCENT = Theme::INFO; // Cyan, so a new screen never reads as an achievement
 
@@ -332,7 +334,6 @@ void setup()
     tft.fillScreen(Theme::BG);
     ledcSetup(BACKLIGHT_CHANNEL, 5000, 8);
     ledcAttachPin(TFT_BL, BACKLIGHT_CHANNEL);
-    ledcWrite(BACKLIGHT_CHANNEL, BACKLIGHT_FULL);
 
     // This order is the navigation order. Every screen but Mining starts locked and joins
     // the rotation as the player progresses (see Unlocks); the header labels follow.
@@ -346,6 +347,10 @@ void setup()
     screenManager.addScreen(&ascendScreen, "Ascend", true);
     applyUnlocks();
     seenUnlocks = unlocks.getRevision();
+
+    // Lit only once the splash covers the Mining screen that addScreen() just painted
+    screenManager.openModal(&splashScreen);
+    ledcWrite(BACKLIGHT_CHANNEL, BACKLIGHT_FULL);
 }
 
 void loop()
