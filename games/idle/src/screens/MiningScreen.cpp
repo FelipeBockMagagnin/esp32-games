@@ -2,6 +2,7 @@
 #include "../assets/Sprites.h"
 #include "../game/Format.h"
 #include "../game/AscensionConfig.h"
+#include "../game/SatMath.h"
 
 
 // The colors image_Icon31_33_pixels is drawn in (light, mid, dark), which each ore tier's
@@ -332,7 +333,7 @@ void MiningScreen::pulseCoin()
 void MiningScreen::sendCoins(uint8_t count, uint64_t gold)
 {
     oreDisplay.flyCoins(count, COIN_TARGET_X, COIN_TARGET_Y);
-    heldGold += gold;
+    heldGold = satAdd(heldGold, gold);
     heldCoins += count;
 }
 
@@ -345,7 +346,7 @@ void MiningScreen::rollGold(unsigned long now)
         uint8_t n = landed < heldCoins ? landed : heldCoins;
         if (n > 0)
         {
-            heldGold -= heldGold * n / heldCoins;
+            heldGold -= mulDiv(heldGold, n, heldCoins);
             heldCoins -= n;
         }
         if (heldCoins == 0)
