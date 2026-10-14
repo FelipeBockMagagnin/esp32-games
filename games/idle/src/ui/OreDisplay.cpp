@@ -21,6 +21,12 @@ static const int16_t CHIP_SPEED_UP_MIN = 120;
 static const int16_t CHIP_SPEED_UP_MAX = 300;
 static const int16_t CHIP_SIZE = 3;
 
+static const unsigned long COIN_MS = 480;
+static const unsigned long COIN_STAGGER_MS = 55;
+static const int16_t COIN_SPREAD = 20;
+static const int16_t COIN_ARC = 50; // How far above the straight line the control point sits
+static const int16_t COIN_RADIUS = 3;
+
 // Halo behind the ore: rings from the outside in, each a stronger blend of the glow
 // color into the background. Radii are relative to the ore's size.
 static const uint8_t GLOW_RINGS = 3;
@@ -63,6 +69,8 @@ OreDisplay::OreDisplay(int16_t x, int16_t y, int16_t w, int16_t h,
       glowColor(0x0000),
       nextPopup(0),
       nextChip(0),
+      nextCoin(0),
+      arrivals(0),
       shaking(false),
       shakeStart(0),
       veinIcon(nullptr),
@@ -81,6 +89,10 @@ OreDisplay::OreDisplay(int16_t x, int16_t y, int16_t w, int16_t h,
     for (uint8_t i = 0; i < MAX_CHIPS; i++)
     {
         chips[i].active = false;
+    }
+    for (uint8_t i = 0; i < MAX_COINS; i++)
+    {
+        coins[i].active = false;
     }
 }
 
@@ -146,6 +158,46 @@ void OreDisplay::burst(uint8_t count, bool gold)
         }
     }
     lastFrame = 0;
+}
+
+static int16_t clampCoin(int16_t value, int16_t size)
+{
+    return value < COIN_RADIUS ? COIN_RADIUS : value > size - 1 - COIN_RADIUS ? size - 1 - COIN_RADIUS : value;
+}
+
+// A coin whose slot is reused before it lands still counts as arrived, so a caller that
+// waits for its coins never waits forever. Coins are painted in the sprite, so the target and
+// the arc are kept inside it (a quadratic arc never leaves the hull of its three points).
+void OreDisplay::flyCoins(uint8_t count, int16_t targetX, int16_t targetY)
+{
+    targetX = clampCoin(targetX, w);
+    targetY = clampCoin(targetY, h);
+    for (uint8_t n = 0; n < count; n++)
+    {
+        Coin &coin = coins[nextCoin];
+        nextCoin = (nextCoin + 1) % MAX_COINS;
+        if (coin.active)
+        {
+            arrivals++;
+        }
+
+        coin.active = true;
+        coin.start = now + n * COIN_STAGGER_MS;
+        coin.x0 = oreX + oreW / 2 + random(-COIN_SPREAD, COIN_SPREAD + 1);
+        coin.y0 = oreY + oreH / 2 + random(-COIN_SPREAD / 2, COIN_SPREAD / 2 + 1);
+        coin.x1 = targetX;
+        coin.y1 = targetY;
+        coin.cx = clampCoin((coin.x0 + targetX) / 2 + random(-COIN_SPREAD, COIN_SPREAD + 1), w);
+        coin.cy = clampCoin((coin.y0 < targetY ? coin.y0 : targetY) - COIN_ARC + random(0, COIN_SPREAD + 1), h);
+    }
+    lastFrame = 0;
+}
+
+uint8_t OreDisplay::takeArrivals()
+{
+    uint8_t count = arrivals;
+    arrivals = 0;
+    return count;
 }
 
 void OreDisplay::setPalette(const uint16_t *source, const uint16_t *target, uint8_t count)
@@ -221,6 +273,16 @@ void OreDisplay::update(unsigned long time)
             chips[i].active = false;
         }
         anyEffect = anyEffect || chips[i].active;
+    }
+
+    for (uint8_t i = 0; i < MAX_COINS; i++)
+    {
+        if (coins[i].active && (long)(now - coins[i].start) >= (long)COIN_MS)
+        {
+            coins[i].active = false;
+            arrivals++;
+        }
+        anyEffect = anyEffect || coins[i].active;
     }
 
     bool wasAnimating = animating;
@@ -357,6 +419,28 @@ void OreDisplay::drawChips()
     }
 }
 
+// Ease-in along a quadratic arc, so a coin leaves the ore slowly and speeds into the card
+void OreDisplay::drawCoins()
+{
+    for (uint8_t i = 0; i < MAX_COINS; i++)
+    {
+        const Coin &coin = coins[i];
+        long age = (long)(now - coin.start);
+        if (!coin.active || age < 0)
+        {
+            continue;
+        }
+        int32_t t = (int32_t)age * 256 / COIN_MS;
+        t = t * t / 256;
+        int32_t u = 256 - t;
+        int16_t px = (u * u * coin.x0 + 2 * u * t * coin.cx + t * t * coin.x1) / 65536;
+        int16_t py = (u * u * coin.y0 + 2 * u * t * coin.cy + t * t * coin.y1) / 65536;
+        sprite->fillCircle(px, py, COIN_RADIUS, Theme::GOLD);
+        sprite->drawCircle(px, py, COIN_RADIUS, Theme::GOLD_FRAME);
+        sprite->drawPixel(px - 1, py - 1, Theme::TEXT);
+    }
+}
+
 void OreDisplay::draw(TFT_eSPI &tft)
 {
     if (sprite == nullptr)
@@ -389,6 +473,7 @@ void OreDisplay::draw(TFT_eSPI &tft)
     drawOre(oreX + shakeOffset());
     drawVein(tft);
     drawChips();
+    drawCoins();
 
     sprite->setTextSize(2);
     sprite->setTextDatum(MC_DATUM);

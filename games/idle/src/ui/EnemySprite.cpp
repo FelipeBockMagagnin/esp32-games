@@ -23,6 +23,16 @@ static const int16_t DEATH_SINK = 6;
 
 static const unsigned long BOB_MS = 500;
 
+static const unsigned long SPAWN_MS = 320;
+static const int16_t SPAWN_DROP = 8;
+
+// Frame pixels, from the middle of the frame
+static const unsigned long CAST_MS = 450;
+static const int16_t CAST_RADIUS_MIN = 4;
+static const int16_t CAST_RADIUS_MAX = 34;
+static const int16_t CAST_THICKNESS = 3;
+static const uint8_t CAST_ALPHA = 220;
+
 static const unsigned long LUNGE_STEP_MS = 35;
 static const int8_t LUNGE_OFFSETS[] = {2, 4, 4, 3, 1}; // Frame pixels down, toward the player's side
 static const uint8_t LUNGE_STEPS = sizeof(LUNGE_OFFSETS);
@@ -106,10 +116,20 @@ static void paintRow(const SpriteDef &def, const uint8_t *&runs, int16_t row, ui
     }
 }
 
+// Walks `runs` past one encoded row without painting it, for rows lifted above the frame
+static void skipRow(const SpriteDef &def, const uint8_t *&runs)
+{
+    for (uint8_t col = 0; col < def.w; runs += 2)
+    {
+        col += pgm_read_byte(runs);
+    }
+}
+
 EnemySprite::EnemySprite(int16_t x, int16_t y, const SpriteDef *sprite)
     : UI(x, y, SIZE, SIZE), sprite(sprite), background(nullptr), countdown(0),
       dyingSprite(nullptr), deathStart(0), hitting(false), hitHeavy(false), hitStart(0),
-      lunging(false), lungeStart(0),
+      lunging(false), lungeStart(0), spawning(false), spawnStart(0),
+      casting(false), castInward(false), castColor(0), castStart(0),
       nextNumber(0), bob(0), now(0), lastFrame(0), animating(false)
 {
     for (uint8_t i = 0; i < MAX_NUMBERS; i++)
@@ -176,11 +196,34 @@ void EnemySprite::kill()
     lastFrame = 0;
 }
 
+void EnemySprite::spawn()
+{
+    if (sprite == nullptr)
+    {
+        return;
+    }
+    dyingSprite = nullptr;
+    spawning = true;
+    spawnStart = now;
+    lastFrame = 0;
+}
+
+void EnemySprite::cast(uint16_t color, bool inward)
+{
+    casting = true;
+    castInward = inward;
+    castColor = swapBytes(color);
+    castStart = now;
+    lastFrame = 0;
+}
+
 void EnemySprite::stopAnimations()
 {
     dyingSprite = nullptr;
     hitting = false;
     lunging = false;
+    spawning = false;
+    casting = false;
     for (uint8_t i = 0; i < MAX_NUMBERS; i++)
     {
         numbers[i].active = false;
@@ -207,6 +250,14 @@ void EnemySprite::update(unsigned long time)
     {
         lunging = false;
     }
+    if (spawning && now - spawnStart >= SPAWN_MS)
+    {
+        spawning = false;
+    }
+    if (casting && now - castStart >= CAST_MS)
+    {
+        casting = false;
+    }
 
     bool anyNumber = false;
     for (uint8_t i = 0; i < MAX_NUMBERS; i++)
@@ -219,7 +270,7 @@ void EnemySprite::update(unsigned long time)
     }
 
     bool wasAnimating = animating;
-    animating = dyingSprite != nullptr || hitting || lunging || anyNumber;
+    animating = dyingSprite != nullptr || hitting || lunging || spawning || casting || anyNumber;
     if (animating && now - lastFrame >= FRAME_MS)
     {
         lastFrame = now;
@@ -301,6 +352,43 @@ void EnemySprite::paintNumbers(uint8_t row, uint16_t *line) const
     }
 }
 
+void EnemySprite::paintRing(uint8_t row, uint16_t *line) const
+{
+    if (!casting)
+    {
+        return;
+    }
+    unsigned long age = now - castStart;
+    int16_t travel = (int32_t)(CAST_RADIUS_MAX - CAST_RADIUS_MIN) * age / CAST_MS;
+    int16_t outer = castInward ? CAST_RADIUS_MAX - travel : CAST_RADIUS_MIN + travel;
+    int16_t inner = outer - CAST_THICKNESS;
+    int16_t dy = (int16_t)row - SPRITE_FRAME / 2;
+    if (dy < -outer || dy > outer)
+    {
+        return;
+    }
+    uint8_t alpha = (uint8_t)(CAST_ALPHA - (uint32_t)CAST_ALPHA * age / CAST_MS);
+
+    int16_t outerHalf = (int16_t)sqrtf((float)(outer * outer - dy * dy));
+    int16_t innerHalf = inner > 0 && dy * dy < inner * inner ? (int16_t)sqrtf((float)(inner * inner - dy * dy)) : -1;
+    for (int16_t side = -1; side <= 1; side += 2)
+    {
+        for (int16_t d = innerHalf + 1; d <= outerHalf; d++)
+        {
+            int16_t fx = SPRITE_FRAME / 2 + side * d - (side < 0 ? 1 : 0);
+            if (fx < 0 || fx >= SPRITE_FRAME)
+            {
+                continue;
+            }
+            for (uint8_t k = 0; k < SCALE; k++)
+            {
+                uint16_t &px = line[fx * SCALE + k];
+                px = blendSwapped(alpha, castColor, px);
+            }
+        }
+    }
+}
+
 void EnemySprite::draw(TFT_eSPI &tft)
 {
     const SpriteDef *enemy = dyingSprite != nullptr ? dyingSprite : sprite;
@@ -339,6 +427,12 @@ void EnemySprite::draw(TFT_eSPI &tft)
             style.tintAlpha = HIT_FLASH_ALPHA;
         }
     }
+    else if (spawning)
+    {
+        unsigned long age = now - spawnStart < SPAWN_MS ? now - spawnStart : SPAWN_MS;
+        style.opacity = (uint8_t)(255 * age / SPAWN_MS);
+        dy -= (int16_t)(SPAWN_DROP - (int32_t)SPAWN_DROP * age / SPAWN_MS);
+    }
     if (lunging && dyingSprite == nullptr)
     {
         uint8_t step = (now - lungeStart) / LUNGE_STEP_MS;
@@ -351,6 +445,13 @@ void EnemySprite::draw(TFT_eSPI &tft)
     uint16_t line[SIZE];
     const uint8_t *enemyRuns = enemy != nullptr ? enemy->runs : nullptr;
     const uint8_t *backgroundRuns = background != nullptr ? background->runs : nullptr;
+    if (enemy != nullptr)
+    {
+        for (int16_t row = enemy->y; row < -dy && row < enemy->y + enemy->h; row++)
+        {
+            skipRow(*enemy, enemyRuns);
+        }
+    }
 
     tft.startWrite();
     tft.setAddrWindow(x, y, SIZE, SIZE);
@@ -368,6 +469,7 @@ void EnemySprite::draw(TFT_eSPI &tft)
         {
             paintRow(*enemy, enemyRuns, (int16_t)row - dy, line, style);
         }
+        paintRing(row, line);
         paintNumbers(row, line);
 
         for (uint8_t k = 0; k < SCALE; k++)

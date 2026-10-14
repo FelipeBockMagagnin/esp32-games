@@ -8,6 +8,7 @@
 #include "../ui/Header.h"
 #include "../ui/ListRow.h"
 #include "../ui/ListView.h"
+#include "../ui/TreeLines.h"
 #include "../ui/ProgressBar.h"
 #include "../ui/ButtonBadge.h"
 #include "../game/GameState.h"
@@ -36,6 +37,9 @@ private:
     ListRow rows[ROWS];
     ListView list;
     uint8_t rowItem[ROWS]; // Which item each row shows, so its fixed texts are not rebuilt
+    TreeLines tree;
+    uint8_t sparkItem; // The talent just bought, flashed when the spark reaches it
+    bool wasShaking;
 
     Box detailPanel;
     Text statusText;
@@ -53,6 +57,7 @@ private:
     Screen &confirmScreen;
 
     void refreshRow(ListRow &row, uint8_t item, bool selected, uint8_t slot);
+    void refreshTree(uint8_t slot, uint8_t item);
     void refreshDetail();
     void refreshAscendDetail();
     void formatEffect(uint8_t id, char *buf, size_t size) const;

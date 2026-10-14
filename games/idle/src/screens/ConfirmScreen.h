@@ -6,6 +6,7 @@
 #include "../ui/Header.h"
 #include "../ui/Box.h"
 #include "../ui/ListRow.h"
+#include "../ui/ScreenWipe.h"
 #include "../managers/ScreenManager.h"
 #include "../managers/SoundManager.h"
 
@@ -25,11 +26,13 @@ public:
         const char *busy;        // Shown once Yes is confirmed, while the action runs
     };
 
-    // The action runs after the busy text reaches the panel and does not return
+    // The action runs after the busy text reaches the panel, or with `flashOut` after a burst
+    // of light in the accent has covered it, and does not return
     ConfirmScreen(const Texts &texts, uint16_t accent, void (*action)(), ScreenManager &screenManager,
-                  SoundManager &sound);
+                  SoundManager &sound, bool flashOut = false);
 
     void onEnter(TFT_eSPI &tft) override;
+    void update(unsigned long now) override;
     void render(TFT_eSPI &tft) override;
 
     void onUpPress() override;
@@ -50,12 +53,14 @@ private:
 
     Text hintText;
     Text busyText;
+    ScreenWipe wipe;
 
     void (*action)();
     ScreenManager &screenManager;
     SoundManager &sound;
     bool yesSelected;
     bool busy;
+    bool flashOut;
 
     void refreshRows();
 };

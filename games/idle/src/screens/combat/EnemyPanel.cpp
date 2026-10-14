@@ -36,7 +36,8 @@ EnemyPanel::EnemyPanel(CombatState &combat)
       bossTag(STATS_CENTER_X, BOSS_Y, "BOSS", Theme::BAD, 2, TC_DATUM),
       dropsCaption(DROPS_CENTER_X, DROPS_Y, "DROPS", Theme::TEXT_DIM, 1, TC_DATUM),
       combat(combat),
-      bannerUntil(0)
+      bannerUntil(0),
+      wasRespawning(false)
 {
     for (uint8_t i = 0; i < MAX_DROPS; i++)
     {
@@ -105,6 +106,11 @@ void EnemyPanel::onAttack()
     sprite.lunge();
 }
 
+void EnemyPanel::onCast(uint16_t color, bool inward)
+{
+    sprite.cast(color, inward);
+}
+
 void EnemyPanel::onKill()
 {
     sprite.kill();
@@ -113,6 +119,7 @@ void EnemyPanel::onKill()
 void EnemyPanel::stopAnimations()
 {
     sprite.stopAnimations();
+    wasRespawning = false;
 }
 
 // The banner covers the sprite, and a frame drawn under it would paint over it
@@ -219,6 +226,11 @@ void EnemyPanel::refresh(unsigned long now)
     sprite.setSprite(respawning ? nullptr : enemy.sprite);
     sprite.setCountdown(respawning ? (uint8_t)(left > 0 ? (left + 999) / 1000 : 1) : 0);
     sprite.setBackground(combat.getZone().background);
+    if (wasRespawning && !respawning)
+    {
+        sprite.spawn();
+    }
+    wasRespawning = respawning;
     refreshSideColumns(enemy);
     if (bannerLeaving)
     {

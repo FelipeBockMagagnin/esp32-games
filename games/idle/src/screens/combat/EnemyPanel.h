@@ -32,6 +32,7 @@ private:
 
     CombatState &combat;
     unsigned long bannerUntil;
+    bool wasRespawning;
 
     void refreshSideColumns(const EnemyDef &enemy);
     void redrawSideColumns();
@@ -45,6 +46,7 @@ public:
     void onHit(uint32_t damage, bool heavy);
     void onKill();
     void onAttack();
+    void onCast(uint16_t color, bool inward);
     void stopAnimations();
     void animate(unsigned long now);
     void showDrop(uint8_t itemId, bool isNew, uint8_t level, uint8_t others, unsigned long until);

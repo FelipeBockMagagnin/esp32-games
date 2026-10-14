@@ -75,6 +75,15 @@ static const unsigned long PROMPT_BLINK_MS = 500;
 static const uint8_t MINE_CHIPS = 4;
 static const uint8_t LEVEL_UP_SPARKS = 14;
 static const uint8_t LUCKY_SPARKS = 10;
+static const uint8_t LUCKY_COINS = 8;
+static const uint8_t DOUBLE_COINS = 3;
+// Where the coins fly: the card's coin, relative to the ore display, which clamps it to its
+// nearest corner
+static const int16_t COIN_TARGET_X = COIN_X - ORE_AREA_X;
+static const int16_t COIN_TARGET_Y = COIN_Y - ORE_AREA_Y;
+
+static const unsigned long ROLL_STEP_MS = 33;
+static const uint8_t ROLL_DIVISOR = 4; // Each step closes this fraction of the gap
 
 MiningScreen::MiningScreen(GameState &game, const Unlocks &unlocks, SoundManager &sound)
     : header("Mining"),
@@ -82,7 +91,8 @@ MiningScreen::MiningScreen(GameState &game, const Unlocks &unlocks, SoundManager
       // Gold card
       goldCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, true, Theme::CARD, true, 4),
       goldCoin(COIN_X, COIN_Y, COIN_RADIUS, COIN_RADIUS, Theme::GOLD, true),
-      goldLabel(GOLD_TEXT_X, GOLD_AMOUNT_Y, "0", Theme::GOLD, 3),
+      // Opaque, so rolling digits repaint without a flicker
+      goldLabel(GOLD_TEXT_X, GOLD_AMOUNT_Y, "0", Theme::GOLD, 3, TL_DATUM, false, Theme::CARD),
       goldRate(GOLD_TEXT_X, GOLD_RATE_Y, "+0 gold/s", RATE_COLOR, 1),
 
       // Center ore display; popups are gold to match the balance they add to
@@ -114,7 +124,11 @@ MiningScreen::MiningScreen(GameState &game, const Unlocks &unlocks, SoundManager
       veinMessage(""),
       veinMessageColor(Theme::GOLD),
       coinPulseUntil(0),
-      levelFlashUntil(0)
+      levelFlashUntil(0),
+      shownGold(0),
+      heldGold(0),
+      heldCoins(0),
+      lastRollStep(0)
 {
     addElement(&header);
     setHeader(&header);
@@ -174,6 +188,11 @@ void MiningScreen::onEnter(TFT_eSPI &tft)
 {
     // A vein that appeared while the player was elsewhere is shown without the chime
     seenVeinSpawns = game.getVeinSpawns();
+    shownGold = game.getGold();
+    heldGold = 0;
+    heldCoins = 0;
+    oreDisplay.takeArrivals();
+    goldLabel.setText(formatAmount(shownGold));
     Screen::onEnter(tft);
 }
 
@@ -202,14 +221,13 @@ void MiningScreen::update(unsigned long now)
     // Animations run at their own frame rate, independent of the text refresh below
     refreshVein(now);
     oreDisplay.update(now);
+    rollGold(now);
     goldCoin.setRadius((long)(now - coinPulseUntil) < 0 ? COIN_PULSE_RADIUS : COIN_RADIUS);
 
     if (!refreshDue(now))
     {
         return;
     }
-
-    goldLabel.setText(formatAmount(game.getGold()));
 
     // A running vein bonus takes the rate line, with its multiplier and the time left
     char buf[40];
@@ -311,6 +329,55 @@ void MiningScreen::pulseCoin()
     coinPulseUntil = millis() + COIN_PULSE_MS;
 }
 
+void MiningScreen::sendCoins(uint8_t count, uint64_t gold)
+{
+    oreDisplay.flyCoins(count, COIN_TARGET_X, COIN_TARGET_Y);
+    heldGold += gold;
+    heldCoins += count;
+}
+
+void MiningScreen::rollGold(unsigned long now)
+{
+    uint8_t landed = oreDisplay.takeArrivals();
+    if (landed > 0)
+    {
+        pulseCoin();
+        uint8_t n = landed < heldCoins ? landed : heldCoins;
+        if (n > 0)
+        {
+            heldGold -= heldGold * n / heldCoins;
+            heldCoins -= n;
+        }
+        if (heldCoins == 0)
+        {
+            heldGold = 0;
+        }
+    }
+
+    if (now - lastRollStep < ROLL_STEP_MS)
+    {
+        return;
+    }
+    lastRollStep = now;
+
+    uint64_t gold = game.getGold();
+    uint64_t target = gold > heldGold ? gold - heldGold : 0;
+    if (target == shownGold)
+    {
+        return;
+    }
+    if (target < shownGold)
+    {
+        shownGold = target;
+    }
+    else
+    {
+        uint64_t step = (target - shownGold) / ROLL_DIVISOR;
+        shownGold += step > 0 ? step : target - shownGold;
+    }
+    goldLabel.setText(formatAmount(shownGold));
+}
+
 void MiningScreen::onConfirmPress()
 {
     bool leveledUp;
@@ -334,6 +401,7 @@ void MiningScreen::onConfirmPress()
         if (game.wasLastMineDoubled())
         {
             oreDisplay.addPopup(String("x2 +") + formatAmount(gained), Theme::MYTHIC);
+            sendCoins(DOUBLE_COINS, gained);
         }
         else
         {
@@ -364,7 +432,7 @@ void MiningScreen::onUpPress()
         snprintf(buf, sizeof(buf), "LUCKY! +%s gold", formatAmount(game.getLastLuckyGold()).c_str());
         oreDisplay.addPopup(String("+") + formatAmount(game.getLastLuckyGold()));
         oreDisplay.burst(LUCKY_SPARKS, true);
-        pulseCoin();
+        sendCoins(LUCKY_COINS, game.getLastLuckyGold());
         break;
     case VeinEffect::FRENZY:
         snprintf(buf, sizeof(buf), "FRENZY! Gold/s x%u for %lus", (unsigned)VEIN_FRENZY_MULTIPLIER,

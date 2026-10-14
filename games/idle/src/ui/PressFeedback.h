@@ -13,6 +13,7 @@ public:
     void flash(ListRow &row);
     void shake(UI &element);
     void update(unsigned long now);
+    bool isShaking() const { return shaking != nullptr; }
 
 private:
     ListRow *flashing = nullptr;

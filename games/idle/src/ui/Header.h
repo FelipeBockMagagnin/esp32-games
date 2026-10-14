@@ -12,7 +12,8 @@
 // each one reserving space for it. The caption (size 1) names the kind of notice, and the
 // accent color tints it and the bar's bottom rule so each kind is recognisable at a glance.
 //
-// A new notice flashes the bar in its accent and fades back, which needs update() every loop.
+// A new notice flashes the bar in its accent and fades back, then a shine sweeps across it,
+// which needs update() every loop. The shine repaints only the strip it crossed, clipped.
 //
 // The bar is painted in its own band color rather than the screen background, so it reads
 // as a title bar on every screen.
@@ -35,7 +36,12 @@ public:
           noticeAccent(Theme::TEXT),
           hasNotice(false),
           flashLevel(0),
-          lastFlashStep(0)
+          lastFlashStep(0),
+          shining(false),
+          shineStart(0),
+          shineX(0),
+          drawnShineX(0),
+          shineOnly(false)
     {
     }
 
@@ -44,7 +50,7 @@ public:
         if (title != newTitle)
         {
             title = newTitle;
-            markDirty();
+            invalidate();
         }
     }
 
@@ -53,7 +59,7 @@ public:
         if (backLabel != label)
         {
             backLabel = label;
-            markDirty();
+            invalidate();
         }
     }
 
@@ -62,7 +68,7 @@ public:
         if (nextLabel != label)
         {
             nextLabel = label;
-            markDirty();
+            invalidate();
         }
     }
 
@@ -82,7 +88,8 @@ public:
         notice = wanted ? name : "";
         noticeCaption = wanted ? caption : nullptr;
         noticeAccent = accent;
-        markDirty();
+        shining = false;
+        invalidate();
     }
 
     void update(unsigned long now);
@@ -98,6 +105,21 @@ private:
     bool hasNotice;
     uint8_t flashLevel;
     unsigned long lastFlashStep;
+
+    bool shining;
+    unsigned long shineStart;
+    int16_t shineX;      // Left edge of the band on its top row
+    int16_t drawnShineX; // Where the last draw left it
+    bool shineOnly;      // Only the shine moved since the last draw
+
+    void invalidate()
+    {
+        shineOnly = false;
+        markDirty();
+    }
+
+    void paintBar(TFT_eSPI &tft, uint16_t band);
+    void paintShine(TFT_eSPI &tft, uint16_t band);
 };
 
 #endif // UI_HEADER_H

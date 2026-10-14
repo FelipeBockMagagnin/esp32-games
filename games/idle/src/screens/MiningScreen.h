@@ -59,6 +59,14 @@ private:
     unsigned long levelFlashUntil;
     void pulseCoin();
 
+    // The balance rolls toward the real one; gold carried by flying coins joins it as they land
+    uint64_t shownGold;
+    uint64_t heldGold;
+    uint8_t heldCoins;
+    unsigned long lastRollStep;
+    void sendCoins(uint8_t count, uint64_t gold);
+    void rollGold(unsigned long now);
+
     void applyOreTier(uint8_t tier);
     void refreshVein(unsigned long now);
 

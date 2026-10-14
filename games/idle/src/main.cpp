@@ -65,7 +65,7 @@ ConfirmScreen resetScreen({"Reset", "Reset game?", "All progress will be lost,",
                           Theme::BAD, resetGame, screenManager, sound);
 ConfirmScreen ascendConfirm({"Ascend", "Ascend now?", "Gold, buildings and upgrades reset.",
                             "Awards, items and talents stay.", "Restart with the points", "Ascending..."},
-                           Theme::EPIC, ascendGame, screenManager, sound);
+                           Theme::EPIC, ascendGame, screenManager, sound, true);
 AscendScreen ascendScreen(game, ascension, sound, screenManager, ascendConfirm);
 
 static const uint16_t UNLOCK_ACCENT = Theme::INFO; // Cyan, so a new screen never reads as an achievement

@@ -18,25 +18,95 @@ static const int16_t NOTICE_NAME_Y = 11;
 static const unsigned long FLASH_STEP_MS = 70;
 static const uint8_t FLASH_ALPHA_PER_STEP = 30;
 
+// A slanted band: each row down shifts it right by one pixel every SHINE_SLANT rows
+static const unsigned long SHINE_MS = 650;
+static const unsigned long SHINE_STEP_MS = 30;
+static const int16_t SHINE_W = 14;
+static const int16_t SHINE_SLANT = 2;
+static const uint8_t SHINE_ALPHA = 90;
+
 void Header::update(unsigned long now)
 {
     if (flashLevel > 0 && now - lastFlashStep >= FLASH_STEP_MS)
     {
         lastFlashStep = now;
         flashLevel--;
+        invalidate();
+        if (flashLevel == 0 && hasNotice)
+        {
+            shining = true;
+            shineStart = now;
+            shineX = -SHINE_W - h / SHINE_SLANT;
+        }
+        return;
+    }
+
+    if (shining && now - lastFlashStep >= SHINE_STEP_MS)
+    {
+        lastFlashStep = now;
+        unsigned long age = now - shineStart;
+        int16_t start = -SHINE_W - h / SHINE_SLANT;
+        shineX = start + (int32_t)(w - start) * (int32_t)(age < SHINE_MS ? age : SHINE_MS) / SHINE_MS;
+        if (age >= SHINE_MS)
+        {
+            shining = false;
+        }
+        if (!dirty)
+        {
+            shineOnly = true;
+        }
         markDirty();
     }
 }
 
+void Header::paintShine(TFT_eSPI &tft, uint16_t band)
+{
+    if (!shining)
+    {
+        return;
+    }
+    uint16_t glow = tft.alphaBlend(SHINE_ALPHA, noticeAccent, band);
+    for (int16_t row = 0; row < h - 1; row++)
+    {
+        tft.drawFastHLine(x + shineX + row / SHINE_SLANT, y + row, SHINE_W, glow);
+    }
+}
+
+// The shine only moved: repaint the columns it left and entered, with the text clipped to them
 void Header::draw(TFT_eSPI &tft)
 {
     uint16_t band = flashLevel > 0 ? tft.alphaBlend(flashLevel * FLASH_ALPHA_PER_STEP, noticeAccent, BAND_COLOR)
                                    : BAND_COLOR;
-    tft.fillRect(x, y, w, h - 1, band);
+    bool partial = shineOnly && drawn && hasNotice;
+    shineOnly = false;
+    if (partial)
+    {
+        int16_t left = (drawnShineX < shineX ? drawnShineX : shineX);
+        int16_t right = (drawnShineX > shineX ? drawnShineX : shineX) + SHINE_W + h / SHINE_SLANT;
+        left = left < 0 ? 0 : left;
+        right = right > w ? w : right;
+        drawnShineX = shineX;
+        if (right <= left)
+        {
+            return;
+        }
+        tft.setViewport(x + left, y, right - left, h - 1, false);
+        paintBar(tft, band);
+        tft.resetViewport();
+        return;
+    }
+    drawnShineX = shineX;
+    paintBar(tft, band);
     tft.drawFastHLine(x, y + h - 1, w, hasNotice ? noticeAccent : RULE_COLOR);
+}
+
+void Header::paintBar(TFT_eSPI &tft, uint16_t band)
+{
+    tft.fillRect(x, y, w, h - 1, band);
 
     if (hasNotice)
     {
+        paintShine(tft, band);
         tft.setTextDatum(TC_DATUM);
         tft.setTextSize(1);
         if (noticeCaption != nullptr)

@@ -25,6 +25,11 @@ public:
     void addPopup(const String &text, uint16_t color);
     // Chips fly off the ore and fall; in the ore's own colours, or gold sparks
     void burst(uint8_t count, bool gold);
+    // Coins arc from the ore toward (targetX, targetY), relative to the element and clamped
+    // into it, one after another
+    void flyCoins(uint8_t count, int16_t targetX, int16_t targetY);
+    // How many coins reached their target since the last call
+    uint8_t takeArrivals();
 
     // Both arrays hold `count` RGB565 colors and must outlive the element (point into
     // constexpr tables). Pass a null target to draw the image in its own colors.
@@ -46,6 +51,7 @@ public:
 private:
     static const uint8_t MAX_POPUPS = 5;
     static const uint8_t MAX_CHIPS = 20;
+    static const uint8_t MAX_COINS = 12;
 
     struct Popup
     {
@@ -79,10 +85,25 @@ private:
     uint8_t paletteCount;
     uint16_t glowColor;
 
+    struct Coin
+    {
+        bool active;
+        unsigned long start;
+        int16_t x0;
+        int16_t y0;
+        int16_t cx; // Control point of the arc
+        int16_t cy;
+        int16_t x1;
+        int16_t y1;
+    };
+
     Popup popups[MAX_POPUPS];
     uint8_t nextPopup;
     Chip chips[MAX_CHIPS];
     uint8_t nextChip;
+    Coin coins[MAX_COINS];
+    uint8_t nextCoin;
+    uint8_t arrivals;
 
     bool shaking;
     unsigned long shakeStart;
@@ -103,6 +124,7 @@ private:
     void drawOre(int16_t left);
     void drawVein(TFT_eSPI &tft);
     void drawChips();
+    void drawCoins();
 };
 
 #endif // UI_ORE_DISPLAY_H

@@ -49,6 +49,7 @@ private:
     unsigned long enemyHitUntil;
     unsigned long playerHitUntil;
     unsigned long playerFlashUntil;
+    unsigned long playerHealUntil;
 
     void showFightElements(bool visible);
     void showMessage(unsigned long now, const char *text, uint16_t color, unsigned long durationMs);

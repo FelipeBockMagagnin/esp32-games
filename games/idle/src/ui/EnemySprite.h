@@ -11,8 +11,8 @@
 // the enemy never flickers. A countdown is painted into the same draw, over the frame,
 // since a separate Text could only erase it with a hole in the art.
 //
-// The enemy bobs while idle, flashes and shakes when hit, fades out when killed, and
-// damage numbers float up over it. All of it is painted into the same line buffer, in
+// The enemy bobs while idle, flashes and shakes when hit, fades out when killed, drops in
+// when it spawns, a spell's ring sweeps over it, and damage numbers float up over it. All of it is painted into the same line buffer, in
 // frame pixels, so the animations cost one blit per frame and never flicker either.
 class EnemySprite : public UI
 {
@@ -56,6 +56,8 @@ public:
     void lunge(); // Jumps at the player as its own hit lands
     void addDamage(uint32_t damage, bool heavy);
     void kill(); // Fades out the enemy shown now, even once setSprite() has moved on
+    void spawn(); // Fades the current enemy in from above
+    void cast(uint16_t color, bool inward);
     void stopAnimations();
 
     void update(unsigned long now);
@@ -76,6 +78,7 @@ private:
 
     void drawCountdown(TFT_eSPI &tft);
     void paintNumbers(uint8_t row, uint16_t *line) const;
+    void paintRing(uint8_t row, uint16_t *line) const;
 
     const SpriteDef *sprite;
     const SpriteDef *background;
@@ -88,6 +91,12 @@ private:
     unsigned long hitStart;
     bool lunging;
     unsigned long lungeStart;
+    bool spawning;
+    unsigned long spawnStart;
+    bool casting;
+    bool castInward;
+    uint16_t castColor; // Byte-swapped
+    unsigned long castStart;
     DamageNumber numbers[MAX_NUMBERS];
     uint8_t nextNumber;
     uint8_t bob;

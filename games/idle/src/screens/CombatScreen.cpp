@@ -11,6 +11,7 @@ static const unsigned long KILL_MESSAGE_MS = 1500;
 // even when the eyes are elsewhere
 static const unsigned long HIT_TEXT_MS = 800;
 static const unsigned long HURT_FLASH_MS = 300;
+static const unsigned long HEAL_GLOW_MS = 450;
 // Enough warning to see the enemy's hit coming and press Down in time
 static const unsigned long WARN_MS = 600;
 
@@ -71,7 +72,8 @@ CombatScreen::CombatScreen(CombatState &combat, SoundManager &sound)
       messageUntil(0),
       enemyHitUntil(0),
       playerHitUntil(0),
-      playerFlashUntil(0)
+      playerFlashUntil(0),
+      playerHealUntil(0)
 {
     addElement(&header);
     setHeader(&header);
@@ -108,6 +110,7 @@ void CombatScreen::onEnter(TFT_eSPI &tft)
     enemyHitUntil = 0;
     playerHitUntil = 0;
     playerFlashUntil = 0;
+    playerHealUntil = 0;
     forceRefresh();
     enemyPanel.hideBanner();
     enemyPanel.stopAnimations();
@@ -267,9 +270,10 @@ void CombatScreen::refreshPlayer(unsigned long now)
     regenValue.setText(buf);
 
     bool flash = (long)(now - playerFlashUntil) < 0;
+    bool glow = !flash && (long)(now - playerHealUntil) < 0;
     playerHpBar.setProgress((int32_t)combat.getPlayerHp(), (int32_t)player.maxHp);
-    playerHpBar.setFillColor(flash ? CombatStyle::BLOCKED : PLAYER_HP_COLOR);
-    playerHpBar.setBorderColor(flash ? CombatStyle::BLOCKED : PLAYER_HP_BORDER);
+    playerHpBar.setFillColor(flash ? CombatStyle::BLOCKED : glow ? Theme::GOOD : PLAYER_HP_COLOR);
+    playerHpBar.setBorderColor(flash ? CombatStyle::BLOCKED : glow ? Theme::GOOD : PLAYER_HP_BORDER);
     snprintf(buf, sizeof(buf), "%u/%u", (unsigned)combat.getPlayerHp(), (unsigned)player.maxHp);
     playerHpBar.setLabel(buf);
 
@@ -382,17 +386,21 @@ void CombatScreen::onUpPress()
     case SpellEffect::HEAL:
         snprintf(buf, sizeof(buf), "Healed %u HP", (unsigned)(combat.getPlayerHp() - hpBefore));
         showMessage(now, buf, Theme::GOOD, KILL_MESSAGE_MS);
+        playerHealUntil = now + HEAL_GLOW_MS;
         break;
     case SpellEffect::STUN:
         showMessage(now, "Enemy stunned!", CombatStyle::ACTIVE, KILL_MESSAGE_MS);
+        enemyPanel.onCast(CombatStyle::ACTIVE, true);
         break;
     case SpellEffect::MIDAS:
         snprintf(buf, sizeof(buf), "Next kill pays x%u gold", (unsigned)spell->power);
         showMessage(now, buf, Theme::GOLD, KILL_MESSAGE_MS);
+        enemyPanel.onCast(Theme::GOLD, false);
         break;
     case SpellEffect::WARD:
         snprintf(buf, sizeof(buf), "Warded for %us", (unsigned)(spell->power / 1000));
         showMessage(now, buf, CombatStyle::ACTIVE, KILL_MESSAGE_MS);
+        enemyPanel.onCast(CombatStyle::ACTIVE, false);
         break;
     }
     forceRefresh();

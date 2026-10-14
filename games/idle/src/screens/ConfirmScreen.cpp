@@ -16,7 +16,7 @@ static const int16_t HINT_Y = 220;
 static const int16_t BUSY_Y = 260;
 
 ConfirmScreen::ConfirmScreen(const Texts &texts, uint16_t accent, void (*action)(), ScreenManager &screenManager,
-                             SoundManager &sound)
+                             SoundManager &sound, bool flashOut)
     : header(texts.title),
 
       warningCard(CARD_X, CARD_Y, CARD_W, CARD_H, accent, true, Theme::CARD, true, 4),
@@ -29,12 +29,14 @@ ConfirmScreen::ConfirmScreen(const Texts &texts, uint16_t accent, void (*action)
 
       hintText(120, HINT_Y, "Up/Down choose - Confirm OK", HINT_COLOR, 1, TC_DATUM),
       busyText(120, BUSY_Y, texts.busy, accent, 2, TC_DATUM),
+      wipe(accent),
 
       action(action),
       screenManager(screenManager),
       sound(sound),
       yesSelected(false),
-      busy(false)
+      busy(false),
+      flashOut(flashOut)
 {
     addElement(&header);
     setHeader(&header);
@@ -56,6 +58,7 @@ ConfirmScreen::ConfirmScreen(const Texts &texts, uint16_t accent, void (*action)
     addElement(&hintText);
     busyText.setVisible(false);
     addElement(&busyText);
+    addElement(&wipe);
 
     refreshRows();
 }
@@ -71,7 +74,13 @@ void ConfirmScreen::onEnter(TFT_eSPI &tft)
     // Every visit starts on No, whatever was selected when it was last cancelled
     yesSelected = false;
     refreshRows();
+    wipe.stop();
     Screen::onEnter(tft);
+}
+
+void ConfirmScreen::update(unsigned long now)
+{
+    wipe.update(now);
 }
 
 void ConfirmScreen::render(TFT_eSPI &tft)
@@ -79,7 +88,7 @@ void ConfirmScreen::render(TFT_eSPI &tft)
     Screen::render(tft);
 
     // Only after the busy text is on the panel, so the player sees why it blanks
-    if (busy)
+    if (busy && (!flashOut || wipe.isDone()))
     {
         action();
     }
@@ -115,6 +124,10 @@ void ConfirmScreen::onConfirmPress()
     }
     busy = true;
     busyText.setVisible(true);
+    if (flashOut)
+    {
+        wipe.start(millis());
+    }
 }
 
 bool ConfirmScreen::onBackPress()

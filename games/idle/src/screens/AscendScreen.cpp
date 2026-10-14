@@ -82,6 +82,9 @@ AscendScreen::AscendScreen(const GameState &game, Ascension &ascension, SoundMan
       nextPointBar(CARD_X + 7, BAR_Y, CARD_W - 14, BAR_H, 0, 100, BAR_COLOR, BAR_BG, BAR_BORDER),
 
       list(ROWS),
+      tree(ROW_X, LIST_TOP, ROW_PITCH, ListRow::DEFAULT_H, INDENT, ROWS, PANEL_BORDER, ACCENT),
+      sparkItem(NO_ITEM),
+      wasShaking(false),
 
       detailPanel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, PANEL_BORDER, true, Theme::CARD, true, 4),
       statusText(TEXT_X, STATUS_Y, "", Theme::TEXT, 1),
@@ -113,6 +116,7 @@ AscendScreen::AscendScreen(const GameState &game, Ascension &ascension, SoundMan
         rowItem[i] = NO_ITEM;
         addElement(&rows[i]);
     }
+    addElement(&tree);
 
     addElement(&detailPanel);
     addElement(&statusText, Theme::CARD);
@@ -125,9 +129,43 @@ AscendScreen::AscendScreen(const GameState &game, Ascension &ascension, SoundMan
     list.setCount(LIST_COUNT);
 }
 
+// Later in the table under the same parent; the table is in tree order, so it comes after
+// this talent's whole branch
+static bool hasLaterSibling(uint8_t id)
+{
+    for (uint8_t j = id + 1; j < TALENT_COUNT; j++)
+    {
+        if (TALENTS[j].parent == TALENTS[id].parent)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void AscendScreen::update(unsigned long now)
 {
     feedback.update(now);
+    tree.update(now);
+
+    // A shaken row slid over the lines beside it
+    bool shaking = feedback.isShaking();
+    if (wasShaking && !shaking)
+    {
+        tree.resetDrawn();
+    }
+    wasShaking = shaking;
+
+    if (tree.takeArrival() && sparkItem != NO_ITEM)
+    {
+        uint8_t slot = tree.getSparkTarget();
+        if (slot < list.getVisibleCount() && rowItem[slot] == sparkItem)
+        {
+            feedback.flash(rows[slot]);
+        }
+        sparkItem = NO_ITEM;
+    }
+
     if (!refreshDue(now))
     {
         return;
@@ -156,11 +194,13 @@ void AscendScreen::update(unsigned long now)
         if (i >= visible)
         {
             rows[i].setVisible(false);
+            tree.setSlot(i, 0, 0, false);
             continue;
         }
         uint8_t item = (uint8_t)(list.getFirstVisible() + i);
         rows[i].setVisible(true);
         refreshRow(rows[i], item, item == list.getSelected(), i);
+        refreshTree(i, item);
     }
 
     refreshDetail();
@@ -234,6 +274,28 @@ void AscendScreen::refreshRow(ListRow &row, uint8_t item, bool selected, uint8_t
     {
         row.setState(maxed ? ListRow::OWNED : ListRow::NORMAL);
     }
+}
+
+void AscendScreen::refreshTree(uint8_t slot, uint8_t item)
+{
+    if (item == 0)
+    {
+        tree.setSlot(slot, 0, 0, false);
+        return;
+    }
+    uint8_t id = item - 1;
+    uint8_t depth = ascension.getTalentDepth(id);
+    uint8_t through = 0;
+    uint8_t ancestor = id;
+    for (uint8_t d = depth; d > 1; d--)
+    {
+        ancestor = TALENTS[ancestor].parent;
+        if (hasLaterSibling(ancestor))
+        {
+            through |= 1 << (d - 2);
+        }
+    }
+    tree.setSlot(slot, depth, through, depth > 0 && hasLaterSibling(id));
 }
 
 // The talent's own share of its bonus, now and with one more level
@@ -397,7 +459,18 @@ void AscendScreen::onConfirmPress()
     if (ascension.buyTalent(item - 1))
     {
         sound.playBuy();
-        feedback.flash(row);
+        uint8_t parent = TALENTS[item - 1].parent;
+        if (parent == NO_TALENT)
+        {
+            feedback.flash(row);
+        }
+        else
+        {
+            // A spark runs down from the talent that opened it
+            int16_t parentSlot = (int16_t)(parent + 1) - (int16_t)list.getFirstVisible();
+            sparkItem = item;
+            tree.spark(parentSlot >= 0 ? (int8_t)parentSlot : -1, (uint8_t)(item - list.getFirstVisible()));
+        }
     }
     else
     {
