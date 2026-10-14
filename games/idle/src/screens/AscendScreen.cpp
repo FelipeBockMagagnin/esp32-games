@@ -208,7 +208,7 @@ void AscendScreen::update(unsigned long now)
 
 void AscendScreen::refreshRow(ListRow &row, uint8_t item, bool selected, uint8_t slot)
 {
-    char buf[24];
+    char buf[28];
 
     if (item == 0)
     {
@@ -222,7 +222,18 @@ void AscendScreen::refreshRow(ListRow &row, uint8_t item, bool selected, uint8_t
             row.setIconPixels(image_item_core_sigil_pixels, 16, 16);
             row.setValueSub("points");
         }
-        row.setSubtitle(pending > 0 ? "Restart the run for points" : "Earn more gold first");
+        uint64_t runGold = game.getTotalGoldEarned();
+        uint32_t gain = game.getAscendGainPercent();
+        if (gain >= ASCEND_SUGGEST_GAIN_PERCENT)
+        {
+            snprintf(buf, sizeof(buf), "Good time: gold/s +%lu%%", (unsigned long)gain);
+        }
+        else
+        {
+            uint64_t next = ascension.getRunGoldForNextPoint(runGold);
+            snprintf(buf, sizeof(buf), "Next point in %s", formatAmount(next > runGold ? next - runGold : 0).c_str());
+        }
+        row.setSubtitle(buf);
         snprintf(buf, sizeof(buf), "+%lu", (unsigned long)pending);
         row.setValue(buf);
         row.setValueColor(pending > 0 ? ACCENT : LOCKED_COLOR);
