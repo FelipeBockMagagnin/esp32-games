@@ -89,29 +89,32 @@ enum BuildingId : uint8_t
 {
     BUILDING_PICKAXE, BUILDING_MINECART, BUILDING_DRILL, BUILDING_EXCAVATOR,
     BUILDING_ORE_MILL, BUILDING_SMELTER, BUILDING_DEEP_SHAFT, BUILDING_RUNE_FORGE,
-    BUILDING_ORE_BARGE, BUILDING_TRANSMUTER
+    BUILDING_ORE_BARGE, BUILDING_TRANSMUTER, BUILDING_VOID_PIT, BUILDING_TIME_MINE,
+    BUILDING_STAR_MINE
 };
 
-// Tuned with tools/sim for a run of about three days (see CLAUDE.md for the targets):
-// each tier costs 16.5x the previous one and produces 7x as much, so a tier pays for
-// itself a bit over twice as slowly as the one before it. First of each, for a player
-// checking in hourly and catching the gold veins that show while they are there:
-// Excavator ~15 min, Ore Mill 1 h, Smelter 4 h, Deep Shaft 8 h, Rune Forge 15 h, Ore
-// Barge 31 h, Transmuter ~55 h (the award upgrades fill the waits before the last two). A player who checks in for less sees fewer veins and
-// takes closer to four days. A boost costs up to 1e6x its building's base, which kept
-// the last base cost near a trillion while a balance capped at 1.8e16 (it now holds 1.8e19).
+// Tuned with tools/sim to Cookie Clicker's pace: each tier costs about 11x the one before
+// and takes 2-3x as long to pay for itself. First of each, for a player checking in hourly
+// and catching the gold veins that show while they are there: Ore Mill ~25 min, Smelter
+// 1-2 h, Deep Shaft 3-4 h, Rune Forge 6 h, Ore Barge 12 h, Transmuter 24 h, Void Pit ~2
+// days, Time Mine ~4, Star Mine ~5.5, about when Cookie Clicker's Factory to Antimatter
+// Condenser land. Past the Star Mine the run slows down, which is the cue to ascend.
+// The last tier is as dear as the balance allows: its fifth boost has to fit in 64 bits.
 static constexpr BuildingsDef BUILDINGS[] = {
-    //  name         gold/s          cost              growth%  icon
-    {"Pickaxe",      100,            15,               115,     image_building_pickaxe_pixels},
-    {"Minecart",     700,            250,              115,     image_building_minecart_pixels},
-    {"Drill",        4900,           4100,             115,     image_building_drill_pixels},
-    {"Excavator",    34000,          67000,            115,     image_building_excavator_pixels},
-    {"Ore Mill",     240000,         1100000,          115,     image_building_ore_mill_pixels},
-    {"Smelter",      1700000,        18000000,         115,     image_building_smelter_pixels},
-    {"Deep Shaft",   12000000,       300000000,        115,     image_building_deep_shaft_pixels},
-    {"Rune Forge",   82000000,       5000000000ULL,    115,     image_building_rune_forge_pixels},
-    {"Ore Barge",    580000000,      82000000000ULL,   115,     image_building_ore_barge_pixels},
-    {"Transmuter",   4000000000ULL,  1400000000000ULL, 115,     image_building_transmuter_pixels},
+    //  name         gold/s              cost                growth%  icon
+    {"Pickaxe",      100,                15,                 115,     image_building_pickaxe_pixels},
+    {"Minecart",     520,                165,                115,     image_building_minecart_pixels},
+    {"Drill",        2700,               1800,               115,     image_building_drill_pixels},
+    {"Excavator",    14000,              20000,              115,     image_building_excavator_pixels},
+    {"Ore Mill",     72000,              220000,             115,     image_building_ore_mill_pixels},
+    {"Smelter",      420000,             2400000,            115,     image_building_smelter_pixels},
+    {"Deep Shaft",   2400000,            26000000,           115,     image_building_deep_shaft_pixels},
+    {"Rune Forge",   13000000,           210000000,          115,     image_building_rune_forge_pixels},
+    {"Ore Barge",    65000000,           3200000000ULL,      115,     image_building_ore_barge_pixels},
+    {"Transmuter",   330000000,          35000000000ULL,     115,     image_building_transmuter_pixels},
+    {"Void Pit",     4000000000ULL,      2600000000000ULL,   115,     image_building_void_pit_pixels},
+    {"Time Mine",    20000000000ULL,     32000000000000ULL,  115,     image_building_time_mine_pixels},
+    {"Star Mine",    75000000000ULL,     180000000000000ULL, 115,     image_building_star_mine_pixels},
 };
 // Derived from the table, so adding a row is all it takes to add a building
 static constexpr uint8_t BUILDING_COUNT = sizeof(BUILDINGS) / sizeof(BUILDINGS[0]);
@@ -142,7 +145,9 @@ static const uint8_t NO_BUILDING_REQ = 0xFF;
 // times its base cost. They multiply, so a building's late upgrades are what keep it
 // relevant after the next tier arrives.
 static constexpr uint16_t BOOST_LEVELS[] = {1, 10, 25, 50, 100};
-static constexpr uint64_t BOOST_COST_FACTORS[] = {10, 100, 1000, 50000, 1000000};
+static constexpr uint64_t BOOST_COST_FACTORS[] = {10, 100, 1000, 20000, 100000};
+static_assert(BUILDINGS[BUILDING_COUNT - 1].baseCost <= (uint64_t)-1 / BOOST_COST_FACTORS[4],
+              "the last building's fifth boost would cost more than the balance can hold");
 
 // One-time upgrades bought with gold. An upgrade stays hidden until its requirements
 // are met, so the shop reveals itself as the player progresses.
@@ -188,6 +193,9 @@ static constexpr GoldUpgradeDef GOLD_UPGRADES[] = {
     {"Shaft Bracing",   "Gold production is increased by 25%",        AT(BUILDING_RUNE_FORGE, 40),  25,      UpgradeTarget::PRODUCTION,        BUILDING_RUNE_FORGE,  15,  0},
     {"Rune Etching",    "Gold production is increased by 25%",        AT(BUILDING_ORE_BARGE, 40),   25,      UpgradeTarget::PRODUCTION,        BUILDING_ORE_BARGE,   15,  0},
     {"Gold Sense",      "Gold production is increased by 25%",        AT(BUILDING_TRANSMUTER, 40),  25,      UpgradeTarget::PRODUCTION,        BUILDING_TRANSMUTER,  15,  0},
+    {"Void Siphon",     "Gold production is increased by 25%",        AT(BUILDING_VOID_PIT, 40),    25,      UpgradeTarget::PRODUCTION,        BUILDING_VOID_PIT,    15,  0},
+    {"Time Dilation",   "Gold production is increased by 25%",        AT(BUILDING_TIME_MINE, 40),   25,      UpgradeTarget::PRODUCTION,        BUILDING_TIME_MINE,   15,  0},
+    {"Stardust",        "Gold production is increased by 25%",        AT(BUILDING_STAR_MINE, 40),   25,      UpgradeTarget::PRODUCTION,        BUILDING_STAR_MINE,   15,  0},
 
     {"Iron Fist",       "Gold per click is increased by 100%",        50,                           100,     UpgradeTarget::CLICK,             NO_BUILDING_REQ,      0,   0},
     {"Steel Grip",      "Gold per click is increased by 100%",        600,                          100,     UpgradeTarget::CLICK,             NO_BUILDING_REQ,      0,   5},
@@ -200,13 +208,13 @@ static constexpr GoldUpgradeDef GOLD_UPGRADES[] = {
     {"Titan Grip",      "Each click also earns 2% of your gold/s",    AT(BUILDING_SMELTER, 3),      2,       UpgradeTarget::CLICK_PRODUCTION,  BUILDING_SMELTER,     1,   0},
     {"Earthshaker",     "Each click also earns 3% of your gold/s",    AT(BUILDING_RUNE_FORGE, 3),   3,       UpgradeTarget::CLICK_PRODUCTION,  BUILDING_RUNE_FORGE,  1,   0},
 
-    {"Tempered Edge",   "Attack is increased by 50%",                 AT(BUILDING_ORE_MILL, 1),     50,      UpgradeTarget::ATTACK,            BUILDING_ORE_MILL,    1,   0},
-    {"Plated Guard",    "Defense is increased by 50%",                AT(BUILDING_ORE_MILL, 2),     50,      UpgradeTarget::DEFENSE,           BUILDING_ORE_MILL,    1,   0},
-    {"Miners Vigor",    "Maximum health is increased by 100%",        AT(BUILDING_ORE_MILL, 2),     100,     UpgradeTarget::MAX_HP,            BUILDING_ORE_MILL,    1,   0},
-    {"Honed Steel",     "Attack is increased by 100%",                AT(BUILDING_SMELTER, 2),      100,     UpgradeTarget::ATTACK,            BUILDING_SMELTER,     1,   0},
-    {"Bulwark",         "Defense is increased by 100%",               AT(BUILDING_DEEP_SHAFT, 2),   100,     UpgradeTarget::DEFENSE,           BUILDING_DEEP_SHAFT,  1,   0},
-    {"Deep Lungs",      "Maximum health is increased by 150%",        AT(BUILDING_RUNE_FORGE, 2),   150,     UpgradeTarget::MAX_HP,            BUILDING_RUNE_FORGE,  1,   0},
-    {"Runic Edge",      "Attack is increased by 100%",                AT(BUILDING_ORE_BARGE, 1),    100,     UpgradeTarget::ATTACK,            BUILDING_ORE_BARGE,   1,   0},
+    {"Tempered Edge",   "Attack is increased by 50%",                 AT(BUILDING_ORE_MILL, 4),     50,      UpgradeTarget::ATTACK,            BUILDING_ORE_MILL,    1,   0},
+    {"Plated Guard",    "Defense is increased by 50%",                AT(BUILDING_ORE_MILL, 8),     50,      UpgradeTarget::DEFENSE,           BUILDING_ORE_MILL,    1,   0},
+    {"Miners Vigor",    "Maximum health is increased by 100%",        AT(BUILDING_ORE_MILL, 8),     100,     UpgradeTarget::MAX_HP,            BUILDING_ORE_MILL,    1,   0},
+    {"Honed Steel",     "Attack is increased by 100%",                AT(BUILDING_DEEP_SHAFT, 2),   100,     UpgradeTarget::ATTACK,            BUILDING_DEEP_SHAFT,  1,   0},
+    {"Bulwark",         "Defense is increased by 100%",               AT(BUILDING_RUNE_FORGE, 2),   100,     UpgradeTarget::DEFENSE,           BUILDING_RUNE_FORGE,  1,   0},
+    {"Deep Lungs",      "Maximum health is increased by 150%",        AT(BUILDING_ORE_BARGE, 5),    150,     UpgradeTarget::MAX_HP,            BUILDING_TRANSMUTER,  1,   0},
+    {"Runic Edge",      "Attack is increased by 100%",                AT(BUILDING_TRANSMUTER, 3),   100,     UpgradeTarget::ATTACK,            BUILDING_TRANSMUTER,  10,  0},
     {"Prospecting",     "Gold veins appear 50% more often",           AT(BUILDING_DRILL, 5),        50,      UpgradeTarget::VEIN_FREQUENCY,    BUILDING_DRILL,       1,   0},
     {"Lucky Charm",     "Gold vein bonuses are 50% stronger",         AT(BUILDING_EXCAVATOR, 5),    50,      UpgradeTarget::VEIN_POWER,        BUILDING_EXCAVATOR,   1,   0},
     {"Dowsing Rod",     "Gold veins appear 50% more often",           AT(BUILDING_ORE_MILL, 5),     50,      UpgradeTarget::VEIN_FREQUENCY,    BUILDING_ORE_MILL,    1,   0},
@@ -216,18 +224,18 @@ static constexpr GoldUpgradeDef GOLD_UPGRADES[] = {
     {"Gold Fever",      "Gold veins appear twice as often",           AT(BUILDING_ORE_BARGE, 5),    100,     UpgradeTarget::VEIN_FREQUENCY,    BUILDING_ORE_BARGE,   1,   0},
 
     // Kitten-style: worth more the more awards are in. Gated by levels of the older
-    // buildings so they land in the long waits for the next tier (~20, 36, 50 and 66 h).
-    {"Trophy Shelf",    "Gold/s +1% for every achievement",          AT(BUILDING_DEEP_SHAFT, 40),  1,       UpgradeTarget::AWARD_PRODUCTION,  BUILDING_SMELTER,     25,  0},
-    {"Hall of Ores",    "Gold/s +1% for every achievement",          AT(BUILDING_RUNE_FORGE, 40),  1,       UpgradeTarget::AWARD_PRODUCTION,  BUILDING_DEEP_SHAFT,  25,  0},
-    {"Gilded Plaque",   "Gold/s +1% for every achievement",          AT(BUILDING_ORE_BARGE, 10),   1,       UpgradeTarget::AWARD_PRODUCTION,  BUILDING_RUNE_FORGE,  20,  0},
-    {"Museum Wing",     "Gold/s +1% for every achievement",          AT(BUILDING_TRANSMUTER, 2),   1,       UpgradeTarget::AWARD_PRODUCTION,  BUILDING_ORE_BARGE,   15,  0},
+    // buildings so they land in the long waits for the next tier (~24, 36, 78 and 138 h).
+    {"Trophy Shelf",    "Gold/s +1% for every achievement",           AT(BUILDING_ORE_BARGE, 5),    1,       UpgradeTarget::AWARD_PRODUCTION,  BUILDING_RUNE_FORGE,  15,  0},
+    {"Hall of Ores",    "Gold/s +1% for every achievement",           AT(BUILDING_TRANSMUTER, 10),  1,       UpgradeTarget::AWARD_PRODUCTION,  BUILDING_ORE_BARGE,   25,  0},
+    {"Gilded Plaque",   "Gold/s +1% for every achievement",           AT(BUILDING_VOID_PIT, 3),     1,       UpgradeTarget::AWARD_PRODUCTION,  BUILDING_TRANSMUTER,  25,  0},
+    {"Museum Wing",     "Gold/s +1% for every achievement",           AT(BUILDING_TIME_MINE, 1),    1,       UpgradeTarget::AWARD_PRODUCTION,  BUILDING_VOID_PIT,    20,  0},
 
-    {"Alchemic Edge",   "Attack is increased by 100%",                AT(BUILDING_TRANSMUTER, 5),   100,     UpgradeTarget::ATTACK,            BUILDING_TRANSMUTER,  5,   0},
+    {"Alchemic Edge",   "Attack is increased by 100%",                AT(BUILDING_VOID_PIT, 5),     100,     UpgradeTarget::ATTACK,            BUILDING_VOID_PIT,    5,   0},
 
-    {"Forest Maps",     "Opens the Forest for fighting",              AT(BUILDING_ORE_MILL, 2),     1,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_ORE_MILL,    1,   0},
-    {"Crypt Maps",      "Opens the Crypt for fighting",               AT(BUILDING_DEEP_SHAFT, 2),   2,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_DEEP_SHAFT,  1,   0},
-    {"Depth Maps",      "Opens the Depths for fighting",              AT(BUILDING_RUNE_FORGE, 2),   3,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_RUNE_FORGE,  1,   0},
-    {"Core Maps",       "Opens the Molten Core for fighting",         AT(BUILDING_ORE_BARGE, 5),    4,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_TRANSMUTER,  1,   0},
+    {"Forest Maps",     "Opens the Forest for fighting",              AT(BUILDING_ORE_MILL, 8),     1,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_ORE_MILL,    1,   0},
+    {"Crypt Maps",      "Opens the Crypt for fighting",               AT(BUILDING_RUNE_FORGE, 2),   2,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_RUNE_FORGE,  1,   0},
+    {"Depth Maps",      "Opens the Depths for fighting",              AT(BUILDING_TRANSMUTER, 2),   3,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_TRANSMUTER,  1,   0},
+    {"Core Maps",       "Opens the Molten Core for fighting",         AT(BUILDING_TRANSMUTER, 5),   4,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_VOID_PIT,    1,   0},
 
     BUILDING_BOOSTS(BUILDING_PICKAXE,    "Pickaxe",    "Pickaxes"),
     BUILDING_BOOSTS(BUILDING_MINECART,   "Minecart",   "Minecarts"),
@@ -239,6 +247,9 @@ static constexpr GoldUpgradeDef GOLD_UPGRADES[] = {
     BUILDING_BOOSTS(BUILDING_RUNE_FORGE, "Rune Forge", "Rune Forges"),
     BUILDING_BOOSTS(BUILDING_ORE_BARGE,  "Ore Barge",  "Ore Barges"),
     BUILDING_BOOSTS(BUILDING_TRANSMUTER, "Transmuter", "Transmuters"),
+    BUILDING_BOOSTS(BUILDING_VOID_PIT,   "Void Pit",   "Void Pits"),
+    BUILDING_BOOSTS(BUILDING_TIME_MINE,  "Time Mine",  "Time Mines"),
+    BUILDING_BOOSTS(BUILDING_STAR_MINE,  "Star Mine",  "Star Mines"),
 };
 
 #undef BUILDING_BOOSTS

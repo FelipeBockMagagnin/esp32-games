@@ -289,7 +289,7 @@ static void testNextPointSaturates()
     puts("next ascension point saturates");
     Ascension ascension;
     Ascension::Snapshot snap = {};
-    snap.priorGold = UINT64_MAX - 1;
+    snap.priorUnits = UINT64_MAX - 1;
     ascension.load(snap);
     CHECK(ascension.getRunGoldForNextPoint(0) > 0);
 }
@@ -374,18 +374,18 @@ static void testLateGoals()
     {
         game.buildingLevels[i] = 1;
     }
-    game.gold = BUILDINGS[BUILDING_TRANSMUTER].baseCost / 2;
+    game.gold = BUILDINGS[BUILDING_STAR_MINE].baseCost / 2;
     w.game.load(game);
     simNow += 1000;
     w.unlocks.evaluate(simNow, w.game, w.inventory, w.combat, w.achievements, false);
     const Unlocks::Goal *goal = w.unlocks.getGoal();
     CHECK(goal != nullptr);
-    CHECK(strcmp(goal->label, "Buy a Transmuter") == 0);
+    CHECK(strcmp(goal->label, "Buy a Star Mine") == 0);
     // Past 32 bits the progress is in thousandths
     CHECK(goal->target == 1000);
     CHECK(goal->done == 500);
 
-    game.buildingLevels[BUILDING_TRANSMUTER] = 1;
+    game.buildingLevels[BUILDING_STAR_MINE] = 1;
     w.game.load(game);
     simNow += 1000;
     w.unlocks.evaluate(simNow, w.game, w.inventory, w.combat, w.achievements, false);

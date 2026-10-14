@@ -2,7 +2,7 @@
 #include <math.h>
 
 Ascension::Ascension()
-    : priorGold(0),
+    : priorUnits(0),
       ascensions(0),
       pointsSpent(0),
       revision(0)
@@ -14,26 +14,39 @@ Ascension::Ascension()
     recount();
 }
 
+// The largest cube that fits in 64 bits is this number's
+static const uint64_t MAX_CUBE_ROOT = 2642245;
+
 // The float estimate is nudged to the exact integer root, which a double can miss by one
 // near a perfect cube
-uint32_t Ascension::pointsFor(uint64_t lifetimeGold)
+uint32_t Ascension::pointsFor(uint64_t units)
 {
-    uint64_t units = lifetimeGold / ASCEND_GOLD_PER_POINT;
     uint64_t root = (uint64_t)cbrt((double)units);
+    if (root > MAX_CUBE_ROOT)
+    {
+        root = MAX_CUBE_ROOT;
+    }
     while (root > 0 && root * root * root > units)
     {
         root--;
     }
-    while ((root + 1) * (root + 1) * (root + 1) <= units)
+    while (root < MAX_CUBE_ROOT && (root + 1) * (root + 1) * (root + 1) <= units)
     {
         root++;
     }
     return (uint32_t)root;
 }
 
+uint64_t Ascension::getLifetimeUnits(uint64_t runGold) const
+{
+    uint64_t runUnits = runGold / ASCEND_GOLD_PER_POINT;
+    return priorUnits > UINT64_MAX - runUnits ? UINT64_MAX : priorUnits + runUnits;
+}
+
 uint64_t Ascension::getLifetimeGold(uint64_t runGold) const
 {
-    return priorGold > UINT64_MAX - runGold ? UINT64_MAX : priorGold + runGold;
+    uint64_t prior = priorUnits > UINT64_MAX / ASCEND_GOLD_PER_POINT ? UINT64_MAX : priorUnits * ASCEND_GOLD_PER_POINT;
+    return prior > UINT64_MAX - runGold ? UINT64_MAX : prior + runGold;
 }
 
 uint32_t Ascension::getPointsAvailable() const
@@ -45,19 +58,18 @@ uint32_t Ascension::getPointsAvailable() const
 
 uint32_t Ascension::getPendingPoints(uint64_t runGold) const
 {
-    return pointsFor(getLifetimeGold(runGold)) - getPointsEarned();
+    return pointsFor(getLifetimeUnits(runGold)) - getPointsEarned();
 }
 
 uint64_t Ascension::getRunGoldForNextPoint(uint64_t runGold) const
 {
-    uint64_t next = pointsFor(getLifetimeGold(runGold)) + 1;
-    uint64_t cube = next * next * next;
-    if (cube > UINT64_MAX / ASCEND_GOLD_PER_POINT)
+    uint64_t next = pointsFor(getLifetimeUnits(runGold)) + 1;
+    if (next > MAX_CUBE_ROOT)
     {
         return UINT64_MAX;
     }
-    uint64_t lifetime = cube * ASCEND_GOLD_PER_POINT;
-    return lifetime > priorGold ? lifetime - priorGold : 0;
+    uint64_t needed = next * next * next - priorUnits;
+    return needed > UINT64_MAX / ASCEND_GOLD_PER_POINT ? UINT64_MAX : needed * ASCEND_GOLD_PER_POINT;
 }
 
 bool Ascension::ascend(uint64_t runGold)
@@ -66,7 +78,7 @@ bool Ascension::ascend(uint64_t runGold)
     {
         return false;
     }
-    priorGold = getLifetimeGold(runGold);
+    priorUnits = getLifetimeUnits(runGold);
     ascensions++;
     revision++;
     return true;
@@ -163,7 +175,7 @@ void Ascension::recount()
 
 void Ascension::save(Snapshot &out) const
 {
-    out.priorGold = priorGold;
+    out.priorUnits = priorUnits;
     out.ascensions = ascensions;
     for (uint8_t i = 0; i < TALENT_COUNT; i++)
     {
@@ -173,7 +185,7 @@ void Ascension::save(Snapshot &out) const
 
 void Ascension::load(const Snapshot &in)
 {
-    priorGold = in.priorGold;
+    priorUnits = in.priorUnits;
     ascensions = in.ascensions;
     for (uint8_t i = 0; i < TALENT_COUNT; i++)
     {

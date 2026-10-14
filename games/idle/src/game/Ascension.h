@@ -5,25 +5,27 @@
 #include "AscensionConfig.h"
 
 // What survives an ascension besides the awards and the items: the gold of every past run,
-// which the points are counted from, and the talents bought with them. Like Achievements it
+// which the points are counted from, and the talents bought with them. Past runs are kept in
+// point units (ASCEND_GOLD_PER_POINT), since late runs earn enough that their sum in gold
+// would saturate 64 bits within a few months. Like Achievements it
 // holds no references; callers pass the current run's gold (GameState::getTotalGoldEarned).
 class Ascension
 {
 public:
     struct Snapshot
     {
-        uint64_t priorGold; // Whole units earned by the runs before this one
+        uint64_t priorUnits; // Gold of the runs before this one, in ASCEND_GOLD_PER_POINT
         uint16_t ascensions;
         uint8_t talentLevels[TALENT_COUNT];
     };
 
     Ascension();
 
-    static uint32_t pointsFor(uint64_t lifetimeGold);
+    static uint32_t pointsFor(uint64_t units);
     static uint32_t talentCost(const TalentDef &def, uint8_t level); // Of buying level + 1
 
-    uint64_t getLifetimeGold(uint64_t runGold) const;
-    uint32_t getPointsEarned() const { return pointsFor(priorGold); }
+    uint64_t getLifetimeGold(uint64_t runGold) const; // Saturates; for display
+    uint32_t getPointsEarned() const { return pointsFor(priorUnits); }
     uint32_t getPointsAvailable() const;
     // What ascending now would add, and the run gold the next one of those needs
     uint32_t getPendingPoints(uint64_t runGold) const;
@@ -53,8 +55,9 @@ public:
 
 private:
     void recount();
+    uint64_t getLifetimeUnits(uint64_t runGold) const;
 
-    uint64_t priorGold;
+    uint64_t priorUnits;
     uint16_t ascensions;
     uint8_t talentLevels[TALENT_COUNT];
     uint32_t pointsSpent;

@@ -280,8 +280,8 @@ static constexpr DropDef SUN_EATER_DROPS[] = {
 // (the previous zone's set part-levelled, plus the combat upgrades bought by then),
 // measured with tools/sim rather than assumed:
 //
-//   arrival (atk / def / hp):  Sewers 10/5/90 (starting kit)   Forest 21-22/30-36/230
-//                              Crypt 92-110/205-235/440-475   Depths 275-420/650-1015/1750-2600
+//   arrival (atk / def / hp):  Sewers 10/5/90 (starting kit)   Forest 19-22/30-36/222-230
+//                              Crypt 92-117/192-235/412-475   Depths 275-450/650-1110/1750-2620
 //                              Molten Core 890-1180/1750-2030/4460-5020
 //                              Void Rift 2000-2850/3100-5200/5900-9400
 //                              Star Forge 6200-6450/9090/16250
@@ -292,13 +292,14 @@ static constexpr DropDef SUN_EATER_DROPS[] = {
 // The zone's own drops are what make it idle-farmable.
 //
 // The run the tables are tuned for (tools/sim, a player checking in hourly while awake):
-// Sewers from minute 5, Forest at 1-2 h, Crypt at 8 h, Depths at 16-24 h, Molten Core with
-// the Transmuter at 48 h; each zone farms itself 0-10 h after it opens (the Crypt at
-// once when Honed Steel lands with it), the Core around day 4. The kill gates (150 / 500 / 1500 / 1000) keep a zone from opening before the
-// one before it has been fought for a while.
+// Sewers from minute 5, Forest at 1 h, Crypt at 8-9 h, Depths with the Transmuter at 25 h,
+// Molten Core with the Void Pit at 50-53 h; each zone farms itself 0-6 h after it opens,
+// the Core about a day later. The zone maps and combat upgrades are gated in GameConfig.h
+// to keep these hours. The kill gates (150 / 500 / 1500 / 1000) keep a zone from opening
+// before the one before it has been fought for a while.
 //
 // The two zones past the Core are for later runs: Deep Delver's two levels open them around
-// days 13-16 and 22 of ascending every three days (tools/sim --runs 30). The Void Rift
+// days 19 and 31 of ascending every six days (tools/sim --days 6 --runs 10). The Void Rift
 // farms itself 15-45 h after it first opens, once a few Mythic pieces have dropped. The Star
 // Forge opens with the Mythic set around Lv 40, and nothing it drops raises attack: it turns
 // idle on its fourth run, with the set near its cap, and its auto-attack kills stay slow.

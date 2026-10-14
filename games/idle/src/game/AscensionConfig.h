@@ -9,12 +9,13 @@
 // awards, the items and the talents. Points follow Cookie Clicker's prestige curve: the
 // lifetime total is floor(cbrt(lifetime gold / ASCEND_GOLD_PER_POINT)), and ascending
 // banks whatever that total has gained, so ascending early never costs points.
-// Tuned for months of play, measured with tools/sim --runs 30 (an ascension every three
-// days): 18-29 points a run for the first month, still about 18 by day 90, and Deep Delver's
-// zones around days 16 and 31. A run banks fewer points the more came before it, since
-// holding steady would need its gold to grow with the square of the points, so the deep
-// talent levels stay out of reach for good.
-static const uint64_t ASCEND_GOLD_PER_POINT = 4000000000ULL;
+// Tuned for months of play, measured with tools/sim --days 6 --runs 15 (an ascension every
+// six days, once the run slows past the Star Mine): 39-50 points a run for the first five
+// weeks, the same points a day as before the ladder grew to thirteen buildings, and Deep
+// Delver's zones around days 19 and 31. Later runs reach the Star Mine within two days and
+// bank 100-220; the talent prices grow geometrically, so that buys a few more levels of
+// each rather than the deep ones.
+static const uint64_t ASCEND_GOLD_PER_POINT = 20000000000ULL;
 
 // Every point earned, spent or not, also adds this much gold production, as Cookie
 // Clicker's prestige levels do. It and the production talents multiply the other bonuses.
@@ -125,7 +126,7 @@ static constexpr TalentDef TALENTS[] = {
     {"Lingering",   "Veins stay 2s longer",    TalentEffect::VEIN_LINGER,           2,   10, 2,   140,  TALENT_DOWSER,       image_icon_gold_vein_pixels},
 
     // Cosmetic, a theme a level. Doubling from 1 point, the last theme costs 128 and all
-    // eight 255, against about 600 points earned over three months of ascensions: the first
+    // eight 255, against about 600 points earned over the first eight weeks: the first
     // is a treat, the last a long goal. Last in the table: its level sits in what was padding
     // in the save, so older saves still load (see SaveGame.cpp)
     {"Palette",     "A new theme per level",   TalentEffect::THEMES,                1,   8,  1,   200,  NO_TALENT,           image_icon_star_crown_pixels},

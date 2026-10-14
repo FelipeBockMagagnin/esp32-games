@@ -32,6 +32,9 @@ extern const uint16_t image_building_deep_shaft_pixels[];
 extern const uint16_t image_building_rune_forge_pixels[];
 extern const uint16_t image_building_ore_barge_pixels[];
 extern const uint16_t image_building_transmuter_pixels[];
+extern const uint16_t image_building_void_pit_pixels[];
+extern const uint16_t image_building_time_mine_pixels[];
+extern const uint16_t image_building_star_mine_pixels[];
 
 // 16x16 upgrade category icons
 extern const uint16_t image_upgrade_production_pixels[];
