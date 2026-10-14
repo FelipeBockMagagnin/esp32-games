@@ -42,7 +42,7 @@ public:
         }
     }
 
-    void setRingColor(uint16_t color)
+    void setRingColor(Color color)
     {
         if (ringColor != color)
         {
@@ -81,10 +81,10 @@ private:
     ButtonBadge::Kind kind;
     bool hasCap;
     uint8_t step;
-    uint16_t ringColor;
-    uint16_t trackColor;
+    Color ringColor;
+    Color trackColor;
     bool outlined;
-    uint16_t outlineColor;
+    Color outlineColor;
     bool capDimmed;
     bool pingPending;
     bool pinging;

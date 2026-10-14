@@ -195,6 +195,57 @@ static void testLegacySaveMigrates()
     CHECK(sameBlob(read, legacy));
 }
 
+// A save from before the Palette talent: same bytes, but fingerprinted with one talent less
+static void testSaveBeforePaletteLoads()
+{
+    puts("a save from before the Palette talent loads with Palette at 0");
+    Preferences::store.clear();
+    eraseSave();
+
+    World w;
+    w.game.addGold(55);
+    SaveBlob old;
+    w.capture(old);
+    const uint32_t sizes[] = {
+        (uint32_t)sizeof(SaveBlob), BUILDING_COUNT, GOLD_UPGRADE_COUNT, ITEM_COUNT,
+        EQUIP_SLOT_COUNT, ZONE_COUNT, ACHIEVEMENT_COUNT, FEATURE_COUNT, (uint32_t)TALENT_COUNT - 1};
+    uint32_t hash = 2166136261u;
+    for (size_t i = 0; i < sizeof(sizes); i++)
+    {
+        hash = (hash ^ ((const uint8_t *)sizes)[i]) * 16777619u;
+    }
+    old.layout = hash;
+    hash = 2166136261u;
+    for (size_t i = 0; i < sizeof(old); i++)
+    {
+        hash = (hash ^ ((const uint8_t *)&old)[i]) * 16777619u;
+    }
+    Preferences prefs;
+    prefs.begin("idlegame");
+    prefs.putBytes("blob", &old, sizeof(old));
+    prefs.putUInt("crc", hash);
+
+    SaveBlob read;
+    CHECK(loadGame(read));
+    CHECK(read.game.gold == old.game.gold);
+    CHECK(read.ascension.talentLevels[TALENT_PALETTE] == 0);
+}
+
+// Settings saved before the theme field existed keep their values and read theme 0
+static void testShortSettingsLoad()
+{
+    puts("settings from before a new field still load");
+    Preferences::store.clear();
+    Preferences prefs;
+    prefs.begin("idlegame");
+    const uint8_t old[2] = {2, 0};
+    prefs.putBytes("settings", old, sizeof(old));
+
+    Settings read = {9, 9, 9};
+    CHECK(loadSettings(read));
+    CHECK(read.sound == 2 && read.dimAfter == 0 && read.theme == 0);
+}
+
 // Hopping between zones must not refill health nor cut a revive short
 static void testZoneHopKeepsHealth()
 {
@@ -396,6 +447,8 @@ int main()
     testSaveSurvivesFailedWrite();
     testUnreadableSlotIsOverwritten();
     testLegacySaveMigrates();
+    testShortSettingsLoad();
+    testSaveBeforePaletteLoads();
     testZoneHopKeepsHealth();
     testNextPointSaturates();
     testGoldPastThousandthsCap();

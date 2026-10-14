@@ -154,6 +154,15 @@ void ScreenManager::replaceModal(Screen *screen)
     modal->onEnter(tft);
 }
 
+void ScreenManager::repaint()
+{
+    Screen *screen = getCurrentScreen();
+    if (screen != nullptr)
+    {
+        screen->repaint(tft);
+    }
+}
+
 Screen *ScreenManager::getCurrentScreen() const
 {
     if (modal != nullptr)

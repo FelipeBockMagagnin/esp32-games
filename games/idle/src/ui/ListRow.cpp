@@ -2,10 +2,12 @@
 #include "IconUtil.h"
 #include "Theme.h"
 
-static const uint16_t SELECTED_COLOR = Theme::SELECT;
-static const uint16_t OWNED_COLOR = Theme::GOOD;
-static const uint16_t DIMMED_COLOR = Theme::TEXT_DIM;
-static const uint16_t SUBTITLE_COLOR = Theme::TEXT_2; // Secondary to the title
+constexpr Color ListRow::DEFAULT_FRAME_COLOR;
+
+static constexpr Color SELECTED_COLOR = Theme::SELECT;
+static constexpr Color OWNED_COLOR = Theme::GOOD;
+static constexpr Color DIMMED_COLOR = Theme::TEXT_DIM;
+static constexpr Color SUBTITLE_COLOR = Theme::TEXT_2; // Secondary to the title
 
 // Icon cell on the left, then the text column; values are right-aligned
 static const int16_t ICON_CELL_W = 26;
@@ -13,11 +15,11 @@ static const int16_t TEXT_DX = 31;
 static const int16_t VALUE_MARGIN = 5;
 static const int16_t COIN_RADIUS = 3;
 static const uint8_t DIM_ICON_PERCENT = 55; // Brightness a locked row's gray icon keeps
-static const uint16_t FLASH_COLOR = Theme::GOOD;
+static constexpr Color FLASH_COLOR = Theme::GOOD;
 static const uint8_t FLASH_FILL_ALPHA = 90;
 static const int16_t TREND_HALF_W = 3;
 
-void ListRow::setIconBitmap(const unsigned char *bitmap, int16_t bw, int16_t bh, uint16_t color)
+void ListRow::setIconBitmap(const unsigned char *bitmap, int16_t bw, int16_t bh, Color color)
 {
     if (iconBitmap == bitmap && iconPixels == nullptr && iconW == bw && iconH == bh && iconColor == color)
     {
@@ -113,7 +115,7 @@ void ListRow::draw(TFT_eSPI &tft)
         titleColor = titleColorOverride;
     }
 
-    tft.drawRect(x, y, w, h, flashOn ? FLASH_COLOR : frame);
+    tft.drawRect(x, y, w, h, flashOn ? (uint16_t)FLASH_COLOR : frame);
 
     if (iconW > 0 && iconH > 0)
     {

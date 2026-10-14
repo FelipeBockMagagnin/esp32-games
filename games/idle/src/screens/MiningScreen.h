@@ -52,7 +52,7 @@ private:
     // Gold veins: the Mining screen is where they show and where Up catches them
     unsigned long veinMessageUntil; // What the last caught vein gave stays on the line until then
     String veinMessage;
-    uint16_t veinMessageColor;
+    Color veinMessageColor;
 
     unsigned long levelFlashUntil;
 

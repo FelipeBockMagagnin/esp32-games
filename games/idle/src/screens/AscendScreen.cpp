@@ -1,17 +1,18 @@
 #include "AscendScreen.h"
+#include "../ui/Themes.h"
 #include "../game/SatMath.h"
 #include "../game/Format.h"
 #include "../game/Achievements.h"
 #include "../game/CombatConfig.h"
 
-static const uint16_t ACCENT = Theme::EPIC;
-static const uint16_t PANEL_BORDER = Theme::FRAME;
-static const uint16_t HINT_COLOR = Theme::TEXT_2;
-static const uint16_t LOCKED_COLOR = Theme::TEXT_DIM;
-static const uint16_t AFFORD_COLOR = Theme::GOOD;
-static const uint16_t BAR_COLOR = Theme::GOLD_BAR;
-static const uint16_t BAR_BG = Theme::GOLD_TRACK;
-static const uint16_t BAR_BORDER = Theme::GOLD_BORDER;
+static constexpr Color ACCENT = Theme::EPIC;
+static constexpr Color PANEL_BORDER = Theme::FRAME;
+static constexpr Color HINT_COLOR = Theme::TEXT_2;
+static constexpr Color LOCKED_COLOR = Theme::TEXT_DIM;
+static constexpr Color AFFORD_COLOR = Theme::GOOD;
+static constexpr Color BAR_COLOR = Theme::GOLD_BAR;
+static constexpr Color BAR_BG = Theme::GOLD_TRACK;
+static constexpr Color BAR_BORDER = Theme::GOLD_BORDER;
 
 // Summary card
 static const int16_t CARD_X = 5;
@@ -43,7 +44,7 @@ static const int16_t BADGE_OFFSET_Y = (8 - ButtonBadge::SIZE) / 2;
 struct EffectStyle
 {
     const char *label;
-    uint16_t color;
+    Color color;
     const char *unit; // After the value: "%" for the percentages
 };
 
@@ -69,6 +70,7 @@ static const EffectStyle EFFECT_STYLES[TALENT_EFFECT_COUNT] = {
     {"Maps kept", Theme::EPIC, ""},        // KEEP_MAPS
     {"", Theme::EPIC, ""},                 // DEEP_ZONES, worded in formatEffect
     {"Vein time", Theme::GOLD, "s"},       // VEIN_LINGER
+    {"", Theme::SELECT, ""},               // THEMES, worded in formatEffect
 };
 
 AscendScreen::AscendScreen(const GameState &game, Ascension &ascension, SoundManager &sound,
@@ -349,6 +351,16 @@ void AscendScreen::formatEffect(uint8_t id, char *buf, size_t size) const
         snprintf(buf, size, maxed ? "Opened %s" : "Opens %s", ZONES[first + (maxed ? level - 1 : level)].name);
         return;
     }
+    case TalentEffect::THEMES:
+        if (maxed)
+        {
+            snprintf(buf, size, "All %u themes opened", (unsigned)THEME_COUNT);
+        }
+        else
+        {
+            snprintf(buf, size, "Opens %s", THEMES[FREE_THEMES + level].name);
+        }
+        return;
     default:
         break;
     }

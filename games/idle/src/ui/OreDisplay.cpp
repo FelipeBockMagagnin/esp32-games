@@ -55,7 +55,7 @@ static uint16_t swapBytes(uint16_t color)
 
 OreDisplay::OreDisplay(int16_t x, int16_t y, int16_t w, int16_t h,
                        const uint16_t *orePixels, int16_t oreX, int16_t oreY, int16_t oreW, int16_t oreH,
-                       uint16_t popupColor)
+                       Color popupColor)
     : UI(x, y, w, h),
       orePixels(orePixels),
       oreX(oreX),
@@ -117,7 +117,7 @@ void OreDisplay::addPopup(const String &text)
     addPopup(text, popupColor);
 }
 
-void OreDisplay::addPopup(const String &text, uint16_t color)
+void OreDisplay::addPopup(const String &text, Color color)
 {
     // Reuses the oldest slot when all are in use
     Popup &popup = popups[nextPopup];
@@ -211,7 +211,7 @@ void OreDisplay::setPalette(const uint16_t *source, const uint16_t *target, uint
     }
 }
 
-void OreDisplay::setGlowColor(uint16_t color)
+void OreDisplay::setGlowColor(Color color)
 {
     if (glowColor != color)
     {

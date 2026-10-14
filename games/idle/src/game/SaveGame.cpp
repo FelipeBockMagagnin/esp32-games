@@ -40,13 +40,20 @@ static uint32_t checksum(const void *data, size_t len)
 
 // Changes whenever a config table gains or loses a row, which shifts every snapshot
 // after it, even when SAVE_VERSION was not bumped
-static uint32_t layoutFingerprint()
+static uint32_t layoutFingerprint(uint32_t talentCount = TALENT_COUNT)
 {
     const uint32_t sizes[] = {
         (uint32_t)sizeof(SaveBlob), BUILDING_COUNT, GOLD_UPGRADE_COUNT, ITEM_COUNT,
-        EQUIP_SLOT_COUNT, ZONE_COUNT, ACHIEVEMENT_COUNT, FEATURE_COUNT, TALENT_COUNT};
+        EQUIP_SLOT_COUNT, ZONE_COUNT, ACHIEVEMENT_COUNT, FEATURE_COUNT, talentCount};
     return checksum(sizes, sizeof(sizes));
 }
+
+// Palette, the last talent, took a byte the snapshot already padded, and captureSave zeroes
+// padding: a save from before it reads as Palette level 0
+static const uint32_t TALENTS_BEFORE_PALETTE = TALENT_PALETTE;
+static_assert(TALENT_PALETTE == TALENT_COUNT - 1, "Palette must stay the last talent for the migration");
+static_assert(sizeof(Ascension::Snapshot) == ((8 + 2 + TALENT_COUNT - 1 + 7) / 8) * 8,
+              "the Palette byte must fit in the snapshot's old padding");
 
 void captureSave(SaveBlob &blob, const GameState &game, const Inventory &inventory,
                  const CombatState &combat, const Achievements &achievements, const Unlocks &unlocks,
@@ -86,6 +93,10 @@ static const uint16_t SAVE_VERSION_GOLD_THOUSANDTHS = 7;
 // Brings an older save up to date in place; false when it cannot be read
 static bool makeUsable(SaveBlob &blob)
 {
+    if (blob.layout == layoutFingerprint(TALENTS_BEFORE_PALETTE))
+    {
+        blob.layout = layoutFingerprint();
+    }
     if (blob.layout != layoutFingerprint())
     {
         return false;
@@ -179,7 +190,17 @@ bool loadSettings(Settings &out)
     {
         return false;
     }
-    bool ok = prefs.getBytesLength(KEY_SETTINGS) == sizeof(out) && prefs.getBytes(KEY_SETTINGS, &out, sizeof(out)) == sizeof(out);
+    size_t stored = prefs.getBytesLength(KEY_SETTINGS);
+    bool ok = stored > 0 && stored <= sizeof(out);
+    if (ok)
+    {
+        Settings read = {};
+        ok = prefs.getBytes(KEY_SETTINGS, &read, stored) == stored;
+        if (ok)
+        {
+            out = read;
+        }
+    }
     prefs.end();
     return ok;
 }

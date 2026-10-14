@@ -18,16 +18,16 @@ static const unsigned long HEAL_GLOW_MS = 450;
 static const unsigned long WARN_MS = 600;
 
 // Warm belongs to the enemy, cool to the player
-static const uint16_t ENEMY_HP_COLOR = Theme::ENEMY_HP_BAR;
-static const uint16_t ENEMY_HP_BG = Theme::ENEMY_HP_TRACK;
-static const uint16_t ENEMY_HP_BORDER = Theme::ENEMY_HP_BORDER;
-static const uint16_t ENEMY_ATTACK_COLOR = Theme::ENEMY_ATK_BAR;
-static const uint16_t ENEMY_ATTACK_BG = Theme::ENEMY_ATK_TRACK;
-static const uint16_t ENEMY_ATTACK_BORDER = Theme::ENEMY_ATK_BORDER;
-static const uint16_t PLAYER_HP_COLOR = Theme::HP_BAR;
-static const uint16_t PLAYER_HP_BG = Theme::HP_TRACK;
-static const uint16_t PLAYER_HP_BORDER = Theme::HP_BORDER;
-static const uint16_t INERT_COLOR = Theme::INERT_BAR;
+static constexpr Color ENEMY_HP_COLOR = Theme::ENEMY_HP_BAR;
+static constexpr Color ENEMY_HP_BG = Theme::ENEMY_HP_TRACK;
+static constexpr Color ENEMY_HP_BORDER = Theme::ENEMY_HP_BORDER;
+static constexpr Color ENEMY_ATTACK_COLOR = Theme::ENEMY_ATK_BAR;
+static constexpr Color ENEMY_ATTACK_BG = Theme::ENEMY_ATK_TRACK;
+static constexpr Color ENEMY_ATTACK_BORDER = Theme::ENEMY_ATK_BORDER;
+static constexpr Color PLAYER_HP_COLOR = Theme::HP_BAR;
+static constexpr Color PLAYER_HP_BG = Theme::HP_TRACK;
+static constexpr Color PLAYER_HP_BORDER = Theme::HP_BORDER;
+static constexpr Color INERT_COLOR = Theme::INERT_BAR;
 
 static const int16_t CENTER_X = 120;
 
@@ -138,7 +138,7 @@ void CombatScreen::showFightElements(bool visible)
     playerHpBar.setVisible(visible);
 }
 
-void CombatScreen::showMessage(unsigned long now, const char *text, uint16_t color, unsigned long durationMs)
+void CombatScreen::showMessage(unsigned long now, const char *text, Color color, unsigned long durationMs)
 {
     messageText.setText(text);
     messageText.setColor(color);

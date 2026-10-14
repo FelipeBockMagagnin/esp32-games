@@ -5,24 +5,24 @@
 
 
 static const unsigned long SPENT_BLINK_MS = 150;
-static const uint16_t CARD_BORDER = Theme::GOLD_FRAME; // Dark amber, same frame as the other gold cards
-static const uint16_t RATE_COLOR = Theme::GOOD;  // Soft green: income that grows on its own
-static const uint16_t PANEL_BORDER = Theme::FRAME; // Dark slate
-static const uint16_t LINE_COLOR = Theme::TEXT_2;
-static const uint16_t HINT_COLOR = Theme::TEXT_2;
-static const uint16_t AFFORD_COLOR = Theme::GOOD;
-static const uint16_t TOO_DEAR_COLOR = Theme::TEXT_DIM;
-static const uint16_t SAVINGS_COLOR = Theme::GOLD_BAR; // Amber fill, dark enough for the white label
-static const uint16_t SAVINGS_BG = Theme::GOLD_TRACK;
-static const uint16_t SAVINGS_BORDER = Theme::GOLD_BORDER;
-static const uint16_t READY_FILL = Theme::DONE_BAR; // Dark green once the price is covered
+static constexpr Color CARD_BORDER = Theme::GOLD_FRAME; // Dark amber, same frame as the other gold cards
+static constexpr Color RATE_COLOR = Theme::GOOD;  // Soft green: income that grows on its own
+static constexpr Color PANEL_BORDER = Theme::FRAME; // Dark slate
+static constexpr Color LINE_COLOR = Theme::TEXT_2;
+static constexpr Color HINT_COLOR = Theme::TEXT_2;
+static constexpr Color AFFORD_COLOR = Theme::GOOD;
+static constexpr Color TOO_DEAR_COLOR = Theme::TEXT_DIM;
+static constexpr Color SAVINGS_COLOR = Theme::GOLD_BAR; // Amber fill, dark enough for the white label
+static constexpr Color SAVINGS_BG = Theme::GOLD_TRACK;
+static constexpr Color SAVINGS_BORDER = Theme::GOLD_BORDER;
+static constexpr Color READY_FILL = Theme::DONE_BAR; // Dark green once the price is covered
 
 // How each upgrade category looks, indexed by UpgradeTarget. The colors echo where the
 // bonus lands: gold for production, the combat screen's red/blue/green for its stats.
 struct CategoryStyle
 {
     const char *label;
-    uint16_t accent;
+    Color accent;
     const uint16_t *icon;
 };
 

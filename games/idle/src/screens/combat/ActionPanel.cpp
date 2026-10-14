@@ -3,7 +3,7 @@
 #include "../../ui/ButtonBadge.h"
 #include "../../assets/Assets.h"
 
-static const uint16_t AUTO_COLOR = Theme::ATTACK;
+static constexpr Color AUTO_COLOR = Theme::ATTACK;
 
 static const int16_t RING_CX = 18;
 static const int16_t RING_R = 11;

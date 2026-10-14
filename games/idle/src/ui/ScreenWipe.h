@@ -9,7 +9,7 @@
 class ScreenWipe : public UI
 {
 public:
-    explicit ScreenWipe(uint16_t color);
+    explicit ScreenWipe(Color color);
 
     void start(unsigned long now);
     void stop();
@@ -22,7 +22,7 @@ protected:
     void erase(TFT_eSPI &tft) override {}
 
 private:
-    uint16_t color;
+    Color color;
     unsigned long startTime;
     int16_t reach;      // Rows from the middle the light should cover
     int16_t drawnReach; // Rows it covers on the panel

@@ -8,7 +8,7 @@ class Ellipse : public UI
 public:
     int16_t rx;
     int16_t ry;
-    uint16_t color;
+    Color color;
     bool filled;
 
     Ellipse()
@@ -16,7 +16,7 @@ public:
     {
     }
 
-    Ellipse(int16_t centerX, int16_t centerY, int16_t rx, int16_t ry, uint16_t color = Theme::TEXT, bool filled = false)
+    Ellipse(int16_t centerX, int16_t centerY, int16_t rx, int16_t ry, Color color = Theme::TEXT, bool filled = false)
         : UI(centerX - rx, centerY - ry, rx * 2 + 1, ry * 2 + 1),
           rx(rx),
           ry(ry),
@@ -25,7 +25,7 @@ public:
     {
     }
 
-    void setColor(uint16_t c)
+    void setColor(Color c)
     {
         if (color != c)
         {

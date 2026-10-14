@@ -7,7 +7,7 @@ static const int16_t SPARK_HALF = 1; // A 3x3 spark
 static const uint8_t MAX_DEPTH = 4;   // How far into the gaps a stale line may reach
 
 TreeLines::TreeLines(int16_t x, int16_t top, int16_t pitch, int16_t rowH, int16_t indent, uint8_t count,
-                     uint16_t lineColor, uint16_t sparkColor)
+                     Color lineColor, Color sparkColor)
     : UI(x, top - (pitch - rowH), 0, count * pitch), top(top), pitch(pitch), rowH(rowH), indent(indent),
       slotCount(count < MAX_SLOTS ? count : MAX_SLOTS), lineColor(lineColor), sparkColor(sparkColor),
       layoutChanged(true), sparking(false), arrived(false), sparkTo(0), sparkX0(0), sparkY0(0), sparkY1(0),

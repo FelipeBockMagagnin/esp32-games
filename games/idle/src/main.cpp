@@ -23,6 +23,7 @@
 #include "screens/AscendScreen.h"
 #include "screens/ConfirmScreen.h"
 #include "screens/SettingsScreen.h"
+#include "ui/Themes.h"
 
 // The buttons form a D-pad: Confirm in the middle, Up/Down for in-screen actions,
 // Right/Left to step forward/backward through the screens
@@ -71,10 +72,10 @@ ConfirmScreen ascendConfirm({"Ascend", "Ascend now?", "Gold, buildings and upgra
                             "Awards, items and talents stay.", "Restart with the points", "Ascending..."},
                            Theme::EPIC, ascendGame, screenManager, sound, true);
 AscendScreen ascendScreen(game, ascension, sound, screenManager, ascendConfirm);
-Settings settings = {(uint8_t)SoundMode::ON, DIM_DEFAULT};
-SettingsScreen settingsScreen(settings, applySettings, screenManager, sound, resetScreen);
+Settings settings = {(uint8_t)SoundMode::ON, DIM_DEFAULT, 0};
+SettingsScreen settingsScreen(settings, applySettings, ascension, screenManager, sound, resetScreen);
 
-static const uint16_t UNLOCK_ACCENT = Theme::INFO; // Cyan, so a new screen never reads as an achievement
+static constexpr Color UNLOCK_ACCENT = Theme::INFO; // Cyan, so a new screen never reads as an achievement
 
 // Last achievement count the loop played a sound for
 uint8_t seenAchievements = 0;
@@ -104,6 +105,12 @@ void applySettings()
     {
         settings.dimAfter = DIM_DEFAULT;
     }
+    // A theme past the opened ones: the save it was opened in is gone
+    if (settings.theme >= unlockedThemes(ascension.getEffectLevel(TalentEffect::THEMES)))
+    {
+        settings.theme = 0;
+    }
+    Theme::setActive(settings.theme);
     sound.setMode((SoundMode)settings.sound);
     saveSettings(settings);
 }

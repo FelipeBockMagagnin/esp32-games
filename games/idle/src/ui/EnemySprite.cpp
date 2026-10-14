@@ -296,7 +296,7 @@ void EnemySprite::update(unsigned long time)
 // A dark shadow one frame pixel down and right, then the digits, so they read over any art
 void EnemySprite::paintNumbers(uint8_t row, uint16_t *line) const
 {
-    static const uint16_t SHADOW = swapBytes(Theme::HEADER);
+    const uint16_t SHADOW = swapBytes(Theme::HEADER);
 
     for (uint8_t i = 0; i < MAX_NUMBERS; i++)
     {

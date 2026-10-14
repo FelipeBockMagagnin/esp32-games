@@ -60,7 +60,7 @@ static void drawIcon(TFT_eSPI &tft, const ItemDef &def, int16_t left, int16_t to
 void DropBanner::draw(TFT_eSPI &tft)
 {
     const ItemDef &def = ITEMS[itemId];
-    uint16_t rarity = ITEM_TIER_COLORS[def.tier];
+    uint16_t rarity = Theme::tierColor(def.tier);
     int16_t cx = x + w / 2;
 
     tft.fillRoundRect(x, y, w, h, RADIUS, Theme::CARD);

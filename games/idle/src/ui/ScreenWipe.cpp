@@ -3,7 +3,7 @@
 static const unsigned long WIPE_MS = 420;
 static const unsigned long FRAME_MS = 20;
 
-ScreenWipe::ScreenWipe(uint16_t color)
+ScreenWipe::ScreenWipe(Color color)
     : UI(0, 0, TFT_WIDTH, TFT_HEIGHT), color(color), startTime(0), reach(0), drawnReach(-1), done(false),
       lastFrame(0)
 {

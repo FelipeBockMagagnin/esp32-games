@@ -53,7 +53,7 @@ private:
     unsigned long enemyFlashUntil;
 
     void showFightElements(bool visible);
-    void showMessage(unsigned long now, const char *text, uint16_t color, unsigned long durationMs);
+    void showMessage(unsigned long now, const char *text, Color color, unsigned long durationMs);
     void handleEvents(unsigned long now);
     void refreshEnemyAttack(unsigned long now, bool fighting);
     void refreshPlayer(unsigned long now);

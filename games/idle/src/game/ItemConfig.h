@@ -36,7 +36,6 @@ static const uint8_t ITEM_TIER_COUNT = 6;
 static const uint8_t MYTHIC_TIER = 4;
 static const uint8_t RELIC_TIER = 5;
 static const char *const ITEM_TIER_NAMES[ITEM_TIER_COUNT] = {"Common", "Uncommon", "Rare", "Epic", "Mythic", "Relic"};
-static const uint16_t ITEM_TIER_COLORS[ITEM_TIER_COUNT] = {0xBD52, 0x8E4D, 0x7D5A, 0xC45B, 0xF443, 0xF5A8}; // Theme TEXT_2, GOOD, DEFENSE, EPIC, MYTHIC, GOLD
 
 // What the worn relic does, as relicPercent of it scaled by the relic's level like a stat.
 // Relics drop only once the Relic Sense talent has a level per relic, in table order.

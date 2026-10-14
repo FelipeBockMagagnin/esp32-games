@@ -14,7 +14,7 @@ public:
     int16_t h;
     bool visible;
     bool dirty;
-    uint16_t eraseColor; // Color used to clear the element when it is hidden or moved
+    Color eraseColor; // Color used to clear the element when it is hidden or moved
 
     UI() : UI(0, 0, 0, 0) {}
     UI(int16_t x, int16_t y, int16_t w = 0, int16_t h = 0)

@@ -5,15 +5,15 @@
 // Values change every frame while producing, so only rebuild the texts a few times per second
 
 static const unsigned long SPENT_BLINK_MS = 150;
-static const uint16_t CARD_BORDER = Theme::GOLD_FRAME;    // Dark amber, same frame as the Mining gold card
-static const uint16_t RATE_COLOR = Theme::GOOD;     // Soft green: income that grows on its own
-static const uint16_t AFFORD_COLOR = Theme::GOOD;   // Green price when the player can buy
-static const uint16_t TOO_DEAR_COLOR = Theme::TEXT_DIM; // Gray price when they cannot
-static const uint16_t PANEL_BORDER = Theme::FRAME;
-static const uint16_t HINT_COLOR = Theme::TEXT_2;
-static const uint16_t SHARE_COLOR = Theme::GOLD_BAR;    // Amber fill, dark enough for the white label
-static const uint16_t SHARE_BG = Theme::GOLD_TRACK;
-static const uint16_t SHARE_BORDER = Theme::GOLD_BORDER;
+static constexpr Color CARD_BORDER = Theme::GOLD_FRAME;    // Dark amber, same frame as the Mining gold card
+static constexpr Color RATE_COLOR = Theme::GOOD;     // Soft green: income that grows on its own
+static constexpr Color AFFORD_COLOR = Theme::GOOD;   // Green price when the player can buy
+static constexpr Color TOO_DEAR_COLOR = Theme::TEXT_DIM; // Gray price when they cannot
+static constexpr Color PANEL_BORDER = Theme::FRAME;
+static constexpr Color HINT_COLOR = Theme::TEXT_2;
+static constexpr Color SHARE_COLOR = Theme::GOLD_BAR;    // Amber fill, dark enough for the white label
+static constexpr Color SHARE_BG = Theme::GOLD_TRACK;
+static constexpr Color SHARE_BORDER = Theme::GOLD_BORDER;
 
 // Gold card
 static const int16_t CARD_X = 5;

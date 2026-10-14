@@ -74,7 +74,7 @@ public:
 
     // nullptr or an empty name gives the bar back to the title and nav labels.
     // The caption is compared by pointer, so pass a string literal or other fixed storage.
-    void setNotice(const char *caption, const char *name, uint16_t accent)
+    void setNotice(const char *caption, const char *name, Color accent)
     {
         bool wanted = name != nullptr && name[0] != '\0';
         if (wanted == hasNotice &&
@@ -101,7 +101,7 @@ private:
 
     String notice;
     const char *noticeCaption;
-    uint16_t noticeAccent;
+    Color noticeAccent;
     bool hasNotice;
     uint8_t flashLevel;
     unsigned long lastFlashStep;

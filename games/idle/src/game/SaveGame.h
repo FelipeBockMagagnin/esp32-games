@@ -31,11 +31,13 @@ struct SaveBlob
 };
 
 // Player preferences, under a key of their own so changing one never touches the save's
-// version or layout. Erasing the save clears them too.
+// version or layout. Erasing the save clears them too. New fields go at the end: an older,
+// shorter record still loads, and the fields it lacks read as 0.
 struct Settings
 {
     uint8_t sound;  // SoundMode
     uint8_t dimAfter; // Index into DIM_OPTIONS (main.cpp)
+    uint8_t theme;    // Index into THEMES (ui/Themes.h)
 };
 bool loadSettings(Settings &out);
 void saveSettings(const Settings &in);

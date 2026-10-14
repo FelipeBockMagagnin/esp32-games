@@ -7,8 +7,8 @@ class Text : public UI
 {
 public:
     String text;
-    uint16_t color;
-    uint16_t bgColor;
+    Color color;
+    Color bgColor;
     uint8_t size;
     uint8_t datum;
     bool transparentBg;
@@ -28,7 +28,7 @@ public:
     {
     }
 
-    Text(int16_t x, int16_t y, const String &text, uint16_t color = Theme::TEXT, uint8_t size = 1, uint8_t datum = TL_DATUM, bool transparentBg = true, uint16_t bgColor = Theme::BG)
+    Text(int16_t x, int16_t y, const String &text, Color color = Theme::TEXT, uint8_t size = 1, uint8_t datum = TL_DATUM, bool transparentBg = true, Color bgColor = Theme::BG)
         : UI(x, y, 0, 0),
           text(text),
           color(color),
@@ -62,7 +62,7 @@ public:
         }
     }
 
-    void setColor(uint16_t newColor)
+    void setColor(Color newColor)
     {
         if (color != newColor)
         {
@@ -71,7 +71,7 @@ public:
         }
     }
 
-    void setBgColor(uint16_t newBg, bool transparent = false)
+    void setBgColor(Color newBg, bool transparent = false)
     {
         if (bgColor != newBg || transparentBg != transparent)
         {

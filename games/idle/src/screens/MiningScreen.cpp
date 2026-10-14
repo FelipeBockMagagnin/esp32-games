@@ -10,16 +10,16 @@
 static const uint16_t ORE_SPRITE_PALETTE[3] = {0xFC08, 0xD163, 0x806A};
 static const uint8_t ORE_PALETTE_SIZE = 3;
 
-static const uint16_t CARD_BORDER = Theme::GOLD_FRAME; // Dark amber, the gold card's frame
-static const uint16_t RATE_COLOR = Theme::GOOD;  // Soft green: income that grows on its own
-static const uint16_t HINT_COLOR = Theme::TEXT_2;  // Mid gray for secondary lines
-static const uint16_t XP_BAR_COLOR = Theme::XP_BAR; // Teal fill, with a near-black tint and a mid tone
-static const uint16_t XP_BAR_BG = Theme::XP_TRACK;    // of the same hue, like the combat bars
-static const uint16_t XP_BAR_BORDER = Theme::XP_BORDER;
-static const uint16_t PROMPT_COLOR = Theme::CONFIRM; // The Confirm cap's red, so the prompt points at it
-static const uint16_t GOAL_COLOR = Theme::GOLD_BAR;   // Amber fill, dark enough for the white label,
-static const uint16_t GOAL_BG = Theme::GOLD_TRACK;      // the same progress style as the Awards screen
-static const uint16_t GOAL_BORDER = Theme::GOLD_BORDER;
+static constexpr Color CARD_BORDER = Theme::GOLD_FRAME; // Dark amber, the gold card's frame
+static constexpr Color RATE_COLOR = Theme::GOOD;  // Soft green: income that grows on its own
+static constexpr Color HINT_COLOR = Theme::TEXT_2;  // Mid gray for secondary lines
+static constexpr Color XP_BAR_COLOR = Theme::XP_BAR; // Teal fill, with a near-black tint and a mid tone
+static constexpr Color XP_BAR_BG = Theme::XP_TRACK;    // of the same hue, like the combat bars
+static constexpr Color XP_BAR_BORDER = Theme::XP_BORDER;
+static constexpr Color PROMPT_COLOR = Theme::CONFIRM; // The Confirm cap's red, so the prompt points at it
+static constexpr Color GOAL_COLOR = Theme::GOLD_BAR;   // Amber fill, dark enough for the white label,
+static constexpr Color GOAL_BG = Theme::GOLD_TRACK;      // the same progress style as the Awards screen
+static constexpr Color GOAL_BORDER = Theme::GOLD_BORDER;
 
 // Layout coordinates
 static const int16_t CENTER_X = 120;

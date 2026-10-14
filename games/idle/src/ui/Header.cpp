@@ -2,10 +2,10 @@
 #include "../assets/Assets.h"
 #include "Theme.h"
 
-static const uint16_t COLOR = Theme::TEXT;
-static const uint16_t NAV_COLOR = Theme::TEXT_2; // The neighbours are secondary to the title
-static const uint16_t BAND_COLOR = Theme::HEADER; // A step below the screen background
-static const uint16_t RULE_COLOR = Theme::FRAME;  // Same frame as the cards
+static constexpr Color COLOR = Theme::TEXT;
+static constexpr Color NAV_COLOR = Theme::TEXT_2; // The neighbours are secondary to the title
+static constexpr Color BAND_COLOR = Theme::HEADER; // A step below the screen background
+static constexpr Color RULE_COLOR = Theme::FRAME;  // Same frame as the cards
 
 static const int16_t NAV_Y = 5;
 static const int16_t ARROW_Y = 7;
@@ -76,7 +76,7 @@ void Header::paintShine(TFT_eSPI &tft, uint16_t band)
 void Header::draw(TFT_eSPI &tft)
 {
     uint16_t band = flashLevel > 0 ? tft.alphaBlend(flashLevel * FLASH_ALPHA_PER_STEP, noticeAccent, BAND_COLOR)
-                                   : BAND_COLOR;
+                                   : (uint16_t)BAND_COLOR;
     bool partial = shineOnly && drawn && hasNotice;
     shineOnly = false;
     if (partial)

@@ -6,8 +6,8 @@
 class Box : public UI
 {
 public:
-    uint16_t borderColor;
-    uint16_t fillColor;
+    Color borderColor;
+    Color fillColor;
     bool filled;
     bool showBorder;
     bool rounded;
@@ -24,7 +24,7 @@ public:
     {
     }
 
-    Box(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t borderColor = Theme::FRAME, bool filled = false, uint16_t fillColor = Theme::CARD, bool rounded = false, int16_t radius = 4)
+    Box(int16_t x, int16_t y, int16_t w, int16_t h, Color borderColor = Theme::FRAME, bool filled = false, Color fillColor = Theme::CARD, bool rounded = false, int16_t radius = 4)
         : UI(x, y, w, h),
           borderColor(borderColor),
           fillColor(fillColor),
@@ -35,7 +35,7 @@ public:
     {
     }
 
-    void setBorderColor(uint16_t color)
+    void setBorderColor(Color color)
     {
         if (borderColor != color)
         {
@@ -44,7 +44,7 @@ public:
         }
     }
 
-    void setFillColor(uint16_t color)
+    void setFillColor(Color color)
     {
         if (fillColor != color)
         {

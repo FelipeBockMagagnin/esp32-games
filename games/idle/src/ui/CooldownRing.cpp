@@ -4,7 +4,7 @@
 static const uint16_t TOP = 180;
 
 static const unsigned long PING_MS = 200;
-static const uint16_t PING_COLOR = Theme::TEXT;
+static constexpr Color PING_COLOR = Theme::TEXT;
 
 void CooldownRing::update(unsigned long now)
 {

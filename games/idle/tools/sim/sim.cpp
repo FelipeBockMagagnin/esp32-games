@@ -498,7 +498,9 @@ static void ascendRun()
         int best = -1;
         for (uint8_t t = 0; t < TALENT_COUNT; t++)
         {
-            if (ascension.canBuyTalent(t) && (best < 0 || ascension.getTalentCost(t) < ascension.getTalentCost(best)))
+            // Themes change nothing the simulator measures
+            if (TALENTS[t].effect != TalentEffect::THEMES && ascension.canBuyTalent(t) &&
+                (best < 0 || ascension.getTalentCost(t) < ascension.getTalentCost(best)))
             {
                 best = t;
             }

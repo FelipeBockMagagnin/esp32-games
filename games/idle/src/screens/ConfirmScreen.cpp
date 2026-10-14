@@ -1,6 +1,6 @@
 #include "ConfirmScreen.h"
 
-static const uint16_t HINT_COLOR = Theme::TEXT_DIM;
+static constexpr Color HINT_COLOR = Theme::TEXT_DIM;
 
 static const int16_t CARD_X = 5;
 static const int16_t CARD_Y = 44;
@@ -15,7 +15,7 @@ static const int16_t YES_ROW_Y = NO_ROW_Y + ListRow::DEFAULT_H + 8;
 static const int16_t HINT_Y = 220;
 static const int16_t BUSY_Y = 260;
 
-ConfirmScreen::ConfirmScreen(const Texts &texts, uint16_t accent, void (*action)(), ScreenManager &screenManager,
+ConfirmScreen::ConfirmScreen(const Texts &texts, Color accent, void (*action)(), ScreenManager &screenManager,
                              SoundManager &sound, bool flashOut)
     : header(texts.title),
 

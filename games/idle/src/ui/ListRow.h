@@ -29,7 +29,7 @@ public:
 
     static const int16_t DEFAULT_W = 230;
     static const int16_t DEFAULT_H = 26;
-    static const uint16_t DEFAULT_FRAME_COLOR = Theme::FRAME_DIM;
+    static constexpr Color DEFAULT_FRAME_COLOR = Theme::FRAME_DIM;
 
     ListRow(int16_t x = 0, int16_t y = 0, int16_t w = DEFAULT_W, int16_t h = DEFAULT_H)
         : UI(x, y, w, h),
@@ -71,7 +71,7 @@ public:
         }
     }
 
-    void setValueColor(uint16_t v)
+    void setValueColor(Color v)
     {
         if (valueColor != v)
         {
@@ -80,7 +80,7 @@ public:
         }
     }
 
-    void setValueSubColor(uint16_t v)
+    void setValueSubColor(Color v)
     {
         if (valueSubColor != v)
         {
@@ -109,7 +109,7 @@ public:
     }
 
     // Title color for every state but DIMMED, which stays gray; overrides OWNED's green title
-    void setTitleColor(uint16_t v)
+    void setTitleColor(Color v)
     {
         if (!hasTitleColor || titleColorOverride != v)
         {
@@ -120,7 +120,7 @@ public:
     }
 
     // Frame of a NORMAL row; the other states keep their own colors
-    void setFrameColor(uint16_t v)
+    void setFrameColor(Color v)
     {
         if (frameColor != v)
         {
@@ -131,7 +131,7 @@ public:
 
     // Background of a SELECTED row (Theme::ROW_SELECTED by default), so the selection
     // reads as a highlight bar rather than only a frame. Other rows fill with Theme::CARD.
-    void setSelectedFill(uint16_t v)
+    void setSelectedFill(Color v)
     {
         if (!hasSelectedFill || selectedFill != v)
         {
@@ -151,7 +151,7 @@ public:
         }
     }
 
-    void setIconBitmap(const unsigned char *bitmap, int16_t bw, int16_t bh, uint16_t color = Theme::TEXT);
+    void setIconBitmap(const unsigned char *bitmap, int16_t bw, int16_t bh, Color color = Theme::TEXT);
     void setIconPixels(const uint16_t *pixels, int16_t pw, int16_t ph);
     void clearIcon();
 
@@ -173,8 +173,8 @@ private:
     String valueSub;
 
     State state;
-    uint16_t valueColor;
-    uint16_t valueSubColor;
+    Color valueColor;
+    Color valueSubColor;
     bool showCoin;
     Trend trend;
 
@@ -182,13 +182,13 @@ private:
     const uint16_t *iconPixels;
     int16_t iconW;
     int16_t iconH;
-    uint16_t iconColor;
+    Color iconColor;
 
-    uint16_t frameColor;
-    uint16_t fillColor;
-    uint16_t selectedFill;
+    Color frameColor;
+    Color fillColor;
+    Color selectedFill;
     bool hasSelectedFill;
-    uint16_t titleColorOverride;
+    Color titleColorOverride;
     bool hasTitleColor;
     bool flashOn;
 };

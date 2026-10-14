@@ -8,15 +8,15 @@ class ProgressBar : public UI
 public:
     int32_t current;
     int32_t maxVal;
-    uint16_t fillColor;
-    uint16_t bgColor;
-    uint16_t borderColor;
+    Color fillColor;
+    Color bgColor;
+    Color borderColor;
     bool showBorder;
 
     // Optional text centered over the bar (e.g. "23/100"). Drawn fresh every redraw, on top
     // of the fill, so the label never gets left over stale pixels when the fill width changes.
     String label;
-    uint16_t labelColor;
+    Color labelColor;
 
     ProgressBar()
         : UI(0, 0, 0, 0),
@@ -36,7 +36,7 @@ public:
     {
     }
 
-    ProgressBar(int16_t x, int16_t y, int16_t w, int16_t h, int32_t current, int32_t maxVal, uint16_t fillColor, uint16_t bgColor = Theme::XP_TRACK, uint16_t borderColor = Theme::XP_BORDER)
+    ProgressBar(int16_t x, int16_t y, int16_t w, int16_t h, int32_t current, int32_t maxVal, Color fillColor, Color bgColor = Theme::XP_TRACK, Color borderColor = Theme::XP_BORDER)
         : UI(x, y, w, h),
           current(current),
           maxVal(maxVal),
@@ -56,7 +56,7 @@ public:
 
     // A drop then leaves the lost part lit in `color` for a moment before it drains away,
     // so a hit reads as a chunk taken out. Needs update() every loop.
-    void enableTrail(uint16_t color)
+    void enableTrail(Color color)
     {
         trailColor = color;
     }
@@ -68,7 +68,7 @@ public:
             return;
         }
         // A rise (regen, a heal) leaves a trail that is still draining alone
-        if (trailColor == 0 || max != maxVal)
+        if (trailColor == Color() || max != maxVal)
         {
             trailValue = val;
         }
@@ -87,7 +87,7 @@ public:
 
     void update(unsigned long time);
 
-    void setFillColor(uint16_t color)
+    void setFillColor(Color color)
     {
         if (fillColor != color)
         {
@@ -96,7 +96,7 @@ public:
         }
     }
 
-    void setBorderColor(uint16_t color)
+    void setBorderColor(Color color)
     {
         if (borderColor != color)
         {
@@ -119,7 +119,7 @@ public:
 private:
     static const unsigned long TRAIL_HOLD_MS = 250;
 
-    uint16_t trailColor; // 0 while the trail is off
+    Color trailColor; // 0 while the trail is off
     int32_t trailValue;
     unsigned long trailHoldUntil;
     unsigned long lastTrailStep;

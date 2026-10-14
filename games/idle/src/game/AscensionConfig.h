@@ -48,6 +48,7 @@ enum class TalentEffect : uint8_t
     KEEP_MAPS,           // Zone maps kept, from the Forest's
     DEEP_ZONES,          // Zones past the Molten Core opened (ZoneDef::reqDelveLevel)
     VEIN_LINGER,         // Seconds a gold vein stays up beyond VEIN_VISIBLE_MS
+    THEMES,              // Themes opened beyond the free ones, in THEMES order (ui/Themes.h)
     COUNT
 };
 static constexpr uint8_t TALENT_EFFECT_COUNT = (uint8_t)TalentEffect::COUNT;
@@ -88,7 +89,8 @@ enum TalentId : uint8_t
     TALENT_LEGACY, TALENT_HEIRLOOM, TALENT_SYNERGY,
     TALENT_WAR_SPIRIT, TALENT_IRON_BODY, TALENT_SECOND_WIND, TALENT_KEEN_EYE, TALENT_BOUNTY,
     TALENT_TWIN_DROP, TALENT_RELIC_SENSE, TALENT_OLD_MAPS, TALENT_DEEP_DELVER,
-    TALENT_DOWSER, TALENT_VEIN_LORE, TALENT_LINGERING
+    TALENT_DOWSER, TALENT_VEIN_LORE, TALENT_LINGERING,
+    TALENT_PALETTE
 };
 
 // Shown in this order, so a talent's parent must come before it: the list draws the tree
@@ -121,6 +123,12 @@ static constexpr TalentDef TALENTS[] = {
     {"Dowser",      "Veins 5% more often",     TalentEffect::VEIN_FREQUENCY,        5,   20, 1,   135,  NO_TALENT,           image_icon_gold_vein_pixels},
     {"Vein Lore",   "Vein bonuses +5% a lvl",  TalentEffect::VEIN_POWER,            5,   20, 2,   135,  TALENT_DOWSER,       image_icon_gold_vein_pixels},
     {"Lingering",   "Veins stay 2s longer",    TalentEffect::VEIN_LINGER,           2,   10, 2,   140,  TALENT_DOWSER,       image_icon_gold_vein_pixels},
+
+    // Cosmetic, a theme a level. Doubling from 1 point, the last theme costs 128 and all
+    // eight 255, against about 600 points earned over three months of ascensions: the first
+    // is a treat, the last a long goal. Last in the table: its level sits in what was padding
+    // in the save, so older saves still load (see SaveGame.cpp)
+    {"Palette",     "A new theme per level",   TalentEffect::THEMES,                1,   8,  1,   200,  NO_TALENT,           image_icon_star_crown_pixels},
 };
 static constexpr uint8_t TALENT_COUNT = sizeof(TALENTS) / sizeof(TALENTS[0]);
 

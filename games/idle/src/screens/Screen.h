@@ -12,7 +12,7 @@ class Screen
 {
 protected:
     std::vector<UI *> elements;
-    uint16_t bgColor;
+    Color bgColor;
     Header *headerElement;
 
     // Text rebuilds are gated to this interval while animations advance every frame;
@@ -32,13 +32,13 @@ protected:
     void forceRefresh() { lastRefresh = 0; }
 
 public:
-    Screen(uint16_t bgColor = Theme::BG);
+    Screen(Color bgColor = Theme::BG);
     virtual ~Screen() = default;
 
     void addElement(UI *element);
     // For an element drawn on a filled card or panel rather than the screen background:
     // it erases with the card's colour, so updating it does not punch a hole in the card
-    void addElement(UI *element, uint16_t surface);
+    void addElement(UI *element, Color surface);
     void markAllDirty();
 
     // Screens register their header so the main loop can push a notification to whichever
@@ -52,10 +52,12 @@ public:
             headerElement->update(now);
         }
     }
-    void applyNotice(const char *caption, const char *name, uint16_t accent);
+    void applyNotice(const char *caption, const char *name, Color accent);
     void setNavLabels(const char *back, const char *next);
 
     virtual void onEnter(TFT_eSPI &tft);
+    // Clears and redraws every element, keeping the screen's state (after a theme change)
+    void repaint(TFT_eSPI &tft);
     virtual void onExit();
     virtual void update(unsigned long now);
     virtual void render(TFT_eSPI &tft);
@@ -69,8 +71,8 @@ public:
     // through to ScreenManager, which steps back through the rotation.
     virtual bool onBackPress() { return false; }
 
-    uint16_t getBgColor() const { return bgColor; }
-    void setBgColor(uint16_t color);
+    Color getBgColor() const { return bgColor; }
+    void setBgColor(Color color);
 };
 
 #endif // SCREEN_H

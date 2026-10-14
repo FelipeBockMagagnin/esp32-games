@@ -4,16 +4,16 @@
 #include "../game/ItemStats.h"
 
 
-static const uint16_t CARD_BORDER = Theme::FRAME;   // Dark slate: the player's side, not the gold cards
-static const uint16_t PANEL_BORDER = Theme::FRAME;
-static const uint16_t ATTACK_COLOR = Theme::ATTACK;  // Soft red, as on the combat screen
-static const uint16_t DEFENSE_COLOR = Theme::DEFENSE; // Steel blue
-static const uint16_t HP_COLOR = Theme::HP;      // Leaf green
-static const uint16_t HINT_COLOR = Theme::TEXT_2;
-static const uint16_t VALUE_COLOR = Theme::TEXT;   // An item's own stats, neither better nor worse
-static const uint16_t BETTER_COLOR = Theme::GOOD;
-static const uint16_t WORSE_COLOR = Theme::BAD;
-static const uint16_t SAME_COLOR = Theme::TEXT_DIM;
+static constexpr Color CARD_BORDER = Theme::FRAME;   // Dark slate: the player's side, not the gold cards
+static constexpr Color PANEL_BORDER = Theme::FRAME;
+static constexpr Color ATTACK_COLOR = Theme::ATTACK;  // Soft red, as on the combat screen
+static constexpr Color DEFENSE_COLOR = Theme::DEFENSE; // Steel blue
+static constexpr Color HP_COLOR = Theme::HP;      // Leaf green
+static constexpr Color HINT_COLOR = Theme::TEXT_2;
+static constexpr Color VALUE_COLOR = Theme::TEXT;   // An item's own stats, neither better nor worse
+static constexpr Color BETTER_COLOR = Theme::GOOD;
+static constexpr Color WORSE_COLOR = Theme::BAD;
+static constexpr Color SAME_COLOR = Theme::TEXT_DIM;
 
 // Stats card
 static const int16_t CARD_X = 5;
@@ -42,7 +42,7 @@ static const int16_t HINT_ROW_Y = PANEL_Y + 42;
 static const int16_t BADGE_OFFSET_Y = (8 - ButtonBadge::SIZE) / 2;
 // Two 18-char columns ("Double mine +1500%") fill the panel's inner width exactly
 static const int16_t STAT_COLUMN_W = 108;
-static const uint16_t NEW_COLOR = Theme::INFO;
+static constexpr Color NEW_COLOR = Theme::INFO;
 
 static int32_t statValue(const Inventory &inventory, uint8_t id, StatKind kind)
 {
@@ -333,7 +333,7 @@ void InventoryScreen::refreshRows()
                 const ItemDef &def = ITEMS[itemId];
                 char buf[12];
                 row.setTitle(def.name);
-                row.setTitleColor(ITEM_TIER_COLORS[def.tier]);
+                row.setTitleColor(Theme::tierColor(def.tier));
                 row.setSubtitle(describeItem(inventory, (uint8_t)itemId));
                 snprintf(buf, sizeof(buf), "Lv %u", (unsigned)inventory.getItemLevel((uint8_t)itemId));
                 row.setValue(buf);
@@ -372,7 +372,7 @@ void InventoryScreen::refreshRows()
         char buf[12];
 
         row.setTitle(def.name);
-        row.setTitleColor(ITEM_TIER_COLORS[def.tier]);
+        row.setTitleColor(Theme::tierColor(def.tier));
         row.setSubtitle(describeItem(inventory, (uint8_t)itemId));
         snprintf(buf, sizeof(buf), "Lv %u", (unsigned)inventory.getItemLevel((uint8_t)itemId));
         row.setValue(buf);
@@ -447,7 +447,7 @@ void InventoryScreen::showStats(int8_t itemId, int8_t against, bool compare)
         const ItemDef &relic = ITEMS[itemId];
         formatRelic(relic, relicAtLevel(relic, inventory.getItemLevel((uint8_t)itemId)), relicBuf, sizeof(relicBuf));
         statColumns[0].setText(relicBuf);
-        statColumns[0].setColor(ITEM_TIER_COLORS[RELIC_TIER]);
+        statColumns[0].setColor(Theme::tierColor(RELIC_TIER));
         statColumns[0].setVisible(true);
         for (uint8_t i = 1; i < STAT_COLUMNS; i++)
         {
@@ -546,7 +546,7 @@ void InventoryScreen::refreshPanel()
     bool isEquipped = equipped == itemId;
 
     panelTitle.setText(def.name);
-    panelTitle.setColor(ITEM_TIER_COLORS[def.tier]);
+    panelTitle.setColor(Theme::tierColor(def.tier));
     snprintf(buf, sizeof(buf), "%s  Lv %u", ITEM_TIER_NAMES[def.tier], (unsigned)inventory.getItemLevel((uint8_t)itemId));
     panelRight.setText(buf);
 

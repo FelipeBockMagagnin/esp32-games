@@ -1,6 +1,6 @@
 #include "Screen.h"
 
-Screen::Screen(uint16_t bgColor)
+Screen::Screen(Color bgColor)
     : bgColor(bgColor), headerElement(nullptr)
 {
 }
@@ -10,7 +10,7 @@ void Screen::setHeader(Header *header)
     headerElement = header;
 }
 
-void Screen::applyNotice(const char *caption, const char *name, uint16_t accent)
+void Screen::applyNotice(const char *caption, const char *name, Color accent)
 {
     if (headerElement != nullptr)
     {
@@ -36,7 +36,7 @@ void Screen::addElement(UI *element)
     }
 }
 
-void Screen::addElement(UI *element, uint16_t surface)
+void Screen::addElement(UI *element, Color surface)
 {
     if (element != nullptr)
     {
@@ -45,7 +45,7 @@ void Screen::addElement(UI *element, uint16_t surface)
     }
 }
 
-void Screen::setBgColor(uint16_t color)
+void Screen::setBgColor(Color color)
 {
     // Elements on a card keep the card's colour
     for (auto *elem : elements)
@@ -70,6 +70,11 @@ void Screen::markAllDirty()
 }
 
 void Screen::onEnter(TFT_eSPI &tft)
+{
+    repaint(tft);
+}
+
+void Screen::repaint(TFT_eSPI &tft)
 {
     tft.fillScreen(bgColor);
 

@@ -3,15 +3,15 @@
 #include "../game/Ascension.h"
 
 
-static const uint16_t CARD_BORDER = Theme::FRAME; // Dark slate, as on the Inventory stats card
-static const uint16_t PANEL_BORDER = Theme::FRAME;
-static const uint16_t ATTACK_COLOR = Theme::ATTACK;  // Soft red, as on the combat screen
-static const uint16_t DEFENSE_COLOR = Theme::DEFENSE; // Steel blue
-static const uint16_t HP_COLOR = Theme::HP;      // Leaf green
-static const uint16_t HINT_COLOR = Theme::TEXT_2;
-static const uint16_t STATS_COLOR = Theme::TEXT;
-static const uint16_t ENEMY_NAME_COLOR = Theme::ENEMY_NAME; // Warm peach, the enemy's side on the combat screen
-static const uint16_t ACTIVE_COLOR = Theme::GOOD;
+static constexpr Color CARD_BORDER = Theme::FRAME; // Dark slate, as on the Inventory stats card
+static constexpr Color PANEL_BORDER = Theme::FRAME;
+static constexpr Color ATTACK_COLOR = Theme::ATTACK;  // Soft red, as on the combat screen
+static constexpr Color DEFENSE_COLOR = Theme::DEFENSE; // Steel blue
+static constexpr Color HP_COLOR = Theme::HP;      // Leaf green
+static constexpr Color HINT_COLOR = Theme::TEXT_2;
+static constexpr Color STATS_COLOR = Theme::TEXT;
+static constexpr Color ENEMY_NAME_COLOR = Theme::ENEMY_NAME; // Warm peach, the enemy's side on the combat screen
+static constexpr Color ACTIVE_COLOR = Theme::GOOD;
 
 
 

@@ -37,6 +37,7 @@ public:
     // Swaps the open modal for another without showing the screen underneath in between
     void replaceModal(Screen *screen);
     bool hasModal() const { return modal != nullptr; }
+    void repaint();
 
     Screen *getCurrentScreen() const;
     int getCurrentIndex() const;

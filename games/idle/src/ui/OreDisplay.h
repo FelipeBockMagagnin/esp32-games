@@ -16,13 +16,13 @@ public:
     // (x, y, w, h) is the animated area; the ore is drawn at (oreX, oreY) inside it
     OreDisplay(int16_t x, int16_t y, int16_t w, int16_t h,
                const uint16_t *orePixels, int16_t oreX, int16_t oreY, int16_t oreW, int16_t oreH,
-               uint16_t popupColor);
+               Color popupColor);
     ~OreDisplay();
 
     // Animations start at the time of the last update(), so their age can never be negative
     void shake();
     void addPopup(const String &text);
-    void addPopup(const String &text, uint16_t color);
+    void addPopup(const String &text, Color color);
     // Chips fly off the ore and fall; in the ore's own colours, or gold sparks
     void burst(uint8_t count, bool gold);
     // Coins arc from the ore toward (targetX, targetY), relative to the element and clamped
@@ -36,7 +36,7 @@ public:
     void setPalette(const uint16_t *source, const uint16_t *target, uint8_t count);
 
     // Tint of the halo behind the ore; blended toward the background so it stays dim
-    void setGlowColor(uint16_t color);
+    void setGlowColor(Color color);
 
     // A gold vein beside the ore: the icon (16x16 RGB565) at 2x with a pulsing glow and the
     // Up button under it, on the left or right of the ore, blinking when `fading`
@@ -58,7 +58,7 @@ private:
         bool active;
         unsigned long start;
         int16_t x;
-        uint16_t color;
+        Color color;
         String text;
     };
 
@@ -70,7 +70,7 @@ private:
         int16_t y;
         int16_t vx; // Pixels per second
         int16_t vy;
-        uint16_t color;
+        Color color;
     };
 
     const uint16_t *orePixels;
@@ -78,12 +78,12 @@ private:
     int16_t oreY;
     int16_t oreW;
     int16_t oreH;
-    uint16_t popupColor;
+    Color popupColor;
 
     const uint16_t *paletteSource;
     const uint16_t *paletteTarget;
     uint8_t paletteCount;
-    uint16_t glowColor;
+    Color glowColor;
 
     struct Coin
     {

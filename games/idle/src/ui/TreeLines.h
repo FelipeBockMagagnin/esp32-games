@@ -13,7 +13,7 @@ public:
 
     // Slot i's row sits at (x + depth * indent, top + i * pitch), rowH tall
     TreeLines(int16_t x, int16_t top, int16_t pitch, int16_t rowH, int16_t indent, uint8_t count,
-              uint16_t lineColor, uint16_t sparkColor);
+              Color lineColor, Color sparkColor);
 
     // `through` has bit l set when column l carries a line past this row to a later sibling
     // of an ancestor; `continues` when the row's own line goes on to a later sibling of its own
@@ -44,8 +44,8 @@ private:
     int16_t rowH;
     int16_t indent;
     uint8_t slotCount;
-    uint16_t lineColor;
-    uint16_t sparkColor;
+    Color lineColor;
+    Color sparkColor;
     Slot slots[MAX_SLOTS];
     bool layoutChanged;
 

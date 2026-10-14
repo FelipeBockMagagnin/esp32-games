@@ -4,15 +4,15 @@
 #include "../game/Format.h"
 
 
-static const uint16_t CARD_BORDER = Theme::GOLD_FRAME;   // Dark amber, same frame as the gold cards
-static const uint16_t PANEL_BORDER = Theme::FRAME;  // Dark slate
-static const uint16_t UNLOCKED_COLOR = Theme::GOOD; // Green, same as a taken upgrade
-static const uint16_t LOCKED_COLOR = Theme::TEXT_DIM;
-static const uint16_t HINT_COLOR = Theme::TEXT_2;
-static const uint16_t BAR_COLOR = Theme::GOLD_BAR;     // Amber fill, dark enough for the white label
-static const uint16_t BAR_BG = Theme::GOLD_TRACK;
-static const uint16_t BAR_BORDER = Theme::GOLD_BORDER;
-static const uint16_t DONE_FILL = Theme::DONE_BAR;     // Dark green once complete
+static constexpr Color CARD_BORDER = Theme::GOLD_FRAME;   // Dark amber, same frame as the gold cards
+static constexpr Color PANEL_BORDER = Theme::FRAME;  // Dark slate
+static constexpr Color UNLOCKED_COLOR = Theme::GOOD; // Green, same as a taken upgrade
+static constexpr Color LOCKED_COLOR = Theme::TEXT_DIM;
+static constexpr Color HINT_COLOR = Theme::TEXT_2;
+static constexpr Color BAR_COLOR = Theme::GOLD_BAR;     // Amber fill, dark enough for the white label
+static constexpr Color BAR_BG = Theme::GOLD_TRACK;
+static constexpr Color BAR_BORDER = Theme::GOLD_BORDER;
+static constexpr Color DONE_FILL = Theme::DONE_BAR;     // Dark green once complete
 
 // Summary card
 static const int16_t CARD_X = 5;
@@ -105,7 +105,7 @@ static const char *const BONUS_CODES[ACH_REWARD_COUNT - 1] = {"A/D", "RSP", "REV
 
 // Each reward in the colour of what it touches elsewhere: gold for the economy, the
 // combat screen's stat colours for the fight, the spell purple, the guard's cyan
-static const uint16_t REWARD_COLORS[ACH_REWARD_COUNT] = {
+static constexpr Color REWARD_COLORS[ACH_REWARD_COUNT] = {
     Theme::GOLD,       // PRODUCTION
     Theme::ATTACK,     // ATTACK_DEFENSE
     Theme::TEXT,       // RESPAWN_CUT
@@ -116,7 +116,7 @@ static const uint16_t REWARD_COLORS[ACH_REWARD_COUNT] = {
     Theme::DEFENSE,    // DROP_CHANCE, the rare-item blue
 };
 
-static uint16_t rewardColor(AchReward reward)
+static Color rewardColor(AchReward reward)
 {
     return REWARD_COLORS[(uint8_t)reward];
 }
