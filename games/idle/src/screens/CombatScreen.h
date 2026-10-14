@@ -5,6 +5,8 @@
 #include "../ui/Text.h"
 #include "../ui/Header.h"
 #include "../ui/ProgressBar.h"
+#include "../ui/Ellipse.h"
+#include "../game/GameState.h"
 #include "../game/CombatState.h"
 #include "../managers/SoundManager.h"
 #include "combat/EnemyPanel.h"
@@ -33,10 +35,14 @@ private:
     Text defValue;
     Text regenLabel;
     Text regenValue;
+    // Kill gold lands here, so the balance it adds to is in sight
+    Ellipse goldCoin;
+    Text goldText;
     ProgressBar playerHpBar;
     Text playerHitText;
 
     CombatState &combat;
+    const GameState &game;
     SoundManager &sound;
 
     uint32_t seenKills;
@@ -57,10 +63,11 @@ private:
     void handleEvents(unsigned long now);
     void refreshEnemyAttack(unsigned long now, bool fighting);
     void refreshPlayer(unsigned long now);
+    void refreshGold();
     void refreshStatus(unsigned long now, bool fighting);
 
 public:
-    CombatScreen(CombatState &combat, SoundManager &sound);
+    CombatScreen(CombatState &combat, const GameState &game, SoundManager &sound);
 
     void onEnter(TFT_eSPI &tft) override;
     void update(unsigned long now) override;

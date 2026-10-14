@@ -44,10 +44,12 @@ static const int16_t ENEMY_ATK_BAR_H = 13;
 static const int16_t MESSAGE_Y = 215;
 
 static const int16_t STATS_Y = 298;
+static const int16_t GOLD_RIGHT_X = 234;
+static const int16_t GOLD_COIN_R = 3;
 static const int16_t PLAYER_HP_Y = 308;
 static const int16_t PLAYER_HP_H = 11;
 
-CombatScreen::CombatScreen(CombatState &combat, SoundManager &sound)
+CombatScreen::CombatScreen(CombatState &combat, const GameState &game, SoundManager &sound)
     : header("Combat"),
       enemyPanel(combat),
       enemyHpBar(BAR_X, ENEMY_HP_Y, HP_BAR_W, ENEMY_HP_H, 0, 1, ENEMY_HP_COLOR, ENEMY_HP_BG, ENEMY_HP_BORDER),
@@ -62,9 +64,12 @@ CombatScreen::CombatScreen(CombatState &combat, SoundManager &sound)
       defValue(80, STATS_Y, "", Theme::DEFENSE, 1),
       regenLabel(112, STATS_Y, "RGN", Theme::TEXT_2, 1),
       regenValue(132, STATS_Y, "", Theme::HP, 1),
+      goldCoin(GOLD_RIGHT_X, STATS_Y + 3, GOLD_COIN_R, GOLD_COIN_R, Theme::GOLD),
+      goldText(GOLD_RIGHT_X, STATS_Y, "", Theme::GOLD, 1, TR_DATUM),
       playerHpBar(BAR_X, PLAYER_HP_Y, HP_BAR_W, PLAYER_HP_H, 0, 1, PLAYER_HP_COLOR, PLAYER_HP_BG, PLAYER_HP_BORDER),
       playerHitText(HIT_TEXT_X, PLAYER_HP_Y + 2, "", CombatStyle::BLOCKED, 1, TR_DATUM),
       combat(combat),
+      game(game),
       sound(sound),
       seenKills(0),
       seenDrops(0),
@@ -93,6 +98,8 @@ CombatScreen::CombatScreen(CombatState &combat, SoundManager &sound)
     addElement(&defValue);
     addElement(&regenLabel);
     addElement(&regenValue);
+    addElement(&goldCoin);
+    addElement(&goldText);
     addElement(&playerHpBar);
     addElement(&playerHitText);
 
@@ -287,6 +294,13 @@ void CombatScreen::refreshPlayer(unsigned long now)
     enemyHitText.setVisible((long)(now - enemyHitUntil) < 0);
 }
 
+void CombatScreen::refreshGold()
+{
+    String gold = formatAmount(game.getGold());
+    goldText.setText(gold);
+    goldCoin.setCenter(GOLD_RIGHT_X - (int16_t)gold.length() * 6 - GOLD_COIN_R - 2, STATS_Y + 3);
+}
+
 void CombatScreen::refreshStatus(unsigned long now, bool fighting)
 {
     if (messageUntil != 0 && (long)(now - messageUntil) < 0)
@@ -329,6 +343,7 @@ void CombatScreen::update(unsigned long now)
     {
         return;
     }
+    refreshGold();
 
     if (!combat.isInZone())
     {

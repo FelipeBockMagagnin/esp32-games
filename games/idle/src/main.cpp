@@ -54,7 +54,7 @@ ScreenManager screenManager(tft);
 
 InventoryScreen inventoryScreen(game, inventory, sound);
 MiningScreen miningScreen(game, unlocks, sound);
-CombatScreen combatScreen(combat, sound);
+CombatScreen combatScreen(combat, game, sound);
 BuildingScreen buildingScreen(game, sound);
 UpgradeScreen upgradeScreen(game, sound);
 ZoneScreen zoneScreen(game, inventory, combat, sound, screenManager);
