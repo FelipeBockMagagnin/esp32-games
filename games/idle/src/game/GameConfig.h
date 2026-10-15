@@ -230,7 +230,7 @@ static constexpr GoldUpgradeDef GOLD_UPGRADES[] = {
     {"Gilded Plaque",   "Gold/s +1% for every achievement",           AT(BUILDING_VOID_PIT, 3),     1,       UpgradeTarget::AWARD_PRODUCTION,  BUILDING_TRANSMUTER,  25,  0},
     {"Museum Wing",     "Gold/s +1% for every achievement",           AT(BUILDING_TIME_MINE, 1),    1,       UpgradeTarget::AWARD_PRODUCTION,  BUILDING_VOID_PIT,    20,  0},
 
-    {"Alchemic Edge",   "Attack is increased by 100%",                AT(BUILDING_VOID_PIT, 5),     100,     UpgradeTarget::ATTACK,            BUILDING_VOID_PIT,    5,   0},
+    {"Alchemic Edge",   "Attack is increased by 100%",                AT(BUILDING_VOID_PIT, 1),     100,     UpgradeTarget::ATTACK,            BUILDING_VOID_PIT,    1,   0},
 
     {"Forest Maps",     "Opens the Forest for fighting",              AT(BUILDING_ORE_MILL, 8),     1,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_ORE_MILL,    1,   0},
     {"Crypt Maps",      "Opens the Crypt for fighting",               AT(BUILDING_RUNE_FORGE, 2),   2,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_RUNE_FORGE,  1,   0},

@@ -77,6 +77,10 @@ struct DropDef
     uint16_t chanceBp;
 };
 
+// An item not yet owned drops this many times as often. The first piece is what lets the
+// auto-attack through a new zone; the long farm is meant for its levels, not for finding it.
+static const uint8_t NEW_ITEM_DROP_MULTIPLIER = 4;
+
 struct EnemyDef
 {
     const char *name;
@@ -109,9 +113,9 @@ struct ZoneDef
     uint8_t reqDelveLevel;      // Deep Delver levels needed; left off the first zones' rows
 };
 
-// Drop chances are fixed; only equipped items, awards and talents raise them. A repeat
+// Drop chances are fixed; only equipped items, awards, talents and a first find raise them. A repeat
 // drop is one level of a hundred, so a zone's chances are set for its set to be found in
-// minutes and stand around level 30-60 when the next zone opens, which keeps the arrival
+// minutes and stand around level 30-90 when the next zone opens, which keeps the arrival
 // stats the enemy tables below are tuned for. They fall from zone to zone, so the early
 // zones rain items and the late ones are a long farm across ascensions. With N enemies
 // picked at random, an item on k of them at chance c drops at k*c/N per kill. The boss of
@@ -232,24 +236,24 @@ static constexpr DropDef CORE_GOLEM_DROPS[] = {
     {ITEM_GOLEM_HEART, 30},
 };
 
-// The Mythic set drops in both deep zones; the Star Forge levels it faster
+// The Mythic set drops in both deep zones
 static constexpr DropDef RIFT_STALKER_DROPS[] = {
-    {ITEM_EMBER_HELM, 12},
-    {ITEM_EMBER_GRIPS, 12},
-    {ITEM_EMBER_BLADE, 12},
+    {ITEM_EMBER_HELM, 20},
+    {ITEM_EMBER_GRIPS, 20},
+    {ITEM_EMBER_BLADE, 20},
 };
 static constexpr DropDef VOID_WRAITH_DROPS[] = {
-    {ITEM_EMBER_MAIL, 12},
-    {ITEM_EMBER_LEGS, 12},
-    {ITEM_EMBER_BOOTS, 12},
-    {ITEM_EMBER_GUARD, 10},
+    {ITEM_EMBER_MAIL, 20},
+    {ITEM_EMBER_LEGS, 20},
+    {ITEM_EMBER_BOOTS, 20},
+    {ITEM_EMBER_GUARD, 16},
 };
 static constexpr DropDef VOID_MAW_DROPS[] = {
-    {ITEM_EMBER_BLADE, 12},
-    {ITEM_EMBER_GUARD, 12},
-    {ITEM_EMBER_RING, 6},
-    {ITEM_EMBER_CHARM, 6},
-    {ITEM_VOID_PICK, 6},
+    {ITEM_EMBER_BLADE, 20},
+    {ITEM_EMBER_GUARD, 20},
+    {ITEM_EMBER_RING, 12},
+    {ITEM_EMBER_CHARM, 12},
+    {ITEM_VOID_PICK, 12},
 };
 static constexpr DropDef STAR_SMITH_DROPS[] = {
     {ITEM_EMBER_HELM, 20},
@@ -280,11 +284,11 @@ static constexpr DropDef SUN_EATER_DROPS[] = {
 // (the previous zone's set part-levelled, plus the combat upgrades bought by then),
 // measured with tools/sim rather than assumed:
 //
-//   arrival (atk / def / hp):  Sewers 10/5/90 (starting kit)   Forest 19-22/30-36/222-230
-//                              Crypt 92-117/192-235/412-475   Depths 275-450/650-1110/1750-2620
-//                              Molten Core 890-1180/1750-2030/4460-5020
-//                              Void Rift 1840-2490/2660-3410/5840-7410 (4360/6070/11770 by its third run)
-//                              Star Forge 4440/6210/12000
+//   arrival (atk / def / hp):  Sewers 10/5/90 (starting kit)   Forest 19-21/30/220-224
+//                              Crypt 90-102/190-222/408-458   Depths 412-456/980-1098/2550-2620
+//                              Molten Core 930-1080/1830-1870/4260-4410
+//                              Void Rift 2220-2620/2790-3080/5750-5840 (5760-6750 atk by its second run)
+//                              Star Forge 7580-7940/8530-9180/16530-16620 (Mythic set maxed)
 //
 // Defense sits at 1.2-1.5x that attack, so the auto-attack is blocked on arrival while the
 // strike gets through. A hit costs 3-5% of max HP (8% for a boss), so a timed guard keeps
@@ -293,16 +297,18 @@ static constexpr DropDef SUN_EATER_DROPS[] = {
 //
 // The run the tables are tuned for (tools/sim, a player checking in hourly while awake):
 // Sewers from minute 5, Forest at 1 h, Crypt at 8-9 h, Depths with the Transmuter at 25 h,
-// Molten Core with the Void Pit at 50-53 h; each zone farms itself 0-6 h after it opens,
-// the Core about a day later. The zone maps and combat upgrades are gated in GameConfig.h
+// Molten Core with the Void Pit at 48-50 h; each zone farms itself within 0-7 awake hours
+// of opening (the sim prints it per run). The zone maps and combat upgrades are gated in GameConfig.h
 // to keep these hours. The kill gates (150 / 500 / 1500 / 1000) keep a zone from opening
 // before the one before it has been fought for a while.
 //
 // The two zones past the Core are for later runs: Deep Delver's two levels open them around
-// days 14 and 25 of ascending when the game suggests it (tools/sim --suggest --days 10
-// --runs 6), so the Rift is the fourth run's goal. It farms itself about a day after it first
-// opens, and within hours in the next run, once a few Mythic pieces have dropped. The Star
-// Forge is a wall to grind the Mythic set up against.
+// days 13.5 and 23.5 of ascending when the game suggests it (tools/sim --suggest --days 10
+// --runs 7), so the Rift is the fourth run's goal. It farms itself 1-7 awake hours after it
+// first opens, once a few Mythic pieces have dropped, and levels the set to about 100 by the
+// time the Star Forge opens. The Forge breaks the 1.2-1.5x rule: its defense sits at that
+// maxed attack, so it farms itself within hours, and its health keeps an idle kill around
+// half a minute (~115 an hour), to farm its relic and tools.
 //
 // The Sewers are set by hand: fought with the starting kit, they cost about 40% of health
 // per fight and a death every three to four kills until the first drops come in.
@@ -340,12 +346,12 @@ static constexpr EnemyDef CRYPT_ENEMIES[] = {
     {"Crypt Ghoul",   320,    184,  135,  2600,     1800000,   PLACEHOLDER_SPRITE,   DROPS(CRYPT_GHOUL_DROPS)},
 };
 static constexpr EnemyDef DEPTH_ENEMIES[] = {
-    {"Deep Lurker",   1100,   471,  400,  2400,     20000000,  PLACEHOLDER_SPRITE,   DROPS(DEEP_LURKER_DROPS)},
-    {"Abyss Worm",    1200,   484,  430,  2600,     32000000,  PLACEHOLDER_SPRITE,   DROPS(ABYSS_WORM_DROPS)},
+    {"Deep Lurker",   1100,   471,  500,  2400,     20000000,  PLACEHOLDER_SPRITE,   DROPS(DEEP_LURKER_DROPS)},
+    {"Abyss Worm",    1200,   484,  530,  2600,     32000000,  PLACEHOLDER_SPRITE,   DROPS(ABYSS_WORM_DROPS)},
 };
 static constexpr EnemyDef CORE_ENEMIES[] = {
-    {"Magma Hound",   4200,   2100, 1450, 2400,     480000000, PLACEHOLDER_SPRITE,   DROPS(MAGMA_HOUND_DROPS)},
-    {"Core Golem",    4600,   2150, 1530, 2600,     720000000, PLACEHOLDER_SPRITE,   DROPS(CORE_GOLEM_DROPS)},
+    {"Magma Hound",   4200,   2100, 1300, 2400,     480000000, PLACEHOLDER_SPRITE,   DROPS(MAGMA_HOUND_DROPS)},
+    {"Core Golem",    4600,   2150, 1380, 2600,     720000000, PLACEHOLDER_SPRITE,   DROPS(CORE_GOLEM_DROPS)},
 };
 static constexpr EnemyDef RIFT_ENEMIES[] = {
     {"Riftstalker",   4500,   3900, 2600, 2400,     1000000000ULL,   PLACEHOLDER_SPRITE, DROPS(RIFT_STALKER_DROPS)},
@@ -353,9 +359,9 @@ static constexpr EnemyDef RIFT_ENEMIES[] = {
     {"Void Maw",      9000,   4600, 2950, 2800,     4000000000ULL,   PLACEHOLDER_SPRITE, DROPS(VOID_MAW_DROPS), true},
 };
 static constexpr EnemyDef STAR_ENEMIES[] = {
-    {"Star Smith",    22000,  9700, 7800, 2400,     6000000000ULL,   PLACEHOLDER_SPRITE, DROPS(STAR_SMITH_DROPS)},
-    {"Nova Golem",    24000,  9900, 8100, 2600,     8000000000ULL,   PLACEHOLDER_SPRITE, DROPS(NOVA_GOLEM_DROPS)},
-    {"Sun Eater",     44000,  10400, 8800, 2800,    24000000000ULL,  PLACEHOLDER_SPRITE, DROPS(SUN_EATER_DROPS), true},
+    {"Star Smith",    16000,  9700, 7300, 2400,     6000000000ULL,   PLACEHOLDER_SPRITE, DROPS(STAR_SMITH_DROPS)},
+    {"Nova Golem",    18000,  9900, 7500, 2600,     8000000000ULL,   PLACEHOLDER_SPRITE, DROPS(NOVA_GOLEM_DROPS)},
+    {"Sun Eater",     30000,  10400, 7900, 2800,    24000000000ULL,  PLACEHOLDER_SPRITE, DROPS(SUN_EATER_DROPS), true},
 };
 
 #define ZONE(table) table, sizeof(table) / sizeof(table[0])

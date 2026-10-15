@@ -90,6 +90,11 @@ static std::vector<std::string> summary;
 // the measure of a run's dry stretches
 static unsigned long dryAwake = 0, dryFrom = 0, longestDry = 0, longestDryFrom = 0;
 
+// Awake time from a zone opening to it farming itself, the measure of a combat wall. Both
+// hold the awake clock plus one, so 0 means not yet in this run.
+static unsigned long awakeClock = 0;
+static unsigned long zoneOpenedAwake[ZONE_COUNT], zoneIdleAwake[ZONE_COUNT];
+
 static bool awardSeen[ACHIEVEMENT_COUNT];
 
 // When each item first reached these levels, and the kills and time spent in each zone
@@ -341,41 +346,58 @@ struct ZoneOutlook;
 static ZoneOutlook outlook(uint8_t z, const Stats &s, bool active);
 static bool farmsItself(uint8_t z);
 
-// On leaving, the player swaps in whatever finds more loot, slot by slot, as long as the
-// zone still farms itself: the drop chance first, then the kill gold
+// Loot found per second while away: the chance the worn drop perks give times the kills
+// the auto-attack makes alone, 0 where the zone does not farm itself. A swap that trades
+// attack for a drop perk can slow the kills more than it raises the chance.
+static double farmRate(uint8_t z)
+{
+    if (!farmsItself(z))
+    {
+        return 0;
+    }
+    Stats s = resolvePlayerStats(game, inventory);
+    const ZoneDef &zone = ZONES[z];
+    double fight = 0;
+    for (uint8_t e = 0; e < zone.enemyCount; e++)
+    {
+        const EnemyDef &en = zone.enemies[e];
+        fight += en.maxHp / (damageThrough(s.attack, en.defense) / (AUTO_ATTACK_MS / 1000.0));
+    }
+    uint32_t cut = inventory.getPerkPercent(ItemPerk::RESPAWN_CUT);
+    double respawn = RESPAWN_MS / 1000.0 * (100 - (cut < MAX_RESPAWN_CUT_PERCENT ? cut : MAX_RESPAWN_CUT_PERCENT)) / 100;
+    return (100 + inventory.getPerkPercent(ItemPerk::DROP)) / (fight / zone.enemyCount + respawn);
+}
+
+// On leaving, the player swaps in whatever finds more loot an hour, slot by slot, then
+// whatever pays more gold a kill at the same loot rate
 static void equipFarmLoadout(uint8_t zone)
 {
     for (uint8_t slot = 0; slot < EQUIP_SLOT_COUNT; slot++)
     {
-        int8_t worn = inventory.getEquipped((EquipSlot)slot);
-        double wornScore = worn == NO_ITEM ? 0
-                                           : inventory.getItemPerk(worn, ItemPerk::DROP) * 1000.0 +
-                                                 inventory.getItemPerk(worn, ItemPerk::KILL_GOLD);
+        int8_t best = inventory.getEquipped((EquipSlot)slot);
+        double bestRate = farmRate(zone);
+        uint32_t bestGold = best == NO_ITEM ? 0 : inventory.getItemPerk(best, ItemPerk::KILL_GOLD);
         for (uint8_t i = 0; i < ITEM_COUNT; i++)
         {
-            if ((uint8_t)ITEMS[i].slot != slot || !inventory.isOwned(i) || i == worn)
+            if ((uint8_t)ITEMS[i].slot != slot || !inventory.isOwned(i) || i == best)
             {
                 continue;
             }
-            double score = inventory.getItemPerk(i, ItemPerk::DROP) * 1000.0 + inventory.getItemPerk(i, ItemPerk::KILL_GOLD);
-            if (score <= wornScore)
-            {
-                continue;
-            }
-            int8_t before = inventory.getEquipped((EquipSlot)slot);
             inventory.equip(i);
-            if (farmsItself(zone))
+            double rate = farmRate(zone);
+            uint32_t gold = inventory.getItemPerk(i, ItemPerk::KILL_GOLD);
+            if (rate > bestRate * 1.001 || (rate >= bestRate * 0.999 && rate > 0 && gold > bestGold))
             {
-                wornScore = score;
+                best = i, bestRate = rate, bestGold = gold;
             }
-            else if (before != NO_ITEM)
-            {
-                inventory.equip((uint8_t)before);
-            }
-            else
-            {
-                inventory.unequip((EquipSlot)slot);
-            }
+        }
+        if (best != NO_ITEM)
+        {
+            inventory.equip((uint8_t)best);
+        }
+        else
+        {
+            inventory.unequip((EquipSlot)slot);
         }
     }
 }
@@ -498,6 +520,24 @@ static void printMilestones()
     printf("  Longest awake stretch with nothing new: %.1fh from %s\n", longestDry / (double)HOUR,
            stamp(longestDryFrom).c_str());
     dryAwake = longestDry = 0;
+    printf("  Awake hours from opening to farming itself:");
+    for (uint8_t z = 1; z < ZONE_COUNT; z++)
+    {
+        if (zoneOpenedAwake[z] == 0)
+        {
+            continue;
+        }
+        if (zoneIdleAwake[z] == 0)
+        {
+            printf("  %s - (%.1f so far)", ZONES[z].name, (awakeClock + 1 - zoneOpenedAwake[z]) / (double)HOUR);
+        }
+        else
+        {
+            printf("  %s %.1f", ZONES[z].name, (zoneIdleAwake[z] - zoneOpenedAwake[z]) / (double)HOUR);
+        }
+        zoneOpenedAwake[z] = zoneIdleAwake[z] = 0;
+    }
+    printf("\n");
 }
 
 // What the game does on Ascend, minus the reboot: bank the points, keep the items and
@@ -608,6 +648,7 @@ int main(int argc, char **argv)
         bool active = isActive(now);
         if (isAwake(now))
         {
+            awakeClock += TICK;
             dryAwake += TICK;
             if (dryAwake > longestDry)
             {
@@ -699,10 +740,12 @@ int main(int argc, char **argv)
         while (zoneUnlockedSeen < ZONE_COUNT && combat.isZoneUnlocked(zoneUnlockedSeen))
         {
             Stats s = resolvePlayerStats(game, inventory);
+            // The gear set the zone before drops; past the Core that is the Mythic set
+            uint8_t prevTier = zoneUnlockedSeen - 1 < MYTHIC_TIER ? zoneUnlockedSeen - 1 : MYTHIC_TIER;
             unsigned prevOwned = 0, prevLevels = 0, prevTotal = 0;
             for (uint8_t i = 0; i < ITEM_COUNT; i++)
             {
-                if (ITEMS[i].tier == zoneUnlockedSeen - 1 && !ITEMS[i].tool)
+                if (ITEMS[i].tier == prevTier && !ITEMS[i].tool)
                 {
                     prevTotal++;
                     prevOwned += inventory.isOwned(i);
@@ -712,8 +755,9 @@ int main(int argc, char **argv)
             char buf[160];
             snprintf(buf, sizeof(buf), "UNLOCKED %s  arrive ATK %u DEF %u HP %u, tier %u items %u/%u avg Lv %.1f",
                      ZONES[zoneUnlockedSeen].name, (unsigned)s.attack, (unsigned)s.defense, (unsigned)s.maxHp,
-                     (unsigned)(zoneUnlockedSeen - 1), prevOwned, prevTotal, prevOwned ? prevLevels / (double)prevOwned : 0.0);
+                     (unsigned)prevTier, prevOwned, prevTotal, prevOwned ? prevLevels / (double)prevOwned : 0.0);
             event(buf, true);
+            zoneOpenedAwake[zoneUnlockedSeen] = awakeClock + 1;
             zoneUnlockedSeen++;
         }
         if (now % MIN == 0)
@@ -724,6 +768,7 @@ int main(int argc, char **argv)
                 if (!idleReach[z] && combat.isZoneUnlocked(z) && outlook(z, s, false).idle)
                 {
                     idleReach[z] = true;
+                    zoneIdleAwake[z] = awakeClock + 1;
                     event(std::string("IDLE     ") + ZONES[z].name + " farms itself (ATK " + std::to_string(s.attack) +
                           " DEF " + std::to_string(s.defense) + " HP " + std::to_string(s.maxHp) + ")", true);
                 }

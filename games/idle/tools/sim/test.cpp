@@ -284,6 +284,17 @@ static void testZoneHopKeepsHealth()
     CHECK(w.combat.getReviveRemaining(simNow) == revive);
 }
 
+static void testNewItemDropsMoreOften()
+{
+    puts("an unowned item drops more often, up to certain");
+    World w;
+    DropDef drop = {ITEM_EMBER_HELM, 20};
+    uint16_t unowned = w.combat.getDropChanceBp(drop);
+    w.inventory.addDrop(ITEM_EMBER_HELM);
+    CHECK(unowned == w.combat.getDropChanceBp(drop) * NEW_ITEM_DROP_MULTIPLIER);
+    CHECK(w.combat.getDropChanceBp({ITEM_EMBER_MAIL, 9000}) == 10000);
+}
+
 static void testNextPointSaturates()
 {
     puts("next ascension point saturates");
@@ -482,6 +493,7 @@ int main()
     testShortSettingsLoad();
     testSaveBeforePaletteLoads();
     testZoneHopKeepsHealth();
+    testNewItemDropsMoreOften();
     testNextPointSaturates();
     testGoldPastThousandthsCap();
     testThousandthsSaveMigrates();

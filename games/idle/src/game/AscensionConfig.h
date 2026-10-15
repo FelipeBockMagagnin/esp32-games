@@ -11,7 +11,7 @@
 // banks whatever that total has gained, so ascending early never costs points.
 // Measured with tools/sim --suggest (ascending when the game suggests it): the first run
 // ascends on day 4 with ~26 points, the next ones on days 4.5-6 with 40, 60, 90, 135 and
-// 205, and Deep Delver's zones open around days 14 and 25. From about week six a run's gold
+// 205, and Deep Delver's zones open around days 13.5 and 23.5. From about week six a run's gold
 // fills 64 bits within days, so points per run shrink and the suggestion comes on the full
 // total instead. The talent prices grow geometrically, so late points buy a few more levels
 // of each rather than the deep ones.

@@ -247,6 +247,10 @@ uint16_t CombatState::getDropChanceBp(const DropDef &drop) const
 {
     uint32_t bonus = getReward(AchReward::DROP_CHANCE) + inventory.getPerkPercent(ItemPerk::DROP);
     uint32_t chance = (uint32_t)drop.chanceBp * (100 + bonus) / 100;
+    if (!inventory.isOwned(drop.itemId))
+    {
+        chance *= NEW_ITEM_DROP_MULTIPLIER;
+    }
     return chance < 10000 ? (uint16_t)chance : 10000;
 }
 
