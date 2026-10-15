@@ -349,7 +349,7 @@ void Unlocks::refreshLateGoal(const GameState &game, const Inventory &inventory,
 
     uint64_t runGold = game.getTotalGoldEarned();
     const Ascension &ascension = game.getAscension();
-    if (game.getAscendGainPercent() >= ASCEND_SUGGEST_GAIN_PERCENT)
+    if (game.isAscendSuggested())
     {
         snprintf(label, size, "Ascend for +%lu points", (unsigned long)ascension.getPendingPoints(runGold));
         setProgress(goal, 1, 1);

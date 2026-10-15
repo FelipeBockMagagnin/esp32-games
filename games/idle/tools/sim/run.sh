@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds the balance simulator against the real game logic and runs it.
-# Usage: tools/sim/run.sh [--days 3] [--seed 1] [--session 5] [--cps 3] [--runs 1]
+# Usage: tools/sim/run.sh [--days 3] [--seed 1] [--session 5] [--cps 3] [--runs 1] [--suggest]
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 OUT="${TMPDIR:-/tmp}/idle-sim"

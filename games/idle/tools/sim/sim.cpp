@@ -36,6 +36,12 @@ static unsigned long sessionLength = 5 * MIN; // Per waking hour
 static double clicksPerSecond = 3.0;
 static double days = 3.0;
 static int runs = 1;
+static bool ascendOnSuggest = false;
+
+static bool isAwake(unsigned long t)
+{
+    return (t + START_OF_DAY) % DAY >= 8 * HOUR;
+}
 
 static bool isActive(unsigned long t)
 {
@@ -43,9 +49,7 @@ static bool isActive(unsigned long t)
     {
         return true;
     }
-    unsigned long clock = (t + START_OF_DAY) % DAY;
-    bool awake = clock >= 8 * HOUR;
-    return awake && (clock % HOUR) < sessionLength;
+    return isAwake(t) && ((t + START_OF_DAY) % HOUR) < sessionLength;
 }
 
 static std::string stamp(unsigned long t)
@@ -81,6 +85,10 @@ CombatState combat(game, inventory);
 
 static bool verbose = false;
 static std::vector<std::string> summary;
+
+// The longest the player spends awake without anything new (a zone change is not news),
+// the measure of a run's dry stretches
+static unsigned long dryAwake = 0, dryFrom = 0, longestDry = 0, longestDryFrom = 0;
 
 static bool awardSeen[ACHIEVEMENT_COUNT];
 
@@ -155,6 +163,10 @@ static void printItemReport()
 static void event(const std::string &what, bool milestone = false)
 {
     std::string line = stamp(simNow) + "  " + what;
+    if (what.rfind("zone", 0) != 0)
+    {
+        dryAwake = 0, dryFrom = simNow;
+    }
     if (verbose)
     {
         printf("%s\n", line.c_str());
@@ -483,13 +495,16 @@ static void printMilestones()
         printf("  %s\n", line.c_str());
     }
     summary.clear();
+    printf("  Longest awake stretch with nothing new: %.1fh from %s\n", longestDry / (double)HOUR,
+           stamp(longestDryFrom).c_str());
+    dryAwake = longestDry = 0;
 }
 
 // What the game does on Ascend, minus the reboot: bank the points, keep the items and
 // awards, and load a new game's (zeroed) snapshots over the run. Talents that open content
 // are bought first, as the maps are in the shop; the rest of the points go to the cheapest
 // level on offer, which spreads them over the roots before going deep.
-static void ascendRun()
+static void ascendRun(unsigned long runStart)
 {
     uint32_t gained = ascension.getPendingPoints(game.getTotalGoldEarned());
     ascension.ascend(game.getTotalGoldEarned());
@@ -526,8 +541,9 @@ static void ascendRun()
     game.load(freshGame);
     combat.load(freshCombat);
 
-    printf("\n==== %s  ASCENDED +%u points (%u earned, gold/s x%.2f from ascension). Talents:", stamp(simNow).c_str(),
-           (unsigned)gained, (unsigned)ascension.getPointsEarned(), (100 + game.getAscensionProductionPercent()) / 100.0);
+    printf("\n==== %s  ASCENDED +%u points (%u earned, gold/s x%.2f from ascension) on run day %.1f. Talents:",
+           stamp(simNow).c_str(), (unsigned)gained, (unsigned)ascension.getPointsEarned(),
+           (100 + game.getAscensionProductionPercent()) / 100.0, (simNow - runStart) / (double)DAY);
     for (uint8_t t = 0; t < TALENT_COUNT; t++)
     {
         printf(" %s %u%s", TALENTS[t].name, (unsigned)ascension.getTalentLevel(t), t + 1 < TALENT_COUNT ? "," : "\n");
@@ -545,10 +561,12 @@ int main(int argc, char **argv)
         else if (a == "--session" && i + 1 < argc) sessionLength = (unsigned long)(atof(argv[++i]) * MIN);
         else if (a == "--cps" && i + 1 < argc) clicksPerSecond = atof(argv[++i]);
         else if (a == "--runs" && i + 1 < argc) runs = atoi(argv[++i]);
+        else if (a == "--suggest") ascendOnSuggest = true;
     }
 
     unsigned long runLength = (unsigned long)(days * DAY);
-    unsigned long end = runLength * runs;
+    unsigned long runStart = 0;
+    int runsDone = 0;
     double clickDebt = 0;
     int zoneShown = -2;
     uint8_t zoneUnlockedSeen = 1;
@@ -565,13 +583,21 @@ int main(int argc, char **argv)
     bool veinWasVisible = false;
     double luckyGold = 0;
 
-    for (simNow = 0; simNow < end; simNow += TICK)
+    // A run lasts --days, or with --suggest ends at the first check-in once the game
+    // suggests ascending
+    for (simNow = 0;; simNow += TICK)
     {
         unsigned long now = simNow;
-        if (now > 0 && now % runLength == 0)
+        bool suggested = ascendOnSuggest && isActive(now) && game.isAscendSuggested();
+        if (now > runStart && (now - runStart >= runLength || suggested))
         {
+            if (++runsDone == runs)
+            {
+                break;
+            }
             printMilestones();
-            ascendRun();
+            ascendRun(runStart);
+            runStart = now;
             zoneShown = -2;
             zoneUnlockedSeen = 1;
             for (bool &reached : idleReach)
@@ -580,6 +606,14 @@ int main(int argc, char **argv)
             }
         }
         bool active = isActive(now);
+        if (isAwake(now))
+        {
+            dryAwake += TICK;
+            if (dryAwake > longestDry)
+            {
+                longestDry = dryAwake, longestDryFrom = dryFrom;
+            }
+        }
 
         // Gold veins: a present player catches one a couple of seconds after it shows
         if (game.isVeinVisible() && !veinWasVisible)

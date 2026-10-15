@@ -225,10 +225,9 @@ void AscendScreen::refreshRow(ListRow &row, uint8_t item, bool selected, uint8_t
             row.setValueSub("points");
         }
         uint64_t runGold = game.getTotalGoldEarned();
-        uint32_t gain = game.getAscendGainPercent();
-        if (gain >= ASCEND_SUGGEST_GAIN_PERCENT)
+        if (game.isAscendSuggested())
         {
-            snprintf(buf, sizeof(buf), "Good time: gold/s +%lu%%", (unsigned long)gain);
+            snprintf(buf, sizeof(buf), "Good time: gold/s +%lu%%", (unsigned long)game.getAscendGainPercent());
         }
         else
         {

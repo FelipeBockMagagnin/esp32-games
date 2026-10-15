@@ -9,20 +9,24 @@
 // awards, the items and the talents. Points follow Cookie Clicker's prestige curve: the
 // lifetime total is floor(cbrt(lifetime gold / ASCEND_GOLD_PER_POINT)), and ascending
 // banks whatever that total has gained, so ascending early never costs points.
-// Tuned for months of play, measured with tools/sim --days 6 --runs 15 (an ascension every
-// six days, once the run slows past the Star Mine): 44-76 points a run for the first five
-// weeks, and Deep Delver's zones around days 13 and 25. Later runs reach the Star Mine within two days and
-// bank 100-220; the talent prices grow geometrically, so that buys a few more levels of
-// each rather than the deep ones.
+// Measured with tools/sim --suggest (ascending when the game suggests it): the first run
+// ascends on day 4 with ~26 points, the next ones on days 4.5-6 with 40, 60, 90, 135 and
+// 205, and Deep Delver's zones open around days 14 and 25. From about week six a run's gold
+// fills 64 bits within days, so points per run shrink and the suggestion comes on the full
+// total instead. The talent prices grow geometrically, so late points buy a few more levels
+// of each rather than the deep ones.
 static const uint64_t ASCEND_GOLD_PER_POINT = 20000000000ULL;
 
 // Every point earned, spent or not, also adds this much gold production, as Cookie
 // Clicker's prestige levels do. It and the production talents multiply the other bonuses.
-static const uint32_t ASCEND_PRODUCTION_PER_POINT = 1;
+// At 1 no cadence of ascending out-earned five weeks of one run; at 2 ascending every 6-9
+// days earns the most points (tools/sim --days N --runs M); at 3 the bonus compounds away.
+static const uint32_t ASCEND_PRODUCTION_PER_POINT = 2;
 
-// Ascending is suggested once the new points would raise that share by this much. Points
-// shrink run after run (the cube root), so "until it doubles" would never come round.
-static const uint32_t ASCEND_SUGGEST_GAIN_PERCENT = 10;
+// Ascending is suggested once the new points would raise that share by this much, which
+// lands on days 4-6 of a run, after the last building, as the run goes quiet. Points shrink
+// run after run (the cube root), so "until it doubles" would never come round.
+static const uint32_t ASCEND_SUGGEST_GAIN_PERCENT = 50;
 
 // Most effects add a percentage; the rest change a mechanic, and their per-level value
 // means what the comment says
@@ -118,14 +122,14 @@ static constexpr TalentDef TALENTS[] = {
     {"Twin Drop",   "5% drops count twice",    TalentEffect::TWIN_DROP,             5,   10, 4,   150,  TALENT_KEEN_EYE,     image_item_gold_ring_pixels},
     {"Relic Sense", "Relics start to drop",    TalentEffect::RELIC_HUNT,            1,   4,  6,   200,  TALENT_KEEN_EYE,     image_award_skull_pixels},
     {"Old Maps",    "Keep zone maps",          TalentEffect::KEEP_MAPS,             1,   4,  3,   150,  TALENT_WAR_SPIRIT,   image_upgrade_map_pixels},
-    {"Deep Delver", "Opens deeper zones",      TalentEffect::DEEP_ZONES,            1,   2,  35,  300,  TALENT_OLD_MAPS,     image_zone_depths_pixels},
+    {"Deep Delver", "Opens deeper zones",      TalentEffect::DEEP_ZONES,            1,   2,  50,  300,  TALENT_OLD_MAPS,     image_zone_depths_pixels},
 
     {"Dowser",      "Veins 5% more often",     TalentEffect::VEIN_FREQUENCY,        5,   20, 1,   135,  NO_TALENT,           image_icon_gold_vein_pixels},
     {"Vein Lore",   "Vein bonuses +5% a lvl",  TalentEffect::VEIN_POWER,            5,   20, 2,   135,  TALENT_DOWSER,       image_icon_gold_vein_pixels},
     {"Lingering",   "Veins stay 2s longer",    TalentEffect::VEIN_LINGER,           2,   10, 2,   140,  TALENT_DOWSER,       image_icon_gold_vein_pixels},
 
     // Cosmetic, a theme a level. Doubling from 1 point, the last theme costs 128 and all
-    // eight 255, against about 600 points earned over the first eight weeks: the first
+    // eight 255, against about 550 points earned over the first four weeks: the first
     // is a treat, the last a long goal. Last in the table: its level sits in what was padding
     // in the save, so older saves still load (see SaveGame.cpp)
     {"Palette",     "A new theme per level",   TalentEffect::THEMES,                1,   8,  1,   200,  NO_TALENT,           image_icon_star_crown_pixels},

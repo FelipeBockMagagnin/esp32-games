@@ -299,10 +299,10 @@ static constexpr DropDef SUN_EATER_DROPS[] = {
 // before the one before it has been fought for a while.
 //
 // The two zones past the Core are for later runs: Deep Delver's two levels open them around
-// days 13 and 25 of ascending every six days (tools/sim --days 6 --runs 5), so the Rift is
-// the third run's goal rather than the fourth's. It farms itself about 2 days after it first
-// opens, and 15 h into the next run, once a few Mythic pieces have dropped. The Star Forge
-// opens with the Mythic set around Lv 40, a wall to grind the set up against.
+// days 14 and 25 of ascending when the game suggests it (tools/sim --suggest --days 10
+// --runs 6), so the Rift is the fourth run's goal. It farms itself about a day after it first
+// opens, and within hours in the next run, once a few Mythic pieces have dropped. The Star
+// Forge is a wall to grind the Mythic set up against.
 //
 // The Sewers are set by hand: fought with the starting kit, they cost about 40% of health
 // per fight and a death every three to four kills until the first drops come in.

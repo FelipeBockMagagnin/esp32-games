@@ -284,6 +284,15 @@ uint32_t GameState::getAscendGainPercent() const
     return (uint32_t)mulDiv(gain, 100, 100 + getAscensionProductionPercent());
 }
 
+bool GameState::isAscendSuggested() const
+{
+    if (ascension.getPendingPoints(totalGoldEarned) == 0)
+    {
+        return false;
+    }
+    return getAscendGainPercent() >= ASCEND_SUGGEST_GAIN_PERCENT || totalGoldEarned == UINT64_MAX;
+}
+
 // Bought BUILDING_BOOST upgrades per building; each one doubles that building's output
 void GameState::countBoosts(uint8_t *boosts) const
 {

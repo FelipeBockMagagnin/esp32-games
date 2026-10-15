@@ -17,11 +17,11 @@ An idle/clicker game for an ESP32 with a 240x320 ILI9341 SPI display, five push 
 ```bash
 pio run                       # Build
 pio run -t upload -t monitor  # Flash and open the serial monitor (115200)
-tools/sim/run.sh [--days 3] [--seed 1] [--session 5] [--cps 3] [--runs 1] [--log]
+tools/sim/run.sh [--days 3] [--seed 1] [--session 5] [--cps 3] [--runs 1] [--suggest] [--log]
 tools/sim/test.sh             # Logic tests: save slots, zone changes, saturation
 ```
 
-`tools/sim/test.cpp` holds a few asserts on what the simulator cannot see, built against the same stub (which also fakes `String`, `Serial` and an in-memory `Preferences`). The **balance simulator** compiles the real `src/game/` for the PC (against `tools/sim/stub/Arduino.h`) and plays a scripted player (active 30 min, then a 5-minute check-in every waking hour, asleep 00:00-08:00), printing each building's first purchase and each zone's unlock and self-farming point. `--runs N` ascends at the end of each `--days` run and spends the points, to measure later runs. **Rerun it after touching any table** in `GameConfig.h`, `ItemConfig.h`, `CombatConfig.h` or `AscensionConfig.h`; the timing numbers in their comments come from it. For a pure refactor, diffing its output against the previous commit with the same `--seed` proves behaviour did not change.
+`tools/sim/test.cpp` holds a few asserts on what the simulator cannot see, built against the same stub (which also fakes `String`, `Serial` and an in-memory `Preferences`). The **balance simulator** compiles the real `src/game/` for the PC (against `tools/sim/stub/Arduino.h`) and plays a scripted player (active 30 min, then a 5-minute check-in every waking hour, asleep 00:00-08:00), printing each building's first purchase and each zone's unlock and self-farming point. `--runs N` ascends at the end of each `--days` run and spends the points, to measure later runs; with `--suggest` a run ends instead at the first check-in once the game suggests ascending (`--days` becomes a cap). Each run reports its longest awake stretch with nothing new, the measure of a dry spell. **Rerun it after touching any table** in `GameConfig.h`, `ItemConfig.h`, `CombatConfig.h` or `AscensionConfig.h`; the timing numbers in their comments come from it. For a pure refactor, diffing its output against the previous commit with the same `--seed` proves behaviour did not change.
 
 ## Hardware
 
