@@ -144,7 +144,7 @@ static const uint8_t NO_BUILDING_REQ = 0xFF;
 // output, offered once the player owns BOOST_LEVELS of it and priced at BOOST_COST_FACTORS
 // times its base cost. They multiply, so a building's late upgrades are what keep it
 // relevant after the next tier arrives.
-static constexpr uint16_t BOOST_LEVELS[] = {1, 10, 25, 50, 100};
+static constexpr uint16_t BOOST_LEVELS[] = {1, 10, 25, 50, 75};
 static constexpr uint64_t BOOST_COST_FACTORS[] = {10, 100, 1000, 20000, 100000};
 static_assert(BUILDINGS[BUILDING_COUNT - 1].baseCost <= (uint64_t)-1 / BOOST_COST_FACTORS[4],
               "the last building's fifth boost would cost more than the balance can hold");

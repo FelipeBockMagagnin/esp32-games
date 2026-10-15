@@ -283,8 +283,8 @@ static constexpr DropDef SUN_EATER_DROPS[] = {
 //   arrival (atk / def / hp):  Sewers 10/5/90 (starting kit)   Forest 19-22/30-36/222-230
 //                              Crypt 92-117/192-235/412-475   Depths 275-450/650-1110/1750-2620
 //                              Molten Core 890-1180/1750-2030/4460-5020
-//                              Void Rift 2000-2850/3100-5200/5900-9400
-//                              Star Forge 6200-6450/9090/16250
+//                              Void Rift 1840-2490/2660-3410/5840-7410 (4360/6070/11770 by its third run)
+//                              Star Forge 4440/6210/12000
 //
 // Defense sits at 1.2-1.5x that attack, so the auto-attack is blocked on arrival while the
 // strike gets through. A hit costs 3-5% of max HP (8% for a boss), so a timed guard keeps
@@ -299,10 +299,10 @@ static constexpr DropDef SUN_EATER_DROPS[] = {
 // before the one before it has been fought for a while.
 //
 // The two zones past the Core are for later runs: Deep Delver's two levels open them around
-// days 19 and 26 of ascending every six days (tools/sim --days 6 --runs 10). The Void Rift
-// farms itself 15-45 h after it first opens, once a few Mythic pieces have dropped. The Star
-// Forge opens with the Mythic set around Lv 40, and nothing it drops raises attack: it turns
-// idle on its fourth run, with the set near its cap, and its auto-attack kills stay slow.
+// days 13 and 25 of ascending every six days (tools/sim --days 6 --runs 5), so the Rift is
+// the third run's goal rather than the fourth's. It farms itself about 2 days after it first
+// opens, and 15 h into the next run, once a few Mythic pieces have dropped. The Star Forge
+// opens with the Mythic set around Lv 40, a wall to grind the set up against.
 //
 // The Sewers are set by hand: fought with the starting kit, they cost about 40% of health
 // per fight and a death every three to four kills until the first drops come in.

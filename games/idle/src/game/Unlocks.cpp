@@ -173,6 +173,39 @@ static int16_t zoneMapUpgrade(uint8_t zoneId)
     return -1;
 }
 
+// The first relic that can drop but is not owned yet, and the first open zone that drops it
+static int16_t huntableRelic(const Inventory &inventory, const CombatState &combat, int8_t &zoneOut)
+{
+    for (uint8_t item = 0; item < ITEM_COUNT; item++)
+    {
+        if (relicRank(item) == 0 || inventory.isOwned(item) || !combat.canDrop(item))
+        {
+            continue;
+        }
+        for (uint8_t z = 0; z < ZONE_COUNT; z++)
+        {
+            if (!combat.isZoneUnlocked(z))
+            {
+                continue;
+            }
+            const ZoneDef &zone = ZONES[z];
+            for (uint8_t e = 0; e < zone.enemyCount; e++)
+            {
+                const EnemyDef &enemy = zone.enemies[e];
+                for (uint8_t d = 0; d < enemy.dropCount; d++)
+                {
+                    if (enemy.drops[d].itemId == item)
+                    {
+                        zoneOut = (int8_t)z;
+                        return item;
+                    }
+                }
+            }
+        }
+    }
+    return -1;
+}
+
 void Unlocks::refreshGoal(const GameState &game, const Inventory &inventory, const CombatState &combat,
                           const Achievements &achievements)
 {
@@ -270,7 +303,7 @@ void Unlocks::refreshLateGoal(const GameState &game, const Inventory &inventory,
     {
         if (game.getBuildingLevel(i) == 0)
         {
-            snprintf(label, size, "Buy a %s", BUILDINGS[i].name);
+            snprintf(label, size, "Buy your first %s", BUILDINGS[i].name);
             setProgress(goal, game.getGold(), game.getBuildingCost(i));
             return;
         }
@@ -300,6 +333,17 @@ void Unlocks::refreshLateGoal(const GameState &game, const Inventory &inventory,
         }
         snprintf(label, size, "Fight in %s to open %s", ZONES[z - 1].name, zone.name);
         setProgress(goal, combat.getZoneKills(z - 1), zone.reqPrevZoneKills);
+        return;
+    }
+
+    // Relics drop in zones long since left behind, so the player is told where to go back
+    int8_t relicZone;
+    int16_t relic = huntableRelic(inventory, combat, relicZone);
+    if (relic >= 0)
+    {
+        snprintf(label, size, "Hunt the %s in %s", ITEMS[relic].name, ZONES[relicZone].name);
+        goal.done = 0;
+        goal.target = 0;
         return;
     }
 

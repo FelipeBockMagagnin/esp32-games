@@ -380,7 +380,7 @@ static void testLateGoals()
     w.unlocks.evaluate(simNow, w.game, w.inventory, w.combat, w.achievements, false);
     const Unlocks::Goal *goal = w.unlocks.getGoal();
     CHECK(goal != nullptr);
-    CHECK(strcmp(goal->label, "Buy a Star Mine") == 0);
+    CHECK(strcmp(goal->label, "Buy your first Star Mine") == 0);
     // Past 32 bits the progress is in thousandths
     CHECK(goal->target == 1000);
     CHECK(goal->done == 500);

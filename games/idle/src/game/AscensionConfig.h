@@ -11,7 +11,7 @@
 // banks whatever that total has gained, so ascending early never costs points.
 // Tuned for months of play, measured with tools/sim --days 6 --runs 15 (an ascension every
 // six days, once the run slows past the Star Mine): 44-76 points a run for the first five
-// weeks, and Deep Delver's zones around days 19 and 26. Later runs reach the Star Mine within two days and
+// weeks, and Deep Delver's zones around days 13 and 25. Later runs reach the Star Mine within two days and
 // bank 100-220; the talent prices grow geometrically, so that buys a few more levels of
 // each rather than the deep ones.
 static const uint64_t ASCEND_GOLD_PER_POINT = 20000000000ULL;
@@ -118,7 +118,7 @@ static constexpr TalentDef TALENTS[] = {
     {"Twin Drop",   "5% drops count twice",    TalentEffect::TWIN_DROP,             5,   10, 4,   150,  TALENT_KEEN_EYE,     image_item_gold_ring_pixels},
     {"Relic Sense", "Relics start to drop",    TalentEffect::RELIC_HUNT,            1,   4,  6,   200,  TALENT_KEEN_EYE,     image_award_skull_pixels},
     {"Old Maps",    "Keep zone maps",          TalentEffect::KEEP_MAPS,             1,   4,  3,   150,  TALENT_WAR_SPIRIT,   image_upgrade_map_pixels},
-    {"Deep Delver", "Opens deeper zones",      TalentEffect::DEEP_ZONES,            1,   2,  70,  150,  TALENT_OLD_MAPS,     image_zone_depths_pixels},
+    {"Deep Delver", "Opens deeper zones",      TalentEffect::DEEP_ZONES,            1,   2,  35,  300,  TALENT_OLD_MAPS,     image_zone_depths_pixels},
 
     {"Dowser",      "Veins 5% more often",     TalentEffect::VEIN_FREQUENCY,        5,   20, 1,   135,  NO_TALENT,           image_icon_gold_vein_pixels},
     {"Vein Lore",   "Vein bonuses +5% a lvl",  TalentEffect::VEIN_POWER,            5,   20, 2,   135,  TALENT_DOWSER,       image_icon_gold_vein_pixels},
