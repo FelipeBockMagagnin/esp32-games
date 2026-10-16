@@ -146,8 +146,7 @@ uint32_t GameState::getDoubleXpPercent() const
 
 uint32_t GameState::getUpgradeDiscountPercent() const
 {
-    uint32_t percent = inventory.getRelicPercent(RelicEffect::UPGRADE_DISCOUNT) +
-                       inventory.getPerkPercent(ItemPerk::UPGRADE_DISCOUNT);
+    uint32_t percent = inventory.getPerkPercent(ItemPerk::UPGRADE_DISCOUNT);
     return percent < MAX_UPGRADE_DISCOUNT_PERCENT ? percent : MAX_UPGRADE_DISCOUNT_PERCENT;
 }
 
@@ -429,7 +428,7 @@ uint32_t GameState::getProductionBonusPercent() const
     return getBonusPercent(UpgradeTarget::PRODUCTION) +
            getBonusPercent(UpgradeTarget::AWARD_PRODUCTION) * achievements.getUnlockedCount() +
            inventory.getPerkPercent(ItemPerk::GOLD) +
-           achievements.getProductionBonusPercent() * (100 + inventory.getRelicPercent(RelicEffect::AWARD_BOOST)) / 100;
+           achievements.getProductionBonusPercent();
 }
 
 uint32_t GameState::getClickBonusPercent() const

@@ -3,7 +3,7 @@
 #include "../game/Format.h"
 
 // A new item holds the stage longer than a duplicate that only levelled one up
-static const unsigned long NEW_DROP_MS = 3000;
+static const unsigned long NEW_DROP_MS = 2500;
 static const unsigned long LEVEL_DROP_MS = 1800;
 static const unsigned long KILL_MESSAGE_MS = 1500;
 
@@ -16,6 +16,8 @@ static const unsigned long ENEMY_FLASH_MS = 130;
 static const unsigned long HEAL_GLOW_MS = 450;
 // Enough warning to see the enemy's hit coming and press Down in time
 static const unsigned long WARN_MS = 600;
+// Below this many kills in all, the status line coaches the basic presses
+static const uint32_t HINT_KILLS = 30;
 
 // Warm belongs to the enemy, cool to the player
 static constexpr Color ENEMY_HP_COLOR = Theme::ENEMY_HP_BAR;
@@ -76,6 +78,8 @@ CombatScreen::CombatScreen(CombatState &combat, const GameState &game, SoundMana
       seenHits(0),
       seenHurts(0),
       seenSecondWinds(0),
+      seenWeakPoints(0),
+      seenFuries(0),
       messageUntil(0),
       enemyHitUntil(0),
       playerHitUntil(0),
@@ -116,6 +120,8 @@ void CombatScreen::onEnter(TFT_eSPI &tft)
     seenHits = combat.getHitEvents();
     seenHurts = combat.getHurtEvents();
     seenSecondWinds = combat.getSecondWindEvents();
+    seenWeakPoints = combat.getWeakPointEvents();
+    seenFuries = combat.getFuryEvents();
     messageUntil = 0;
     enemyHitUntil = 0;
     playerHitUntil = 0;
@@ -163,8 +169,29 @@ void CombatScreen::handleEvents(unsigned long now)
         snprintf(buf, sizeof(buf), "-%u", (unsigned)combat.getLastHitDamage());
         enemyHitText.setText(buf);
         enemyHitUntil = now + HIT_TEXT_MS;
-        enemyPanel.onHit(combat.getLastHitDamage(), combat.getLastHitKind() == CombatState::HIT_STRIKE);
+        CombatState::HitKind kind = combat.getLastHitKind();
+        enemyPanel.onHit(combat.getLastHitDamage(), kind != CombatState::HIT_AUTO);
         enemyFlashUntil = now + ENEMY_FLASH_MS;
+        if (kind == CombatState::HIT_CRIT)
+        {
+            snprintf(buf, sizeof(buf), "CRITICAL! -%u", (unsigned)combat.getLastHitDamage());
+            showMessage(now, buf, Theme::GOLD, HIT_TEXT_MS);
+        }
+        forceRefresh();
+    }
+
+    if (combat.getWeakPointEvents() != seenWeakPoints)
+    {
+        seenWeakPoints = combat.getWeakPointEvents();
+        enemyPanel.onWeakPoint();
+        sound.playMenu();
+        forceRefresh();
+    }
+
+    if (combat.getFuryEvents() != seenFuries)
+    {
+        seenFuries = combat.getFuryEvents();
+        sound.playUnlock();
         forceRefresh();
     }
 
@@ -308,23 +335,69 @@ void CombatScreen::refreshStatus(unsigned long now, bool fighting)
         return;
     }
     messageUntil = 0;
+    char buf[40];
+    Color color = Theme::TEXT_2;
+    buf[0] = '\0';
     if (combat.getPhase() == CombatState::DEAD)
     {
-        char buf[40];
         unsigned long remaining = combat.getReviveRemaining(now);
         snprintf(buf, sizeof(buf), "Defeated - reviving in %lu.%lus", remaining / 1000, (remaining % 1000) / 100);
-        messageText.setColor(Theme::TEXT_2);
-        messageText.setText(buf);
     }
-    else if (fighting && combat.getBestAttackDamage() == 0)
+    else if (fighting)
     {
-        messageText.setColor(CombatStyle::BLOCKED);
-        messageText.setText("BLOCKED");
+        color = hint(now, buf, sizeof(buf));
     }
-    else
+    messageText.setColor(color);
+    messageText.setText(buf);
+}
+
+// What to do right now, most urgent first. The basic presses are only coached to a new
+// player; the rest explains a state that is easy to misread at any stage.
+Color CombatScreen::hint(unsigned long now, char *buf, size_t size)
+{
+    const Stats &player = combat.getPlayerStats();
+    uint32_t defense = combat.getEnemyDefense();
+    bool learning = combat.getTotalKills() < HINT_KILLS;
+    bool hitComing = combat.getEnemyAttackDamage() > 0 && !combat.isWarded(now) &&
+                     combat.getEnemyAttackRemaining(now) < WARN_MS;
+
+    if (combat.getStrikeDamage() == 0)
     {
-        messageText.setText("");
+        snprintf(buf, size, "DEF %s blocks even STRIKE: gear up", formatCompact(defense).c_str());
+        return CombatStyle::BLOCKED;
     }
+    if (combat.isWeakPointOpen(now))
+    {
+        snprintf(buf, size, "WEAK POINT! Strike now");
+        return Theme::GOLD;
+    }
+    if (combat.isFuryActive(now))
+    {
+        snprintf(buf, size, "FURY! Mash STRIKE");
+        return Theme::BAD;
+    }
+    if (learning && hitComing && combat.getGuardCooldownRemaining(now) == 0 && !combat.isGuarding(now))
+    {
+        snprintf(buf, size, "Hit coming: DOWN to GUARD");
+        return CombatStyle::ACTIVE;
+    }
+    if (learning && combat.getStrikeCooldownRemaining(now) == 0)
+    {
+        snprintf(buf, size, "Press the red button: STRIKE");
+        return CombatStyle::READY;
+    }
+    const SpellDef *spell = combat.getSpell();
+    if (learning && spell != nullptr && combat.getSpellCooldownRemaining(now) == 0 && !combat.isSpellUseless())
+    {
+        snprintf(buf, size, "UP casts %s", spell->name);
+        return CombatStyle::READY;
+    }
+    if (combat.getAutoAttackDamage() == 0)
+    {
+        snprintf(buf, size, "ATK %s vs DEF %s: use STRIKE", formatCompact(player.attack).c_str(),
+                 formatCompact(defense).c_str());
+    }
+    return Theme::TEXT_2;
 }
 
 // Events are picked up every loop rather than at the refresh rate, so a hit's animation

@@ -120,7 +120,7 @@ static constexpr TalentDef TALENTS[] = {
     {"Keen Eye",    "+5% drop chance a lvl",   TalentEffect::DROP_CHANCE,           5,   20, 2,   140,  TALENT_WAR_SPIRIT,   image_item_ruby_ring_pixels},
     {"Bounty",      "+10% kill gold a level",  TalentEffect::KILL_GOLD,             10,  20, 2,   140,  TALENT_KEEN_EYE,     image_item_miner_ring_pixels},
     {"Twin Drop",   "5% drops count twice",    TalentEffect::TWIN_DROP,             5,   10, 4,   150,  TALENT_KEEN_EYE,     image_item_gold_ring_pixels},
-    {"Relic Sense", "Relics start to drop",    TalentEffect::RELIC_HUNT,            1,   4,  6,   200,  TALENT_KEEN_EYE,     image_award_skull_pixels},
+    {"Relic Sense", "One relic per level",     TalentEffect::RELIC_HUNT,            1,   7,  6,   150,  TALENT_KEEN_EYE,     image_award_skull_pixels},
     {"Old Maps",    "Keep zone maps",          TalentEffect::KEEP_MAPS,             1,   4,  3,   150,  TALENT_WAR_SPIRIT,   image_upgrade_map_pixels},
     {"Deep Delver", "Opens deeper zones",      TalentEffect::DEEP_ZONES,            1,   2,  50,  300,  TALENT_OLD_MAPS,     image_zone_depths_pixels},
 

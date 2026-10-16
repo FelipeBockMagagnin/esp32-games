@@ -111,6 +111,11 @@ void EnemyPanel::onCast(uint16_t color, bool inward)
     sprite.cast(color, inward);
 }
 
+void EnemyPanel::onWeakPoint()
+{
+    sprite.cast(Theme::GOLD, true);
+}
+
 void EnemyPanel::onKill()
 {
     sprite.kill();
@@ -145,8 +150,9 @@ void EnemyPanel::refreshSideColumns(const EnemyDef &enemy)
 
     snprintf(buf, sizeof(buf), "%u", (unsigned)enemy.attack);
     atkValue.setText(buf);
-    snprintf(buf, sizeof(buf), "%u", (unsigned)enemy.defense);
+    snprintf(buf, sizeof(buf), "%u", (unsigned)combat.getEnemyDefense());
     defValue.setText(buf);
+    defValue.setColor(combat.getArmorBreakPercent() > 0 ? Theme::GOOD : Theme::DEFENSE);
     bossTag.setVisible(enemy.boss);
 
     uint8_t slot = 0;

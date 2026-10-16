@@ -55,7 +55,6 @@ extern const uint16_t image_item_wilson_pixels[]; // 16x16
 
 // Icons
 extern const uint16_t image_icon_coin_ring_pixels[]; // 16x16
-extern const uint16_t image_icon_elder_bone_pixels[]; // 16x16
 extern const uint16_t image_icon_ember_blade_pixels[]; // 16x16
 extern const uint16_t image_icon_ember_boots_pixels[]; // 16x16
 extern const uint16_t image_icon_ember_charm_pixels[]; // 16x16
@@ -67,20 +66,24 @@ extern const uint16_t image_icon_ember_mail_pixels[]; // 16x16
 extern const uint16_t image_icon_ember_ring_pixels[]; // 16x16
 extern const uint16_t image_icon_gilt_shield_pixels[]; // 16x16
 extern const uint16_t image_icon_gold_vein_pixels[]; // 16x16
-extern const uint16_t image_icon_golem_heart_pixels[]; // 16x16
 extern const uint16_t image_icon_grave_hood_pixels[]; // 16x16
+extern const uint16_t image_icon_hawk_gloves_pixels[]; // 16x16
 extern const uint16_t image_icon_iron_pick_pixels[]; // 16x16
 extern const uint16_t image_icon_loot_gloves_pixels[]; // 16x16
 extern const uint16_t image_icon_lucky_boots_pixels[]; // 16x16
+extern const uint16_t image_icon_magma_claws_pixels[]; // 16x16
 extern const uint16_t image_icon_miner_helm_pixels[]; // 16x16
+extern const uint16_t image_icon_rage_mask_pixels[]; // 16x16
+extern const uint16_t image_icon_rat_fang_pixels[]; // 16x16
+extern const uint16_t image_icon_rune_cleave_pixels[]; // 16x16
 extern const uint16_t image_icon_rune_pick_pixels[]; // 16x16
 extern const uint16_t image_icon_rusty_pick_pixels[]; // 16x16
 extern const uint16_t image_icon_scout_boots_pixels[]; // 16x16
+extern const uint16_t image_icon_star_aegis_pixels[]; // 16x16
 extern const uint16_t image_icon_star_crown_pixels[]; // 16x16
 extern const uint16_t image_icon_steel_pick_pixels[]; // 16x16
-extern const uint16_t image_icon_time_candle_pixels[]; // 16x16
-extern const uint16_t image_icon_trader_coin_pixels[]; // 16x16
 extern const uint16_t image_icon_void_pick_pixels[]; // 16x16
+extern const uint16_t image_icon_void_visage_pixels[]; // 16x16
 extern const uint16_t image_icon_zone_star_forge_pixels[]; // 16x16
 extern const uint16_t image_icon_zone_void_rift_pixels[]; // 16x16
 

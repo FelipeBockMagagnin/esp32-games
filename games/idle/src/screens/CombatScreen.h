@@ -50,6 +50,8 @@ private:
     uint32_t seenHits;
     uint32_t seenHurts;
     uint32_t seenSecondWinds;
+    uint32_t seenWeakPoints;
+    uint32_t seenFuries;
 
     unsigned long messageUntil;
     unsigned long enemyHitUntil;
@@ -65,6 +67,7 @@ private:
     void refreshPlayer(unsigned long now);
     void refreshGold();
     void refreshStatus(unsigned long now, bool fighting);
+    Color hint(unsigned long now, char *buf, size_t size);
 
 public:
     CombatScreen(CombatState &combat, const GameState &game, SoundManager &sound);

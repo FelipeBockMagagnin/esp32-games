@@ -51,7 +51,6 @@ public:
     uint32_t getPerkPercent(ItemPerk perk) const;
     // One owned item's perk at its current level, 0 if it has none
     uint32_t getItemPerk(uint8_t itemId, ItemPerk perk) const;
-    uint32_t getRelicPercent(RelicEffect effect) const; // The worn relic's, or 0
 
     // Bumped on every change so screens and combat can notice without polling each item
     uint32_t getRevision() const { return revision; }

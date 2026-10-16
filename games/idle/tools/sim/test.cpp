@@ -448,7 +448,7 @@ static void testNextGain()
     CHECK(!findNextGain(stick, ITEM_MAX_LEVEL).found);
 
     char buf[32];
-    formatNextGain(buf, sizeof(buf), stick, findNextGain(stick, 1), STAT_LABELS);
+    formatNextGain(buf, sizeof(buf), findNextGain(stick, 1), STAT_LABELS);
     CHECK(strcmp(buf, "Click gold +1% in 9 lv") == 0);
 }
 
@@ -484,6 +484,118 @@ static void testAwardsWaitForANewAward()
     CHECK(w.unlocks.isUnlocked(Feature::AWARDS));
 }
 
+// Waits for a fight with the strike ready, then strikes
+static bool strikeWhenReady(World &w)
+{
+    for (int i = 0; i < 600; i++)
+    {
+        if (w.combat.getPhase() == CombatState::FIGHTING && w.combat.getStrikeCooldownRemaining(simNow) == 0)
+        {
+            return w.combat.strike(simNow);
+        }
+        tick(w, 100);
+    }
+    return false;
+}
+
+static void testArmorBreakLastsOneFight()
+{
+    puts("armor break stacks per strike, resets on a new enemy");
+    World w;
+    simNow = 1000;
+    w.inventory.addDrop(ITEM_RAT_FANG);
+    w.inventory.equip(ITEM_RAT_FANG);
+    CHECK(w.combat.enterZone(0, simNow));
+    CHECK(strikeWhenReady(w));
+    if (w.combat.getPhase() != CombatState::FIGHTING)
+    {
+        puts("  (skipped: the first strike killed)");
+        return;
+    }
+    uint8_t broken = w.combat.getArmorBreakPercent();
+    CHECK(broken == w.combat.getArmorBreakPerk());
+    CHECK(w.combat.getEnemyDefense() < w.combat.getEnemy().defense);
+    // A strike refused on its cooldown breaks nothing
+    CHECK(!w.combat.strike(simNow));
+    CHECK(w.combat.getArmorBreakPercent() == broken);
+    w.combat.rerollEnemy(simNow);
+    CHECK(w.combat.getArmorBreakPercent() == 0);
+    CHECK(w.combat.getEnemyDefense() == w.combat.getEnemy().defense);
+}
+
+static void testWeakPointCrits()
+{
+    puts("a strike through an open weak point crits and closes it");
+    World w;
+    simNow = 1000;
+    w.inventory.addDrop(ITEM_HAWK_GLOVES);
+    w.inventory.equip(ITEM_HAWK_GLOVES);
+    CHECK(w.combat.enterZone(0, simNow));
+    for (int i = 0; i < 2000 && !(w.combat.isWeakPointOpen(simNow) && w.combat.getStrikeCooldownRemaining(simNow) == 0 &&
+                                  w.combat.getPhase() == CombatState::FIGHTING); i++)
+    {
+        tick(w, 100);
+    }
+    CHECK(w.combat.isWeakPointOpen(simNow));
+    uint32_t plain = w.combat.getStrikeDamage();
+    CHECK(w.combat.strike(simNow));
+    CHECK(w.combat.getLastHitKind() == CombatState::HIT_CRIT);
+    CHECK(w.combat.getLastHitDamage() == plain * (100 + w.combat.getWeakPointPerk()) / 100);
+    CHECK(!w.combat.isWeakPointOpen(simNow));
+}
+
+static void testFuryNeedsItsPerk()
+{
+    puts("fury fills only with its perk and quickens the strike");
+    World plain;
+    simNow = 1000;
+    CHECK(plain.combat.enterZone(0, simNow));
+    for (int i = 0; i < 8; i++)
+    {
+        strikeWhenReady(plain);
+    }
+    CHECK(plain.combat.getFuryPercent() == 0);
+    CHECK(plain.combat.getFuryEvents() == 0);
+
+    World w;
+    w.inventory.addDrop(ITEM_RAGE_MASK);
+    w.inventory.equip(ITEM_RAGE_MASK);
+    CHECK(w.combat.enterZone(0, simNow));
+    for (int i = 0; i < 20 && !w.combat.isFuryActive(simNow); i++)
+    {
+        strikeWhenReady(w);
+    }
+    CHECK(w.combat.isFuryActive(simNow));
+    if (strikeWhenReady(w) && w.combat.isFuryActive(simNow))
+    {
+        CHECK(w.combat.getStrikeCooldownRemaining(simNow) <= FURY_STRIKE_COOLDOWN_MS);
+    }
+}
+
+static void testRelicsNeedRelicSense()
+{
+    puts("relics drop in Relic Sense's order, ten levels a drop");
+    World w;
+    CHECK(!w.combat.canDrop(ITEM_RAT_FANG));
+    CHECK(w.combat.canDrop(ITEM_DULL_STICK));
+    Ascension::Snapshot snap = {};
+    snap.talentLevels[TALENT_RELIC_SENSE] = 1;
+    w.ascension.load(snap);
+    CHECK(w.combat.canDrop(ITEM_RAT_FANG));
+    CHECK(!w.combat.canDrop(ITEM_HAWK_GLOVES));
+
+    CHECK(w.inventory.addDrop(ITEM_RAT_FANG));
+    CHECK(w.inventory.getItemLevel(ITEM_RAT_FANG) == RELIC_DROP_LEVELS);
+    for (int i = 0; i < 12; i++)
+    {
+        CHECK(!w.inventory.addDrop(ITEM_RAT_FANG));
+    }
+    CHECK(w.inventory.getItemLevel(ITEM_RAT_FANG) == ITEM_MAX_LEVEL);
+    w.inventory.addDrop(ITEM_EMBER_BLADE);
+    w.inventory.addDrop(ITEM_EMBER_BLADE);
+    CHECK(w.inventory.getItemLevel(ITEM_EMBER_BLADE) == 2);
+}
+
 int main()
 {
     testSaveRoundTrip();
@@ -502,6 +614,10 @@ int main()
     testAwardProduction();
     testNextGain();
     testAwardsWaitForANewAward();
+    testArmorBreakLastsOneFight();
+    testWeakPointCrits();
+    testFuryNeedsItsPerk();
+    testRelicsNeedRelicSense();
     printf(failures == 0 ? "all passed\n" : "%d failed\n", failures);
     return failures == 0 ? 0 : 1;
 }

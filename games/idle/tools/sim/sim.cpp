@@ -315,7 +315,8 @@ static void shop()
 }
 
 // Best owned item per slot, weighting attack above defense above health and regen;
-// amulets go by tier since what they grant is a spell. Tools never win this on stats.
+// amulets go by tier since what they grant is a spell. Tools never win this on stats, but
+// a relic's perk is taken as worth the stats it gave up against its zone's tier.
 static void equipBest()
 {
     for (uint8_t slot = 0; slot < EQUIP_SLOT_COUNT; slot++)
@@ -330,6 +331,9 @@ static void equipBest()
             }
             Stats s = inventory.getItemStats(i);
             double score = s.attack * 3.0 + s.defense * 2.0 + s.maxHp * 0.5 + s.regen * 0.5 + ITEMS[i].tier * 1000.0 * (slot == (uint8_t)EquipSlot::AMULET);
+            bool combatTool = inventory.getItemPerk(i, ItemPerk::ARMOR_BREAK) + inventory.getItemPerk(i, ItemPerk::WEAK_POINT) +
+                                  inventory.getItemPerk(i, ItemPerk::FURY) > 0;
+            score *= combatTool ? 1.3 : 1.0;
             if (score > bestScore)
             {
                 bestScore = score, best = i;

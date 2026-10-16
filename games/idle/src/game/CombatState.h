@@ -26,7 +26,8 @@ public:
     enum HitKind : uint8_t
     {
         HIT_AUTO,
-        HIT_STRIKE
+        HIT_STRIKE,
+        HIT_CRIT // A strike through an open weak point
     };
 
     struct Snapshot
@@ -53,6 +54,19 @@ public:
     bool isWarded(unsigned long now) const;
     unsigned long getWardRemaining(unsigned long now) const;
     bool isMidasArmed() const { return midasArmed; }
+
+    // The worn relics' perks, capped; zero without one
+    uint32_t getArmorBreakPerk() const;
+    uint32_t getWeakPointPerk() const;
+    uint32_t getFuryPerk() const;
+    uint8_t getArmorBreakPercent() const { return armorBreak; } // Taken off this enemy so far
+    uint32_t getEnemyDefense() const; // With the armor break applied
+    bool isWeakPointOpen(unsigned long now) const;
+    uint32_t getWeakPointEvents() const { return weakPointEvents; }
+    uint8_t getFuryPercent() const { return (uint8_t)(fury / FURY_FULL); }
+    bool isFuryActive(unsigned long now) const;
+    unsigned long getFuryRemaining(unsigned long now) const;
+    uint32_t getFuryEvents() const { return furyEvents; }
 
     bool enterZone(uint8_t zoneId, unsigned long now);
     void leaveZone();
@@ -104,7 +118,7 @@ public:
     bool isGuarding(unsigned long now) const;
     // Base timings and odds with the achievement rewards and item cuts applied
     unsigned long getGuardDurationMs() const;
-    unsigned long getStrikeCooldownMs() const; // With the worn relic's cut
+    unsigned long getStrikeCooldownMs() const;
     unsigned long getGuardCooldownMs() const;
     unsigned long getSpellCooldownMs(const SpellDef &spell) const;
     uint16_t getDropChanceBp(const DropDef &drop) const;
@@ -147,6 +161,9 @@ private:
     void regenerate(unsigned long now);
     uint32_t getReward(AchReward reward) const;
     void pickEnemy(uint8_t avoid = 0xFF);
+    void scheduleWeakPoint(unsigned long now);
+    void updateWeakPoint(unsigned long now);
+    void addFury(uint16_t amount, unsigned long now);
     uint32_t damageTo(uint32_t defense, uint8_t multiplier) const;
     void hitEnemy(uint32_t damage, HitKind kind, unsigned long now);
     void onEnemyKilled(unsigned long now);
@@ -195,6 +212,14 @@ private:
     KillDrops lastDrops;
     unsigned long secondWindReadyAt; // 0 until the first one is used
     uint32_t secondWindEvents;
+
+    uint8_t armorBreak;
+    unsigned long weakOpensAt;  // 0 while none is scheduled
+    unsigned long weakClosesAt; // 0 while closed
+    uint32_t weakPointEvents;
+    uint16_t fury; // Hundredths of a meter point, FURY_FULL * 100 when full
+    unsigned long furyEndsAt; // 0 outside a fury
+    uint32_t furyEvents;
 };
 
 #endif // COMBAT_STATE_H

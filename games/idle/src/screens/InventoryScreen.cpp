@@ -114,14 +114,9 @@ enum Verdict : uint8_t
     MIXED
 };
 
-// Stat by stat against the item it would replace. Relics each do something different,
-// so they are never ranked against one another.
+// Stat by stat against the item it would replace
 static Verdict compareItems(const Inventory &inventory, uint8_t itemId, int8_t against)
 {
-    if (ITEMS[itemId].slot == EquipSlot::RELIC)
-    {
-        return SAME;
-    }
     if (against == NO_ITEM)
     {
         return BETTER;
@@ -441,21 +436,6 @@ static uint8_t statKindsOf(int8_t itemId, int8_t against, StatKind *out, uint8_t
 
 void InventoryScreen::showStats(int8_t itemId, int8_t against, bool compare)
 {
-    if (itemId != NO_ITEM && ITEMS[itemId].slot == EquipSlot::RELIC)
-    {
-        char relicBuf[36];
-        const ItemDef &relic = ITEMS[itemId];
-        formatRelic(relic, relicAtLevel(relic, inventory.getItemLevel((uint8_t)itemId)), relicBuf, sizeof(relicBuf));
-        statColumns[0].setText(relicBuf);
-        statColumns[0].setColor(Theme::tierColor(RELIC_TIER));
-        statColumns[0].setVisible(true);
-        for (uint8_t i = 1; i < STAT_COLUMNS; i++)
-        {
-            statColumns[i].setVisible(false);
-        }
-        return;
-    }
-
     StatKind kinds[STAT_COLUMNS];
     uint8_t kindCount = statKindsOf(itemId, compare ? against : NO_ITEM, kinds, STAT_COLUMNS);
 
@@ -567,7 +547,7 @@ void InventoryScreen::refreshPanel()
     }
     else if (gain.found)
     {
-        formatNextGain(buf, sizeof(buf), def, gain, STAT_SHORT_LABELS);
+        formatNextGain(buf, sizeof(buf), gain, STAT_SHORT_LABELS);
         hintText.setText(buf);
         hintText.setColor(Theme::GOOD);
     }

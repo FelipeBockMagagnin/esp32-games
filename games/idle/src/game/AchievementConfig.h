@@ -41,11 +41,11 @@ enum class AchReward : uint8_t
 };
 static constexpr uint8_t ACH_REWARD_COUNT = (uint8_t)AchReward::COUNT;
 
-// Rings, amulets and relics are jewellery; the rest is gear, and the gear that is not a
-// tool makes up a tier's set
+// Rings and amulets are jewellery and relics a tier of their own; the rest is gear, and
+// the gear that is not a tool makes up a tier's set
 static constexpr bool isSetPiece(const ItemDef &item)
 {
-    return !item.tool && item.slot != EquipSlot::RING && item.slot != EquipSlot::AMULET && item.slot != EquipSlot::RELIC;
+    return !item.tool && item.tier != RELIC_TIER && item.slot != EquipSlot::RING && item.slot != EquipSlot::AMULET;
 }
 
 static constexpr uint8_t gearInTier(uint8_t tier, uint8_t i = 0)

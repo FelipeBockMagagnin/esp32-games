@@ -22,19 +22,25 @@ enum StatKind : uint8_t
     STAT_DOUBLE_MINE,
     STAT_MINE_XP,
     STAT_DISCOUNT,
+    STAT_ARMOR_BREAK,
+    STAT_WEAK_POINT,
+    STAT_FURY,
     STAT_RESPAWN,
     STAT_KIND_COUNT
 };
 
 static const char *const STAT_LABELS[STAT_KIND_COUNT] = {
     "Attack", "Defense", "Max HP", "Regen", "Gold/s", "Click gold",
-    "Drop rate", "Kill gold", "Double mine", "Double XP", "Upg. cost", "Respawn"};
+    "Drop rate", "Kill gold", "Double mine", "Double XP", "Upg. cost", "Armor brk", "Weak pt",
+    "Fury", "Respawn"};
 static const char *const STAT_SHORT_LABELS[STAT_KIND_COUNT] = {
-    "atk", "def", "hp", "rgn", "gold", "clk", "drop", "kill", "2xmine", "2xxp", "cost", "resp"};
+    "atk", "def", "hp", "rgn", "gold", "clk", "drop", "kill", "2xmine", "2xxp", "cost", "brk", "weak",
+    "fury", "resp"};
 static const ItemPerk STAT_PERKS[STAT_KIND_COUNT] = {
     ItemPerk::NONE, ItemPerk::NONE, ItemPerk::NONE, ItemPerk::NONE,
     ItemPerk::GOLD, ItemPerk::CLICK, ItemPerk::DROP, ItemPerk::KILL_GOLD,
-    ItemPerk::DOUBLE_MINE, ItemPerk::MINE_XP, ItemPerk::UPGRADE_DISCOUNT, ItemPerk::RESPAWN_CUT};
+    ItemPerk::DOUBLE_MINE, ItemPerk::MINE_XP, ItemPerk::UPGRADE_DISCOUNT, ItemPerk::ARMOR_BREAK,
+    ItemPerk::WEAK_POINT, ItemPerk::FURY, ItemPerk::RESPAWN_CUT};
 
 inline bool isPercentStat(StatKind kind)
 {
@@ -118,35 +124,6 @@ inline void formatStat(char *buf, size_t size, const char *label, StatKind kind,
     }
 }
 
-inline uint32_t relicAtLevel(const ItemDef &def, uint8_t level)
-{
-    return scaleItemStat(def.relicPercent, level);
-}
-
-// A relic's one effect at `value`; with `change` only the signed amount, for a level-up
-inline void formatRelic(const ItemDef &def, uint32_t value, char *buf, size_t size, bool change = false)
-{
-    unsigned long v = value;
-    switch (def.relic)
-    {
-    case RelicEffect::UPGRADE_DISCOUNT:
-        snprintf(buf, size, change ? "-%lu%%" : "Upgrades -%lu%%", v);
-        return;
-    case RelicEffect::COOLDOWN_CUT:
-        snprintf(buf, size, change ? "-%lu%%" : "Strike/guard cooldown -%lu%%", v);
-        return;
-    case RelicEffect::AWARD_BOOST:
-        snprintf(buf, size, change ? "+%lu%%" : "Award gold bonus +%lu%%", v);
-        return;
-    case RelicEffect::HP_REGEN:
-        snprintf(buf, size, change ? "+%lu.%lu%%" : "Regen %lu.%lu%% max HP/s", v / 10, v % 10);
-        return;
-    default:
-        buf[0] = '\0';
-        return;
-    }
-}
-
 // Levels after `level` until `valueAt` next changes, 0 if it never does again
 template <typename ValueAt>
 uint8_t levelsToNextGain(ValueAt valueAt, uint8_t level)
@@ -176,11 +153,10 @@ uint8_t levelOfLastGain(ValueAt valueAt, uint8_t level)
     return 1;
 }
 
-// The levelled value that rises soonest after `level`: a stat, or the relic's effect
+// The stat that rises soonest after `level`
 struct NextGain
 {
     bool found;
-    bool relic;
     StatKind kind;
     uint8_t levels;     // After `level`
     uint8_t sinceLevel; // The level that value last rose at
@@ -205,37 +181,19 @@ inline NextGain findNextGain(const ItemDef &def, uint8_t level)
         uint8_t levels = levelsToNextGain(valueAt, level);
         if (levels > 0 && (!best.found || levels < best.levels))
         {
-            best = {true, false, kind, levels, levelOfLastGain(valueAt, level),
-                    valueAt((uint8_t)(level + levels)) - valueAt(level)};
-        }
-    }
-    if (def.relicPercent > 0)
-    {
-        auto valueAt = [&](uint8_t l) { return (int32_t)relicAtLevel(def, l); };
-        uint8_t levels = levelsToNextGain(valueAt, level);
-        if (levels > 0 && (!best.found || levels < best.levels))
-        {
-            best = {true, true, STAT_KIND_COUNT, levels, levelOfLastGain(valueAt, level),
+            best = {true, kind, levels, levelOfLastGain(valueAt, level),
                     valueAt((uint8_t)(level + levels)) - valueAt(level)};
         }
     }
     return best;
 }
 
-// "Attack +1 in 3 lv", with the given labels; a relic's effect reads "Effect -1% ..."
-inline void formatNextGain(char *buf, size_t size, const ItemDef &def, const NextGain &gain,
-                           const char *const *labels)
+// "Attack +1 in 3 lv", with the given labels
+inline void formatNextGain(char *buf, size_t size, const NextGain &gain, const char *const *labels)
 {
     char change[16];
-    if (gain.relic)
-    {
-        formatRelic(def, (uint32_t)gain.change, change, sizeof(change), true);
-    }
-    else
-    {
-        formatStat(change, sizeof(change), "", gain.kind, gain.change, true);
-    }
-    const char *label = gain.relic ? "Effect" : labels[gain.kind];
+    formatStat(change, sizeof(change), "", gain.kind, gain.change, true);
+    const char *label = labels[gain.kind];
     if (gain.levels == 1)
     {
         snprintf(buf, size, "%s %s next lv", label, change);

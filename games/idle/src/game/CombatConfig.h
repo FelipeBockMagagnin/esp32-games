@@ -9,7 +9,7 @@
 // Combat pacing. The auto-attack runs on its own clock so a fight progresses on any
 // screen; the two manual actions are what the player adds by being present.
 static const unsigned long AUTO_ATTACK_MS = 2000;
-static const unsigned long STRIKE_COOLDOWN_MS = 3000;
+static const unsigned long STRIKE_COOLDOWN_MS = 1500;
 static const uint8_t STRIKE_MULTIPLIER = 2; // Manual strike hits this many times as hard
 
 // No floor: an attack that cannot beat the defense does nothing. A floor of 1 would let
@@ -22,10 +22,26 @@ inline uint32_t damageThrough(uint32_t attack, uint32_t defense)
 static const unsigned long GUARD_COOLDOWN_MS = 9000;
 static const unsigned long GUARD_DURATION_MS = 3000;
 static const uint8_t GUARD_DAMAGE_PERCENT = 50; // Incoming damage while guarding
-static const unsigned long RESPAWN_MS = 4500; // Long enough to take in a kill and its drop
+static const unsigned long RESPAWN_MS = 2500; // Long enough to take in a kill and its drop
 static const unsigned long REVIVE_MS = 8000; // Health refills over this long after a death
 static const unsigned long REGEN_TICK_MS = 1000;
 static const uint8_t BOSS_KILL_SECONDS = 3;
+
+// What the relics' perks do (see ItemPerk). All three act on the strike only, and the
+// two that add damage multiply what got through the defense, so a strike the defense blocks
+// stays blocked and gear alone still decides which zones are in reach.
+// A WEAK_POINT perk makes the enemy open its guard now and then; a strike in the window crits.
+static const unsigned long WEAK_POINT_OPEN_MS = 1000;
+static const unsigned long WEAK_POINT_MIN_GAP_MS = 4000;
+static const unsigned long WEAK_POINT_MAX_GAP_MS = 7000;
+// A FURY perk fills a meter by strikes landed and hits taken, the perk speeding it up; full,
+// it sets the strike's cooldown to almost nothing for a short burst. It lasts across enemies
+// and empties on a death.
+static const uint16_t FURY_PER_STRIKE = 20;
+static const uint16_t FURY_PER_HURT = 15;
+static const uint16_t FURY_FULL = 100;
+static const unsigned long FURY_MS = 3000;
+static const unsigned long FURY_STRIKE_COOLDOWN_MS = 400;
 
 // The equipped amulet decides what the Up button casts. No spell deals damage, so the
 // strike stays the only way past a defense the auto-attack cannot beat; each one changes
@@ -119,7 +135,9 @@ struct ZoneDef
 // stats the enemy tables below are tuned for. They fall from zone to zone, so the early
 // zones rain items and the late ones are a long farm across ascensions. With N enemies
 // picked at random, an item on k of them at chance c drops at k*c/N per kill. The boss of
-// each zone carries its ring and amulet; a zone's tools drop a little less than its set.
+// each zone carries its ring and amulet; a zone's tools drop a little less than its set,
+// and its relic (on the boss, or the second enemy) far less: a drop is ten levels, so a
+// relic still maxes in a few dozen hours of farming its zone in a later run.
 static constexpr DropDef SMALL_RAT_DROPS[] = {
     {ITEM_DULL_STICK, 1400},
     {ITEM_RAG_GLOVES, 1400},
@@ -154,7 +172,7 @@ static constexpr DropDef GAMER_MOUSE_DROPS[] = {
     {ITEM_TIN_RING, 1000},
     {ITEM_WILSON, 1800},
     {ITEM_WOOD_SHIELD, 900},
-    {ITEM_TRADER_COIN, 300},
+    {ITEM_RAT_FANG, 50},
 };
 
 static constexpr DropDef SPIDER_DROPS[] = {
@@ -187,7 +205,7 @@ static constexpr DropDef GNOME_BAND_DROPS[] = {
     {ITEM_IRON_SHIELD, 250},
     {ITEM_GOLD_RING, 400},
     {ITEM_JADE_AMULET, 400},
-    {ITEM_TIME_CANDLE, 150},
+    {ITEM_HAWK_GLOVES, 30},
 };
 
 static constexpr DropDef BONE_DIGGER_DROPS[] = {
@@ -205,21 +223,22 @@ static constexpr DropDef CRYPT_GHOUL_DROPS[] = {
     {ITEM_STEEL_GUARD, 110},
     {ITEM_RUBY_RING, 60},
     {ITEM_GOLD_AMULET, 60},
-    {ITEM_ELDER_BONE, 40},
+    {ITEM_RAGE_MASK, 10},
 };
 
 static constexpr DropDef DEEP_LURKER_DROPS[] = {
-    {ITEM_RUNE_HELM, 36},
-    {ITEM_RUNE_GRIPS, 36},
-    {ITEM_RUNE_BLADE, 36},
-    {ITEM_RUNE_PICK, 20},
+    {ITEM_RUNE_HELM, 30},
+    {ITEM_RUNE_GRIPS, 30},
+    {ITEM_RUNE_BLADE, 30},
+    {ITEM_RUNE_PICK, 16},
 };
 static constexpr DropDef ABYSS_WORM_DROPS[] = {
-    {ITEM_RUNE_PLATE, 36},
-    {ITEM_RUNE_LEGS, 36},
-    {ITEM_RUNE_BOOTS, 36},
-    {ITEM_RUNE_AEGIS, 28},
-    {ITEM_SCOUT_BOOTS, 20},
+    {ITEM_RUNE_PLATE, 30},
+    {ITEM_RUNE_LEGS, 30},
+    {ITEM_RUNE_BOOTS, 30},
+    {ITEM_RUNE_AEGIS, 23},
+    {ITEM_SCOUT_BOOTS, 16},
+    {ITEM_RUNE_CLEAVE, 6},
 };
 
 static constexpr DropDef MAGMA_HOUND_DROPS[] = {
@@ -233,7 +252,7 @@ static constexpr DropDef CORE_GOLEM_DROPS[] = {
     {ITEM_RUNE_HELM, 40},
     {ITEM_MINER_RING, 30},
     {ITEM_CORE_SIGIL, 60},
-    {ITEM_GOLEM_HEART, 30},
+    {ITEM_MAGMA_CLAWS, 3},
 };
 
 // The Mythic set drops in both deep zones
@@ -254,6 +273,7 @@ static constexpr DropDef VOID_MAW_DROPS[] = {
     {ITEM_EMBER_RING, 12},
     {ITEM_EMBER_CHARM, 12},
     {ITEM_VOID_PICK, 12},
+    {ITEM_VOID_VISAGE, 4},
 };
 static constexpr DropDef STAR_SMITH_DROPS[] = {
     {ITEM_EMBER_HELM, 20},
@@ -271,8 +291,8 @@ static constexpr DropDef NOVA_GOLEM_DROPS[] = {
 static constexpr DropDef SUN_EATER_DROPS[] = {
     {ITEM_EMBER_RING, 10},
     {ITEM_EMBER_CHARM, 8},
-    {ITEM_GOLEM_HEART, 15},
     {ITEM_STAR_CROWN, 8},
+    {ITEM_STAR_AEGIS, 3},
 };
 
 // Until the deeper zones get their own art
@@ -284,9 +304,9 @@ static constexpr DropDef SUN_EATER_DROPS[] = {
 // (the previous zone's set part-levelled, plus the combat upgrades bought by then),
 // measured with tools/sim rather than assumed:
 //
-//   arrival (atk / def / hp):  Sewers 10/5/90 (starting kit)   Forest 19-21/30/220-224
-//                              Crypt 90-102/190-222/408-458   Depths 412-456/980-1098/2550-2620
-//                              Molten Core 930-1080/1830-1870/4260-4410
+//   arrival (atk / def / hp):  Sewers 10/5/90 (starting kit)   Forest 21/30-33/228-234
+//                              Crypt 105-115/230-250/468-496  Depths 453-469/1100-1125/2620
+//                              Molten Core 1030-1060/1870-1890/4300-4500
 //                              Void Rift 2220-2620/2790-3080/5750-5840 (5760-6750 atk by its second run)
 //                              Star Forge 7580-7940/8530-9180/16530-16620 (Mythic set maxed)
 //
@@ -296,8 +316,8 @@ static constexpr DropDef SUN_EATER_DROPS[] = {
 // The zone's own drops are what make it idle-farmable.
 //
 // The run the tables are tuned for (tools/sim, a player checking in hourly while awake):
-// Sewers from minute 5, Forest at 1 h, Crypt at 8-9 h, Depths with the Transmuter at 25 h,
-// Molten Core with the Void Pit at 48-50 h; each zone farms itself within 0-7 awake hours
+// Sewers from minute 5, Forest at 1 h, Crypt at 7-8 h, Depths with the Transmuter at 24 h,
+// Molten Core with the Void Pit at 48 h; each zone farms itself within 0-6 awake hours
 // of opening (the sim prints it per run). The zone maps and combat upgrades are gated in GameConfig.h
 // to keep these hours. The kill gates (150 / 500 / 1500 / 1000) keep a zone from opening
 // before the one before it has been fought for a while.

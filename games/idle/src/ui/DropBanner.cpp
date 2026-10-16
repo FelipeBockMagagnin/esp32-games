@@ -144,14 +144,6 @@ void DropBanner::drawLevelUp(TFT_eSPI &tft, const ItemDef &def, uint16_t rarity)
         lines++;
     };
 
-    if (def.relicPercent > 0)
-    {
-        uint32_t now = relicAtLevel(def, level);
-        uint32_t was = relicAtLevel(def, before);
-        formatRelic(def, now, buf, sizeof(buf));
-        formatRelic(def, now - was, change, sizeof(change), true);
-        drawLine(buf, now != was, change);
-    }
     for (uint8_t k = 0; k < STAT_KIND_COUNT && lines < MAX_STAT_LINES; k++)
     {
         StatKind kind = (StatKind)k;
@@ -174,7 +166,7 @@ void DropBanner::drawLevelUp(TFT_eSPI &tft, const ItemDef &def, uint16_t rarity)
     {
         uint8_t span = level + gain.levels - gain.sinceLevel;
         fillW = (int16_t)((int32_t)innerW * (level - gain.sinceLevel) / span);
-        formatNextGain(buf, sizeof(buf), def, gain, STAT_LABELS);
+        formatNextGain(buf, sizeof(buf), gain, STAT_LABELS);
     }
     else
     {

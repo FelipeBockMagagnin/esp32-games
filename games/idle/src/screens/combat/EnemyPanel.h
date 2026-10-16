@@ -45,6 +45,7 @@ public:
     void hideBanner();
     void onHit(uint32_t damage, bool heavy);
     void onKill();
+    void onWeakPoint();
     void onAttack();
     void onCast(uint16_t color, bool inward);
     void stopAnimations();

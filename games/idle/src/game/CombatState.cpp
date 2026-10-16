@@ -60,7 +60,14 @@ CombatState::CombatState(GameState &game, Inventory &inventory)
       dropEvents(0),
       lastDrops(),
       secondWindReadyAt(0),
-      secondWindEvents(0)
+      secondWindEvents(0),
+      armorBreak(0),
+      weakOpensAt(0),
+      weakClosesAt(0),
+      weakPointEvents(0),
+      fury(0),
+      furyEndsAt(0),
+      furyEvents(0)
 {
     for (uint8_t i = 0; i < ZONE_COUNT; i++)
     {
@@ -189,6 +196,7 @@ void CombatState::pickEnemy(uint8_t avoid)
         currentEnemy = (uint8_t)random(zone.enemyCount);
     }
     enemyHp = zone.enemies[currentEnemy].maxHp;
+    armorBreak = 0;
 }
 
 void CombatState::startFight(unsigned long now)
@@ -196,6 +204,104 @@ void CombatState::startFight(unsigned long now)
     phase = FIGHTING;
     autoAttackAt = now + AUTO_ATTACK_MS;
     enemyAttackAt = now + getEnemy().attackIntervalMs;
+    scheduleWeakPoint(now);
+}
+
+static uint32_t capped(uint32_t value, uint32_t cap)
+{
+    return value < cap ? value : cap;
+}
+
+uint32_t CombatState::getArmorBreakPerk() const
+{
+    return capped(inventory.getPerkPercent(ItemPerk::ARMOR_BREAK), MAX_ARMOR_BREAK_PERCENT);
+}
+
+uint32_t CombatState::getWeakPointPerk() const
+{
+    return capped(inventory.getPerkPercent(ItemPerk::WEAK_POINT), MAX_WEAK_POINT_PERCENT);
+}
+
+uint32_t CombatState::getFuryPerk() const
+{
+    return capped(inventory.getPerkPercent(ItemPerk::FURY), MAX_FURY_PERCENT);
+}
+
+uint32_t CombatState::getEnemyDefense() const
+{
+    // Rounded, so a single strike's break shows even on the Sewers' defense of a dozen
+    uint32_t defense = getEnemy().defense;
+    return defense - (uint32_t)(((uint64_t)defense * armorBreak + 50) / 100);
+}
+
+void CombatState::scheduleWeakPoint(unsigned long now)
+{
+    weakClosesAt = 0;
+    weakOpensAt = getWeakPointPerk() == 0 ? 0 : now + (unsigned long)random(WEAK_POINT_MIN_GAP_MS, WEAK_POINT_MAX_GAP_MS + 1);
+}
+
+bool CombatState::isWeakPointOpen(unsigned long now) const
+{
+    return weakClosesAt != 0 && !reached(now, weakClosesAt);
+}
+
+// A weak point equipped mid-fight starts its clock here, one taken off stops it
+void CombatState::updateWeakPoint(unsigned long now)
+{
+    if (getWeakPointPerk() == 0)
+    {
+        weakOpensAt = 0;
+        weakClosesAt = 0;
+        return;
+    }
+    if (weakClosesAt != 0)
+    {
+        if (reached(now, weakClosesAt))
+        {
+            scheduleWeakPoint(now);
+        }
+        return;
+    }
+    if (weakOpensAt == 0)
+    {
+        scheduleWeakPoint(now);
+    }
+    else if (reached(now, weakOpensAt))
+    {
+        weakOpensAt = 0;
+        weakClosesAt = now + WEAK_POINT_OPEN_MS;
+        weakPointEvents++;
+    }
+}
+
+bool CombatState::isFuryActive(unsigned long now) const
+{
+    return furyEndsAt != 0 && !reached(now, furyEndsAt);
+}
+
+unsigned long CombatState::getFuryRemaining(unsigned long now) const
+{
+    return isFuryActive(now) ? furyEndsAt - now : 0;
+}
+
+// The meter stays still during a fury, which brings the strike back at once
+void CombatState::addFury(uint16_t amount, unsigned long now)
+{
+    uint32_t perk = getFuryPerk();
+    if (perk == 0 || isFuryActive(now))
+    {
+        return;
+    }
+    uint32_t filled = fury + (uint32_t)amount * (100 + perk);
+    if (filled < (uint32_t)FURY_FULL * 100)
+    {
+        fury = (uint16_t)filled;
+        return;
+    }
+    fury = 0;
+    furyEndsAt = now + FURY_MS;
+    furyEvents++;
+    strikeReadyAt = now;
 }
 
 uint64_t CombatState::getKillGold(const EnemyDef &enemy, uint8_t zone) const
@@ -227,15 +333,14 @@ unsigned long CombatState::getGuardDurationMs() const
 
 unsigned long CombatState::getStrikeCooldownMs() const
 {
-    return cutBy(STRIKE_COOLDOWN_MS, inventory.getRelicPercent(RelicEffect::COOLDOWN_CUT));
+    return STRIKE_COOLDOWN_MS;
 }
 
 // Never shorter than the guard it follows plus a second, so a guard cannot be held up
 unsigned long CombatState::getGuardCooldownMs() const
 {
-    unsigned long ms = cutBy(GUARD_COOLDOWN_MS, inventory.getRelicPercent(RelicEffect::COOLDOWN_CUT));
     unsigned long floor = getGuardDurationMs() + 1000;
-    return ms > floor ? ms : floor;
+    return GUARD_COOLDOWN_MS > floor ? GUARD_COOLDOWN_MS : floor;
 }
 
 unsigned long CombatState::getSpellCooldownMs(const SpellDef &spell) const
@@ -268,12 +373,12 @@ uint32_t CombatState::damageTo(uint32_t defense, uint8_t multiplier) const
 
 uint32_t CombatState::getAutoAttackDamage() const
 {
-    return phase == IDLE ? 0 : damageTo(getEnemy().defense, 1);
+    return phase == IDLE ? 0 : damageTo(getEnemyDefense(), 1);
 }
 
 uint32_t CombatState::getStrikeDamage() const
 {
-    return phase == IDLE ? 0 : damageTo(getEnemy().defense, STRIKE_MULTIPLIER);
+    return phase == IDLE ? 0 : damageTo(getEnemyDefense(), STRIKE_MULTIPLIER);
 }
 
 uint32_t CombatState::getBestAttackDamage() const
@@ -448,8 +553,10 @@ void CombatState::onPlayerDied(unsigned long now)
     deathAt = now;
     reviveMs = cutBy(REVIVE_MS, getReward(AchReward::REVIVE_CUT));
     reviveAt = now + reviveMs;
-    guardEndsAt = 0; // Losing the fight drops the guard and the ward
+    guardEndsAt = 0; // Losing the fight drops the guard, the ward and the fury
     wardEndsAt = 0;
+    fury = 0;
+    furyEndsAt = 0;
 }
 
 void CombatState::update(unsigned long now)
@@ -504,6 +611,11 @@ void CombatState::update(unsigned long now)
     {
         wardEndsAt = 0;
     }
+    if (furyEndsAt != 0 && reached(now, furyEndsAt))
+    {
+        furyEndsAt = 0;
+    }
+    updateWeakPoint(now);
 
     const EnemyDef &enemy = getEnemy();
 
@@ -513,7 +625,7 @@ void CombatState::update(unsigned long now)
         // frame never produces a burst of catch-up hits
         autoAttackAt = now + AUTO_ATTACK_MS;
 
-        uint32_t damage = damageTo(enemy.defense, 1);
+        uint32_t damage = damageTo(getEnemyDefense(), 1);
         if (damage > 0)
         {
             hitEnemy(damage, HIT_AUTO, now);
@@ -543,6 +655,7 @@ void CombatState::update(unsigned long now)
             if (playerHp > damage)
             {
                 playerHp -= damage;
+                addFury(FURY_PER_HURT, now);
             }
             else
             {
@@ -558,13 +671,21 @@ bool CombatState::strike(unsigned long now)
     {
         return false;
     }
-    uint32_t damage = damageTo(getEnemy().defense, STRIKE_MULTIPLIER);
+    uint32_t damage = damageTo(getEnemyDefense(), STRIKE_MULTIPLIER);
     if (damage == 0)
     {
         return false;
     }
-    strikeReadyAt = now + getStrikeCooldownMs();
-    hitEnemy(damage, HIT_STRIKE, now);
+    bool crit = isWeakPointOpen(now);
+    if (crit)
+    {
+        damage = (uint32_t)((uint64_t)damage * (100 + getWeakPointPerk()) / 100);
+        scheduleWeakPoint(now);
+    }
+    strikeReadyAt = now + (isFuryActive(now) ? FURY_STRIKE_COOLDOWN_MS : getStrikeCooldownMs());
+    armorBreak = (uint8_t)capped(armorBreak + getArmorBreakPerk(), MAX_ARMOR_BREAK_PERCENT);
+    addFury(FURY_PER_STRIKE, now);
+    hitEnemy(damage, crit ? HIT_CRIT : HIT_STRIKE, now);
     return true;
 }
 

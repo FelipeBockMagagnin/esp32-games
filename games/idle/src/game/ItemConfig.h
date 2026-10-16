@@ -16,7 +16,6 @@ enum class EquipSlot : uint8_t
     SHIELD,
     RING,
     AMULET,
-    RELIC,
     COUNT
 };
 
@@ -26,28 +25,16 @@ static constexpr uint8_t EQUIP_SLOT_COUNT = (uint8_t)EquipSlot::COUNT;
 static const int8_t NO_ITEM = -1;
 
 static const char *const EQUIP_SLOT_NAMES[EQUIP_SLOT_COUNT] = {
-    "Helmet", "Body", "Pants", "Boots", "Gloves", "Sword", "Shield", "Ring", "Amulet", "Relic"};
+    "Helmet", "Body", "Pants", "Boots", "Gloves", "Sword", "Shield", "Ring", "Amulet"};
 
 // Item tiers, worst to best within a slot. The name color follows the familiar RPG
 // rarity scheme, so a better drop stands out in a list before its stats are read.
 // Mythic gear drops only past the Molten Core, in the zones Deep Delver opens; relics are
-// a tier of their own, outside the gear ladder.
+// a tier of their own, outside the gear ladder and its sets, worn in their own slots.
 static const uint8_t ITEM_TIER_COUNT = 6;
 static const uint8_t MYTHIC_TIER = 4;
 static const uint8_t RELIC_TIER = 5;
 static const char *const ITEM_TIER_NAMES[ITEM_TIER_COUNT] = {"Common", "Uncommon", "Rare", "Epic", "Mythic", "Relic"};
-
-// What the worn relic does, as relicPercent of it scaled by the relic's level like a stat.
-// Relics drop only once the Relic Sense talent has a level per relic, in table order.
-enum class RelicEffect : uint8_t
-{
-    NONE,
-    UPGRADE_DISCOUNT, // Gold upgrades cost less
-    COOLDOWN_CUT,     // Strike and guard come back sooner
-    AWARD_BOOST,      // The awards' gold production bonus grows by this share
-    HP_REGEN,         // Tenths of a percent of max HP regained per second
-    COUNT
-};
 
 // What an item adds besides combat stats. Every perk but the respawn cut and the drop
 // chance scales with the item's level like a stat; a levelled drop perk made duplicates
@@ -64,6 +51,9 @@ enum class ItemPerk : uint8_t
     DOUBLE_MINE,      // Chance a click mines twice
     MINE_XP,          // Chance a click gives double mining XP
     UPGRADE_DISCOUNT, // Taken off gold upgrade prices, with the Trader Coin's
+    ARMOR_BREAK,      // Each strike takes this share of the enemy's defense off, for that fight
+    WEAK_POINT,       // Extra damage of a strike landed while the enemy's guard is open
+    FURY,             // Wearing any fills a fury meter, this much faster; see CombatConfig.h
     COUNT
 };
 
@@ -81,6 +71,8 @@ static const uint8_t ITEM_PERK_SLOTS = 3;
 // hundred small steps make finding an item quick and maxing it a goal across ascensions.
 static const uint16_t ITEM_LEVEL_GROWTH_PERMILLE = 15;
 static const uint8_t ITEM_MAX_LEVEL = 100;
+// A relic drops so rarely that one level a drop would never max it
+static const uint8_t RELIC_DROP_LEVELS = 10;
 
 struct ItemDef
 {
@@ -101,8 +93,6 @@ struct ItemDef
     int16_t iconW;
     int16_t iconH;
     PerkValue perks[ITEM_PERK_SLOTS]; // At level 1; unused slots zero-initialize to NONE
-    RelicEffect relic;
-    uint16_t relicPercent; // At level 1; levels scale it like a stat
     // A tool trades about 40% of its slot's combat stats for perks: worn to mine or to farm
     // a zone already beaten, never to open one. Tools are no part of a gear set.
     bool tool;
@@ -113,6 +103,9 @@ static const uint8_t MAX_RESPAWN_CUT_PERCENT = 50;
 static const uint8_t MAX_DOUBLE_MINE_PERCENT = 50;
 static const uint8_t MAX_MINE_XP_PERCENT = 100;
 static const uint8_t MAX_UPGRADE_DISCOUNT_PERCENT = 50;
+static const uint8_t MAX_ARMOR_BREAK_PERCENT = 50; // Of the enemy's defense, however many strikes
+static const uint16_t MAX_WEAK_POINT_PERCENT = 300;
+static const uint16_t MAX_FURY_PERCENT = 200;
 
 // Every item has its own 16x16 RGB565 icon
 #define ICON(pixels) nullptr, pixels, 16, 16
@@ -133,10 +126,11 @@ enum ItemId : uint8_t
     ITEM_WILSON, ITEM_JADE_AMULET, ITEM_GOLD_AMULET, ITEM_CORE_SIGIL,
     ITEM_EMBER_HELM, ITEM_EMBER_MAIL, ITEM_EMBER_LEGS, ITEM_EMBER_BOOTS, ITEM_EMBER_GRIPS,
     ITEM_EMBER_BLADE, ITEM_EMBER_GUARD, ITEM_EMBER_RING, ITEM_EMBER_CHARM,
-    ITEM_TRADER_COIN, ITEM_TIME_CANDLE, ITEM_ELDER_BONE, ITEM_GOLEM_HEART,
     ITEM_RUSTY_PICK, ITEM_LUCKY_BOOTS, ITEM_IRON_PICK, ITEM_MINER_HELM, ITEM_LOOT_GLOVES,
     ITEM_STEEL_PICK, ITEM_GRAVE_HOOD, ITEM_COIN_RING, ITEM_RUNE_PICK, ITEM_SCOUT_BOOTS,
-    ITEM_GILT_SHIELD, ITEM_VOID_PICK, ITEM_STAR_CROWN
+    ITEM_GILT_SHIELD, ITEM_VOID_PICK, ITEM_STAR_CROWN,
+    ITEM_RAT_FANG, ITEM_HAWK_GLOVES, ITEM_RAGE_MASK, ITEM_RUNE_CLEAVE, ITEM_MAGMA_CLAWS,
+    ITEM_VOID_VISAGE, ITEM_STAR_AEGIS
 };
 
 static constexpr ItemDef ITEMS[] = {
@@ -197,14 +191,8 @@ static constexpr ItemDef ITEMS[] = {
     {"Ember Ring",  EquipSlot::RING,      162, 0,   0,   0,   4,    ICON(image_icon_ember_ring_pixels),   {P(CLICK, 250), P(DROP, 40), P(RESPAWN_CUT, 30)}},
     {"Ember Charm", EquipSlot::AMULET,    0,   162, 0,   0,   4,    ICON(image_icon_ember_charm_pixels),  {P(GOLD, 250), P(UPGRADE_DISCOUNT, 15), P(MINE_XP, 10)}},
 
-    //  name           slot               atk  def  hp   rgn  tier  icon                                  perks  relic                          %
-    {"Trader Coin", EquipSlot::RELIC,     0,   0,   0,   0,   5,    ICON(image_icon_trader_coin_pixels),  {},    RelicEffect::UPGRADE_DISCOUNT, 10},
-    {"Time Candle", EquipSlot::RELIC,     0,   0,   0,   0,   5,    ICON(image_icon_time_candle_pixels),  {},    RelicEffect::COOLDOWN_CUT,     15},
-    {"Elder Bone",  EquipSlot::RELIC,     0,   0,   0,   0,   5,    ICON(image_icon_elder_bone_pixels),   {},    RelicEffect::AWARD_BOOST,      20},
-    {"Golem Heart", EquipSlot::RELIC,     0,   0,   0,   0,   5,    ICON(image_icon_golem_heart_pixels),  {},    RelicEffect::HP_REGEN,         4},
-
     // Tools, each beside the plain piece of its slot and tier it gives up stats against
-#define TOOL RelicEffect::NONE, 0, true
+#define TOOL true
     {"Rusty Pick",  EquipSlot::SWORD,     3,   0,   0,   0,   0,    ICON(image_icon_rusty_pick_pixels),   {P(CLICK, 15), P(DOUBLE_MINE, 4)}, TOOL},
     {"Lucky Boots", EquipSlot::BOOTS,     0,   1,   2,   0,   0,    ICON(image_icon_lucky_boots_pixels),  {P(DROP, 20)}, TOOL},
     {"Iron Pick",   EquipSlot::SWORD,     9,   0,   0,   0,   1,    ICON(image_icon_iron_pick_pixels),    {P(CLICK, 30), P(DOUBLE_MINE, 6)}, TOOL},
@@ -219,6 +207,17 @@ static constexpr ItemDef ITEMS[] = {
     {"Void Pick",   EquipSlot::SWORD,     240, 0,   0,   0,   4,    ICON(image_icon_void_pick_pixels),    {P(CLICK, 250), P(DOUBLE_MINE, 12), P(MINE_XP, 12)}, TOOL},
     {"Star Crown",  EquipSlot::HELMET,    0,   95,  240, 0,   4,    ICON(image_icon_star_crown_pixels),   {P(DROP, 60), P(KILL_GOLD, 100)}, TOOL},
 #undef TOOL
+
+    // Relics, a rare drop per zone that only falls once Relic Sense reaches it (relicRank).
+    // Each keeps about 80% of the stats of its slot's piece from the zone's tier, since its
+    // perk only pays in a fight the player is there for.
+    {"Rat Fang",    EquipSlot::SWORD,     4,   0,   0,   0,   5,    ICON(image_icon_rat_fang_pixels),     {P(ARMOR_BREAK, 6)}},
+    {"Hawk Gloves", EquipSlot::GLOVES,    3,   2,   0,   0,   5,    ICON(image_icon_hawk_gloves_pixels),  {P(WEAK_POINT, 50)}},
+    {"Rage Mask",   EquipSlot::HELMET,    0,   14,  36,  0,   5,    ICON(image_icon_rage_mask_pixels),    {P(FURY, 20)}},
+    {"Rune Cleave", EquipSlot::SWORD,     108, 0,   0,   0,   5,    ICON(image_icon_rune_cleave_pixels),  {P(ARMOR_BREAK, 10)}},
+    {"Magma Claws", EquipSlot::GLOVES,    22,  22,  0,   0,   5,    ICON(image_icon_magma_claws_pixels),  {P(WEAK_POINT, 80)}},
+    {"Void Visage", EquipSlot::HELMET,    0,   130, 324, 0,   5,    ICON(image_icon_void_visage_pixels),  {P(FURY, 40)}},
+    {"Star Aegis",  EquipSlot::SHIELD,    0,   360, 0,   0,   5,    ICON(image_icon_star_aegis_pixels),   {P(ARMOR_BREAK, 8), P(WEAK_POINT, 60), P(FURY, 30)}},
 };
 static constexpr uint8_t ITEM_COUNT = sizeof(ITEMS) / sizeof(ITEMS[0]);
 
@@ -228,14 +227,14 @@ static constexpr uint8_t ITEM_COUNT = sizeof(ITEMS) / sizeof(ITEMS[0]);
 // 1 for the first relic in the table, 2 for the next...; 0 for anything else
 inline uint8_t relicRank(uint8_t itemId)
 {
-    if (itemId >= ITEM_COUNT || ITEMS[itemId].slot != EquipSlot::RELIC)
+    if (itemId >= ITEM_COUNT || ITEMS[itemId].tier != RELIC_TIER)
     {
         return 0;
     }
     uint8_t rank = 1;
     for (uint8_t i = 0; i < itemId; i++)
     {
-        rank += ITEMS[i].slot == EquipSlot::RELIC;
+        rank += ITEMS[i].tier == RELIC_TIER;
     }
     return rank;
 }

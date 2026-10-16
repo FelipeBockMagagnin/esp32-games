@@ -6,6 +6,7 @@
 #include "../../ui/Box.h"
 #include "../../ui/Image.h"
 #include "../../ui/CooldownRing.h"
+#include "../../ui/ProgressBar.h"
 #include "../../game/CombatState.h"
 
 // The three physical buttons, stacked like the device (Up spell, Confirm strike, Down
@@ -35,6 +36,10 @@ private:
     Image autoIcon;
     Text autoHit;
     Text autoNote;
+    ProgressBar furyBar; // Only with a fury perk worn
+
+    void refreshStrike(unsigned long now, bool fighting);
+    void refreshFury(unsigned long now, bool fighting);
 
     CombatState &combat;
 

@@ -53,18 +53,12 @@ bool Inventory::addDrop(uint8_t itemId)
 
     revision++;
 
-    if (itemLevels[itemId] == 0)
-    {
-        itemLevels[itemId] = 1;
-        unseen[itemId] = true;
-        return true;
-    }
-
-    if (itemLevels[itemId] < ITEM_MAX_LEVEL)
-    {
-        itemLevels[itemId]++;
-    }
-    return false;
+    uint8_t levels = ITEMS[itemId].tier == RELIC_TIER ? RELIC_DROP_LEVELS : 1;
+    bool isNew = itemLevels[itemId] == 0;
+    unseen[itemId] = unseen[itemId] || isNew;
+    uint32_t level = itemLevels[itemId] + levels;
+    itemLevels[itemId] = (uint8_t)(level < ITEM_MAX_LEVEL ? level : ITEM_MAX_LEVEL);
+    return isNew;
 }
 
 bool Inventory::equip(uint8_t itemId)
@@ -242,16 +236,6 @@ uint32_t Inventory::getItemPerk(uint8_t itemId, ItemPerk perk) const
         }
     }
     return total;
-}
-
-uint32_t Inventory::getRelicPercent(RelicEffect effect) const
-{
-    int8_t worn = equipped[(uint8_t)EquipSlot::RELIC];
-    if (worn == NO_ITEM || ITEMS[(uint8_t)worn].relic != effect)
-    {
-        return 0;
-    }
-    return scaleItemStat(ITEMS[(uint8_t)worn].relicPercent, itemLevels[(uint8_t)worn]);
 }
 
 void Inventory::save(Snapshot &out) const

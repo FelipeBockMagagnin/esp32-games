@@ -21,6 +21,10 @@ static const int16_t AUTO_H = 70;
 static const int16_t AUTO_CX = AUTO_X + AUTO_W / 2;
 static const int16_t AUTO_RING_CY = AUTO_Y + 30;
 static const int16_t AUTO_RING_R = 14;
+static const int16_t FURY_X = AUTO_X + 10;
+static const int16_t FURY_Y = AUTO_RING_CY + AUTO_RING_R + 2;
+static const int16_t FURY_W = AUTO_W - 20;
+static const int16_t FURY_H = 4;
 
 #define ACTION_ROW(cy, kind, label)                                               \
     {                                                                             \
@@ -39,6 +43,7 @@ ActionPanel::ActionPanel(CombatState &combat)
       autoIcon(AUTO_CX - 8, AUTO_RING_CY - 8, 16, 16, image_sword_02b_pixels, true, 0x0000),
       autoHit(AUTO_CX, AUTO_Y + 50, "", Theme::TEXT, 1, TC_DATUM),
       autoNote(AUTO_CX, AUTO_Y + 60, "", Theme::TEXT_2, 1, TC_DATUM),
+      furyBar(FURY_X, FURY_Y, FURY_W, FURY_H, 0, FURY_FULL, Theme::BAD, Theme::HP_TRACK, Theme::FRAME),
       combat(combat)
 {
 }
@@ -61,6 +66,7 @@ void ActionPanel::addTo(Screen &screen)
     screen.addElement(&autoIcon, Theme::CARD);
     screen.addElement(&autoHit, Theme::CARD);
     screen.addElement(&autoNote, Theme::CARD);
+    screen.addElement(&furyBar, Theme::CARD);
 }
 
 // The auto ring and icon decide their own visibility in refresh(), so they are only ever
@@ -81,16 +87,17 @@ void ActionPanel::setVisible(bool visible)
     {
         autoRing.setVisible(false);
         autoIcon.setVisible(false);
+        furyBar.setVisible(false);
     }
 }
 
 void ActionPanel::refresh(unsigned long now, bool fighting)
 {
-    refreshCooldown(actions[STRIKE], combat.getStrikeCooldownRemaining(now), combat.getStrikeCooldownMs(),
-                    combat.getStrikeDamage(), fighting);
+    refreshStrike(now, fighting);
     refreshSpell(now, fighting);
     refreshGuard(now, fighting);
     refreshAutoAttack(now, fighting);
+    refreshFury(now, fighting);
     for (uint8_t i = 0; i < ACTION_COUNT; i++)
     {
         actions[i].ring.update(now);
@@ -130,6 +137,49 @@ void ActionPanel::refreshCooldown(ActionRow &row, unsigned long left, unsigned l
         row.detail.setText(fighting ? buf : "");
         row.detail.setColor(CombatStyle::READY);
     }
+}
+
+// A fury or an open weak point outranks the cooldown text, since both ask for a press now
+void ActionPanel::refreshStrike(unsigned long now, bool fighting)
+{
+    ActionRow &row = actions[STRIKE];
+    bool fury = combat.isFuryActive(now);
+    unsigned long total = fury ? FURY_STRIKE_COOLDOWN_MS : combat.getStrikeCooldownMs();
+    uint32_t damage = combat.getStrikeDamage();
+    refreshCooldown(row, combat.getStrikeCooldownRemaining(now), total, damage, fighting);
+    if (!fighting || damage == 0)
+    {
+        return;
+    }
+
+    char buf[20];
+    if (combat.isWeakPointOpen(now))
+    {
+        snprintf(buf, sizeof(buf), "crit %u", (unsigned)(damage * (100 + combat.getWeakPointPerk()) / 100));
+        row.detail.setText(buf);
+        row.detail.setColor(Theme::GOLD);
+    }
+    else if (fury)
+    {
+        unsigned long left = combat.getFuryRemaining(now);
+        snprintf(buf, sizeof(buf), "FURY %lu.%lus", left / 1000, (left % 1000) / 100);
+        row.detail.setText(buf);
+        row.detail.setColor(Theme::BAD);
+    }
+}
+
+void ActionPanel::refreshFury(unsigned long now, bool fighting)
+{
+    bool worn = combat.getFuryPerk() > 0;
+    furyBar.setVisible(worn);
+    if (!worn)
+    {
+        return;
+    }
+    bool fury = combat.isFuryActive(now);
+    furyBar.setProgress(fury ? (int32_t)combat.getFuryRemaining(now) : combat.getFuryPercent(),
+                        fury ? (int32_t)FURY_MS : FURY_FULL);
+    furyBar.setFillColor(fury ? Theme::GOLD : Theme::BAD);
 }
 
 void ActionPanel::refreshGuard(unsigned long now, bool fighting)
