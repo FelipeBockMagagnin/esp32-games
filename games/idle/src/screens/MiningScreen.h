@@ -5,7 +5,7 @@
 #include "../ui/Box.h"
 #include "../ui/Text.h"
 #include "../ui/Header.h"
-#include "../ui/Ellipse.h"
+#include "../ui/CoinWell.h"
 #include "../ui/OreDisplay.h"
 #include "../ui/ProgressBar.h"
 #include "../ui/ButtonBadge.h"
@@ -21,7 +21,7 @@ private:
 
     // Gold card: balance as the headline, automatic production under it
     Box goldCard;
-    Ellipse goldCoin;
+    CoinWell goldCoin;
     Text goldLabel;
     Text goldRate;
 
@@ -54,9 +54,7 @@ private:
     String veinMessage;
     uint16_t veinMessageColor;
 
-    unsigned long coinPulseUntil;
     unsigned long levelFlashUntil;
-    void pulseCoin();
 
     // The balance rolls toward the real one; gold carried by flying coins joins it as they land
     uint64_t shownGold;

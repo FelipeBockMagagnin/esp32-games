@@ -33,7 +33,6 @@ static const int16_t CARD_W = 224;
 static const int16_t CARD_H = 46;
 static const int16_t COIN_RADIUS = 8;
 static const int16_t COIN_PULSE_RADIUS = 10;
-static const unsigned long COIN_PULSE_MS = 120;
 static const unsigned long LEVEL_FLASH_MS = 400;
 static const int16_t COIN_X = CARD_X + 18;
 static const int16_t COIN_Y = CARD_Y + 18;
@@ -76,12 +75,18 @@ static const unsigned long PROMPT_BLINK_MS = 500;
 static const uint8_t MINE_CHIPS = 4;
 static const uint8_t LEVEL_UP_SPARKS = 14;
 static const uint8_t LUCKY_SPARKS = 10;
+static const uint8_t MINE_COINS = 1;
 static const uint8_t LUCKY_COINS = 8;
 static const uint8_t DOUBLE_COINS = 3;
-// Where the coins fly: the card's coin, relative to the ore display, which clamps it to its
-// nearest corner
-static const int16_t COIN_TARGET_X = COIN_X - ORE_AREA_X;
-static const int16_t COIN_TARGET_Y = COIN_Y - ORE_AREA_Y;
+
+// The card's coin and the strip under it down to the card's border, wide enough to reach
+// the ore display's left edge: coins leave the ore display at its top edge there and land
+// in the well, a few pixels above, across the border
+static const int16_t WELL_X = COIN_X - COIN_PULSE_RADIUS - 1;
+static const int16_t WELL_Y = COIN_Y - COIN_PULSE_RADIUS - 1;
+static const int16_t WELL_W = ORE_AREA_X + 8 - WELL_X;
+static const int16_t WELL_H = CARD_Y + CARD_H - 1 - WELL_Y;
+static const int16_t HANDOFF_X = ORE_AREA_X + 3;
 
 static const unsigned long ROLL_STEP_MS = 33;
 static const uint8_t ROLL_DIVISOR = 4; // Each step closes this fraction of the gap
@@ -91,7 +96,7 @@ MiningScreen::MiningScreen(GameState &game, const Unlocks &unlocks, SoundManager
 
       // Gold card
       goldCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, true, Theme::CARD, true, 4),
-      goldCoin(COIN_X, COIN_Y, COIN_RADIUS, COIN_RADIUS, Theme::GOLD, true),
+      goldCoin(WELL_X, WELL_Y, WELL_W, WELL_H, COIN_X - WELL_X, COIN_Y - WELL_Y, COIN_RADIUS, COIN_PULSE_RADIUS),
       // Opaque, so rolling digits repaint without a flicker
       goldLabel(GOLD_TEXT_X, GOLD_AMOUNT_Y, "0", Theme::GOLD, 3, TL_DATUM, false, Theme::CARD),
       goldRate(GOLD_TEXT_X, GOLD_RATE_Y, "+0 gold/s", RATE_COLOR, 1),
@@ -123,7 +128,6 @@ MiningScreen::MiningScreen(GameState &game, const Unlocks &unlocks, SoundManager
       veinMessageUntil(0),
       veinMessage(""),
       veinMessageColor(Theme::GOLD),
-      coinPulseUntil(0),
       levelFlashUntil(0),
       shownGold(0),
       heldGold(0),
@@ -190,6 +194,7 @@ void MiningScreen::onEnter(TFT_eSPI &tft)
     heldGold = 0;
     heldCoins = 0;
     oreDisplay.takeArrivals();
+    goldCoin.takeArrivals();
     goldLabel.setText(formatAmount(shownGold));
     Screen::onEnter(tft);
 }
@@ -214,8 +219,8 @@ void MiningScreen::update(unsigned long now)
     // Animations run at their own frame rate, independent of the text refresh below
     refreshVein(now);
     oreDisplay.update(now);
+    goldCoin.update(now);
     rollGold(now);
-    goldCoin.setRadius((long)(now - coinPulseUntil) < 0 ? COIN_PULSE_RADIUS : COIN_RADIUS);
 
     if (!refreshDue(now))
     {
@@ -317,24 +322,19 @@ void MiningScreen::update(unsigned long now)
     }
 }
 
-void MiningScreen::pulseCoin()
-{
-    coinPulseUntil = millis() + COIN_PULSE_MS;
-}
-
 void MiningScreen::sendCoins(uint8_t count, uint64_t gold)
 {
-    oreDisplay.flyCoins(count, COIN_TARGET_X, COIN_TARGET_Y);
+    oreDisplay.flyCoins(count, HANDOFF_X - ORE_AREA_X, 0);
     heldGold = satAdd(heldGold, gold);
     heldCoins += count;
 }
 
 void MiningScreen::rollGold(unsigned long now)
 {
-    uint8_t landed = oreDisplay.takeArrivals();
+    goldCoin.catchCoins(oreDisplay.takeArrivals(), HANDOFF_X - WELL_X, WELL_H - 1);
+    uint8_t landed = goldCoin.takeArrivals();
     if (landed > 0)
     {
-        pulseCoin();
         uint8_t n = landed < heldCoins ? landed : heldCoins;
         if (n > 0)
         {
@@ -379,7 +379,9 @@ void MiningScreen::onConfirmPress()
 
     oreDisplay.shake();
     oreDisplay.burst(MINE_CHIPS, false);
-    pulseCoin();
+
+    bool doubled = game.wasLastMineDoubled();
+    sendCoins(doubled ? DOUBLE_COINS : MINE_COINS, gained);
 
     // Both would rise from the same spot, so a level-up takes the popup
     if (leveledUp)
@@ -391,10 +393,9 @@ void MiningScreen::onConfirmPress()
     }
     else
     {
-        if (game.wasLastMineDoubled())
+        if (doubled)
         {
             oreDisplay.addPopup(String("x2 +") + formatAmount(gained), Theme::MYTHIC);
-            sendCoins(DOUBLE_COINS, gained);
         }
         else
         {
