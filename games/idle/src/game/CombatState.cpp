@@ -3,6 +3,7 @@
 #include "Inventory.h"
 #include "Achievements.h"
 #include "Ascension.h"
+#include "SatMath.h"
 
 // Every deadline is compared with a signed difference so the fight survives a
 // millis() rollover, the same way GameState::update does
@@ -197,6 +198,13 @@ void CombatState::startFight(unsigned long now)
     enemyAttackAt = now + getEnemy().attackIntervalMs;
 }
 
+uint64_t CombatState::getKillGold(const EnemyDef &enemy, uint8_t zone) const
+{
+    uint64_t seconds = (uint64_t)ZONES[zone].killSeconds * (enemy.boss ? BOSS_KILL_SECONDS : 1);
+    uint64_t gold = satAdd(enemy.goldReward, mulDiv(game.getBaseProductionPerSecond(), seconds, GOLD_SCALE));
+    return mulDiv(gold, 100 + getReward(AchReward::KILL_GOLD), 100);
+}
+
 // Talents and item perks that pay the same kind of bonus as an award add to it
 uint32_t CombatState::getReward(AchReward reward) const
 {
@@ -338,11 +346,11 @@ void CombatState::onEnemyKilled(unsigned long now)
 
     // An armed Midas multiplies this kill's gold and is spent by it
     lastKillMidas = midasArmed;
-    lastKillGold = (uint64_t)enemy.goldReward * (100 + getReward(AchReward::KILL_GOLD)) / 100;
+    lastKillGold = getKillGold(enemy, currentZone);
     if (midasArmed)
     {
         const SpellDef *spell = getSpell();
-        lastKillGold *= spell != nullptr && spell->effect == SpellEffect::MIDAS ? spell->power : 1;
+        lastKillGold = satMul(lastKillGold, spell != nullptr && spell->effect == SpellEffect::MIDAS ? spell->power : 1);
         midasArmed = false;
     }
     game.addGold(lastKillGold);

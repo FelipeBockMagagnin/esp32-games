@@ -209,7 +209,7 @@ void ZoneScreen::refreshPanel(const Stats &stats)
     // for the toughest. Shown for locked zones too, as something to gear for.
     uint8_t easiest = 0;
     uint8_t toughest = 0;
-    uint64_t minGold = zone.enemies[0].goldReward;
+    uint64_t minGold = combat.getKillGold(zone.enemies[0], id);
     uint64_t maxGold = minGold;
     for (uint8_t i = 1; i < zone.enemyCount; i++)
     {
@@ -222,8 +222,9 @@ void ZoneScreen::refreshPanel(const Stats &stats)
         {
             toughest = i;
         }
-        minGold = enemy.goldReward < minGold ? enemy.goldReward : minGold;
-        maxGold = enemy.goldReward > maxGold ? enemy.goldReward : maxGold;
+        uint64_t gold = combat.getKillGold(enemy, id);
+        minGold = gold < minGold ? gold : minGold;
+        maxGold = gold > maxGold ? gold : maxGold;
     }
     const uint8_t listed[ENEMY_LINES] = {easiest, toughest};
     uint8_t listedCount = zone.enemyCount > 1 ? ENEMY_LINES : 1;

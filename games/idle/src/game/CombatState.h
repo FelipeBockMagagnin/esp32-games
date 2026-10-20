@@ -114,6 +114,8 @@ public:
     // react to a kill or a drop without the engine knowing about the UI
     uint32_t getKillEvents() const { return killEvents; }
     uint64_t getLastKillGold() const { return lastKillGold; } // With any Midas multiplier
+    // What killing `enemy` in `zone` pays now, before a Midas
+    uint64_t getKillGold(const EnemyDef &enemy, uint8_t zone) const;
     bool wasLastKillMidas() const { return lastKillMidas; }
     // A hit on the enemy, and a hit on the player that did damage (after any guard)
     uint32_t getHitEvents() const { return hitEvents; }

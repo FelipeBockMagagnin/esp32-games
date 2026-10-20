@@ -25,6 +25,7 @@ static const uint8_t GUARD_DAMAGE_PERCENT = 50; // Incoming damage while guardin
 static const unsigned long RESPAWN_MS = 4500; // Long enough to take in a kill and its drop
 static const unsigned long REVIVE_MS = 8000; // Health refills over this long after a death
 static const unsigned long REGEN_TICK_MS = 1000;
+static const uint8_t BOSS_KILL_SECONDS = 3;
 
 // The equipped amulet decides what the Up button casts. No spell deals damage, so the
 // strike stays the only way past a defense the auto-attack cannot beat; each one changes
@@ -99,6 +100,10 @@ struct ZoneDef
     uint8_t enemyCount;
     bool requiresUnlockUpgrade; // Needs the UNLOCK_ZONE upgrade that carries this zone index
     uint16_t reqPrevZoneKills;  // Kills needed in the zone before it; 0 for none
+    // Seconds of base production a kill pays on top of its table gold (a boss
+    // BOSS_KILL_SECONDS times as many), so fighting keeps its share of the income once the
+    // buildings outgrow the table
+    uint8_t killSeconds;
     const uint16_t *icon;       // 16x16 RGB565, black transparent
     const SpriteDef *background; // 64x64, drawn behind the enemy at 2x
     uint8_t reqDelveLevel;      // Deep Delver levels needed; left off the first zones' rows
@@ -287,16 +292,16 @@ static constexpr DropDef SUN_EATER_DROPS[] = {
 // The zone's own drops are what make it idle-farmable.
 //
 // The run the tables are tuned for (tools/sim, a player checking in hourly while awake):
-// Sewers from minute 5, Forest at 1-2 h, Crypt at 9-10 h, Depths at 24 h, Molten Core with
-// the Transmuter at 53-58 h; each zone farms itself 0-10 h after it opens (the Crypt at
+// Sewers from minute 5, Forest at 1-2 h, Crypt at 8 h, Depths at 16-24 h, Molten Core with
+// the Transmuter at 48 h; each zone farms itself 0-10 h after it opens (the Crypt at
 // once when Honed Steel lands with it), the Core around day 4. The kill gates (150 / 500 / 1500 / 1000) keep a zone from opening before the
 // one before it has been fought for a while.
 //
 // The two zones past the Core are for later runs: Deep Delver's two levels open them around
-// days 16-19 and 31-34 of ascending every three days (tools/sim --runs 30). The Void Rift
+// days 13-16 and 22 of ascending every three days (tools/sim --runs 30). The Void Rift
 // farms itself 15-45 h after it first opens, once a few Mythic pieces have dropped. The Star
-// Forge opens after the Mythic set is maxed, so nothing it drops raises attack: it turns
-// idle about 14 h into its second run on talents and awards alone, and its auto-attack kills stay slow.
+// Forge opens with the Mythic set around Lv 40, and nothing it drops raises attack: it turns
+// idle on its fourth run, with the set near its cap, and its auto-attack kills stay slow.
 //
 // The Sewers are set by hand: fought with the starting kit, they cost about 40% of health
 // per fight and a death every three to four kills until the first drops come in.
@@ -306,9 +311,11 @@ static constexpr DropDef SUN_EATER_DROPS[] = {
 // Its defense stays a step above the zone's, so the zone's label (set by its hardest
 // enemy) is still STRIKE on arrival, and it pays several kills' worth of gold.
 //
-// Gold per kill is about 5x the expected gold/s when the zone opens (the Sewers excepted,
-// which open before there is any production to speak of), so fighting adds a good share
-// on top of the buildings at that point and fades as production grows.
+// Table gold per kill is about 5x the expected gold/s when the zone opens (the Sewers
+// excepted, which open before there is any production to speak of), and the zone's
+// killSeconds of production come on top, so farming pays a tenth to a fifth of the income
+// at any point of the run instead of fading as the buildings grow (about 40% more
+// ascension points by day 3 than table gold alone).
 static constexpr EnemyDef SEWER_ENEMIES[] = {
     //  name           hp      atk   def   interval  gold       sprite                drops
     {"Small Rat",     26,     9,    11,   2200,     12,        &sprite_small_rat,    DROPS(SMALL_RAT_DROPS)},
@@ -355,15 +362,15 @@ static constexpr EnemyDef STAR_ENEMIES[] = {
 // Zone indices line up with the bonusPercent of the UNLOCK_ZONE upgrades in GameConfig.h
 static constexpr ZoneDef ZONES[] = {
     // Only the Sewers have a scene of their own yet; the rest stand on plain stone
-    //  name           enemies                   needsUpgrade  prevZoneKills  icon                        background
-    {"Sewers",      ZONE(SEWER_ENEMIES),       false,        0,             image_zone_sewers_pixels,   &background_sewers},
-    {"Forest",      ZONE(FOREST_ENEMIES),      true,         150,            image_item_fig_leaf_pixels, &background_stone},
-    {"Crypt",       ZONE(CRYPT_ENEMIES),       true,         500,            image_zone_crypt_pixels,    &background_stone},
-    {"Depths",      ZONE(DEPTH_ENEMIES),       true,         1500,           image_zone_depths_pixels,   &background_stone},
-    {"Molten Core", ZONE(CORE_ENEMIES),        true,         1000,           image_zone_core_pixels,     &background_stone},
+    //  name           enemies                   needsUpgrade  prevZoneKills  killSec  icon                        background
+    {"Sewers",      ZONE(SEWER_ENEMIES),       false,        0,             1,       image_zone_sewers_pixels,   &background_sewers},
+    {"Forest",      ZONE(FOREST_ENEMIES),      true,         150,           1,       image_item_fig_leaf_pixels, &background_stone},
+    {"Crypt",       ZONE(CRYPT_ENEMIES),       true,         500,           2,       image_zone_crypt_pixels,    &background_stone},
+    {"Depths",      ZONE(DEPTH_ENEMIES),       true,         1500,          2,       image_zone_depths_pixels,   &background_stone},
+    {"Molten Core", ZONE(CORE_ENEMIES),        true,         1000,          2,       image_zone_core_pixels,     &background_stone},
     // Past the Molten Core, opened by the Deep Delver talent instead of a map
-    {"Void Rift",   ZONE(RIFT_ENEMIES),        false,        1000,           image_icon_zone_void_rift_pixels,  &background_stone, 1},
-    {"Star Forge",  ZONE(STAR_ENEMIES),        false,        1500,           image_icon_zone_star_forge_pixels, &background_stone, 2},
+    {"Void Rift",   ZONE(RIFT_ENEMIES),        false,        1000,          3,       image_icon_zone_void_rift_pixels,  &background_stone, 1},
+    {"Star Forge",  ZONE(STAR_ENEMIES),        false,        1500,          4,      image_icon_zone_star_forge_pixels, &background_stone, 2},
 };
 static const uint8_t ZONE_MOLTEN_CORE = 4;
 static constexpr uint8_t ZONE_COUNT = sizeof(ZONES) / sizeof(ZONES[0]);

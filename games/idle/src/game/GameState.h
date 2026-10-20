@@ -51,6 +51,7 @@ public:
     // Gold
     uint64_t getGold() const; // Whole units
     uint64_t getProductionPerSecond() const; // GOLD_SCALE units
+    uint64_t getBaseProductionPerSecond() const; // Without a vein's frenzy
     // One building's share of that, all its levels and one level, with the same bonuses applied
     uint64_t getBuildingProduction(uint8_t id) const;      // GOLD_SCALE units
     uint64_t getBuildingProductionPerLevel(uint8_t id) const; // GOLD_SCALE units
@@ -118,7 +119,6 @@ public:
 private:
     uint32_t getBonusPercent(UpgradeTarget target) const;
     void countBoosts(uint8_t *boosts) const; // BUILDING_COUNT entries
-    uint64_t getBaseProductionPerSecond() const; // Without a vein's frenzy
     uint64_t applyProductionBonus(uint64_t production) const;
     uint64_t getBuildingBaseOutput(uint8_t id, const uint8_t *boosts) const;
     uint32_t productionSignature() const;
