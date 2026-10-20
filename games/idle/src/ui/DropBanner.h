@@ -2,10 +2,12 @@
 #define UI_DROP_BANNER_H
 
 #include "UI.h"
+#include "../game/ItemConfig.h"
 
 // A big card announcing an item drop: a caption, the item's icon at 4x, its name in its
 // rarity color, and what it is. A kill that dropped several shows its rarest, with a
-// "+N" beside the icon for the rest. It sits over the enemy sprite while it is up.
+// "+N" beside the icon for the rest. A level-up shows instead what the level raised and
+// how far the next rise is. It sits over the enemy sprite while it is up.
 //
 // Two elements cannot erase each other cleanly (see UI.h), so the card is built around
 // the sprite instead: hiding it only clears its area *outside* the sprite's rectangle
@@ -38,6 +40,8 @@ protected:
     void erase(TFT_eSPI &tft) override;
 
 private:
+    void drawLevelUp(TFT_eSPI &tft, const ItemDef &def, uint16_t rarity);
+
     int16_t holeX;
     int16_t holeY;
     int16_t holeW;

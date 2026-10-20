@@ -13,6 +13,7 @@
 #include "../../src/game/Ascension.h"
 #include "../../src/game/SaveGame.h"
 #include "../../src/game/Format.h"
+#include "../../src/game/ItemStats.h"
 
 static unsigned long simNow = 0;
 static std::mt19937 rng(1);
@@ -371,6 +372,24 @@ static void testAwardProduction()
     CHECK(w.game.getProductionBonusPercent() - before == 10 + awardsOwn);
 }
 
+// Dull Stick: attack 5 reaches 6 at Lv 15, click gold 8% reaches 9% at Lv 10 and 10% at Lv 18
+static void testNextGain()
+{
+    puts("next gain points at the soonest-rising stat");
+    const ItemDef &stick = ITEMS[ITEM_DULL_STICK];
+    NextGain gain = findNextGain(stick, 1);
+    CHECK(gain.found && gain.kind == STAT_CLICK && gain.levels == 9 && gain.sinceLevel == 1 && gain.change == 1);
+    gain = findNextGain(stick, 10);
+    CHECK(gain.found && gain.kind == STAT_ATTACK && gain.levels == 5 && gain.sinceLevel == 1);
+    gain = findNextGain(stick, 15);
+    CHECK(gain.found && gain.kind == STAT_CLICK && gain.levels == 3 && gain.sinceLevel == 10);
+    CHECK(!findNextGain(stick, ITEM_MAX_LEVEL).found);
+
+    char buf[32];
+    formatNextGain(buf, sizeof(buf), stick, findNextGain(stick, 1), STAT_LABELS);
+    CHECK(strcmp(buf, "Click gold +1% in 9 lv") == 0);
+}
+
 int main()
 {
     testSaveRoundTrip();
@@ -384,6 +403,7 @@ int main()
     testCompactFormat();
     testLateGoals();
     testAwardProduction();
+    testNextGain();
     printf(failures == 0 ? "all passed\n" : "%d failed\n", failures);
     return failures == 0 ? 0 : 1;
 }

@@ -251,4 +251,9 @@ inline uint32_t scaleItemStat(uint16_t base, uint8_t level)
     return (uint32_t)base * (1000 + (uint32_t)(level - 1) * ITEM_LEVEL_GROWTH_PERMILLE) / 1000;
 }
 
+inline bool isFlatPerk(ItemPerk perk)
+{
+    return perk == ItemPerk::RESPAWN_CUT || perk == ItemPerk::DROP;
+}
+
 #endif // ITEM_CONFIG_H

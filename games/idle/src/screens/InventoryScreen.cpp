@@ -1,6 +1,7 @@
 #include "InventoryScreen.h"
 #include "../game/CombatConfig.h" // spellForItem
 #include "../game/Format.h"
+#include "../game/ItemStats.h"
 
 
 static const uint16_t CARD_BORDER = Theme::FRAME;   // Dark slate: the player's side, not the gold cards
@@ -43,104 +44,9 @@ static const int16_t BADGE_OFFSET_Y = (8 - ButtonBadge::SIZE) / 2;
 static const int16_t STAT_COLUMN_W = 108;
 static const uint16_t NEW_COLOR = Theme::INFO;
 
-// Combat stats, then the perks; the respawn cut stays last, out of the row subtitle.
-// Labels stay at 11 chars so a label and "+1500%" fit a panel column.
-enum StatKind : uint8_t
-{
-    STAT_ATTACK,
-    STAT_DEFENSE,
-    STAT_HP,
-    STAT_REGEN,
-    STAT_GOLD,
-    STAT_CLICK,
-    STAT_DROP,
-    STAT_KILL_GOLD,
-    STAT_DOUBLE_MINE,
-    STAT_MINE_XP,
-    STAT_DISCOUNT,
-    STAT_RESPAWN,
-    STAT_KIND_COUNT
-};
-
-static const char *const STAT_LABELS[STAT_KIND_COUNT] = {
-    "Attack", "Defense", "Max HP", "Regen", "Gold/s", "Click gold",
-    "Drop rate", "Kill gold", "Double mine", "Double XP", "Upg. cost", "Respawn"};
-static const char *const STAT_SHORT_LABELS[STAT_KIND_COUNT] = {
-    "atk", "def", "hp", "rgn", "gold", "clk", "drop", "kill", "2xmine", "2xxp", "cost", "resp"};
-static const ItemPerk STAT_PERKS[STAT_KIND_COUNT] = {
-    ItemPerk::NONE, ItemPerk::NONE, ItemPerk::NONE, ItemPerk::NONE,
-    ItemPerk::GOLD, ItemPerk::CLICK, ItemPerk::DROP, ItemPerk::KILL_GOLD,
-    ItemPerk::DOUBLE_MINE, ItemPerk::MINE_XP, ItemPerk::UPGRADE_DISCOUNT, ItemPerk::RESPAWN_CUT};
-
-static bool isPercentStat(StatKind kind)
-{
-    return kind >= STAT_GOLD;
-}
-
-// Cuts read as what they take off, so they come back negative and less is better
-static bool lowerIsBetter(StatKind kind)
-{
-    return kind == STAT_DISCOUNT || kind == STAT_RESPAWN;
-}
-
-static bool hasStat(const ItemDef &def, StatKind kind)
-{
-    switch (kind)
-    {
-    case STAT_ATTACK:
-        return def.attack > 0;
-    case STAT_DEFENSE:
-        return def.defense > 0;
-    case STAT_HP:
-        return def.maxHp > 0;
-    case STAT_REGEN:
-        return def.regen > 0;
-    default:
-        for (const PerkValue &p : def.perks)
-        {
-            if (p.kind == STAT_PERKS[kind] && p.value > 0)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-}
-
 static int32_t statValue(const Inventory &inventory, uint8_t id, StatKind kind)
 {
-    const ItemDef &def = ITEMS[id];
-    uint8_t level = inventory.getItemLevel(id);
-    switch (kind)
-    {
-    case STAT_ATTACK:
-        return (int32_t)scaleItemStat(def.attack, level);
-    case STAT_DEFENSE:
-        return (int32_t)scaleItemStat(def.defense, level);
-    case STAT_HP:
-        return (int32_t)scaleItemStat(def.maxHp, level);
-    case STAT_REGEN:
-        return (int32_t)scaleItemStat(def.regen, level);
-    default:
-    {
-        int32_t perk = (int32_t)inventory.getItemPerk(id, STAT_PERKS[kind]);
-        return lowerIsBetter(kind) ? -perk : perk;
-    }
-    }
-}
-
-static void formatStat(char *buf, size_t size, const char *label, StatKind kind, int32_t value, bool forceSign)
-{
-    const char *sign = value < 0 ? "-" : value > 0 && forceSign ? "+" : "";
-    unsigned long magnitude = (unsigned long)(value < 0 ? -value : value);
-    if (kind == STAT_REGEN)
-    {
-        snprintf(buf, size, "%s %s%lu.%lu", label, sign, magnitude / 10, magnitude % 10);
-    }
-    else
-    {
-        snprintf(buf, size, "%s %s%lu%s", label, sign, magnitude, isPercentStat(kind) ? "%" : "");
-    }
+    return statAtLevel(ITEMS[id], kind, inventory.getItemLevel(id));
 }
 
 // Compact "atk 12 clk 10% drop 5%" for a row subtitle, which has room for 24 chars before
@@ -533,37 +439,13 @@ static uint8_t statKindsOf(int8_t itemId, int8_t against, StatKind *out, uint8_t
     return n;
 }
 
-// A relic's one effect, in the first column. Two relics do different things, so a relic is
-// described on its own rather than compared with the one worn.
-static void formatRelic(const Inventory &inventory, uint8_t id, char *buf, size_t size)
-{
-    uint32_t value = scaleItemStat(ITEMS[id].relicPercent, inventory.getItemLevel(id));
-    switch (ITEMS[id].relic)
-    {
-    case RelicEffect::UPGRADE_DISCOUNT:
-        snprintf(buf, size, "Upgrades -%lu%%", (unsigned long)value);
-        return;
-    case RelicEffect::COOLDOWN_CUT:
-        snprintf(buf, size, "Strike/guard cooldown -%lu%%", (unsigned long)value);
-        return;
-    case RelicEffect::AWARD_BOOST:
-        snprintf(buf, size, "Award gold bonus +%lu%%", (unsigned long)value);
-        return;
-    case RelicEffect::HP_REGEN:
-        snprintf(buf, size, "Regen %lu.%lu%% max HP/s", (unsigned long)(value / 10), (unsigned long)(value % 10));
-        return;
-    default:
-        buf[0] = '\0';
-        return;
-    }
-}
-
 void InventoryScreen::showStats(int8_t itemId, int8_t against, bool compare)
 {
     if (itemId != NO_ITEM && ITEMS[itemId].slot == EquipSlot::RELIC)
     {
         char relicBuf[36];
-        formatRelic(inventory, (uint8_t)itemId, relicBuf, sizeof(relicBuf));
+        const ItemDef &relic = ITEMS[itemId];
+        formatRelic(relic, relicAtLevel(relic, inventory.getItemLevel((uint8_t)itemId)), relicBuf, sizeof(relicBuf));
         statColumns[0].setText(relicBuf);
         statColumns[0].setColor(ITEM_TIER_COLORS[RELIC_TIER]);
         statColumns[0].setVisible(true);
@@ -672,13 +554,27 @@ void InventoryScreen::refreshPanel()
     // sidegrade's trade-off is visible before committing to it
     showStats(itemId, isEquipped ? NO_ITEM : equipped, !isEquipped);
 
-    // An amulet's real worth is the spell it puts on the Up button in combat
+    // An amulet's real worth is the spell it puts on the Up button in combat; anything
+    // else says how far its next stat rise is
     const SpellDef *spell = spellForItem(itemId);
+    uint8_t level = inventory.getItemLevel((uint8_t)itemId);
+    NextGain gain = findNextGain(def, level);
     if (spell != nullptr)
     {
         snprintf(buf, sizeof(buf), "Spell: %s", spell->name);
         hintText.setText(buf);
         hintText.setColor(Theme::EPIC);
+    }
+    else if (gain.found)
+    {
+        formatNextGain(buf, sizeof(buf), def, gain, STAT_SHORT_LABELS);
+        hintText.setText(buf);
+        hintText.setColor(Theme::GOOD);
+    }
+    else if (level >= ITEM_MAX_LEVEL)
+    {
+        hintText.setText("MAX LEVEL");
+        hintText.setColor(Theme::GOLD);
     }
 
     actionBadge.setDimmed(isEquipped);

@@ -238,8 +238,7 @@ uint32_t Inventory::getItemPerk(uint8_t itemId, ItemPerk perk) const
     {
         if (p.kind == perk)
         {
-            bool flat = perk == ItemPerk::RESPAWN_CUT || perk == ItemPerk::DROP;
-            total += flat ? p.value : scaleItemStat(p.value, itemLevels[itemId]);
+            total += isFlatPerk(perk) ? p.value : scaleItemStat(p.value, itemLevels[itemId]);
         }
     }
     return total;
