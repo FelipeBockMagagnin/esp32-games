@@ -49,7 +49,7 @@ Header nav labels are computed from the nearest *unlocked* neighbours. The size-
 
 A `Screen` subclass declares its `UI` elements as **members**, initializes them in the init list, registers them once with `addElement(&member)` and `setHeader(&header)`, then:
 - `update(now)` pushes fresh values, gated by `if (!refreshDue(now)) return;` (10 Hz by default, `refreshMs` to change it); input handlers call `forceRefresh()`;
-- `onConfirmPress`/`onUpPress`/`onDownPress` handle input; `onBackPress` returns **true to consume** Left;
+- `onConfirmPress`/`onUpPress`/`onDownPress` handle input; `onBackPress` returns **true to consume** Left; `onConfirmRepeat` returns true to keep a held Confirm repeating (only Buildings opts in: on Mining it would be an autoclicker);
 - `onEnter(tft)` resets screen-local state, then calls `Screen::onEnter(tft)`.
 
 Only the visible screen updates, so screens that react to background events diff a monotonic engine counter (`getKillEvents()`, `getDropEvents()`, `Inventory::getRevision()`...) against their last-seen value, and resync it in `onEnter` so they do not replay a backlog.

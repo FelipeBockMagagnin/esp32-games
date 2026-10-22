@@ -270,6 +270,12 @@ void ScreenManager::handleConfirmPress()
     }
 }
 
+bool ScreenManager::handleConfirmRepeat()
+{
+    Screen *screen = getCurrentScreen();
+    return sweepDirection == 0 && screen != nullptr && screen->onConfirmRepeat();
+}
+
 void ScreenManager::handleUpPress()
 {
     finishSweep();

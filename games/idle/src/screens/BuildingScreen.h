@@ -49,6 +49,7 @@ private:
     unsigned long pulseUntil = 0;
 
     bool isRevealed(uint8_t id) const;
+    bool buySelected(bool quick);
     void updateDetail();
 
 public:
@@ -61,6 +62,7 @@ public:
     void onUpPress() override;
     void onDownPress() override;
     void onConfirmPress() override;
+    bool onConfirmRepeat() override;
 };
 
 #endif // BUILDING_SCREEN_H

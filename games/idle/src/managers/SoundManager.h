@@ -93,17 +93,24 @@ public:
     }
 
     // Two quick rising notes, a till's "ka-ching", for a successful purchase. Purchases in
-    // quick succession climb a whole tone each, up to a fifth, so a buying spree is heard.
-    void playBuy()
+    // quick succession climb a semitone each, up to an octave, so a buying spree is heard.
+    // A quick one is a single blip, short enough for a held Confirm's fastest repeat, which
+    // would otherwise queue notes that play on after the button is let go.
+    void playBuy(bool quick = false)
     {
         unsigned long now = millis();
-        buyStreak = now - lastBuyAt < BUY_STREAK_MS && buyStreak < 3 ? buyStreak + 1 : 0;
+        buyStreak = now - lastBuyAt < BUY_STREAK_MS ? (buyStreak < 12 ? buyStreak + 1 : 12) : 0;
         lastBuyAt = now;
         if (!allowed(false))
         {
             return;
         }
-        float shift = powf(2.0f, buyStreak * 2 / 12.0f);
+        float shift = powf(2.0f, buyStreak / 12.0f);
+        if (quick)
+        {
+            tone(pin, (unsigned int)(NOTE_G7 * shift), 30);
+            return;
+        }
         tone(pin, (unsigned int)(NOTE_C7 * shift), 50);
         tone(pin, (unsigned int)(NOTE_G7 * shift), 110);
     }

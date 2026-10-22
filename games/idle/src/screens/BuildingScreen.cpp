@@ -43,7 +43,7 @@ BuildingScreen::BuildingScreen(GameState &game, SoundManager &sound)
 
       detailPanel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, PANEL_BORDER, true, Theme::CARD, true, 3),
       buyBadge(PANEL_X + 5, BUY_ROW_Y + BADGE_OFFSET_Y, ButtonBadge::CONFIRM),
-      buyLabel(PANEL_X + 20, BUY_ROW_Y, "Buy", Theme::TEXT, 1),
+      buyLabel(PANEL_X + 20, BUY_ROW_Y, "Buy (hold: more)", Theme::TEXT, 1),
       buyDetail(PANEL_X + PANEL_W - 5, BUY_ROW_Y, "", HINT_COLOR, 1, TR_DATUM),
       shareBar(PANEL_X + 5, SHARE_Y, PANEL_W - 10, SHARE_H, 0, 100, SHARE_COLOR, SHARE_BG, SHARE_BORDER),
 
@@ -205,25 +205,37 @@ void BuildingScreen::onDownPress()
     forceRefresh();
 }
 
-void BuildingScreen::onConfirmPress()
+// buyBuilding only spends gold when the player can afford it
+bool BuildingScreen::buySelected(bool quick)
 {
-    // buyBuilding only spends gold when the player can afford it
-    ListRow &row = rows[list.getSelected() - list.getFirstVisible()];
     uint8_t id = (uint8_t)list.getSelected();
     uint64_t cost = game.getBuildingCost(id);
-    if (game.buyBuilding(id))
+    if (!game.buyBuilding(id))
     {
-        unsigned long now = millis();
-        sound.playBuy();
-        goldCard.spend(cost, now);
-        pulseBuilding = id;
-        pulseUntil = now + PULSE_MS;
-        feedback.flash(row);
+        return false;
     }
-    else
+    unsigned long now = millis();
+    sound.playBuy(quick);
+    goldCard.spend(cost, now);
+    pulseBuilding = id;
+    pulseUntil = now + PULSE_MS;
+    feedback.flash(rows[list.getSelected() - list.getFirstVisible()]);
+    forceRefresh();
+    return true;
+}
+
+void BuildingScreen::onConfirmPress()
+{
+    if (!buySelected(false))
     {
         sound.playError();
-        feedback.shake(row);
+        feedback.shake(rows[list.getSelected() - list.getFirstVisible()]);
+        forceRefresh();
     }
-    forceRefresh();
+}
+
+// A held Confirm keeps buying until the gold runs out, quietly
+bool BuildingScreen::onConfirmRepeat()
+{
+    return buySelected(true);
 }

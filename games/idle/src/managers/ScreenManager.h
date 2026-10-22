@@ -55,6 +55,7 @@ public:
     void update(unsigned long now);
 
     void handleConfirmPress();
+    bool handleConfirmRepeat();
     void handleUpPress();
     void handleDownPress();
     void handleSelectPress() { handleDownPress(); }

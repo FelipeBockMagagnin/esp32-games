@@ -63,6 +63,8 @@ public:
     virtual void render(TFT_eSPI &tft);
 
     virtual void onConfirmPress() {}
+    // Sent while Confirm stays held, faster and faster; false stops the repeat until the next press
+    virtual bool onConfirmRepeat() { return false; }
     virtual void onUpPress() {}
     virtual void onDownPress() {}
     virtual void onSelectPress() { onDownPress(); }

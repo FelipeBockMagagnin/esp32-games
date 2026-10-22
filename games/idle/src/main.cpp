@@ -279,6 +279,41 @@ void checkVeinGesture(unsigned long now)
     sound.playDrop();
 }
 
+// Holding Confirm repeats it on screens that ask for it (buying building levels), starting
+// slow so a tap stays a single press
+static const unsigned long REPEAT_DELAY_MS = 400;
+static const unsigned long REPEAT_FIRST_MS = 160;
+static const unsigned long REPEAT_FASTEST_MS = 40;
+bool confirmRepeating = false;
+unsigned long confirmRepeatAt = 0;
+unsigned long confirmRepeatStep = 0;
+
+void checkConfirmRepeat(unsigned long now, bool pressed)
+{
+    if (pressed)
+    {
+        confirmRepeating = true;
+        confirmRepeatAt = now + REPEAT_DELAY_MS;
+        confirmRepeatStep = REPEAT_FIRST_MS;
+        return;
+    }
+    if (!confirmButton.isDown())
+    {
+        confirmRepeating = false;
+    }
+    if (!confirmRepeating || (long)(now - confirmRepeatAt) < 0)
+    {
+        return;
+    }
+    if (!screenManager.handleConfirmRepeat())
+    {
+        confirmRepeating = false;
+        return;
+    }
+    confirmRepeatStep = confirmRepeatStep * 4 / 5 > REPEAT_FASTEST_MS ? confirmRepeatStep * 4 / 5 : REPEAT_FASTEST_MS;
+    confirmRepeatAt = now + confirmRepeatStep;
+}
+
 // Holding Up and Down while the board powers on wipes the save and starts a new game.
 // True when a save was loaded into saveBuffer.
 bool loadOrReset()
@@ -407,6 +442,7 @@ void loop()
     {
         screenManager.handleConfirmPress();
     }
+    checkConfirmRepeat(now, confirm);
 
     if (up)
     {
