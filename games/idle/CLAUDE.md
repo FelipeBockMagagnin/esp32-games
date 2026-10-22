@@ -43,7 +43,7 @@ Elapsed time uses unsigned subtraction (`now - last`), deadlines a signed differ
 **Global declaration order matters:** `Achievements`/`Unlocks`/`Inventory`/`Ascension`/`Journal` → `GameState` → `CombatState`, since each holds references to the earlier ones.
 
 ### Screens
-`ScreenManager` cycles through screens in `addScreen()` order: Mining → Buildings → Upgrade → Awards → Zones → Combat → Inventory → Ascend. All but Mining start locked; `src/game/Unlocks.h` opens them one at a time and `applyUnlocks()` in `main.cpp` maps features to screens. Zones and Combat must unlock together (entering a zone jumps to the next screen).
+`ScreenManager` cycles through screens in `addScreen()` order: Mining → Buildings → Upgrade → Awards → Zones → Combat → Inventory → Journal → Ascend. All but Mining start locked; `src/game/Unlocks.h` opens them one at a time and `applyUnlocks()` in `main.cpp` maps features to screens. Zones and Combat must unlock together (entering a zone jumps to the next screen); Journal opens with Inventory.
 
 Header nav labels are computed from the nearest *unlocked* neighbours. The size-2 title and size-1 labels share a 28px bar, so **nav names stay at 9 chars or less** (hence "Awards").
 
