@@ -21,11 +21,16 @@ static const int16_t CHIP_SPEED_UP_MIN = 120;
 static const int16_t CHIP_SPEED_UP_MAX = 300;
 static const int16_t CHIP_SIZE = 3;
 
-static const unsigned long COIN_MS = 480;
-static const unsigned long COIN_STAGGER_MS = 55;
+static const unsigned long COIN_MS_MIN = 480;
+static const unsigned long COIN_MS_MAX = 680;
+static const unsigned long COIN_STAGGER_MIN_MS = 30;
+static const unsigned long COIN_STAGGER_MAX_MS = 90;
 static const int16_t COIN_SPREAD = 20;
-static const int16_t COIN_ARC = 50; // How far above the straight line the control point sits
+static const int16_t COIN_SWING = 30; // How far the control points stray from the straight line
 static const int16_t COIN_RADIUS = 3;
+// Fading dots behind each coin, so its path reads as a curve despite the ~30 fps
+static const uint8_t COIN_TRAIL = 4;
+static const unsigned long COIN_TRAIL_STEP_MS = 14;
 
 // Halo behind the ore: rings from the outside in, each a stronger blend of the glow
 // color into the background. Radii are relative to the ore's size.
@@ -167,11 +172,12 @@ static int16_t clampCoin(int16_t value, int16_t size)
 
 // A coin whose slot is reused before it lands still counts as arrived, so a caller that
 // waits for its coins never waits forever. Coins are painted in the sprite, so the target and
-// the arc are kept inside it (a quadratic arc never leaves the hull of its three points).
+// the curve are kept inside it (a Bezier curve never leaves the hull of its control points).
 void OreDisplay::flyCoins(uint8_t count, int16_t targetX, int16_t targetY)
 {
     targetX = clampCoin(targetX, w);
     targetY = clampCoin(targetY, h);
+    unsigned long start = now;
     for (uint8_t n = 0; n < count; n++)
     {
         Coin &coin = coins[nextCoin];
@@ -182,13 +188,19 @@ void OreDisplay::flyCoins(uint8_t count, int16_t targetX, int16_t targetY)
         }
 
         coin.active = true;
-        coin.start = now + n * COIN_STAGGER_MS;
+        coin.start = start;
+        start += random(COIN_STAGGER_MIN_MS, COIN_STAGGER_MAX_MS + 1);
+        coin.duration = random(COIN_MS_MIN, COIN_MS_MAX + 1);
         coin.x0 = oreX + oreW / 2 + random(-COIN_SPREAD, COIN_SPREAD + 1);
         coin.y0 = oreY + oreH / 2 + random(-COIN_SPREAD / 2, COIN_SPREAD / 2 + 1);
         coin.x1 = targetX;
         coin.y1 = targetY;
-        coin.cx = clampCoin((coin.x0 + targetX) / 2 + random(-COIN_SPREAD, COIN_SPREAD + 1), w);
-        coin.cy = clampCoin((coin.y0 < targetY ? coin.y0 : targetY) - COIN_ARC + random(0, COIN_SPREAD + 1), h);
+        int16_t dx = targetX - coin.x0;
+        int16_t dy = targetY - coin.y0;
+        coin.c1x = clampCoin(coin.x0 + dx / 3 + random(-COIN_SWING, COIN_SWING + 1), w);
+        coin.c1y = clampCoin(coin.y0 + dy / 3 + random(-COIN_SWING, COIN_SWING / 2 + 1), h);
+        coin.c2x = clampCoin(coin.x0 + dx * 2 / 3 + random(-COIN_SWING, COIN_SWING + 1), w);
+        coin.c2y = clampCoin(coin.y0 + dy * 2 / 3 + random(-COIN_SWING, COIN_SWING / 2 + 1), h);
     }
     lastFrame = 0;
 }
@@ -277,7 +289,7 @@ void OreDisplay::update(unsigned long time)
 
     for (uint8_t i = 0; i < MAX_COINS; i++)
     {
-        if (coins[i].active && (long)(now - coins[i].start) >= (long)COIN_MS)
+        if (coins[i].active && (long)(now - coins[i].start) >= (long)coins[i].duration)
         {
             coins[i].active = false;
             arrivals++;
@@ -419,8 +431,31 @@ void OreDisplay::drawChips()
     }
 }
 
-// Ease-in along a quadratic arc, so a coin leaves the ore slowly and speeds into the card
-void OreDisplay::drawCoins()
+static int16_t lerp(int16_t a, int16_t b, int32_t t)
+{
+    return a + (int32_t)(b - a) * t / 256;
+}
+
+// Half linear, half ease-in along a cubic curve: the coin leaves the ore gently and speeds
+// into the card without jumps too long for the frame rate
+static void coinAt(const int16_t *xs, const int16_t *ys, int32_t t, int16_t &px, int16_t &py)
+{
+    t = t * (256 + t) / 512;
+    int16_t ax = lerp(xs[0], xs[1], t);
+    int16_t ay = lerp(ys[0], ys[1], t);
+    int16_t bx = lerp(xs[1], xs[2], t);
+    int16_t by = lerp(ys[1], ys[2], t);
+    int16_t cx = lerp(xs[2], xs[3], t);
+    int16_t cy = lerp(ys[2], ys[3], t);
+    ax = lerp(ax, bx, t);
+    ay = lerp(ay, by, t);
+    bx = lerp(bx, cx, t);
+    by = lerp(by, cy, t);
+    px = lerp(ax, bx, t);
+    py = lerp(ay, by, t);
+}
+
+void OreDisplay::drawCoins(TFT_eSPI &tft)
 {
     for (uint8_t i = 0; i < MAX_COINS; i++)
     {
@@ -430,11 +465,24 @@ void OreDisplay::drawCoins()
         {
             continue;
         }
-        int32_t t = (int32_t)age * 256 / COIN_MS;
-        t = t * t / 256;
-        int32_t u = 256 - t;
-        int16_t px = (u * u * coin.x0 + 2 * u * t * coin.cx + t * t * coin.x1) / 65536;
-        int16_t py = (u * u * coin.y0 + 2 * u * t * coin.cy + t * t * coin.y1) / 65536;
+        const int16_t xs[] = {coin.x0, coin.c1x, coin.c2x, coin.x1};
+        const int16_t ys[] = {coin.y0, coin.c1y, coin.c2y, coin.y1};
+        int16_t px;
+        int16_t py;
+
+        for (uint8_t k = COIN_TRAIL; k > 0; k--)
+        {
+            long trailAge = age - (long)(k * COIN_TRAIL_STEP_MS);
+            if (trailAge < 0)
+            {
+                continue;
+            }
+            coinAt(xs, ys, (int32_t)trailAge * 256 / coin.duration, px, py);
+            uint8_t alpha = 220 - k * 160 / COIN_TRAIL;
+            sprite->fillCircle(px, py, k <= COIN_TRAIL / 2 ? 2 : 1, tft.alphaBlend(alpha, Theme::GOLD, eraseColor));
+        }
+
+        coinAt(xs, ys, (int32_t)age * 256 / coin.duration, px, py);
         sprite->fillCircle(px, py, COIN_RADIUS, Theme::GOLD);
         sprite->drawCircle(px, py, COIN_RADIUS, Theme::GOLD_FRAME);
         sprite->drawPixel(px - 1, py - 1, Theme::TEXT);
@@ -473,7 +521,7 @@ void OreDisplay::draw(TFT_eSPI &tft)
     drawOre(oreX + shakeOffset());
     drawVein(tft);
     drawChips();
-    drawCoins();
+    drawCoins(tft);
 
     sprite->setTextSize(2);
     sprite->setTextDatum(MC_DATUM);

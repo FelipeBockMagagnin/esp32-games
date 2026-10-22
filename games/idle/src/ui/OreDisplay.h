@@ -25,7 +25,7 @@ public:
     void addPopup(const String &text, Color color);
     // Chips fly off the ore and fall; in the ore's own colours, or gold sparks
     void burst(uint8_t count, bool gold);
-    // Coins arc from the ore toward (targetX, targetY), relative to the element and clamped
+    // Coins fly from the ore along random curves toward (targetX, targetY), relative to the element and clamped
     // into it, one after another
     void flyCoins(uint8_t count, int16_t targetX, int16_t targetY);
     // How many coins reached their target since the last call
@@ -89,10 +89,13 @@ private:
     {
         bool active;
         unsigned long start;
+        uint16_t duration;
         int16_t x0;
         int16_t y0;
-        int16_t cx; // Control point of the arc
-        int16_t cy;
+        int16_t c1x;
+        int16_t c1y;
+        int16_t c2x;
+        int16_t c2y;
         int16_t x1;
         int16_t y1;
     };
@@ -124,7 +127,7 @@ private:
     void drawOre(int16_t left);
     void drawVein(TFT_eSPI &tft);
     void drawChips();
-    void drawCoins();
+    void drawCoins(TFT_eSPI &tft);
 };
 
 #endif // UI_ORE_DISPLAY_H
