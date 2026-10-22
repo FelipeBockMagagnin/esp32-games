@@ -24,6 +24,7 @@
 #include "screens/ConfirmScreen.h"
 #include "screens/SettingsScreen.h"
 #include "screens/SplashScreen.h"
+#include "screens/AscensionScreen.h"
 #include "ui/Themes.h"
 #include "debug/DevConsole.h"
 
@@ -65,6 +66,7 @@ AchievementScreen achievementScreen(achievements, game, inventory, combat, sound
 // Not in the rotation: modals, the first opened by holding Up and Down (see checkResetGesture)
 // or from Settings, which holding Left opens (see checkSettingsGesture)
 void resetGame();
+void showAscension();
 void ascendGame();
 void applySettings();
 ConfirmScreen resetScreen({"Reset", "Reset game?", "All progress will be lost,", "ascension and awards too.",
@@ -72,7 +74,8 @@ ConfirmScreen resetScreen({"Reset", "Reset game?", "All progress will be lost,",
                           Theme::BAD, resetGame, screenManager, sound);
 ConfirmScreen ascendConfirm({"Ascend", "Ascend now?", "Gold, buildings and upgrades reset.",
                             "Awards, items and talents stay.", "Restart with the points", "Ascending..."},
-                           Theme::EPIC, ascendGame, screenManager, sound, true);
+                           Theme::EPIC, showAscension, screenManager, sound, true);
+AscensionScreen ascensionScreen(game, ascension, sound, ascendGame);
 AscendScreen ascendScreen(game, ascension, sound, screenManager, ascendConfirm);
 Settings settings = {(uint8_t)SoundMode::ON, DIM_DEFAULT, 0};
 SettingsScreen settingsScreen(settings, applySettings, ascension, screenManager, sound, resetScreen);
@@ -149,6 +152,11 @@ void resetGame()
 {
     eraseSave();
     ESP.restart();
+}
+
+void showAscension()
+{
+    screenManager.replaceModal(&ascensionScreen);
 }
 
 // The next run starts from a save rather than by resetting every object in place, so it

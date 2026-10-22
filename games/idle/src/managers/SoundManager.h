@@ -184,6 +184,25 @@ public:
         tone(pin, NOTE_G6, 380);
     }
 
+    // A slow climb through two octaves and a held top note, about as long as the
+    // ascension's points take to count up
+    void playAscend()
+    {
+        if (!allowed(true))
+        {
+            return;
+        }
+        tone(pin, NOTE_C5, 140);
+        tone(pin, NOTE_G5, 140);
+        tone(pin, NOTE_C6, 140);
+        tone(pin, NOTE_E6, 140);
+        tone(pin, NOTE_G6, 140);
+        tone(pin, NOTE_C7, 140);
+        tone(pin, NOTE_E7, 140);
+        tone(pin, NOTE_G7, 140);
+        tone(pin, NOTE_C8, 500);
+    }
+
     // Low note when the player can't afford the upgrade
     void playError()
     {
