@@ -168,9 +168,18 @@ void EnemyPanel::refreshSideColumns(const EnemyDef &enemy, unsigned long now)
     }
     else if (!enemy.boss && combat.hasBoss())
     {
-        snprintf(buf, sizeof(buf), "Boss in %u", (unsigned)combat.getKillsToBoss());
-        bossInfo.setText(buf);
-        bossInfo.setColor(combat.getKillsToBoss() <= 1 ? Theme::BAD : Theme::TEXT_2);
+        uint8_t left = combat.getKillsToBoss();
+        // Zero while the last enemy before it is still on its way out
+        if (left == 0)
+        {
+            bossInfo.setText("Boss next");
+        }
+        else
+        {
+            snprintf(buf, sizeof(buf), "Boss in %u", (unsigned)left);
+            bossInfo.setText(buf);
+        }
+        bossInfo.setColor(left <= 1 ? Theme::BAD : Theme::TEXT_2);
     }
     else
     {
