@@ -16,8 +16,12 @@ enum class SoundMode : uint8_t
 class SoundManager
 {
 private:
+    static const unsigned long BUY_STREAK_MS = 1000;
+
     int pin;
     SoundMode mode = SoundMode::ON;
+    unsigned long lastBuyAt = 0;
+    uint8_t buyStreak = 0;
 
     bool allowed(bool important) const
     {
@@ -88,15 +92,20 @@ public:
         tone(pin, NOTE_C7, 160);
     }
 
-    // Two quick rising notes, a till's "ka-ching", for a successful purchase
+    // Two quick rising notes, a till's "ka-ching", for a successful purchase. Purchases in
+    // quick succession climb a whole tone each, up to a fifth, so a buying spree is heard.
     void playBuy()
     {
+        unsigned long now = millis();
+        buyStreak = now - lastBuyAt < BUY_STREAK_MS && buyStreak < 3 ? buyStreak + 1 : 0;
+        lastBuyAt = now;
         if (!allowed(false))
         {
             return;
         }
-        tone(pin, NOTE_C7, 50);
-        tone(pin, NOTE_G7, 110);
+        float shift = powf(2.0f, buyStreak * 2 / 12.0f);
+        tone(pin, (unsigned int)(NOTE_C7 * shift), 50);
+        tone(pin, (unsigned int)(NOTE_G7 * shift), 110);
     }
 
     // Longer fanfare than a level-up, so an achievement is unmistakable

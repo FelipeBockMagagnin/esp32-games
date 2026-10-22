@@ -3,6 +3,7 @@
 
 #include "Screen.h"
 #include "../ui/PressFeedback.h"
+#include "GoldCard.h"
 #include "../ui/Box.h"
 #include "../ui/Header.h"
 #include "../ui/ListRow.h"
@@ -23,11 +24,7 @@ private:
 
     Header header;
 
-    // Gold card: balance and production, as on the Mining screen
-    Box goldCard;
-    Ellipse goldCoin;
-    Text goldText;
-    Text goldRate;
+    GoldCard goldCard;
 
     ListRow rows[ROWS];
     ListView list;
@@ -47,7 +44,9 @@ private:
     GameState &game;
     SoundManager &sound;
     PressFeedback feedback;
-    unsigned long spentUntil = 0; // The balance blinks white as a purchase spends it
+    // The bought building's level count glows for a moment
+    uint8_t pulseBuilding = 0xFF;
+    unsigned long pulseUntil = 0;
 
     bool isRevealed(uint8_t id) const;
     void updateDetail();
@@ -55,6 +54,7 @@ private:
 public:
     BuildingScreen(GameState &game, SoundManager &sound);
 
+    void onEnter(TFT_eSPI &tft) override;
     void update(unsigned long now) override;
 
     // Up / Down buttons navigate through buildings, confirm button buys the selected one

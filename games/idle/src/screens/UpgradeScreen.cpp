@@ -4,9 +4,6 @@
 #include "../game/CombatConfig.h" // ZONES, for the zone an unlock opens
 
 
-static const unsigned long SPENT_BLINK_MS = 150;
-static constexpr Color CARD_BORDER = Theme::GOLD_FRAME; // Dark amber, same frame as the other gold cards
-static constexpr Color RATE_COLOR = Theme::GOOD;  // Soft green: income that grows on its own
 static constexpr Color PANEL_BORDER = Theme::FRAME; // Dark slate
 static constexpr Color LINE_COLOR = Theme::TEXT_2;
 static constexpr Color HINT_COLOR = Theme::TEXT_2;
@@ -59,7 +56,6 @@ static const int16_t CARD_X = 5;
 static const int16_t CARD_Y = 31;
 static const int16_t CARD_W = 230;
 static const int16_t CARD_H = 22;
-static const int16_t COIN_RADIUS = 5;
 
 static const int16_t ROW_X = 5;
 static const int16_t LIST_TOP = 57;
@@ -87,10 +83,7 @@ static const uint8_t NO_UPGRADE = 0xFF;
 UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
     : header("Upgrade"),
 
-      goldCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, true, Theme::CARD, true, 4),
-      goldCoin(CARD_X + 12, CARD_Y + CARD_H / 2, COIN_RADIUS, COIN_RADIUS, Theme::GOLD, true),
-      goldText(CARD_X + 23, CARD_Y + 4, "0", Theme::GOLD, 2),
-      goldRate(CARD_X + CARD_W - 6, CARD_Y + 8, "+0 gold/s", RATE_COLOR, 1, TR_DATUM),
+      goldCard(CARD_X, CARD_Y, CARD_W, CARD_H),
 
       list(ROWS),
 
@@ -112,10 +105,7 @@ UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
     addElement(&header);
     setHeader(&header);
 
-    addElement(&goldCard);
-    addElement(&goldCoin, Theme::CARD);
-    addElement(&goldText, Theme::CARD);
-    addElement(&goldRate, Theme::CARD);
+    goldCard.addTo(*this);
 
     for (uint8_t i = 0; i < ROWS; i++)
     {
@@ -339,17 +329,22 @@ void UpgradeScreen::refreshDetails()
     priceText.setColor(affordable ? AFFORD_COLOR : HINT_COLOR);
 }
 
+void UpgradeScreen::onEnter(TFT_eSPI &tft)
+{
+    goldCard.enter(game);
+    Screen::onEnter(tft);
+}
+
 void UpgradeScreen::update(unsigned long now)
 {
     feedback.update(now);
-    goldText.setColor((long)(now - spentUntil) < 0 ? Theme::TEXT : Theme::GOLD);
+    goldCard.animate(now, game);
     if (!refreshDue(now))
     {
         return;
     }
 
-    goldText.setText(formatAmount(game.getGold()));
-    goldRate.setText(formatRate(game.getProductionPerSecond()));
+    goldCard.refresh(game);
 
     rebuildVisible();
 
@@ -401,10 +396,12 @@ void UpgradeScreen::onDownPress()
 void UpgradeScreen::onConfirmPress()
 {
     // buyGoldUpgrade only spends gold when the upgrade is unlocked, unowned and affordable
-    if (visibleCount > 0 && game.buyGoldUpgrade(visibleIds[list.getSelected()]))
+    uint8_t id = visibleCount > 0 ? visibleIds[list.getSelected()] : 0;
+    uint64_t cost = visibleCount > 0 ? game.getGoldUpgradeCost(id) : 0;
+    if (visibleCount > 0 && game.buyGoldUpgrade(id))
     {
         sound.playBuy();
-        spentUntil = millis() + SPENT_BLINK_MS;
+        goldCard.spend(cost, millis());
     }
     else
     {

@@ -5,6 +5,7 @@
 #include "../ui/PressFeedback.h"
 #include "../ui/Text.h"
 #include "../ui/Header.h"
+#include "GoldCard.h"
 #include "../ui/Box.h"
 #include "../ui/Ellipse.h"
 #include "../ui/ProgressBar.h"
@@ -23,10 +24,7 @@ private:
 
     Header header;
 
-    Box goldCard;
-    Ellipse goldCoin;
-    Text goldText;
-    Text goldRate;
+    GoldCard goldCard;
 
     ListRow rows[ROWS];
     ListView list;
@@ -45,7 +43,6 @@ private:
     GameState &game;
     SoundManager &sound;
     PressFeedback feedback;
-    unsigned long spentUntil = 0; // The balance blinks white as a purchase spends it
 
     // Only unlocked, unbought upgrades are listed; the list's indices point into this
     uint8_t visibleIds[GOLD_UPGRADE_COUNT];
@@ -60,6 +57,7 @@ private:
 public:
     UpgradeScreen(GameState &game, SoundManager &sound);
 
+    void onEnter(TFT_eSPI &tft) override;
     void update(unsigned long now) override;
 
     // Up / Down buttons navigate through upgrades, confirm button buys the selected one

@@ -4,9 +4,7 @@
 
 // Values change every frame while producing, so only rebuild the texts a few times per second
 
-static const unsigned long SPENT_BLINK_MS = 150;
-static constexpr Color CARD_BORDER = Theme::GOLD_FRAME;    // Dark amber, same frame as the Mining gold card
-static constexpr Color RATE_COLOR = Theme::GOOD;     // Soft green: income that grows on its own
+static const unsigned long PULSE_MS = 500;
 static constexpr Color AFFORD_COLOR = Theme::GOOD;   // Green price when the player can buy
 static constexpr Color TOO_DEAR_COLOR = Theme::TEXT_DIM; // Gray price when they cannot
 static constexpr Color PANEL_BORDER = Theme::FRAME;
@@ -20,7 +18,6 @@ static const int16_t CARD_X = 5;
 static const int16_t CARD_Y = 31;
 static const int16_t CARD_W = 230;
 static const int16_t CARD_H = 22;
-static const int16_t COIN_RADIUS = 5;
 
 // List
 static const int16_t ROW_X = 5;
@@ -40,10 +37,7 @@ static const int16_t SHARE_H = 13;
 BuildingScreen::BuildingScreen(GameState &game, SoundManager &sound)
     : header("Buildings"),
 
-      goldCard(CARD_X, CARD_Y, CARD_W, CARD_H, CARD_BORDER, true, Theme::CARD, true, 4),
-      goldCoin(CARD_X + 12, CARD_Y + CARD_H / 2, COIN_RADIUS, COIN_RADIUS, Theme::GOLD, true),
-      goldText(CARD_X + 23, CARD_Y + 4, "0", Theme::GOLD, 2),
-      goldRate(CARD_X + CARD_W - 6, CARD_Y + 8, "+0 gold/s", RATE_COLOR, 1, TR_DATUM),
+      goldCard(CARD_X, CARD_Y, CARD_W, CARD_H),
 
       list(ROWS),
 
@@ -59,10 +53,7 @@ BuildingScreen::BuildingScreen(GameState &game, SoundManager &sound)
     addElement(&header);
     setHeader(&header);
 
-    addElement(&goldCard);
-    addElement(&goldCoin, Theme::CARD);
-    addElement(&goldText, Theme::CARD);
-    addElement(&goldRate, Theme::CARD);
+    goldCard.addTo(*this);
 
     for (uint8_t i = 0; i < ROWS; i++)
     {
@@ -90,17 +81,24 @@ bool BuildingScreen::isRevealed(uint8_t id) const
     return id == 0 || game.getBuildingLevel(id) > 0 || game.getBuildingLevel(id - 1) > 0;
 }
 
+void BuildingScreen::onEnter(TFT_eSPI &tft)
+{
+    goldCard.enter(game);
+    pulseUntil = 0;
+    Screen::onEnter(tft);
+}
+
 void BuildingScreen::update(unsigned long now)
 {
     feedback.update(now);
-    goldText.setColor((long)(now - spentUntil) < 0 ? Theme::TEXT : Theme::GOLD);
+    goldCard.animate(now, game);
     if (!refreshDue(now))
     {
         return;
     }
 
-    goldText.setText(formatAmount(game.getGold()));
-    goldRate.setText(formatRate(game.getProductionPerSecond()));
+    goldCard.refresh(game);
+    bool pulsing = (long)(now - pulseUntil) < 0;
 
     uint8_t visible = list.getVisibleCount();
     for (uint8_t i = 0; i < ROWS; i++)
@@ -142,6 +140,7 @@ void BuildingScreen::update(unsigned long now)
             row.setSubtitle(buf);
             snprintf(buf, sizeof(buf), "x%u", (unsigned)game.getBuildingLevel(id));
             row.setValueSub(buf);
+            row.setValueSubColor(pulsing && id == pulseBuilding ? Theme::GOLD : Theme::TEXT_2);
         }
 
         row.setValue(formatAmount(game.getBuildingCost(id)));
@@ -210,10 +209,15 @@ void BuildingScreen::onConfirmPress()
 {
     // buyBuilding only spends gold when the player can afford it
     ListRow &row = rows[list.getSelected() - list.getFirstVisible()];
-    if (game.buyBuilding((uint8_t)list.getSelected()))
+    uint8_t id = (uint8_t)list.getSelected();
+    uint64_t cost = game.getBuildingCost(id);
+    if (game.buyBuilding(id))
     {
+        unsigned long now = millis();
         sound.playBuy();
-        spentUntil = millis() + SPENT_BLINK_MS;
+        goldCard.spend(cost, now);
+        pulseBuilding = id;
+        pulseUntil = now + PULSE_MS;
         feedback.flash(row);
     }
     else
