@@ -17,6 +17,7 @@ An idle/clicker game for an ESP32 with a 240x320 ILI9341 SPI display, five push 
 ```bash
 pio run                       # Build
 pio run -t upload -t monitor  # Flash and open the serial monitor (115200)
+pio run -e dev -t upload -t monitor  # Dev build: serial cheats (gold, level, zone, unlock, items, points)
 tools/sim/run.sh [--days 3] [--seed 1] [--session 5] [--cps 3] [--runs 1] [--suggest] [--log]
 tools/sim/test.sh             # Logic tests: save slots, zone changes, saturation
 ```

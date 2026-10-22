@@ -25,6 +25,7 @@
 #include "screens/SettingsScreen.h"
 #include "screens/SplashScreen.h"
 #include "ui/Themes.h"
+#include "debug/DevConsole.h"
 
 // The buttons form a D-pad: Confirm in the middle, Up/Down for in-screen actions,
 // Right/Left to step forward/backward through the screens
@@ -89,6 +90,11 @@ const char *shownUnlockNotice = nullptr;
 AutoSaver autoSaver(game, inventory, combat, achievements, unlocks, ascension);
 // Holds the save read at boot, and the one an ascension writes
 SaveBlob saveBuffer;
+
+#ifdef DEV_MODE
+void devChanged();
+DevConsole devConsole(game, inventory, combat, achievements, unlocks, ascension, devChanged);
+#endif
 
 // tone() drives LEDC channel 0, and channel 1 shares its timer
 static const uint8_t BACKLIGHT_CHANNEL = 4;
@@ -306,6 +312,15 @@ void applyUnlocks()
     screenManager.setLocked(&combatScreen, !unlocks.isUnlocked(Feature::COMBAT));
 }
 
+#ifdef DEV_MODE
+void devChanged()
+{
+    seenUnlocks = unlocks.getRevision();
+    applyUnlocks();
+    screenManager.repaint();
+}
+#endif
+
 void setup()
 {
     Serial.begin(115200);
@@ -378,6 +393,9 @@ void loop()
     checkResetGesture(now);
     checkVeinGesture(now);
     checkSettingsGesture(now);
+#ifdef DEV_MODE
+    devConsole.update();
+#endif
 
     if (right && !screenManager.hasModal())
     {
