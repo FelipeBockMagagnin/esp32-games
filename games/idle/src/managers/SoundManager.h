@@ -184,6 +184,19 @@ public:
         tone(pin, NOTE_G6, 380);
     }
 
+    // A low falling call when a boss steps up, the one sound that goes down to warn
+    void playBoss()
+    {
+        if (!allowed(false))
+        {
+            return;
+        }
+        tone(pin, NOTE_D4, 120);
+        tone(pin, NOTE_A3, 120);
+        tone(pin, NOTE_F3, 120);
+        tone(pin, NOTE_D3, 300);
+    }
+
     // A slow climb through two octaves and a held top note, about as long as the
     // ascension's points take to count up
     void playAscend()

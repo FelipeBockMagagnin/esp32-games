@@ -52,6 +52,8 @@ private:
     uint32_t seenSecondWinds;
     uint32_t seenWeakPoints;
     uint32_t seenFuries;
+    uint32_t seenBosses;
+    uint32_t seenBossFled;
 
     unsigned long messageUntil;
     unsigned long enemyHitUntil;

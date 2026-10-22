@@ -25,6 +25,7 @@ private:
     Text defLabel;
     Text defValue;
     Text bossTag;
+    Text bossInfo; // Under the tag: the swift bonus's seconds, or how far off the boss is
 
     Text dropsCaption;
     Image dropIcon[MAX_DROPS];
@@ -34,7 +35,7 @@ private:
     unsigned long bannerUntil;
     bool wasRespawning;
 
-    void refreshSideColumns(const EnemyDef &enemy);
+    void refreshSideColumns(const EnemyDef &enemy, unsigned long now);
     void redrawSideColumns();
 
 public:

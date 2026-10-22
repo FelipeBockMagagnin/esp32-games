@@ -15,6 +15,7 @@ static const int16_t ATK_VALUE_Y = ATK_LABEL_Y + 11;
 static const int16_t DEF_LABEL_Y = ATK_LABEL_Y + 36;
 static const int16_t DEF_VALUE_Y = DEF_LABEL_Y + 11;
 static const int16_t BOSS_Y = DEF_LABEL_Y + 40;
+static const int16_t BOSS_INFO_Y = BOSS_Y + 19;
 
 static const int16_t DROPS_X = SPRITE_X + EnemySprite::SIZE + 4;
 static const int16_t DROPS_CENTER_X = (DROPS_X + 234) / 2;
@@ -34,6 +35,7 @@ EnemyPanel::EnemyPanel(CombatState &combat)
       defLabel(STATS_CENTER_X, DEF_LABEL_Y, "DEF", Theme::TEXT_DIM, 1, TC_DATUM),
       defValue(STATS_CENTER_X, DEF_VALUE_Y, "", Theme::DEFENSE, 2, TC_DATUM),
       bossTag(STATS_CENTER_X, BOSS_Y, "BOSS", Theme::BAD, 2, TC_DATUM),
+      bossInfo(STATS_CENTER_X, BOSS_INFO_Y, "", Theme::TEXT_2, 1, TC_DATUM),
       dropsCaption(DROPS_CENTER_X, DROPS_Y, "DROPS", Theme::TEXT_DIM, 1, TC_DATUM),
       combat(combat),
       bannerUntil(0),
@@ -60,6 +62,7 @@ void EnemyPanel::addTo(Screen &screen)
     screen.addElement(&defLabel);
     screen.addElement(&defValue);
     screen.addElement(&bossTag);
+    screen.addElement(&bossInfo);
     screen.addElement(&dropsCaption);
     for (uint8_t i = 0; i < MAX_DROPS; i++)
     {
@@ -81,6 +84,7 @@ void EnemyPanel::setVisible(bool visible)
     if (!visible)
     {
         bossTag.setVisible(false);
+        bossInfo.setVisible(false);
         banner.setVisible(false);
         for (uint8_t i = 0; i < MAX_DROPS; i++)
         {
@@ -142,11 +146,11 @@ void EnemyPanel::showDrop(uint8_t itemId, bool isNew, uint8_t level, uint8_t oth
     bannerUntil = until;
 }
 
-void EnemyPanel::refreshSideColumns(const EnemyDef &enemy)
+void EnemyPanel::refreshSideColumns(const EnemyDef &enemy, unsigned long now)
 {
     const Inventory &inventory = combat.getInventory();
     uint8_t count = enemy.dropCount < MAX_DROPS ? enemy.dropCount : MAX_DROPS;
-    char buf[8];
+    char buf[16];
 
     snprintf(buf, sizeof(buf), "%u", (unsigned)enemy.attack);
     atkValue.setText(buf);
@@ -154,6 +158,25 @@ void EnemyPanel::refreshSideColumns(const EnemyDef &enemy)
     defValue.setText(buf);
     defValue.setColor(combat.getArmorBreakPercent() > 0 ? Theme::GOOD : Theme::DEFENSE);
     bossTag.setVisible(enemy.boss);
+
+    unsigned long swift = combat.getBossSwiftRemaining(now);
+    if (enemy.boss && swift > 0)
+    {
+        snprintf(buf, sizeof(buf), "x%u %lus", (unsigned)BOSS_SWIFT_GOLD_MULTIPLIER, (swift + 999) / 1000);
+        bossInfo.setText(buf);
+        bossInfo.setColor(Theme::GOLD);
+    }
+    else if (!enemy.boss && combat.hasBoss())
+    {
+        snprintf(buf, sizeof(buf), "Boss in %u", (unsigned)combat.getKillsToBoss());
+        bossInfo.setText(buf);
+        bossInfo.setColor(combat.getKillsToBoss() <= 1 ? Theme::BAD : Theme::TEXT_2);
+    }
+    else
+    {
+        bossInfo.setText("");
+    }
+    bossInfo.setVisible(true);
 
     uint8_t slot = 0;
     for (uint8_t i = 0; i < enemy.dropCount && slot < MAX_DROPS; i++)
@@ -199,6 +222,7 @@ void EnemyPanel::redrawSideColumns()
     defLabel.resetDrawn();
     defValue.resetDrawn();
     bossTag.resetDrawn();
+    bossInfo.resetDrawn();
     dropsCaption.resetDrawn();
     for (uint8_t i = 0; i < MAX_DROPS; i++)
     {
@@ -237,7 +261,7 @@ void EnemyPanel::refresh(unsigned long now)
         sprite.spawn();
     }
     wasRespawning = respawning;
-    refreshSideColumns(enemy);
+    refreshSideColumns(enemy, now);
     if (bannerLeaving)
     {
         sprite.resetDrawn();

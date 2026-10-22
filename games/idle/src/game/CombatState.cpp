@@ -59,6 +59,13 @@ CombatState::CombatState(GameState &game, Inventory &inventory)
       lastHurtGuarded(false),
       dropEvents(0),
       lastDrops(),
+      bossIndex(0xFF),
+      killsToBoss(0),
+      bossStartedAt(0),
+      bossEvents(0),
+      bossFledEvents(0),
+      lastKillSwift(false),
+      bossKills(0),
       secondWindReadyAt(0),
       secondWindEvents(0),
       armorBreak(0),
@@ -143,6 +150,16 @@ bool CombatState::enterZone(uint8_t zoneId, unsigned long now)
 
     currentZone = zoneId;
     inZone = true;
+    const ZoneDef &zone = ZONES[zoneId];
+    bossIndex = 0xFF;
+    for (uint8_t i = 0; i < zone.enemyCount; i++)
+    {
+        if (zone.enemies[i].boss)
+        {
+            bossIndex = i;
+        }
+    }
+    resetBossCount();
     pickEnemy();
     if (phase == DEAD)
     {
@@ -165,35 +182,56 @@ void CombatState::leaveZone()
     phase = IDLE;
 }
 
+// A boss stands its ground: it starts over rather than giving way to another enemy
 void CombatState::rerollEnemy(unsigned long now)
 {
     if (!inZone || phase != FIGHTING)
     {
         return;
     }
-    pickEnemy(currentEnemy);
+    pickEnemy(currentEnemy == bossIndex ? 0xFF : currentEnemy);
     startFight(now);
 }
 
+void CombatState::resetBossCount()
+{
+    killsToBoss = hasBoss() ? ZONES[currentZone].enemyCount - 1 : 0;
+}
+
+// Without a boss due, the pick is an even draw from the others, the one to avoid aside
 void CombatState::pickEnemy(uint8_t avoid)
 {
     const ZoneDef &zone = ZONES[currentZone];
-    if (zone.enemyCount < 2)
+    if (hasBoss() && killsToBoss == 0)
     {
-        currentEnemy = 0;
-    }
-    else if (avoid < zone.enemyCount)
-    {
-        // One draw from the others, shifted past the one to avoid, keeps them equally likely
-        currentEnemy = (uint8_t)random(zone.enemyCount - 1);
-        if (currentEnemy >= avoid)
-        {
-            currentEnemy++;
-        }
+        currentEnemy = bossIndex;
     }
     else
     {
-        currentEnemy = (uint8_t)random(zone.enemyCount);
+        uint8_t candidates = 0;
+        for (uint8_t i = 0; i < zone.enemyCount; i++)
+        {
+            candidates += i != bossIndex && i != avoid ? 1 : 0;
+        }
+        // Nothing else to pick: the one to avoid comes again rather than the boss
+        currentEnemy = avoid < zone.enemyCount && avoid != bossIndex ? avoid : 0;
+        if (candidates > 0)
+        {
+            uint8_t pick = (uint8_t)random(candidates);
+            for (uint8_t i = 0; i < zone.enemyCount; i++)
+            {
+                if (i == bossIndex || i == avoid)
+                {
+                    continue;
+                }
+                if (pick == 0)
+                {
+                    currentEnemy = i;
+                    break;
+                }
+                pick--;
+            }
+        }
     }
     enemyHp = zone.enemies[currentEnemy].maxHp;
     armorBreak = 0;
@@ -205,6 +243,16 @@ void CombatState::startFight(unsigned long now)
     autoAttackAt = now + AUTO_ATTACK_MS;
     enemyAttackAt = now + getEnemy().attackIntervalMs;
     scheduleWeakPoint(now);
+    if (getEnemy().boss)
+    {
+        bossStartedAt = now;
+        bossEvents++;
+    }
+}
+
+unsigned long CombatState::getBossSwiftRemaining(unsigned long now) const
+{
+    return phase == FIGHTING && getEnemy().boss ? remainingUntil(now, bossStartedAt + BOSS_SWIFT_MS) : 0;
 }
 
 static uint32_t capped(uint32_t value, uint32_t cap)
@@ -456,6 +504,20 @@ void CombatState::onEnemyKilled(unsigned long now)
     // An armed Midas multiplies this kill's gold and is spent by it
     lastKillMidas = midasArmed;
     lastKillGold = getKillGold(enemy, currentZone);
+    lastKillSwift = enemy.boss && !reached(now, bossStartedAt + BOSS_SWIFT_MS);
+    if (lastKillSwift)
+    {
+        lastKillGold = satMul(lastKillGold, BOSS_SWIFT_GOLD_MULTIPLIER);
+    }
+    if (enemy.boss)
+    {
+        bossKills++;
+        resetBossCount();
+    }
+    else if (killsToBoss > 0)
+    {
+        killsToBoss--;
+    }
     if (midasArmed)
     {
         const SpellDef *spell = getSpell();
@@ -548,6 +610,11 @@ void CombatState::onPlayerDied(unsigned long now)
         return;
     }
 
+    if (getEnemy().boss)
+    {
+        resetBossCount();
+        bossFledEvents++;
+    }
     playerHp = 0;
     phase = DEAD;
     deathAt = now;

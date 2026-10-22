@@ -77,6 +77,16 @@ public:
     // False for a relic the Relic Sense talent has not reached yet
     bool canDrop(uint8_t itemId) const;
 
+    // The boss of the zone, if it has one, comes after this many more kills; 0 while it is up
+    bool hasBoss() const { return bossIndex < ZONES[currentZone].enemyCount; }
+    uint8_t getKillsToBoss() const { return killsToBoss; }
+    bool isBossFight() const { return phase != IDLE && getEnemy().boss; }
+    unsigned long getBossSwiftRemaining(unsigned long now) const; // 0 once the swift bonus is out of reach
+    uint32_t getBossEvents() const { return bossEvents; }         // A boss stepped up
+    uint32_t getBossFledEvents() const { return bossFledEvents; } // It killed the player and left
+    bool wasLastKillSwift() const { return lastKillSwift; }
+    uint32_t getBossKills() const { return bossKills; }
+
     // Second Wind turns a death into a revive at half health, then recharges
     bool isSecondWindReady(unsigned long now) const;
     unsigned long getSecondWindRemaining(unsigned long now) const;
@@ -161,6 +171,7 @@ private:
     void regenerate(unsigned long now);
     uint32_t getReward(AchReward reward) const;
     void pickEnemy(uint8_t avoid = 0xFF);
+    void resetBossCount();
     void scheduleWeakPoint(unsigned long now);
     void updateWeakPoint(unsigned long now);
     void addFury(uint16_t amount, unsigned long now);
@@ -210,6 +221,13 @@ private:
     bool lastHurtGuarded;
     uint32_t dropEvents;
     KillDrops lastDrops;
+    uint8_t bossIndex; // Past the zone's enemy count when it has no boss
+    uint8_t killsToBoss;
+    unsigned long bossStartedAt;
+    uint32_t bossEvents;
+    uint32_t bossFledEvents;
+    bool lastKillSwift;
+    uint32_t bossKills; // Since boot
     unsigned long secondWindReadyAt; // 0 until the first one is used
     uint32_t secondWindEvents;
 

@@ -26,6 +26,12 @@ static const unsigned long RESPAWN_MS = 2500; // Long enough to take in a kill a
 static const unsigned long REVIVE_MS = 8000; // Health refills over this long after a death
 static const unsigned long REGEN_TICK_MS = 1000;
 static const uint8_t BOSS_KILL_SECONDS = 3;
+// A zone's boss comes after one of each of its other enemies on average, as often as a
+// random pick would bring it, so its drops keep their rates. Beaten this fast, it pays
+// this many times its gold; it runs off when it kills the player, so an idle fight never
+// stalls on it.
+static const unsigned long BOSS_SWIFT_MS = 15000;
+static const uint8_t BOSS_SWIFT_GOLD_MULTIPLIER = 2;
 
 // What the relics' perks do (see ItemPerk). All three act on the strike only, and the
 // two that add damage multiply what got through the defense, so a strike the defense blocks

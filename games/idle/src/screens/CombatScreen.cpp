@@ -6,6 +6,7 @@
 static const unsigned long NEW_DROP_MS = 2500;
 static const unsigned long LEVEL_DROP_MS = 1800;
 static const unsigned long KILL_MESSAGE_MS = 1500;
+static const unsigned long BOSS_MESSAGE_MS = 2500;
 
 // The player's bar flashes for the first part of a hit's text, so a hit taken is noticed
 // even when the eyes are elsewhere
@@ -80,6 +81,8 @@ CombatScreen::CombatScreen(CombatState &combat, const GameState &game, SoundMana
       seenSecondWinds(0),
       seenWeakPoints(0),
       seenFuries(0),
+      seenBosses(0),
+      seenBossFled(0),
       messageUntil(0),
       enemyHitUntil(0),
       playerHitUntil(0),
@@ -122,6 +125,8 @@ void CombatScreen::onEnter(TFT_eSPI &tft)
     seenSecondWinds = combat.getSecondWindEvents();
     seenWeakPoints = combat.getWeakPointEvents();
     seenFuries = combat.getFuryEvents();
+    seenBosses = combat.getBossEvents();
+    seenBossFled = combat.getBossFledEvents();
     messageUntil = 0;
     enemyHitUntil = 0;
     playerHitUntil = 0;
@@ -213,15 +218,33 @@ void CombatScreen::handleEvents(unsigned long now)
         sound.playLevelUp();
     }
 
+    if (combat.getBossFledEvents() != seenBossFled)
+    {
+        seenBossFled = combat.getBossFledEvents();
+        showMessage(now, "The boss got away...", Theme::BAD, BOSS_MESSAGE_MS);
+    }
+
     bool killed = combat.getKillEvents() != seenKills;
     if (killed)
     {
         seenKills = combat.getKillEvents();
         enemyPanel.onKill();
         bool midas = combat.wasLastKillMidas();
-        snprintf(buf, sizeof(buf), midas ? "MIDAS! +%s gold" : "Defeated! +%s gold",
+        bool swift = combat.wasLastKillSwift();
+        snprintf(buf, sizeof(buf), midas ? "MIDAS! +%s gold" : swift ? "SWIFT! +%s gold" : "Defeated! +%s gold",
                  formatAmount(combat.getLastKillGold()).c_str());
-        showMessage(now, buf, midas ? Theme::GOLD : Theme::GOOD, KILL_MESSAGE_MS);
+        showMessage(now, buf, midas || swift ? Theme::GOLD : Theme::GOOD, KILL_MESSAGE_MS);
+    }
+
+    // After the kill, whose respawn is what brings the boss in
+    if (combat.getBossEvents() != seenBosses)
+    {
+        seenBosses = combat.getBossEvents();
+        snprintf(buf, sizeof(buf), "BOSS! Beat it in %lus: x%u gold", BOSS_SWIFT_MS / 1000,
+                 (unsigned)BOSS_SWIFT_GOLD_MULTIPLIER);
+        showMessage(now, buf, Theme::BAD, BOSS_MESSAGE_MS);
+        enemyPanel.onCast(Theme::BAD, true);
+        sound.playBoss();
     }
 
     // A drop outranks the kill sound: it gets its own fanfare and the big card
