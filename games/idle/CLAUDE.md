@@ -40,7 +40,7 @@ tools/sim/test.sh             # Logic tests: save slots, zone changes, saturatio
 
 Elapsed time uses unsigned subtraction (`now - last`), deadlines a signed difference (`(long)(now - deadline) >= 0`), so both survive `millis()` rollover. Deadlines are pushed from `now` (`deadline = now + interval`), never accumulated, to avoid catch-up bursts.
 
-**Global declaration order matters:** `Achievements`/`Unlocks`/`Inventory`/`Ascension` → `GameState` → `CombatState`, since each holds references to the earlier ones.
+**Global declaration order matters:** `Achievements`/`Unlocks`/`Inventory`/`Ascension`/`Journal` → `GameState` → `CombatState`, since each holds references to the earlier ones.
 
 ### Screens
 `ScreenManager` cycles through screens in `addScreen()` order: Mining → Buildings → Upgrade → Awards → Zones → Combat → Inventory → Ascend. All but Mining start locked; `src/game/Unlocks.h` opens them one at a time and `applyUnlocks()` in `main.cpp` maps features to screens. Zones and Combat must unlock together (entering a zone jumps to the next screen).
@@ -79,7 +79,8 @@ A big screen can group elements into a plain class with `addTo(Screen &)`/`setVi
 - **`Inventory`** — one byte per item (0 = not owned, else level; duplicates level up) plus the equipped item per slot.
 - **`CombatState`** — current zone, HP, cooldowns, kills, drops, spells.
 - **`Ascension`** — what survives an ascension besides awards and items: the past runs' gold (points are `cbrt` of the lifetime total, see `AscensionConfig.h`) and the talent levels. Its production share multiplies the other production bonuses (`GameState::applyProductionBonus`).
-- **`Achievements`**, **`Unlocks`** and **`Ascension`** hold **no references**: they take the other states as `evaluate()` arguments, which avoids a dependency cycle with `GameState`.
+- **`Journal`** — records an ascension would otherwise wipe: past runs' clicks, kills and veins, boss kills, best click streak, play time, and the last five ascensions. `ascendGame()` calls `bankRun()` before capturing the save.
+- **`Achievements`**, **`Unlocks`**, **`Ascension`** and **`Journal`** hold **no references**: they take the other states as `evaluate()` arguments, which avoids a dependency cycle with `GameState`.
 - **`Stats.h`** `resolvePlayerStats()` is the single source of the player's attack/defense/HP.
 
 ### Combat balance
@@ -92,7 +93,7 @@ Enemy tables are tuned so **a zone's defense sits at 1.2-1.5x the attack the pla
 
 `AutoSaver` writes every 60 s, brought forward to 5 s on a milestone (`milestoneSignature()`), and skips byte-identical blobs. The interval is a flash-wear budget; don't shorten it casually.
 
-**Snapshots stay POD: primitives and indices into the config tables, never a `String` or pointer.** Adding a field means bumping `SAVE_VERSION`; adding a table row is caught by the `layout` fingerprint. A mismatched save is discarded, with no migration.
+**Snapshots stay POD: primitives and indices into the config tables, never a `String` or pointer.** Adding a field means bumping `SAVE_VERSION`; adding a table row is caught by the `layout` fingerprint. A mismatched save is discarded; the only migrations are the ones in `makeUsable()`/`readSlotBeforeJournal()` (a version 10 slot is today's blob cut before `journal`, so new snapshots go at the end of `SaveBlob` when they can).
 
 Reset: hold Up + Down while powering on, or for 3 s in game (`checkResetGesture()`), which opens the reset `ConfirmScreen`; Yes erases the save and calls `ESP.restart()`.
 

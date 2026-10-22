@@ -27,9 +27,9 @@ static uint64_t parseAmount(const char *text)
 }
 
 DevConsole::DevConsole(GameState &game, Inventory &inventory, CombatState &combat, Achievements &achievements,
-                       Unlocks &unlocks, Ascension &ascension, void (*changed)())
+                       Unlocks &unlocks, Ascension &ascension, Journal &journal, void (*changed)())
     : game(game), inventory(inventory), combat(combat), achievements(achievements), unlocks(unlocks),
-      ascension(ascension), changed(changed), length(0)
+      ascension(ascension), journal(journal), changed(changed), length(0)
 {
 }
 
@@ -56,12 +56,12 @@ void DevConsole::update()
 
 void DevConsole::capture()
 {
-    captureSave(blob, game, inventory, combat, achievements, unlocks, ascension);
+    captureSave(blob, game, inventory, combat, achievements, unlocks, ascension, journal);
 }
 
 void DevConsole::apply()
 {
-    applySave(blob, game, inventory, combat, achievements, unlocks, ascension);
+    applySave(blob, game, inventory, combat, achievements, unlocks, ascension, journal);
     changed();
 }
 
