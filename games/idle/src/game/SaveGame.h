@@ -8,7 +8,6 @@
 #include "Achievements.h"
 #include "Unlocks.h"
 #include "Ascension.h"
-#include "Journal.h"
 
 // The whole save is one raw blob in NVS (Preferences). That only works because every
 // Snapshot holds primitives and indices into the constexpr config tables, never a
@@ -17,7 +16,7 @@
 // Adding a field to any Snapshot changes the layout, so bump SAVE_VERSION. Adding a row
 // to a config table changes it too, but `layout` already catches that: a save whose
 // version or layout does not match is ignored and the game starts fresh.
-static const uint16_t SAVE_VERSION = 11;
+static const uint16_t SAVE_VERSION = 10;
 
 struct SaveBlob
 {
@@ -29,7 +28,6 @@ struct SaveBlob
     Achievements::Snapshot achievements;
     Unlocks::Snapshot unlocks;
     Ascension::Snapshot ascension;
-    Journal::Snapshot journal; // Last, so a version 10 save is this blob without it
 };
 
 // Player preferences, under a key of their own so changing one never touches the save's
@@ -48,7 +46,7 @@ void saveSettings(const Settings &in);
 // checksum (and the unchanged-save check) only see real data.
 void captureSave(SaveBlob &blob, const GameState &game, const Inventory &inventory,
                  const CombatState &combat, const Achievements &achievements, const Unlocks &unlocks,
-                 const Ascension &ascension, const Journal &journal);
+                 const Ascension &ascension);
 
 // Turns a captured save into the start of the next run: the gold, buildings, upgrades,
 // mining and zone progress go back to a new game's, while the items, awards, opened
@@ -58,7 +56,7 @@ void clearRun(SaveBlob &blob);
 // Restores the live state, in dependency order: combat re-enters its zone, which reads
 // the player's stats from the inventory and the upgrades in the game state.
 void applySave(const SaveBlob &blob, GameState &game, Inventory &inventory, CombatState &combat,
-               Achievements &achievements, Unlocks &unlocks, Ascension &ascension, Journal &journal);
+               Achievements &achievements, Unlocks &unlocks, Ascension &ascension);
 
 // Both return false on any failure; loadGame also rejects a save that is the wrong size,
 // fails its checksum, or has another version or layout, leaving `blob` unusable.
@@ -73,8 +71,7 @@ class AutoSaver
 {
 public:
     AutoSaver(const GameState &game, const Inventory &inventory, const CombatState &combat,
-              const Achievements &achievements, const Unlocks &unlocks, const Ascension &ascension,
-              const Journal &journal);
+              const Achievements &achievements, const Unlocks &unlocks, const Ascension &ascension);
 
     // Called once the state is loaded, with the blob it came from (nullptr for a new game)
     void begin(unsigned long now, const SaveBlob *loaded);
@@ -89,7 +86,6 @@ private:
     const Achievements &achievements;
     const Unlocks &unlocks;
     const Ascension &ascension;
-    const Journal &journal;
 
     SaveBlob buffer;
     SaveBlob lastSaved;

@@ -13,7 +13,7 @@ class DevConsole
 public:
     // `changed` runs after every edit, to relock the screens and repaint
     DevConsole(GameState &game, Inventory &inventory, CombatState &combat, Achievements &achievements,
-               Unlocks &unlocks, Ascension &ascension, Journal &journal, void (*changed)());
+               Unlocks &unlocks, Ascension &ascension, void (*changed)());
 
     void update();
 
@@ -24,7 +24,6 @@ private:
     Achievements &achievements;
     Unlocks &unlocks;
     Ascension &ascension;
-    Journal &journal;
     void (*changed)();
     char line[48];
     uint8_t length;

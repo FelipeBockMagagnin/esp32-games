@@ -37,7 +37,6 @@ public:
     // Returns the gold gained (whole units); leveledUp is set on a level-up
     uint64_t mine(bool &leveledUp, unsigned long now);
     uint32_t getComboPercent(unsigned long now) const; // Bonus the next click would get
-    uint16_t getClickStreak() const { return comboCount; } // Clicks in the latest streak, talent or not
     uint32_t getXpPerClick() const;
     uint32_t getDoubleMinePercent() const; // Capped chances from the items worn
     uint32_t getDoubleXpPercent() const;

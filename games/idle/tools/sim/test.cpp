@@ -40,17 +40,16 @@ struct World
     Unlocks unlocks;
     Inventory inventory;
     Ascension ascension;
-    Journal journal;
     GameState game{inventory, achievements, ascension};
     CombatState combat{game, inventory};
 
     void capture(SaveBlob &blob) const
     {
-        captureSave(blob, game, inventory, combat, achievements, unlocks, ascension, journal);
+        captureSave(blob, game, inventory, combat, achievements, unlocks, ascension);
     }
     void apply(const SaveBlob &blob)
     {
-        applySave(blob, game, inventory, combat, achievements, unlocks, ascension, journal);
+        applySave(blob, game, inventory, combat, achievements, unlocks, ascension);
     }
 };
 
@@ -230,78 +229,6 @@ static void testSaveBeforePaletteLoads()
     CHECK(loadGame(read));
     CHECK(read.game.gold == old.game.gold);
     CHECK(read.ascension.talentLevels[TALENT_PALETTE] == 0);
-}
-
-static uint32_t fnv(const void *data, size_t len, uint32_t hash = 2166136261u)
-{
-    for (size_t i = 0; i < len; i++)
-    {
-        hash = (hash ^ ((const uint8_t *)data)[i]) * 16777619u;
-    }
-    return hash;
-}
-
-// A version 10 slot is today's blob cut before the journal, with its own size in the layout
-static void testSaveBeforeJournalLoads()
-{
-    puts("a save from before the Journal loads with empty records");
-    Preferences::store.clear();
-    eraseSave();
-
-    World w;
-    w.game.addGold(77);
-    SaveBlob blob;
-    w.capture(blob);
-    const size_t oldSize = (offsetof(SaveBlob, journal) + 7) / 8 * 8;
-    blob.version = 10;
-    const uint32_t sizes[] = {
-        (uint32_t)oldSize, BUILDING_COUNT, GOLD_UPGRADE_COUNT, ITEM_COUNT,
-        EQUIP_SLOT_COUNT, ZONE_COUNT, ACHIEVEMENT_COUNT, FEATURE_COUNT, (uint32_t)TALENT_COUNT};
-    blob.layout = fnv(sizes, sizeof(sizes));
-
-    std::vector<uint8_t> slot(oldSize + 8, 0);
-    memcpy(slot.data(), &blob, offsetof(SaveBlob, journal));
-    uint32_t sequence = 3;
-    memcpy(slot.data() + oldSize, &sequence, 4);
-    uint32_t crc = fnv(slot.data(), oldSize + 4);
-    memcpy(slot.data() + oldSize + 4, &crc, 4);
-    Preferences prefs;
-    prefs.begin("idlegame");
-    prefs.putBytes("save0", slot.data(), slot.size());
-
-    SaveBlob read;
-    CHECK(loadGame(read));
-    CHECK(read.version == SAVE_VERSION);
-    CHECK(read.game.gold == 77);
-    CHECK(read.journal.runCount == 0 && read.journal.pastClicks == 0);
-
-    // The next write goes to the other slot, a full-size one
-    CHECK(saveGame(read));
-    SaveBlob again;
-    CHECK(loadGame(again));
-    CHECK(sameBlob(again, read));
-}
-
-static void testJournalBanksARun()
-{
-    puts("the journal counts play time and banks a run's totals");
-    World w;
-    bool leveled;
-    w.journal.update(1000, w.game, w.combat);
-    for (unsigned long t = 1000; t < 1500; t += 100)
-    {
-        w.game.mine(leveled, t);
-    }
-    w.journal.update(4600, w.game, w.combat);
-    CHECK(w.journal.getRunSeconds() == 3);
-    CHECK(w.journal.getBestStreak() == 5);
-
-    w.journal.bankRun(w.game, w.combat, 7);
-    CHECK(w.journal.getRunSeconds() == 0);
-    CHECK(w.journal.getTotalSeconds() == 3);
-    CHECK(w.journal.getRunCount() == 1);
-    CHECK(w.journal.getRun(0).points == 7 && w.journal.getRun(0).seconds == 3);
-    CHECK(w.journal.getLifetimeClicks(w.game) == 10); // Banked 5, and the run still holds its 5
 }
 
 // Settings saved before the theme field existed keep their values and read theme 0
@@ -677,8 +604,6 @@ int main()
     testLegacySaveMigrates();
     testShortSettingsLoad();
     testSaveBeforePaletteLoads();
-    testSaveBeforeJournalLoads();
-    testJournalBanksARun();
     testZoneHopKeepsHealth();
     testNewItemDropsMoreOften();
     testNextPointSaturates();

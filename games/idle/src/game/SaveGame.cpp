@@ -10,16 +10,6 @@ static const char *const KEY_SLOTS[2] = {"save0", "save1"};
 static const char *const KEY_LEGACY_BLOB = "blob";
 static const char *const KEY_LEGACY_CRC = "crc";
 
-// The save before the Journal: the same blob up to it, so it loads with the records empty
-static const uint16_t SAVE_VERSION_BEFORE_JOURNAL = 10;
-static const size_t BLOB_SIZE_BEFORE_JOURNAL = offsetof(SaveBlob, journal);
-struct StoredSaveBeforeJournal
-{
-    uint8_t blob[(BLOB_SIZE_BEFORE_JOURNAL + 7) / 8 * 8]; // SaveBlob was 8-byte aligned
-    uint32_t sequence;
-    uint32_t crc;
-};
-
 struct StoredSave
 {
     SaveBlob blob;
@@ -29,7 +19,6 @@ struct StoredSave
 
 // Static rather than on the loop task's stack; only one save or load runs at a time
 static StoredSave stored;
-static StoredSaveBeforeJournal storedBeforeJournal;
 static uint32_t lastSequence = 0;
 // Always the slot other than the one the live save came from, so a torn write never
 // takes the last good copy with it
@@ -51,15 +40,13 @@ static uint32_t checksum(const void *data, size_t len)
 
 // Changes whenever a config table gains or loses a row, which shifts every snapshot
 // after it, even when SAVE_VERSION was not bumped
-static uint32_t layoutFingerprint(uint32_t talentCount = TALENT_COUNT, uint32_t blobSize = sizeof(SaveBlob))
+static uint32_t layoutFingerprint(uint32_t talentCount = TALENT_COUNT)
 {
     const uint32_t sizes[] = {
-        blobSize, BUILDING_COUNT, GOLD_UPGRADE_COUNT, ITEM_COUNT,
+        (uint32_t)sizeof(SaveBlob), BUILDING_COUNT, GOLD_UPGRADE_COUNT, ITEM_COUNT,
         EQUIP_SLOT_COUNT, ZONE_COUNT, ACHIEVEMENT_COUNT, FEATURE_COUNT, talentCount};
     return checksum(sizes, sizeof(sizes));
 }
-
-
 
 // Palette, the last talent, took a byte the snapshot already padded, and captureSave zeroes
 // padding: a save from before it reads as Palette level 0
@@ -70,7 +57,7 @@ static_assert(sizeof(Ascension::Snapshot) == ((8 + 2 + TALENT_COUNT - 1 + 7) / 8
 
 void captureSave(SaveBlob &blob, const GameState &game, const Inventory &inventory,
                  const CombatState &combat, const Achievements &achievements, const Unlocks &unlocks,
-                 const Ascension &ascension, const Journal &journal)
+                 const Ascension &ascension)
 {
     memset(&blob, 0, sizeof(blob));
     blob.version = SAVE_VERSION;
@@ -81,7 +68,6 @@ void captureSave(SaveBlob &blob, const GameState &game, const Inventory &invento
     achievements.save(blob.achievements);
     unlocks.save(blob.unlocks);
     ascension.save(blob.ascension);
-    journal.save(blob.journal);
 }
 
 void clearRun(SaveBlob &blob)
@@ -91,9 +77,8 @@ void clearRun(SaveBlob &blob)
 }
 
 void applySave(const SaveBlob &blob, GameState &game, Inventory &inventory, CombatState &combat,
-               Achievements &achievements, Unlocks &unlocks, Ascension &ascension, Journal &journal)
+               Achievements &achievements, Unlocks &unlocks, Ascension &ascension)
 {
-    journal.load(blob.journal);
     ascension.load(blob.ascension);
     inventory.load(blob.inventory);
     achievements.load(blob.achievements);
@@ -152,39 +137,6 @@ bool saveGame(const SaveBlob &blob)
     return ok;
 }
 
-static bool readSlot(Preferences &prefs, const char *key)
-{
-    return prefs.getBytesLength(key) == sizeof(stored) && prefs.getBytes(key, &stored, sizeof(stored)) == sizeof(stored) &&
-           stored.crc == checksum(&stored, offsetof(StoredSave, crc));
-}
-
-// Reads a slot written before the Journal into `stored`, with the records empty and the
-// layout brought up to date; makeUsable() still checks the version
-static bool readSlotBeforeJournal(Preferences &prefs, const char *key)
-{
-    StoredSaveBeforeJournal &old = storedBeforeJournal;
-    if (prefs.getBytesLength(key) != sizeof(old) || prefs.getBytes(key, &old, sizeof(old)) != sizeof(old) ||
-        old.crc != checksum(&old, offsetof(StoredSaveBeforeJournal, crc)))
-    {
-        return false;
-    }
-    memset(&stored, 0, sizeof(stored));
-    memcpy(&stored.blob, old.blob, BLOB_SIZE_BEFORE_JOURNAL);
-    stored.sequence = old.sequence;
-    for (uint32_t talents : {(uint32_t)TALENT_COUNT, TALENTS_BEFORE_PALETTE})
-    {
-        if (stored.blob.layout == layoutFingerprint(talents, sizeof(old.blob)))
-        {
-            stored.blob.layout = layoutFingerprint();
-        }
-    }
-    if (stored.blob.version == SAVE_VERSION_BEFORE_JOURNAL)
-    {
-        stored.blob.version = SAVE_VERSION;
-    }
-    return true;
-}
-
 bool loadGame(SaveBlob &blob)
 {
     Preferences prefs;
@@ -198,7 +150,9 @@ bool loadGame(SaveBlob &blob)
     for (uint8_t slot = 0; slot < 2; slot++)
     {
         const char *key = KEY_SLOTS[slot];
-        if (!prefs.isKey(key) || !(readSlot(prefs, key) || readSlotBeforeJournal(prefs, key)))
+        if (!prefs.isKey(key) || prefs.getBytesLength(key) != sizeof(stored) ||
+            prefs.getBytes(key, &stored, sizeof(stored)) != sizeof(stored) ||
+            stored.crc != checksum(&stored, offsetof(StoredSave, crc)))
         {
             continue;
         }
@@ -278,15 +232,13 @@ static const unsigned long SAVE_INTERVAL_MS = 60000;
 static const unsigned long SAVE_SOON_MS = 5000;
 
 AutoSaver::AutoSaver(const GameState &game, const Inventory &inventory, const CombatState &combat,
-                     const Achievements &achievements, const Unlocks &unlocks, const Ascension &ascension,
-                     const Journal &journal)
+                     const Achievements &achievements, const Unlocks &unlocks, const Ascension &ascension)
     : game(game),
       inventory(inventory),
       combat(combat),
       achievements(achievements),
       unlocks(unlocks),
       ascension(ascension),
-      journal(journal),
       buffer(),
       lastSaved(),
       nextSaveAt(0),
@@ -333,7 +285,7 @@ void AutoSaver::update(unsigned long now)
 
     nextSaveAt = now + SAVE_INTERVAL_MS;
     savedMilestones = milestones;
-    captureSave(buffer, game, inventory, combat, achievements, unlocks, ascension, journal);
+    captureSave(buffer, game, inventory, combat, achievements, unlocks, ascension);
     // Nothing moved since the last write (no production yet): spare the flash
     if (memcmp(&buffer, &lastSaved, sizeof(SaveBlob)) == 0)
     {

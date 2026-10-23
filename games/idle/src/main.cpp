@@ -50,7 +50,6 @@ Achievements achievements;
 Unlocks unlocks;
 Inventory inventory;
 Ascension ascension;
-Journal journal;
 GameState game(inventory, achievements, ascension);
 CombatState combat(game, inventory);
 SoundManager sound(BUZZER_PIN);
@@ -91,13 +90,13 @@ uint8_t seenUnlocks = 0;
 // Unlock notice the loop last saw, so its sound plays once when it appears
 const char *shownUnlockNotice = nullptr;
 
-AutoSaver autoSaver(game, inventory, combat, achievements, unlocks, ascension, journal);
+AutoSaver autoSaver(game, inventory, combat, achievements, unlocks, ascension);
 // Holds the save read at boot, and the one an ascension writes
 SaveBlob saveBuffer;
 
 #ifdef DEV_MODE
 void devChanged();
-DevConsole devConsole(game, inventory, combat, achievements, unlocks, ascension, journal, devChanged);
+DevConsole devConsole(game, inventory, combat, achievements, unlocks, ascension, devChanged);
 #endif
 
 // tone() drives LEDC channel 0, and channel 1 shares its timer
@@ -165,11 +164,9 @@ void showAscension()
 // loses the ascension, never the run.
 void ascendGame()
 {
-    uint32_t points = ascension.getPendingPoints(game.getTotalGoldEarned());
     if (ascension.ascend(game.getTotalGoldEarned()))
     {
-        journal.bankRun(game, combat, points);
-        captureSave(saveBuffer, game, inventory, combat, achievements, unlocks, ascension, journal);
+        captureSave(saveBuffer, game, inventory, combat, achievements, unlocks, ascension);
         clearRun(saveBuffer);
         if (!saveGame(saveBuffer))
         {
@@ -337,7 +334,7 @@ bool loadOrReset()
     }
     if (loadGame(saveBuffer))
     {
-        applySave(saveBuffer, game, inventory, combat, achievements, unlocks, ascension, journal);
+        applySave(saveBuffer, game, inventory, combat, achievements, unlocks, ascension);
         Serial.println("Save loaded");
         return true;
     }
@@ -476,7 +473,6 @@ void loop()
     // Game progress runs every loop, whichever screen is visible
     game.update(now);
     combat.update(now);
-    journal.update(now, game, combat);
 
     // Achievements can unlock from anything, so they are checked centrally and the
     // notice is handed to whichever screen is open rather than to a specific one
