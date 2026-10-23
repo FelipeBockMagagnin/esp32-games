@@ -21,7 +21,6 @@
 #include "screens/ZoneScreen.h"
 #include "screens/AchievementScreen.h"
 #include "screens/AscendScreen.h"
-#include "screens/JournalScreen.h"
 #include "screens/ConfirmScreen.h"
 #include "screens/SettingsScreen.h"
 #include "screens/SplashScreen.h"
@@ -64,7 +63,6 @@ BuildingScreen buildingScreen(game, sound);
 UpgradeScreen upgradeScreen(game, sound);
 ZoneScreen zoneScreen(game, inventory, combat, sound, screenManager);
 AchievementScreen achievementScreen(achievements, game, inventory, combat, sound);
-JournalScreen journalScreen(game, inventory, combat, achievements, ascension, journal, sound);
 
 // Not in the rotation: modals, the first opened by holding Up and Down (see checkResetGesture)
 // or from Settings, which holding Left opens (see checkSettingsGesture)
@@ -354,8 +352,6 @@ void applyUnlocks()
     screenManager.setLocked(&upgradeScreen, !unlocks.isUnlocked(Feature::UPGRADES));
     screenManager.setLocked(&achievementScreen, !unlocks.isUnlocked(Feature::AWARDS));
     screenManager.setLocked(&inventoryScreen, !unlocks.isUnlocked(Feature::INVENTORY));
-    // Joins with the Inventory, right after it, once there is a bestiary to fill
-    screenManager.setLocked(&journalScreen, !unlocks.isUnlocked(Feature::INVENTORY));
     screenManager.setLocked(&ascendScreen, !unlocks.isUnlocked(Feature::ASCEND));
     // Zones and Combat open together: entering a zone jumps straight to the next screen
     screenManager.setLocked(&zoneScreen, !unlocks.isUnlocked(Feature::COMBAT));
@@ -409,7 +405,6 @@ void setup()
     screenManager.addScreen(&zoneScreen, "Zones", true);
     screenManager.addScreen(&combatScreen, "Combat", true);
     screenManager.addScreen(&inventoryScreen, "Inventory", true);
-    screenManager.addScreen(&journalScreen, "Journal", true);
     screenManager.addScreen(&ascendScreen, "Ascend", true);
     applyUnlocks();
     seenUnlocks = unlocks.getRevision();

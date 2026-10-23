@@ -10,7 +10,7 @@ class Achievements;
 
 // The screens a new player has not reached yet. A fresh game shows only Mining, and
 // each of these opens when the player first has a use for it, one at a time, so the
-// game introduces itself a piece at a time instead of every screen on boot.
+// game introduces itself a piece at a time instead of all eight screens on boot.
 // Declared in unlock order: each one also waits for the one before it.
 enum class Feature : uint8_t
 {
