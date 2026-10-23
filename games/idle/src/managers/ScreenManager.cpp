@@ -1,11 +1,7 @@
 #include "ScreenManager.h"
-#include "../ui/Header.h"
-
-static const unsigned long SWEEP_MS = 110;
-static const int16_t SWEEP_EDGE = 3;
 
 ScreenManager::ScreenManager(TFT_eSPI &display)
-    : tft(display), currentIndex(-1), modal(nullptr), sweepDirection(0), sweepStart(0), sweptCols(0)
+    : tft(display), currentIndex(-1), modal(nullptr)
 {
 }
 
@@ -78,18 +74,12 @@ void ScreenManager::refreshNavLabels()
 
 void ScreenManager::setScreen(int index)
 {
-    startScreen(index, 0);
-}
-
-void ScreenManager::startScreen(int index, int direction)
-{
     if (modal != nullptr || index < 0 || index >= (int)screens.size() || index == currentIndex)
     {
         return;
     }
 
-    bool hadScreen = currentIndex >= 0 && currentIndex < (int)screens.size();
-    if (hadScreen)
+    if (currentIndex >= 0 && currentIndex < (int)screens.size())
     {
         screens[currentIndex]->onExit();
     }
@@ -97,51 +87,6 @@ void ScreenManager::startScreen(int index, int direction)
     currentIndex = index;
     // Labels first, so the header's first draw after the switch already has them
     refreshNavLabels();
-    if (!hadScreen || direction == 0)
-    {
-        sweepDirection = 0;
-        screens[currentIndex]->onEnter(tft);
-        return;
-    }
-    if (sweepDirection == 0)
-    {
-        sweepStart = millis();
-        sweptCols = 0;
-    }
-    sweepDirection = (int8_t)direction;
-}
-
-// The body clears from the side the player is heading to, with a lit leading edge
-void ScreenManager::advanceSweep(unsigned long now)
-{
-    unsigned long age = now - sweepStart;
-    int16_t target = age >= SWEEP_MS ? TFT_WIDTH : (int16_t)(TFT_WIDTH * (int32_t)age / SWEEP_MS);
-    int16_t top = Header::HEIGHT;
-    int16_t height = TFT_HEIGHT - top;
-    uint16_t bg = screens[currentIndex]->getBgColor();
-    if (target <= sweptCols)
-    {
-        return;
-    }
-    if (target >= TFT_WIDTH)
-    {
-        finishSweep();
-        return;
-    }
-    int16_t x = sweepDirection > 0 ? TFT_WIDTH - target : sweptCols;
-    tft.fillRect(x, top, target - sweptCols, height, bg);
-    sweptCols = target;
-    int16_t edge = sweepDirection > 0 ? TFT_WIDTH - sweptCols - SWEEP_EDGE : sweptCols;
-    tft.fillRect(edge, top, SWEEP_EDGE, height, Theme::SELECT);
-}
-
-void ScreenManager::finishSweep()
-{
-    if (sweepDirection == 0)
-    {
-        return;
-    }
-    sweepDirection = 0;
     screens[currentIndex]->onEnter(tft);
 }
 
@@ -152,7 +97,7 @@ void ScreenManager::nextScreen()
         return;
     }
 
-    startScreen(stepFrom(currentIndex, 1), 1);
+    setScreen(stepFrom(currentIndex, 1));
 }
 
 void ScreenManager::previousScreen()
@@ -162,7 +107,7 @@ void ScreenManager::previousScreen()
         return;
     }
 
-    startScreen(stepFrom(currentIndex, -1), -1);
+    setScreen(stepFrom(currentIndex, -1));
 }
 
 void ScreenManager::openModal(Screen *screen)
@@ -171,8 +116,6 @@ void ScreenManager::openModal(Screen *screen)
     {
         return;
     }
-    // Unpainted, the screen under the modal would come back half swept when it closes
-    sweepDirection = 0;
 
     if (currentIndex >= 0 && currentIndex < (int)screens.size())
     {
@@ -213,7 +156,6 @@ void ScreenManager::replaceModal(Screen *screen)
 
 void ScreenManager::repaint()
 {
-    finishSweep();
     Screen *screen = getCurrentScreen();
     if (screen != nullptr)
     {
@@ -246,11 +188,6 @@ int ScreenManager::getScreenCount() const
 
 void ScreenManager::update(unsigned long now)
 {
-    if (sweepDirection != 0)
-    {
-        advanceSweep(now);
-        return;
-    }
     Screen *screen = getCurrentScreen();
     if (screen != nullptr)
     {
@@ -262,7 +199,6 @@ void ScreenManager::update(unsigned long now)
 
 void ScreenManager::handleConfirmPress()
 {
-    finishSweep();
     Screen *screen = getCurrentScreen();
     if (screen != nullptr)
     {
@@ -273,12 +209,11 @@ void ScreenManager::handleConfirmPress()
 bool ScreenManager::handleConfirmRepeat()
 {
     Screen *screen = getCurrentScreen();
-    return sweepDirection == 0 && screen != nullptr && screen->onConfirmRepeat();
+    return screen != nullptr && screen->onConfirmRepeat();
 }
 
 void ScreenManager::handleUpPress()
 {
-    finishSweep();
     Screen *screen = getCurrentScreen();
     if (screen != nullptr)
     {
@@ -288,7 +223,6 @@ void ScreenManager::handleUpPress()
 
 void ScreenManager::handleDownPress()
 {
-    finishSweep();
     Screen *screen = getCurrentScreen();
     if (screen != nullptr)
     {
@@ -298,12 +232,6 @@ void ScreenManager::handleDownPress()
 
 bool ScreenManager::handleBackPress()
 {
-    // Mid-sweep the new screen has not shown yet, so it has no sub-list to back out of
-    if (sweepDirection != 0)
-    {
-        previousScreen();
-        return false;
-    }
     // The current screen gets first refusal (e.g. inventory sub-list)
     Screen *screen = getCurrentScreen();
     if (screen != nullptr && screen->onBackPress())

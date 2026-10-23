@@ -16,17 +16,8 @@ private:
     int currentIndex;
     Screen *modal; // Shown over the rotation, outside it; takes every input while open
 
-    // A screen change sweeps the old body away before the new screen paints. currentIndex
-    // already names the new screen meanwhile, so a second press skips on without painting it.
-    int8_t sweepDirection; // 0 when no sweep runs
-    unsigned long sweepStart;
-    int16_t sweptCols;
-
     int stepFrom(int index, int direction) const; // Next unlocked screen that way, or index itself
     void refreshNavLabels();
-    void startScreen(int index, int direction);
-    void advanceSweep(unsigned long now);
-    void finishSweep();
 
 public:
     ScreenManager(TFT_eSPI &display);
