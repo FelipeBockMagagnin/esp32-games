@@ -176,9 +176,9 @@ const HEADER_Y = 66.3, ROW1 = 7.8, ROW2 = 7.8 + 25.4, ESP_X0 = 8.5, PITCH = 2.54
 const DPAD = { x: 31, y: 84.8, step: 10.5 };
 const HOLES = [[3, 3], [59, 3], [3.5, 96.5], [58.5, 96.5]];
 const SWITCH_H = 5;
-const BUZZER_H = 10;
+const BUZZER_H = 10, BUZZER_AIR = 1;
 // Case
-const FLOOR_TOP = -(GAP + T + ESP.parts) - 1.2, FLOOR_T = 1.6, WALL = 2, CGAP = 0.5;
+const FLOOR_TOP = Math.min(-(GAP + T + ESP.parts) - 1.2, -BUZZER_H - BUZZER_AIR), FLOOR_T = 1.6, WALL = 2, CGAP = 0.5;
 const DISPLAY_TOP = T + GAP + DISP.thick, PLATE_BOT = DISPLAY_TOP + 0.2, PLATE_T = 1.6;
 const WINDOW = [46, 62], CAP_D = 8.5;
 
@@ -479,9 +479,8 @@ const screwHeads = HOLES.map(([x, y]) => {
   const outline = (d) => roundedRect(new THREE.Shape(), -d, top - d, W + 2 * d, len + 2 * d, CORNER + d);
   const floorBot = FLOOR_TOP - FLOOR_T, outer = CGAP + WALL;
   const floor = outline(outer);
-  const bzHole = new THREE.Path(); bzHole.absarc(9, 50, 6.5, 0, Math.PI * 2, true); floor.holes.push(bzHole);
   slab(G.caseBottom, M.caseB, floor, floorBot, FLOOR_T, 'Bandeja (case_bottom.stl)',
-    'A PCB é parafusada nela e a ESP32 fica pendurada dentro. Fundo 1,2 mm abaixo da peça mais baixa da ESP, com um furo de 13 mm onde o buzzer se encaixa.');
+    'A PCB é parafusada nela e a ESP32 e o buzzer ficam pendurados dentro. Fundo fechado, 1 mm abaixo do buzzer, a peça mais baixa.');
   const wallShape = outline(outer); wallShape.holes.push(outline(CGAP));
   const usbZ = -(GAP + T + 1.6), usbZ0 = Math.max(usbZ - 4, floorBot + 0.6), usbZ1 = usbZ + 4;
   // Walls in three bands so the left wall can carry the USB opening
@@ -688,9 +687,8 @@ function update() {
   // 4. Back side: tallest part vs the ESP stack and the case floor
   const espLow = GAP + T + ESP.parts;
   out.push(check('ok', 'Peças do verso × ESP32', `Q1 desce ${mm(5.5)} e a ESP32 ${mm(espLow)}. O buzzer desce ${mm(BUZZER_H)} e é o único que passa dela.`));
-  const floorOut = -FLOOR_TOP + FLOOR_T;
-  out.push(check(BUZZER_H < floorOut ? 'ok' : 'bad', 'Buzzer × fundo da bandeja',
-    `Passa ${mm(BUZZER_H + FLOOR_TOP)} do topo do fundo e se encaixa no furo de 13 mm, ficando ${mm(floorOut - BUZZER_H)} para dentro da face de fora.`));
+  out.push(check(BUZZER_H < -FLOOR_TOP ? 'ok' : 'bad', 'Buzzer × fundo da bandeja',
+    `${mm(-FLOOR_TOP - BUZZER_H)} de ar entre o buzzer e o fundo fechado; o som sai pela abertura do USB e pelos furos dos botões.`));
   out.push(check('ok', 'ESP32 × fundo da bandeja', `${mm(-FLOOR_TOP - espLow)} entre a blindagem do WROOM e o fundo.`));
 
   // 5. Display glass vs the bezel

@@ -7,7 +7,7 @@ Placa portátil de **62×100 mm**, 2 camadas, só com componentes PTH (fáceis d
 
 **O display de 2.8" não cabe inteiro numa placa de 100 mm** acima dos botões. Por isso o conector dele fica na borda de baixo do módulo, logo acima da cruz, e os ~17 mm de cima passam da borda da placa, apoiados em trilhos da case. Assim a PCB continua na faixa de US$ 2.
 
-**O display e a ESP32 vão soldados direto na placa**, sem soquete. Isso deixa a case com **21 mm** de espessura, mas para tirar um deles depois é preciso dessoldar.
+**O display e a ESP32 vão soldados direto na placa**, sem soquete. Isso deixa a case com **23 mm** de espessura, mas para tirar um deles depois é preciso dessoldar.
 
 | Frente | Verso (visto por trás) |
 |---|---|
@@ -125,7 +125,7 @@ O display fica a só 2,5 mm da frente da placa, e a ESP32 a 2,5 mm do verso. Por
 4. **R1 (1 kΩ):** dobre as pernas, encaixe pelo verso e solde pela frente. Não tem polaridade.
 5. **D1 (1N4148):** a faixa preta do diodo vai do lado marcado **K**.
 6. **Q1 (S8050):** as pernas seguem as letras **E B C** impressas. Empurre até o corpo ficar a ~1 mm da placa. Um BC337 (pernas C-B-E) entra girado 180°, com a face plana para o lado oposto ao desenho.
-7. **Buzzer:** a perna **+** vai no pad quadrado (marcado com +). Os furos são oblongos: servem para pernas a 6,5 ou 7,6 mm. Encostado na placa. Com 10 mm de altura, ele passa do fundo da case e se encaixa no furo de 13 mm que há nela.
+7. **Buzzer:** a perna **+** vai no pad quadrado (marcado com +). Os furos são oblongos: servem para pernas a 6,5 ou 7,6 mm. Encostado na placa. Com 10 mm de altura, é a peça mais baixa do verso: a case fica 1 mm abaixo dele.
 8. **C1 (100 µF):** a perna longa (+) vai no pad marcado com **+**. Dobre as pernas a 90° rente ao corpo e deite o capacitor sobre o retângulo "C1" impresso, na direção dos botões.
 9. Corte rente, na frente, as pernas de todos eles: essa área fica embaixo do display.
 
@@ -166,17 +166,28 @@ O display de 2.8" usa o mesmo controlador (ILI9341) e a mesma resolução, entã
 
 ## 7. Case impressa em 3D
 
-Os arquivos estão em `case/`: o modelo paramétrico `case.scad` (OpenSCAD) e três STLs prontos para fatiar.
+Os arquivos estão em `case/`: o modelo paramétrico `case.scad` (OpenSCAD) os STLs prontos para fatiar (as três peças e as partes coloridas da logo) e o `case.3mf`, que junta tudo num arquivo só para mandar imprimir. `brand.scad` guarda a arte da dotcompany em pixels, tirada de `src/assets/png/sprites/splash/`.
 
 ![case](case/preview.png)
 
 | Arquivo | Peça | Como imprimir |
 |---|---|---|
-| `case_bottom.stl` | Bandeja: a PCB é parafusada nela; a ESP32 fica dentro e o buzzer se encaixa num furo do fundo | Fundo na mesa |
-| `case_top.stl` | Moldura com a janela do display e os furos da cruz | **De cabeça para baixo** (face externa na mesa) |
+| `case_bottom.stl` | Bandeja: a PCB é parafusada nela; a ESP32 e o buzzer ficam dentro, com o fundo fechado. Leva o personagem e o nome da dotcompany gravados por fora | Fundo na mesa |
+| `case_top.stl` | Moldura com a janela do display e os furos da cruz, com DOTCOMPANY gravado acima da tela | **De cabeça para baixo** (face externa na mesa) |
 | `case_caps.stl` | 5 botões, que levam o toque da tampa até as chaves | Base na mesa |
 
-**Impressão:** PLA ou PETG, camada de 0,2 mm, 3 perímetros, 20% de preenchimento. Nenhuma peça precisa de suporte. As medidas externas ficam em 67×122×21 mm.
+**Impressão:** PLA ou PETG, camada de 0,2 mm, 3 perímetros, 20% de preenchimento. Nenhuma peça precisa de suporte. As medidas externas ficam em 67×122×23 mm. O fundo é fechado: o som do buzzer sai pela abertura do USB e pelos furos dos botões.
+
+**Logo:** a arte fica gravada 0,6 mm (3 camadas) na face que vai na mesa, então sai sem suporte. Ela tem **três cores**, como o personagem original: capuz, corpo e nomes em preto, o rosto em cinza, e a máscara na cor da própria case (por isso a case fica branca ou cinza bem claro).
+
+- **Impressora multicor** (AMS, MMU, com 3 filamentos): `case_top_logo.stl`, `case_bottom_logo.stl` (preto) e `case_bottom_face.stl` (cinza) preenchem o baixo-relevo. No fatiador, carregue cada peça junto com as partes dela como **um objeto com várias partes** (o fatiador pergunta), para que mantenham a posição. Só as 3 primeiras camadas têm mais de uma cor, então a purga gasta pouco.
+- **Um bico só:** trocar o filamento numa camada não funciona, porque a logo divide as mesmas camadas com o resto da face. Pinte o baixo-relevo com tinta acrílica ou esmalte (rosto cinza, o resto preto) e raspe o excesso com uma espátula.
+
+**Mandar imprimir:** envie só o `case.3mf`. Ele tem as três peças numa mesa só (208×122 mm), já viradas do jeito certo de imprimir, e as partes da logo encaixadas nas suas peças, cada uma com sua cor. Mande junto as instruções, porque nem todo fatiador lê a cor do arquivo:
+
+> Case em 3 peças + botões, tudo no `case.3mf`, já orientado; não precisa de suporte. PLA ou PETG, camada 0,2 mm, 3 perímetros, 20% de preenchimento. Três cores: peças em **branco** (ou cinza bem claro), as partes "Bandeja logo" e "Moldura logo" em **preto** e a parte "Bandeja rosto" em **cinza médio**. As partes coloridas já estão encaixadas nas peças e ocupam só as 3 primeiras camadas (0,6 mm).
+
+Se o serviço só imprimir em uma cor, a logo sai gravada do mesmo jeito; aí peça para ignorar as partes coloridas e pinte depois. Se pedirem STL, mande os seis `case_*.stl` e avise que as partes coloridas têm que ficar na posição original da peça delas.
 
 **Montagem:**
 1. Comece com a placa já montada (ESP32 e display soldados).
@@ -190,9 +201,11 @@ Os arquivos estão em `case/`: o modelo paramétrico `case.scad` (OpenSCAD) e tr
 - `display_thick`: espessura do módulo do display (placa + vidro). O padrão é 4,5 mm.
 - `window` e `display_center`: tamanho e posição da janela, caso a área visível do seu display fique deslocada.
 - `fit`: folga do encaixe da moldura. Aumente para 0,25 se ficar justo demais.
+- `brand_depth`, `word_px`, `char_px`: profundidade da gravação e tamanho de cada pixel do nome e do personagem. Abaixo de 0,6 mm em `word_px`, os vãos de 1 pixel das letras ficam mais finos que o bico e somem.
 
 ```bash
-openscad -D 'part="bottom"' -o case_bottom.stl case.scad   # também: top, caps
+openscad -D 'part="bottom"' -o case_bottom.stl case.scad   # também: top, caps, top_logo, bottom_logo, bottom_face
+python3 export_3mf.py                                        # junta os STLs no case.3mf
 ```
 
 ## Ligações (referência)

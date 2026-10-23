@@ -2,9 +2,10 @@
 // overhangs the board and rests on rails in the tray.
 //
 // Three printed parts:
-//   bottom - tray the PCB screws into; holds the ESP32 hanging off the back
+//   bottom - tray the PCB screws into; holds the ESP32 and the buzzer hanging off the back
 //   top    - bezel with the display window and the D-pad holes; snaps onto the tray
 //   caps   - five button plungers that bridge the gap from the switches to the bezel
+// plus top_logo, bottom_logo and bottom_face, the inlays for printing the logos in colour
 //
 // Export one part at a time:
 //   openscad -D 'part="bottom"' -o case_bottom.stl case.scad
@@ -12,7 +13,7 @@
 // Coordinates: the PCB's front faces +Z, its bottom face is z = 0, and KiCad's y axis
 // (downwards) is flipped so the board's top edge (and the display overhang) is at +Y.
 
-part = "assembly"; // bottom | top | caps | assembly
+part = "assembly"; // bottom | top | caps | top_logo | bottom_logo | bottom_face | assembly
 
 /* [Board] */
 pcb_w = 62;
@@ -39,11 +40,13 @@ display_center = [31, 68.8 - 86 / 2];
 window = [46, 62]; // A little larger than the 43.2x57.6 visible area
 overhang = display_size[1] / 2 - display_center[1]; // Beyond the board's top edge
 
-// KiCad coordinates of the 12 mm buzzer, on the back below the ESP32. At 10 mm tall it
-// reaches past the floor's top, so it sits in a hole through the floor
+// KiCad coordinates of the 12 mm buzzer, on the back below the ESP32. At 10 mm tall it is
+// the lowest part, so it sets the floor; its sound gets out through the USB opening and
+// the button holes, and the air gap under it keeps the floor from muffling it
 buzzer_pos = [9, 50];
 buzzer_d = 12;
 buzzer_h = 10;
+buzzer_air = 1;
 
 /* [Buttons] D-pad centre and spacing, as in generate_pcb.py */
 dpad_y = 84.8;
@@ -73,11 +76,17 @@ rail_w = 3;
 usb_y = 7.8 + 12.7;
 usb_size = [12, 8];
 
+/* [Branding] engraved, so it prints on the bed face of both parts */
+brand_depth = 0.6;
+// The wordmark's 1-pixel counters stay over a nozzle width
+word_px = 0.65;
+char_px = 1.2;
+
 $fn = 48;
 
 // Derived heights
 esp_bottom = -(module_gap + pcb_t + esp_parts);   // Lowest point of the ESP32
-floor_top = esp_bottom - 1.2;
+floor_top = min(esp_bottom - 1.2, -buzzer_h - buzzer_air);
 floor_bot = floor_top - floor_t;
 display_top = pcb_t + module_gap + display_thick;
 plate_bot = display_top + 0.2;
@@ -99,6 +108,27 @@ module outline(d) {
 }
 
 module pcb_outline() { rrect(pcb_w, pcb_h, pcb_corner); }
+
+// The engraved logos, as pockets (e > 0, poking out of the face) or as the inlays that
+// fill them, for printing in a second colour on a multi-material printer
+module front_logo(e = 0) {
+    window_top = ky(display_center)[1] + window[1] / 2 + plate_t;
+    translate([pcb_w / 2, (window_top + case_len + gap + wall) / 2, plate_top - brand_depth])
+        linear_extrude(brand_depth + e) pixel_art(brand_wordmark, word_px);
+}
+
+// Character over the wordmark, mirrored to read from behind.
+// With face, only the character's grey face, the third colour's inlay
+module back_logo(e = 0, face = false) {
+    char_h = len(brand_character) * char_px;
+    word_h = len(brand_wordmark) * word_px;
+    art_gap = 5;
+    translate([pcb_w / 2, case_len / 2, floor_bot - e]) linear_extrude(brand_depth + e) mirror([1, 0]) {
+        translate([0, (art_gap + word_h) / 2])
+            pixel_art(face ? brand_character_face : brand_character, char_px);
+        if (!face) translate([0, -(art_gap + char_h) / 2]) pixel_art(brand_wordmark, word_px);
+    }
+}
 
 module bottom() {
     outer = gap + wall;
@@ -132,8 +162,8 @@ module bottom() {
         usb_z0 = max(usb_z - usb_size[1] / 2, floor_bot + 0.6);
         translate([-10, ky([0, usb_y])[1] - usb_size[0] / 2, usb_z0])
             cube([10, usb_size[0], usb_z + usb_size[1] / 2 - usb_z0]);
-        // Hole the buzzer sits in, which also lets its sound out through the floor
-        translate([each ky(buzzer_pos), floor_bot - 1]) cylinder(h = floor_t + 2, d = buzzer_d + 1);
+        back_logo(0.01);
+        back_logo(0.01, face = true);
     }
 }
 
@@ -158,6 +188,7 @@ module top() {
                 square(window, center = true);
         for (b = buttons)
             translate([each ky(b), plate_bot - 1]) cylinder(h = plate_t + 2, d = cap_d + 0.6);
+        front_logo(0.01);
         // Finger notch on one long side for prying the bezel off
         translate([pcb_w + gap + wall / 2, case_len / 2, tray_top]) cube([wall + 2, 12, 1.6], center = true);
     }
@@ -195,10 +226,14 @@ module ghosts() {
 }
 
 include <components.scad>
+include <brand.scad>
 
 if (part == "bottom") bottom();
 else if (part == "top") top();
 else if (part == "caps") caps();
+else if (part == "top_logo") front_logo();
+else if (part == "bottom_logo") back_logo();
+else if (part == "bottom_face") back_logo(face = true);
 // Parts for the 3D viewer, in their assembled positions
 else if (part == "caps_placed") for (b = buttons) translate([each ky(b), switch_top]) cap();
 else if (part == "header_spacers") header_spacers();
