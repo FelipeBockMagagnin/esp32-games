@@ -3,8 +3,8 @@
 #include "../game/Format.h"
 
 // A new item holds the stage longer than a duplicate that only levelled one up
-static const unsigned long NEW_DROP_MS = 2500;
-static const unsigned long LEVEL_DROP_MS = 1800;
+static const unsigned long NEW_DROP_MS = 3500;
+static const unsigned long LEVEL_DROP_MS = 2800;
 static const unsigned long KILL_MESSAGE_MS = 1500;
 static const unsigned long BOSS_MESSAGE_MS = 2500;
 

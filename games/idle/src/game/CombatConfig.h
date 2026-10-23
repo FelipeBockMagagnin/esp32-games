@@ -22,7 +22,7 @@ inline uint32_t damageThrough(uint32_t attack, uint32_t defense)
 static const unsigned long GUARD_COOLDOWN_MS = 9000;
 static const unsigned long GUARD_DURATION_MS = 3000;
 static const uint8_t GUARD_DAMAGE_PERCENT = 50; // Incoming damage while guarding
-static const unsigned long RESPAWN_MS = 2500; // Long enough to take in a kill and its drop
+static const unsigned long RESPAWN_MS = 4000; // Long enough to take in a kill and read its drop
 static const unsigned long REVIVE_MS = 8000; // Health refills over this long after a death
 static const unsigned long REGEN_TICK_MS = 1000;
 static const uint8_t BOSS_KILL_SECONDS = 3;
