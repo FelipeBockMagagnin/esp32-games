@@ -75,8 +75,8 @@ public:
     uint32_t getAscensionProductionPercent() const;
     // How much ascending now would raise the ascension's production share, in percent of it
     uint32_t getAscendGainPercent() const;
-    // Past ASCEND_SUGGEST_GAIN_PERCENT, or once the run's gold total is full and no more
-    // points can come
+    // Past the suggestion bar (ASCEND_SUGGEST_*), or once the run's gold total is full and
+    // no more points can come
     bool isAscendSuggested() const;
     uint32_t getClickBonusPercent() const;
     // Share of production per second that every click adds on top (CLICK_PRODUCTION

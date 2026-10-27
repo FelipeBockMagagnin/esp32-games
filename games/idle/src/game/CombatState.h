@@ -49,11 +49,12 @@ public:
     // The spell the equipped amulet grants, or nullptr without one
     const SpellDef *getSpell() const;
     // Why castSpell() would refuse right now beyond the cooldown: full health for a heal,
-    // a Midas already armed. Lets the screen grey the button out instead of erroring.
+    // a Midas or Seek already armed. Lets the screen grey the button out instead of erroring.
     bool isSpellUseless() const;
     bool isWarded(unsigned long now) const;
     unsigned long getWardRemaining(unsigned long now) const;
     bool isMidasArmed() const { return midasArmed; }
+    bool isSeekArmed() const { return seekArmed; }
 
     // The worn relics' perks, capped; zero without one
     uint32_t getArmorBreakPerk() const;
@@ -201,6 +202,7 @@ private:
     unsigned long spellReadyAt;
     unsigned long wardEndsAt;
     bool midasArmed;
+    bool seekArmed;
     unsigned long guardReadyAt;
     unsigned long guardEndsAt;
     unsigned long respawnAt;

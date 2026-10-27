@@ -400,18 +400,13 @@ static void testLateGoals()
     w.game.load(game);
     simNow += 1000;
     w.unlocks.evaluate(simNow, w.game, w.inventory, w.combat, w.achievements, false);
-    CHECK(strcmp(w.unlocks.getGoal()->label, "Buy Forest Maps to open Forest") == 0);
+    CHECK(strcmp(w.unlocks.getGoal()->label, "Buy Old Mine Maps to open Old Mine") == 0);
 
-    game.goldUpgradesBought[upgradeIndex("Forest Maps")] = true;
+    game.goldUpgradesBought[upgradeIndex("Old Mine Maps")] = true;
     w.game.load(game);
-    CombatState::Snapshot combat = {};
-    combat.zoneKills[0] = 10;
-    w.combat.load(combat);
     simNow += 1000;
     w.unlocks.evaluate(simNow, w.game, w.inventory, w.combat, w.achievements, false);
-    goal = w.unlocks.getGoal();
-    CHECK(strcmp(goal->label, "Fight in Sewers to open Forest") == 0);
-    CHECK(goal->done == 10 && goal->target == ZONES[1].reqPrevZoneKills);
+    CHECK(strcmp(w.unlocks.getGoal()->label, "Buy Forest Maps to open Forest") == 0);
 }
 
 static void testAwardProduction()
@@ -434,22 +429,23 @@ static void testAwardProduction()
     CHECK(w.game.getProductionBonusPercent() - before == 10 + awardsOwn);
 }
 
-// Dull Stick: attack 5 reaches 6 at Lv 15, click gold 8% reaches 9% at Lv 10 and 10% at Lv 18
+// Dull Stick: attack 5 reaches 6 at Lv 3, 8 at Lv 11 and 9 at Lv 18; click gold 8% reaches
+// 9% at Lv 2, 10% at Lv 3, 11% at Lv 5 and 15% at Lv 21
 static void testNextGain()
 {
     puts("next gain points at the soonest-rising stat");
     const ItemDef &stick = ITEMS[ITEM_DULL_STICK];
     NextGain gain = findNextGain(stick, 1);
-    CHECK(gain.found && gain.kind == STAT_CLICK && gain.levels == 9 && gain.sinceLevel == 1 && gain.change == 1);
-    gain = findNextGain(stick, 10);
-    CHECK(gain.found && gain.kind == STAT_ATTACK && gain.levels == 5 && gain.sinceLevel == 1);
-    gain = findNextGain(stick, 15);
-    CHECK(gain.found && gain.kind == STAT_CLICK && gain.levels == 3 && gain.sinceLevel == 10);
+    CHECK(gain.found && gain.kind == STAT_CLICK && gain.levels == 1 && gain.sinceLevel == 1 && gain.change == 1);
+    gain = findNextGain(stick, 3);
+    CHECK(gain.found && gain.kind == STAT_CLICK && gain.levels == 2 && gain.sinceLevel == 3);
+    gain = findNextGain(stick, 17);
+    CHECK(gain.found && gain.kind == STAT_ATTACK && gain.levels == 1 && gain.sinceLevel == 11);
     CHECK(!findNextGain(stick, ITEM_MAX_LEVEL).found);
 
     char buf[32];
-    formatNextGain(buf, sizeof(buf), findNextGain(stick, 1), STAT_LABELS);
-    CHECK(strcmp(buf, "Click gold +1% in 9 lv") == 0);
+    formatNextGain(buf, sizeof(buf), findNextGain(stick, 3), STAT_LABELS);
+    CHECK(strcmp(buf, "Click gold +1% in 2 lv") == 0);
 }
 
 // Awards that came before Upgrade opened do not open Awards right behind it
@@ -596,6 +592,43 @@ static void testRelicsNeedRelicSense()
     CHECK(w.inventory.getItemLevel(ITEM_EMBER_BLADE) == 2);
 }
 
+static void testDefenseCountsHalfAgainstHits()
+{
+    puts("an enemy's hit loses half the defense; immunity takes twice its attack");
+    CHECK(hurtThrough(100, 60) == 70);
+    CHECK(hurtThrough(100, 199) == 1);
+    CHECK(hurtThrough(100, 200) == 0);
+    CHECK(damageThrough(100, 60) == 40);
+}
+
+static void testSeekRaisesOneKillsDrops()
+{
+    puts("a cast Seek multiplies the next kill's drop chances, then is spent");
+    World w;
+    simNow = 1000;
+    w.inventory.addDrop(ITEM_EMBER_CHARM);
+    w.inventory.equip(ITEM_EMBER_CHARM);
+    w.inventory.addDrop(ITEM_EMBER_BLADE);
+    w.inventory.equip(ITEM_EMBER_BLADE);
+    w.inventory.addDrop(ITEM_DULL_STICK);
+    CHECK(w.combat.enterZone(0, simNow));
+    for (int i = 0; i < 100 && w.combat.getPhase() != CombatState::FIGHTING; i++)
+    {
+        tick(w, 100);
+    }
+    DropDef drop = {ITEM_DULL_STICK, 100};
+    uint16_t plain = w.combat.getDropChanceBp(drop);
+    CHECK(w.combat.castSpell(simNow));
+    CHECK(w.combat.isSeekArmed());
+    CHECK(w.combat.getDropChanceBp(drop) == plain * spellForItem(ITEM_EMBER_CHARM)->power);
+    CHECK(w.combat.isSpellUseless());
+    uint32_t kills = w.combat.getKillEvents();
+    CHECK(strikeWhenReady(w));
+    CHECK(w.combat.getKillEvents() == kills + 1);
+    CHECK(!w.combat.isSeekArmed());
+    CHECK(w.combat.getDropChanceBp(drop) == plain);
+}
+
 int main()
 {
     testSaveRoundTrip();
@@ -618,6 +651,8 @@ int main()
     testWeakPointCrits();
     testFuryNeedsItsPerk();
     testRelicsNeedRelicSense();
+    testSeekRaisesOneKillsDrops();
+    testDefenseCountsHalfAgainstHits();
     printf(failures == 0 ? "all passed\n" : "%d failed\n", failures);
     return failures == 0 ? 0 : 1;
 }

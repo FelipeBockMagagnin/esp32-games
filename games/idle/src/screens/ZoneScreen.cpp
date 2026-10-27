@@ -168,8 +168,7 @@ void ZoneScreen::refreshRows(const Stats &stats)
             }
             else
             {
-                snprintf(buf, sizeof(buf), "%u/%u kills in %s", (unsigned)combat.getZoneKills(id - 1),
-                         (unsigned)zone.reqPrevZoneKills, ZONES[id - 1].name);
+                snprintf(buf, sizeof(buf), "open %s first", ZONES[id - 1].name);
             }
             row.setSubtitle(buf);
             row.setValue("LOCKED");

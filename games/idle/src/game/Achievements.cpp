@@ -66,8 +66,7 @@ uint64_t Achievements::getProgress(const AchievementDef &def, const GameState &g
         uint8_t maxed = 0;
         for (uint8_t i = 0; i < ITEM_COUNT; i++)
         {
-            const ItemDef &item = ITEMS[i];
-            if (item.tier == def.target && isSetPiece(item) && inventory.getItemLevel(i) >= ITEM_MAX_LEVEL)
+            if (isZoneSetPiece(def.target, i) && inventory.getItemLevel(i) >= ITEM_MAX_LEVEL)
             {
                 maxed++;
             }

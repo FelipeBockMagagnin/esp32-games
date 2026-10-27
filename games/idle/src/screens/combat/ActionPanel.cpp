@@ -268,11 +268,11 @@ void ActionPanel::refreshSpell(unsigned long now, bool fighting)
         row.detail.setColor(CombatStyle::ACTIVE);
         return;
     }
-    if (combat.isMidasArmed())
+    if (combat.isMidasArmed() || combat.isSeekArmed())
     {
         snprintf(buf, sizeof(buf), "next kill x%u", (unsigned)spell->power);
         row.detail.setText(buf);
-        row.detail.setColor(Theme::GOLD);
+        row.detail.setColor(combat.isSeekArmed() ? Theme::GOOD : Theme::GOLD);
         return;
     }
     if (left > 0)
@@ -303,6 +303,9 @@ void ActionPanel::refreshSpell(unsigned long now, bool fighting)
         break;
     case SpellEffect::WARD:
         snprintf(buf, sizeof(buf), "block %us", (unsigned)(spell->power / 1000));
+        break;
+    case SpellEffect::SEEK:
+        snprintf(buf, sizeof(buf), "x%u drops", (unsigned)spell->power);
         break;
     }
     row.detail.setText(fighting ? buf : "");

@@ -329,11 +329,8 @@ void Unlocks::refreshLateGoal(const GameState &game, const Inventory &inventory,
                 setProgress(goal, game.getGold(), game.getGoldUpgradeCost(map));
                 return;
             }
-            break;
         }
-        snprintf(label, size, "Fight in %s to open %s", ZONES[z - 1].name, zone.name);
-        setProgress(goal, combat.getZoneKills(z - 1), zone.reqPrevZoneKills);
-        return;
+        break;
     }
 
     // Relics drop in zones long since left behind, so the player is told where to go back

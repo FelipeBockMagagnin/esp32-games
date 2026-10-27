@@ -65,11 +65,13 @@ struct PerkValue
 
 static const uint8_t ITEM_PERK_SLOTS = 3;
 
-// A duplicate drop levels an item up instead of stacking, adding this many thousandths of
-// its base stats per level above 1. The cap keeps a maxed item (+148.5%) below the next
-// tier's base (3x), so farming duplicates never replaces moving on to a new zone. A
-// hundred small steps make finding an item quick and maxing it a goal across ascensions.
-static const uint16_t ITEM_LEVEL_GROWTH_PERMILLE = 15;
+// A duplicate drop levels an item up instead of stacking. The growth follows the square
+// root of the levels gained, as NGU Idle's early boosts do: the first levels are a big
+// step (Lv 5 +40%, Lv 10 +60%, Lv 25 +97%, Lv 50 +139%), felt while the zone is still the
+// newest, and the last ones a long goal across ascensions. Maxed (+198%) it passes the next
+// zone's set (sqrt(3), 1.73x) but stays below the next tier's (3x), and the zone maps come
+// in order, so farming duplicates never skips a zone.
+static const uint16_t ITEM_MAX_GROWTH_PERMILLE = 1980;
 static const uint8_t ITEM_MAX_LEVEL = 100;
 // A relic drops so rarely that one level a drop would never max it
 static const uint8_t RELIC_DROP_LEVELS = 10;
@@ -126,6 +128,16 @@ enum ItemId : uint8_t
     ITEM_WILSON, ITEM_JADE_AMULET, ITEM_GOLD_AMULET, ITEM_CORE_SIGIL,
     ITEM_EMBER_HELM, ITEM_EMBER_MAIL, ITEM_EMBER_LEGS, ITEM_EMBER_BOOTS, ITEM_EMBER_GRIPS,
     ITEM_EMBER_BLADE, ITEM_EMBER_GUARD, ITEM_EMBER_RING, ITEM_EMBER_CHARM,
+    ITEM_BRASS_HELM, ITEM_BRASS_VEST, ITEM_BRASS_LEGS, ITEM_BRASS_BOOTS, ITEM_BRASS_MITTS,
+    ITEM_BRASS_SWORD, ITEM_BRASS_TARGE,
+    ITEM_BONE_HELM, ITEM_BONE_MAIL, ITEM_BONE_LEGS, ITEM_BONE_BOOTS, ITEM_BONE_GRIPS,
+    ITEM_BONE_CLUB, ITEM_BONE_SHIELD,
+    ITEM_ONYX_HELM, ITEM_ONYX_PLATE, ITEM_ONYX_LEGS, ITEM_ONYX_BOOTS, ITEM_ONYX_GRIPS,
+    ITEM_ONYX_BLADE, ITEM_ONYX_WARD,
+    ITEM_MAGMA_HELM, ITEM_MAGMA_PLATE, ITEM_MAGMA_LEGS, ITEM_MAGMA_BOOTS, ITEM_MAGMA_FISTS,
+    ITEM_MAGMA_BRAND, ITEM_MAGMA_WALL,
+    ITEM_STAR_HELM, ITEM_STAR_MAIL, ITEM_STAR_LEGS, ITEM_STAR_BOOTS, ITEM_STAR_GRIPS,
+    ITEM_STAR_BLADE, ITEM_STAR_SHIELD,
     ITEM_RUSTY_PICK, ITEM_LUCKY_BOOTS, ITEM_IRON_PICK, ITEM_MINER_HELM, ITEM_LOOT_GLOVES,
     ITEM_STEEL_PICK, ITEM_GRAVE_HOOD, ITEM_COIN_RING, ITEM_RUNE_PICK, ITEM_SCOUT_BOOTS,
     ITEM_GILT_SHIELD, ITEM_VOID_PICK, ITEM_STAR_CROWN,
@@ -156,12 +168,12 @@ static constexpr ItemDef ITEMS[] = {
     {"Rune Boots",  EquipSlot::BOOTS,     0,   54,  108, 0,   3,    ICON(image_item_rune_boots_pixels)},
 
     {"Rag Gloves",  EquipSlot::GLOVES,    1,   1,   0,   0,   0,    ICON(image_item_rag_gloves_pixels),   {P(CLICK, 5)}},
-    {"Iron Gloves", EquipSlot::GLOVES,    3,   3,   0,   0,   1,    ICON(image_item_iron_gloves_pixels)},
+    {"Iron Gloves", EquipSlot::GLOVES,    4,   3,   0,   0,   1,    ICON(image_item_iron_gloves_pixels)},
     {"Steel Grips", EquipSlot::GLOVES,    9,   9,   0,   0,   2,    ICON(image_item_steel_grips_pixels)},
     {"Rune Grips",  EquipSlot::GLOVES,    27,  27,  0,   0,   3,    ICON(image_item_rune_grips_pixels)},
 
     {"Dull Stick",  EquipSlot::SWORD,     5,   0,   0,   0,   0,    ICON(image_item_dull_stick_pixels),   {P(CLICK, 8)}},
-    {"Good Stick",  EquipSlot::SWORD,     15,  0,   0,   0,   1,    ICON(image_item_good_stick_pixels)},
+    {"Good Stick",  EquipSlot::SWORD,     17,  0,   0,   0,   1,    ICON(image_item_good_stick_pixels)},
     {"Great Stick", EquipSlot::SWORD,     45,  0,   0,   0,   2,    ICON(image_item_great_stick_pixels)},
     {"Rune Blade",  EquipSlot::SWORD,     135, 0,   0,   0,   3,    ICON(image_item_rune_blade_pixels)},
 
@@ -190,6 +202,49 @@ static constexpr ItemDef ITEMS[] = {
     {"Ember Guard", EquipSlot::SHIELD,    0,   405, 405, 0,   4,    ICON(image_icon_ember_guard_pixels)},
     {"Ember Ring",  EquipSlot::RING,      162, 0,   0,   0,   4,    ICON(image_icon_ember_ring_pixels),   {P(CLICK, 250), P(DROP, 40), P(RESPAWN_CUT, 30)}},
     {"Ember Charm", EquipSlot::AMULET,    0,   162, 0,   0,   4,    ICON(image_icon_ember_charm_pixels),  {P(GOLD, 250), P(UPGRADE_DISCOUNT, 15), P(MINE_XP, 10)}},
+
+    // The sets of the zones between the tiers' own, each about sqrt(3) times the set before
+    // it, so a zone is one step and a tier two. They wear the icon of the piece below
+    // until they get their own art.
+    {"Brass Helm",  EquipSlot::HELMET,    0,   4,   9,   0,   0,    ICON(image_item_leaf_hat_pixels)},
+    {"Brass Vest",  EquipSlot::BODY,      0,   7,   17,  5,   0,    ICON(image_item_cloth_vest_pixels)},
+    {"Brass Legs",  EquipSlot::PANTS,     0,   5,   10,  0,   0,    ICON(image_item_fig_leaf_pixels)},
+    {"Brass Boots", EquipSlot::BOOTS,     0,   4,   7,   0,   0,    ICON(image_item_worn_boots_pixels)},
+    {"Brass Mitts", EquipSlot::GLOVES,    3,   2,   0,   0,   0,    ICON(image_item_rag_gloves_pixels)},
+    {"Brass Sword", EquipSlot::SWORD,     11,  0,   0,   0,   0,    ICON(image_item_dull_stick_pixels)},
+    {"Brass Targe", EquipSlot::SHIELD,    0,   9,   9,   0,   0,    ICON(image_item_wood_shield_pixels)},
+
+    {"Bone Helm",   EquipSlot::HELMET,    0,   10,  26,  0,   1,    ICON(image_item_leather_cap_pixels)},
+    {"Bone Mail",   EquipSlot::BODY,      0,   21,  52,  0,   1,    ICON(image_armor_01b_pixels)},
+    {"Bone Legs",   EquipSlot::PANTS,     0,   16,  31,  16,  1,    ICON(image_item_loincloth_pixels)},
+    {"Bone Boots",  EquipSlot::BOOTS,     0,   10,  21,  0,   1,    ICON(image_item_iron_boots_pixels)},
+    {"Bone Grips",  EquipSlot::GLOVES,    5,   5,   0,   0,   1,    ICON(image_item_iron_gloves_pixels)},
+    {"Bone Club",   EquipSlot::SWORD,     26,  0,   0,   0,   1,    ICON(image_item_good_stick_pixels)},
+    {"Bone Shield", EquipSlot::SHIELD,    0,   26,  26,  0,   1,    ICON(image_item_iron_shield_pixels)},
+
+    {"Onyx Helm",   EquipSlot::HELMET,    0,   31,  78,  0,   2,    ICON(image_item_steel_helm_pixels)},
+    {"Onyx Plate",  EquipSlot::BODY,      0,   62,  156, 47,  2,    ICON(image_item_steel_plate_pixels)},
+    {"Onyx Legs",   EquipSlot::PANTS,     0,   47,  94,  0,   2,    ICON(image_item_steel_legs_pixels)},
+    {"Onyx Boots",  EquipSlot::BOOTS,     0,   31,  62,  0,   2,    ICON(image_item_steel_boots_pixels)},
+    {"Onyx Grips",  EquipSlot::GLOVES,    16,  16,  0,   0,   2,    ICON(image_item_steel_grips_pixels)},
+    {"Onyx Blade",  EquipSlot::SWORD,     78,  0,   0,   0,   2,    ICON(image_item_great_stick_pixels)},
+    {"Onyx Ward",   EquipSlot::SHIELD,    0,   78,  78,  0,   2,    ICON(image_item_steel_guard_pixels)},
+
+    {"Magma Helm",  EquipSlot::HELMET,    0,   94,  234, 140, 3,    ICON(image_item_rune_helm_pixels)},
+    {"Magma Plate", EquipSlot::BODY,      0,   187, 468, 0,   3,    ICON(image_item_rune_plate_pixels)},
+    {"Magma Legs",  EquipSlot::PANTS,     0,   140, 281, 0,   3,    ICON(image_item_rune_legs_pixels)},
+    {"Magma Boots", EquipSlot::BOOTS,     0,   94,  187, 0,   3,    ICON(image_item_rune_boots_pixels)},
+    {"Magma Fists", EquipSlot::GLOVES,    47,  47,  0,   0,   3,    ICON(image_item_rune_grips_pixels)},
+    {"Magma Brand", EquipSlot::SWORD,     234, 0,   0,   0,   3,    ICON(image_item_rune_blade_pixels)},
+    {"Magma Wall",  EquipSlot::SHIELD,    0,   234, 234, 0,   3,    ICON(image_item_rune_aegis_pixels)},
+
+    {"Star Helm",   EquipSlot::HELMET,    0,   281, 701, 0,   4,    ICON(image_icon_ember_helm_pixels)},
+    {"Star Mail",   EquipSlot::BODY,      0,   561, 1403, 420, 4,   ICON(image_icon_ember_mail_pixels)},
+    {"Star Legs",   EquipSlot::PANTS,     0,   421, 842, 0,   4,    ICON(image_icon_ember_legs_pixels)},
+    {"Star Boots",  EquipSlot::BOOTS,     0,   281, 561, 0,   4,    ICON(image_icon_ember_boots_pixels)},
+    {"Star Grips",  EquipSlot::GLOVES,    140, 140, 0,   0,   4,    ICON(image_icon_ember_grips_pixels)},
+    {"Star Blade",  EquipSlot::SWORD,     701, 0,   0,   0,   4,    ICON(image_icon_ember_blade_pixels)},
+    {"Star Shield", EquipSlot::SHIELD,    0,   701, 701, 0,   4,    ICON(image_icon_ember_guard_pixels)},
 
     // Tools, each beside the plain piece of its slot and tier it gives up stats against
 #define TOOL true
@@ -220,9 +275,18 @@ static constexpr ItemDef ITEMS[] = {
     {"Star Aegis",  EquipSlot::SHIELD,    0,   360, 0,   0,   5,    ICON(image_icon_star_aegis_pixels),   {P(ARMOR_BREAK, 8), P(WEAK_POINT, 60), P(FURY, 30)}},
 };
 static constexpr uint8_t ITEM_COUNT = sizeof(ITEMS) / sizeof(ITEMS[0]);
+// Equipped slots hold an int8_t id, NO_ITEM being -1
+static_assert(ITEM_COUNT <= 127, "item ids must fit an int8_t");
 
 #undef ICON
 #undef P
+
+// Rings and amulets are jewellery and relics a tier of their own; the rest is gear, and
+// the gear that is not a tool makes up a zone's set
+static constexpr bool isSetPiece(const ItemDef &item)
+{
+    return !item.tool && item.tier != RELIC_TIER && item.slot != EquipSlot::RING && item.slot != EquipSlot::AMULET;
+}
 
 // 1 for the first relic in the table, 2 for the next...; 0 for anything else
 inline uint8_t relicRank(uint8_t itemId)
@@ -239,14 +303,31 @@ inline uint8_t relicRank(uint8_t itemId)
     return rank;
 }
 
-// Level 1 gives the base value; every level after adds ITEM_LEVEL_GROWTH_PERMILLE of it
+// Thousandths of the base an item gains by `level`: ITEM_MAX_GROWTH_PERMILLE times the
+// square root of the share of the levels past 1 it has reached
+inline uint32_t itemGrowthPermille(uint8_t level)
+{
+    if (level <= 1)
+    {
+        return 0;
+    }
+    uint32_t share = (uint32_t)(level - 1) * 1000000 / (ITEM_MAX_LEVEL - 1); // Millionths
+    uint32_t root = 0;
+    while ((root + 1) * (root + 1) <= share)
+    {
+        root++;
+    }
+    return ITEM_MAX_GROWTH_PERMILLE * root / 1000;
+}
+
+// Level 1 gives the base value; the levels after add itemGrowthPermille of it
 inline uint32_t scaleItemStat(uint16_t base, uint8_t level)
 {
     if (base == 0 || level == 0)
     {
         return 0;
     }
-    return (uint32_t)base * (1000 + (uint32_t)(level - 1) * ITEM_LEVEL_GROWTH_PERMILLE) / 1000;
+    return (uint32_t)base * (1000 + itemGrowthPermille(level)) / 1000;
 }
 
 inline bool isFlatPerk(ItemPerk perk)

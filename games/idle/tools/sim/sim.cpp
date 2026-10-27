@@ -90,10 +90,13 @@ static std::vector<std::string> summary;
 // the measure of a run's dry stretches
 static unsigned long dryAwake = 0, dryFrom = 0, longestDry = 0, longestDryFrom = 0;
 
-// Awake time from a zone opening to it farming itself, the measure of a combat wall. Both
-// hold the awake clock plus one, so 0 means not yet in this run.
+// Awake time from a zone opening to it farming itself, the measure of a combat wall, and
+// to farming itself without dying. All hold the awake clock plus one, so 0 means not yet
+// in this run.
 static unsigned long awakeClock = 0;
-static unsigned long zoneOpenedAwake[ZONE_COUNT], zoneIdleAwake[ZONE_COUNT];
+static unsigned long zoneOpenedAwake[ZONE_COUNT], zoneIdleAwake[ZONE_COUNT], zoneSafeAwake[ZONE_COUNT];
+// Deaths a kill below which an idle fight counts as not dying
+static const double SAFE_DEATHS_PER_KILL = 0.01;
 
 static bool awardSeen[ACHIEVEMENT_COUNT];
 
@@ -168,7 +171,7 @@ static void printItemReport()
 static void event(const std::string &what, bool milestone = false)
 {
     std::string line = stamp(simNow) + "  " + what;
-    if (what.rfind("zone", 0) != 0)
+    if (what.rfind("zone", 0) != 0 && what.rfind("ARRIVE", 0) != 0)
     {
         dryAwake = 0, dryFrom = simNow;
     }
@@ -407,7 +410,11 @@ static void equipFarmLoadout(uint8_t zone)
 }
 
 // How a zone would go with these stats: can the auto attack (or the strike) get through
-// every enemy, and roughly how many deaths per kill it costs
+// every enemy, and roughly how many deaths per kill it costs. An auto attack that only
+// scratches an enemy does not farm the zone: past this many seconds a kill on average,
+// the drops would take days.
+static const double MAX_IDLE_KILL_S = 60;
+
 struct ZoneOutlook
 {
     bool idle;
@@ -419,13 +426,14 @@ static ZoneOutlook outlook(uint8_t z, const Stats &s, bool active)
 {
     ZoneOutlook o{true, true, 0};
     const ZoneDef &zone = ZONES[z];
-    double deaths = 0;
+    double deaths = 0, idleFight = 0;
     for (uint8_t e = 0; e < zone.enemyCount; e++)
     {
         const EnemyDef &en = zone.enemies[e];
         double autoHit = damageThrough(s.attack, en.defense);
         double strikeHit = damageThrough(s.attack * STRIKE_MULTIPLIER, en.defense);
         o.idle = o.idle && autoHit > 0;
+        idleFight += autoHit > 0 ? en.maxHp / (autoHit / (AUTO_ATTACK_MS / 1000.0)) : 0;
         o.strike = o.strike && strikeHit > 0;
         double dps = autoHit / (AUTO_ATTACK_MS / 1000.0) + (active ? strikeHit / (STRIKE_COOLDOWN_MS / 1000.0) : 0);
         if (dps <= 0)
@@ -434,7 +442,7 @@ static ZoneOutlook outlook(uint8_t z, const Stats &s, bool active)
             continue;
         }
         double fight = en.maxHp / dps;
-        double hurt = damageThrough(en.attack, s.defense);
+        double hurt = hurtThrough(en.attack, s.defense);
         if (active)
         {
             hurt *= 0.7; // Timed guards
@@ -443,7 +451,78 @@ static ZoneOutlook outlook(uint8_t z, const Stats &s, bool active)
         deaths += netHurt > 0 ? fight * netHurt / s.maxHp : 0;
     }
     o.deathsPerKill = deaths / zone.enemyCount;
+    o.idle = o.idle && idleFight / zone.enemyCount <= MAX_IDLE_KILL_S;
     return o;
+}
+
+// What a player arrives with: the best piece per slot from the zones before this one,
+// either as owned (at its level) or, for one who moved on at once, every piece at level 1
+static Stats arrivalKit(uint8_t zone, bool levelOne)
+{
+    Inventory kit;
+    for (uint8_t slot = 0; slot < EQUIP_SLOT_COUNT; slot++)
+    {
+        int best = -1;
+        double bestScore = -1;
+        for (uint8_t i = 0; i < ITEM_COUNT; i++)
+        {
+            const ItemDef &item = ITEMS[i];
+            bool earlier = false;
+            for (uint8_t z = 0; z < zone && !earlier; z++)
+            {
+                earlier = enemiesDropItem(ZONES[z].enemies, ZONES[z].enemyCount, i);
+            }
+            if ((uint8_t)item.slot != slot || item.tool || item.tier == RELIC_TIER || !earlier ||
+                (!levelOne && !inventory.isOwned(i)))
+            {
+                continue;
+            }
+            Stats st = levelOne ? Stats{item.attack, item.defense, item.maxHp, 0} : inventory.getItemStats(i);
+            double score = st.attack * 3.0 + st.defense * 2.0 + st.maxHp * 0.5;
+            if (score > bestScore)
+            {
+                bestScore = score, best = i;
+            }
+        }
+        if (best >= 0)
+        {
+            for (uint8_t level = levelOne ? 1 : inventory.getItemLevel((uint8_t)best); level > 0; level--)
+            {
+                kit.addDrop((uint8_t)best);
+            }
+            kit.equip((uint8_t)best);
+        }
+    }
+    return resolvePlayerStats(game, kit);
+}
+
+// How a zone meets these stats, against the balance rule (CombatConfig.h): the auto attack
+// blocked by every regular, the strike through all, and a regular's hit worth guarding
+static std::string judge(uint8_t z, const Stats &s)
+{
+    const ZoneDef &zone = ZONES[z];
+    unsigned autoThrough = 0, strikeThrough = 0, regulars = 0;
+    double minHurt = 1e9, maxHurt = 0;
+    for (uint8_t e = 0; e < zone.enemyCount; e++)
+    {
+        const EnemyDef &en = zone.enemies[e];
+        strikeThrough += damageThrough(s.attack * STRIKE_MULTIPLIER, en.defense) > 0;
+        if (en.boss)
+        {
+            continue;
+        }
+        regulars++;
+        autoThrough += damageThrough(s.attack, en.defense) > 0;
+        double hurt = 100.0 * hurtThrough(en.attack, s.defense) / s.maxHp;
+        minHurt = hurt < minHurt ? hurt : minHurt;
+        maxHurt = hurt > maxHurt ? hurt : maxHurt;
+    }
+    char buf[160];
+    snprintf(buf, sizeof(buf), "ATK %u DEF %u HP %u: auto %u/%u, strike %u/%u, hit %.0f-%.0f%%%s",
+             (unsigned)s.attack, (unsigned)s.defense, (unsigned)s.maxHp, autoThrough, regulars, strikeThrough,
+             zone.enemyCount, minHurt, maxHurt,
+             strikeThrough < zone.enemyCount ? "  << WALL" : autoThrough > 0 || maxHurt < 3 ? "  << TOO EASY" : "");
+    return buf;
 }
 
 static bool farmsItself(uint8_t z)
@@ -507,10 +586,32 @@ static void fight(unsigned long now)
             }
             break;
         case SpellEffect::MIDAS:
+        case SpellEffect::SEEK:
             combat.castSpell(now);
             break;
         }
     }
+}
+
+static void printSince(const char *what, const unsigned long *reached)
+{
+    printf("  Awake hours from opening to %s:", what);
+    for (uint8_t z = 1; z < ZONE_COUNT; z++)
+    {
+        if (zoneOpenedAwake[z] == 0)
+        {
+            continue;
+        }
+        if (reached[z] == 0)
+        {
+            printf("  %s - (%.1f so far)", ZONES[z].name, (awakeClock + 1 - zoneOpenedAwake[z]) / (double)HOUR);
+        }
+        else
+        {
+            printf("  %s %.1f", ZONES[z].name, (reached[z] - zoneOpenedAwake[z]) / (double)HOUR);
+        }
+    }
+    printf("\n");
 }
 
 static void printMilestones()
@@ -524,24 +625,12 @@ static void printMilestones()
     printf("  Longest awake stretch with nothing new: %.1fh from %s\n", longestDry / (double)HOUR,
            stamp(longestDryFrom).c_str());
     dryAwake = longestDry = 0;
-    printf("  Awake hours from opening to farming itself:");
-    for (uint8_t z = 1; z < ZONE_COUNT; z++)
+    printSince("farming itself", zoneIdleAwake);
+    printSince("farming without dying", zoneSafeAwake);
+    for (uint8_t z = 0; z < ZONE_COUNT; z++)
     {
-        if (zoneOpenedAwake[z] == 0)
-        {
-            continue;
-        }
-        if (zoneIdleAwake[z] == 0)
-        {
-            printf("  %s - (%.1f so far)", ZONES[z].name, (awakeClock + 1 - zoneOpenedAwake[z]) / (double)HOUR);
-        }
-        else
-        {
-            printf("  %s %.1f", ZONES[z].name, (zoneIdleAwake[z] - zoneOpenedAwake[z]) / (double)HOUR);
-        }
-        zoneOpenedAwake[z] = zoneIdleAwake[z] = 0;
+        zoneOpenedAwake[z] = zoneIdleAwake[z] = zoneSafeAwake[z] = 0;
     }
-    printf("\n");
 }
 
 // What the game does on Ascend, minus the reboot: bank the points, keep the items and
@@ -614,7 +703,9 @@ int main(int argc, char **argv)
     double clickDebt = 0;
     int zoneShown = -2;
     uint8_t zoneUnlockedSeen = 1;
+    unsigned long arrivalDue[ZONE_COUNT] = {};
     bool idleReach[ZONE_COUNT] = {};
+    bool safeReach[ZONE_COUNT] = {};
     bool wasDead = false;
     uint32_t deaths = 0;
     uint8_t itemsSeen = inventory.countOwnedItems();
@@ -644,9 +735,9 @@ int main(int argc, char **argv)
             runStart = now;
             zoneShown = -2;
             zoneUnlockedSeen = 1;
-            for (bool &reached : idleReach)
+            for (uint8_t z = 0; z < ZONE_COUNT; z++)
             {
-                reached = false;
+                idleReach[z] = safeReach[z] = false;
             }
         }
         bool active = isActive(now);
@@ -740,16 +831,29 @@ int main(int argc, char **argv)
             }
         }
 
+        // A zone is judged once the check-in that opened it is over, so the combat upgrades
+        // bought beside its map count, against the gear worn and against a level-1 kit
+        for (uint8_t z = 1; z < ZONE_COUNT; z++)
+        {
+            if (arrivalDue[z] != 0 && (!active || (long)(now - arrivalDue[z]) >= 0))
+            {
+                event(std::string("ARRIVE   ") + ZONES[z].name + "  owned " + judge(z, arrivalKit(z, false)) +
+                          "; level-1 kit " + judge(z, arrivalKit(z, true)),
+                      true);
+                arrivalDue[z] = 0;
+            }
+        }
+
         // Milestones
         while (zoneUnlockedSeen < ZONE_COUNT && combat.isZoneUnlocked(zoneUnlockedSeen))
         {
+            arrivalDue[zoneUnlockedSeen] = now + 10 * MIN;
             Stats s = resolvePlayerStats(game, inventory);
-            // The gear set the zone before drops; past the Core that is the Mythic set
-            uint8_t prevTier = zoneUnlockedSeen - 1 < MYTHIC_TIER ? zoneUnlockedSeen - 1 : MYTHIC_TIER;
+            uint8_t prevZone = zoneUnlockedSeen - 1;
             unsigned prevOwned = 0, prevLevels = 0, prevTotal = 0;
             for (uint8_t i = 0; i < ITEM_COUNT; i++)
             {
-                if (ITEMS[i].tier == prevTier && !ITEMS[i].tool)
+                if (isZoneSetPiece(prevZone, i))
                 {
                     prevTotal++;
                     prevOwned += inventory.isOwned(i);
@@ -757,9 +861,9 @@ int main(int argc, char **argv)
                 }
             }
             char buf[160];
-            snprintf(buf, sizeof(buf), "UNLOCKED %s  arrive ATK %u DEF %u HP %u, tier %u items %u/%u avg Lv %.1f",
+            snprintf(buf, sizeof(buf), "UNLOCKED %s  arrive ATK %u DEF %u HP %u, %s set %u/%u avg Lv %.1f",
                      ZONES[zoneUnlockedSeen].name, (unsigned)s.attack, (unsigned)s.defense, (unsigned)s.maxHp,
-                     (unsigned)prevTier, prevOwned, prevTotal, prevOwned ? prevLevels / (double)prevOwned : 0.0);
+                     ZONES[prevZone].name, prevOwned, prevTotal, prevTotal ? prevLevels / (double)prevTotal : 0.0);
             event(buf, true);
             zoneOpenedAwake[zoneUnlockedSeen] = awakeClock + 1;
             zoneUnlockedSeen++;
@@ -769,12 +873,24 @@ int main(int argc, char **argv)
             Stats s = resolvePlayerStats(game, inventory);
             for (uint8_t z = 0; z < ZONE_COUNT; z++)
             {
-                if (!idleReach[z] && combat.isZoneUnlocked(z) && outlook(z, s, false).idle)
+                if (!combat.isZoneUnlocked(z))
+                {
+                    continue;
+                }
+                ZoneOutlook o = outlook(z, s, false);
+                std::string at = " (ATK " + std::to_string(s.attack) + " DEF " + std::to_string(s.defense) + " HP " +
+                                 std::to_string(s.maxHp) + ")";
+                if (!idleReach[z] && o.idle)
                 {
                     idleReach[z] = true;
                     zoneIdleAwake[z] = awakeClock + 1;
-                    event(std::string("IDLE     ") + ZONES[z].name + " farms itself (ATK " + std::to_string(s.attack) +
-                          " DEF " + std::to_string(s.defense) + " HP " + std::to_string(s.maxHp) + ")", true);
+                    event(std::string("IDLE     ") + ZONES[z].name + " farms itself" + at, true);
+                }
+                if (!safeReach[z] && o.idle && o.deathsPerKill < SAFE_DEATHS_PER_KILL)
+                {
+                    safeReach[z] = true;
+                    zoneSafeAwake[z] = awakeClock + 1;
+                    event(std::string("SAFE     ") + ZONES[z].name + " farms itself without dying" + at, true);
                 }
             }
         }

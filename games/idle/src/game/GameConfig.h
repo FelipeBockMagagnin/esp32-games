@@ -232,10 +232,15 @@ static constexpr GoldUpgradeDef GOLD_UPGRADES[] = {
 
     {"Alchemic Edge",   "Attack is increased by 100%",                AT(BUILDING_VOID_PIT, 2),     100,     UpgradeTarget::ATTACK,            BUILDING_VOID_PIT,    1,   0},
 
-    {"Forest Maps",     "Opens the Forest for fighting",              AT(BUILDING_ORE_MILL, 8),     1,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_ORE_MILL,    1,   0},
-    {"Crypt Maps",      "Opens the Crypt for fighting",               AT(BUILDING_RUNE_FORGE, 2),   2,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_RUNE_FORGE,  1,   0},
-    {"Depth Maps",      "Opens the Depths for fighting",              AT(BUILDING_TRANSMUTER, 2),   3,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_TRANSMUTER,  1,   0},
-    {"Core Maps",       "Opens the Molten Core for fighting",         AT(BUILDING_TRANSMUTER, 5),   4,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_VOID_PIT,    1,   0},
+    // In zone order, the order Old Maps keeps them in. Priced so each opens later after the
+    // one before than that one did after its own (CombatConfig.h has the hours)
+    {"Old Mine Maps",   "Opens the Old Mine for fighting",            AT(BUILDING_ORE_MILL, 2),     1,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_ORE_MILL,    1,   0},
+    {"Forest Maps",     "Opens the Forest for fighting",              AT(BUILDING_ORE_MILL, 16),    2,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_ORE_MILL,    1,   0},
+    {"Barrow Maps",     "Opens the Barrows for fighting",             AT(BUILDING_DEEP_SHAFT, 3),   3,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_DEEP_SHAFT,  1,   0},
+    {"Crypt Maps",      "Opens the Crypt for fighting",               AT(BUILDING_RUNE_FORGE, 6),   4,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_RUNE_FORGE,  1,   0},
+    {"Onyx Maps",       "Opens the Onyx Caves for fighting",          AT(BUILDING_ORE_BARGE, 12),   5,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_ORE_BARGE,   1,   0},
+    {"Depth Maps",      "Opens the Depths for fighting",              AT(BUILDING_TRANSMUTER, 11),  6,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_TRANSMUTER,  1,   0},
+    {"Core Maps",       "Opens the Molten Core for fighting",         AT(BUILDING_VOID_PIT, 3),     7,       UpgradeTarget::UNLOCK_ZONE,       BUILDING_VOID_PIT,    1,   0},
 
     BUILDING_BOOSTS(BUILDING_PICKAXE,    "Pickaxe",    "Pickaxes"),
     BUILDING_BOOSTS(BUILDING_MINECART,   "Minecart",   "Minecarts"),

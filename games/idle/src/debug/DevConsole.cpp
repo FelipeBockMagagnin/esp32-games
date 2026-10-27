@@ -95,10 +95,6 @@ void DevConsole::run(char *command)
         for (uint8_t i = 1; i <= last; i++)
         {
             const ZoneDef &zone = ZONES[i];
-            if (blob.combat.zoneKills[i - 1] < zone.reqPrevZoneKills)
-            {
-                blob.combat.zoneKills[i - 1] = zone.reqPrevZoneKills;
-            }
             for (uint8_t u = 0; zone.requiresUnlockUpgrade && u < GOLD_UPGRADE_COUNT; u++)
             {
                 if (GOLD_UPGRADES[u].target == UpgradeTarget::UNLOCK_ZONE && GOLD_UPGRADES[u].bonusPercent == i)

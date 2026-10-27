@@ -20,7 +20,7 @@ enum class AchKind : uint8_t
     ITEMS_OWNED,      // Distinct items found
     ACHIEVEMENTS,     // Achievements already unlocked, so the list rewards itself
     VEINS_CAUGHT,     // Gold veins caught on the Mining screen
-    GEAR_SET_MAXED,   // Gear pieces of tier `target` at ITEM_MAX_LEVEL, jewellery and tools aside
+    GEAR_SET_MAXED,   // Pieces of ZONES[target]'s set at ITEM_MAX_LEVEL (isZoneSetPiece)
     ITEM_MAXED        // Level of ITEMS[target]
 };
 
@@ -40,18 +40,6 @@ enum class AchReward : uint8_t
     COUNT
 };
 static constexpr uint8_t ACH_REWARD_COUNT = (uint8_t)AchReward::COUNT;
-
-// Rings and amulets are jewellery and relics a tier of their own; the rest is gear, and
-// the gear that is not a tool makes up a tier's set
-static constexpr bool isSetPiece(const ItemDef &item)
-{
-    return !item.tool && item.tier != RELIC_TIER && item.slot != EquipSlot::RING && item.slot != EquipSlot::AMULET;
-}
-
-static constexpr uint8_t gearInTier(uint8_t tier, uint8_t i = 0)
-{
-    return i >= ITEM_COUNT ? 0 : (ITEMS[i].tier == tier && isSetPiece(ITEMS[i])) + gearInTier(tier, i + 1);
-}
 
 static const uint8_t NO_ACH_TARGET = 0xFF;
 
@@ -227,11 +215,16 @@ static constexpr AchievementDef ACHIEVEMENTS[] = {
     // A maxed set lands well after its zone, so its stats help the zones ahead rather than
     // the one that dropped it; with the levels carried across ascensions, these are the
     // long goals of the game.
-    {"Scrap Knight", "Max all Common gear",               AchKind::GEAR_SET_MAXED,   0,                     gearInTier(0), 10, AchReward::ATTACK_DEFENSE},
-    {"Iron Will",    "Max all Uncommon gear",             AchKind::GEAR_SET_MAXED,   1,                     gearInTier(1), 15, AchReward::ATTACK_DEFENSE},
-    {"Steel Wall",   "Max all Rare gear",                 AchKind::GEAR_SET_MAXED,   2,                     gearInTier(2), 20, AchReward::ATTACK_DEFENSE},
-    {"Rune Lord",    "Max all Epic gear",                 AchKind::GEAR_SET_MAXED,   3,                     gearInTier(3), 25, AchReward::ATTACK_DEFENSE},
-    {"Mythbreaker",  "Max all Mythic gear",               AchKind::GEAR_SET_MAXED,   MYTHIC_TIER,           gearInTier(MYTHIC_TIER), 30, AchReward::ATTACK_DEFENSE},
+    {"Scrap Knight", "Max the Sewers set",                AchKind::GEAR_SET_MAXED,   0,                     zoneSetSize(0), 10, AchReward::ATTACK_DEFENSE},
+    {"Brass Band",   "Max the Old Mine set",              AchKind::GEAR_SET_MAXED,   1,                     zoneSetSize(1), 5, AchReward::ATTACK_DEFENSE},
+    {"Iron Will",    "Max the Forest set",                AchKind::GEAR_SET_MAXED,   2,                     zoneSetSize(2), 15, AchReward::ATTACK_DEFENSE},
+    {"Boneclad",     "Max the Barrows set",               AchKind::GEAR_SET_MAXED,   3,                     zoneSetSize(3), 7, AchReward::ATTACK_DEFENSE},
+    {"Steel Wall",   "Max the Crypt set",                 AchKind::GEAR_SET_MAXED,   4,                     zoneSetSize(4), 20, AchReward::ATTACK_DEFENSE},
+    {"Onyx Heart",   "Max the Onyx Caves set",            AchKind::GEAR_SET_MAXED,   5,                     zoneSetSize(5), 10, AchReward::ATTACK_DEFENSE},
+    {"Rune Lord",    "Max the Depths set",                AchKind::GEAR_SET_MAXED,   6,                     zoneSetSize(6), 25, AchReward::ATTACK_DEFENSE},
+    {"Magma Born",   "Max the Molten Core set",           AchKind::GEAR_SET_MAXED,   ZONE_MOLTEN_CORE,      zoneSetSize(ZONE_MOLTEN_CORE), 12, AchReward::ATTACK_DEFENSE},
+    {"Mythbreaker",  "Max the Void Rift set",             AchKind::GEAR_SET_MAXED,   8,                     zoneSetSize(8), 30, AchReward::ATTACK_DEFENSE},
+    {"Starforged",   "Max the Star Forge set",            AchKind::GEAR_SET_MAXED,   ZONE_COUNT - 1,        zoneSetSize(ZONE_COUNT - 1), 15, AchReward::ATTACK_DEFENSE},
 
     // Picks pay gold production
     {"Rust Bucket",  "Max the Rusty Pick",                AchKind::ITEM_MAXED,       ITEM_RUSTY_PICK,       ITEM_MAX_LEVEL, 5},

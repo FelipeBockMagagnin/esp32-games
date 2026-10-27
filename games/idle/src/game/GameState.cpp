@@ -289,7 +289,12 @@ bool GameState::isAscendSuggested() const
     {
         return false;
     }
-    return getAscendGainPercent() >= ASCEND_SUGGEST_GAIN_PERCENT || totalGoldEarned == UINT64_MAX;
+    uint32_t threshold = ASCEND_SUGGEST_GAIN_PERCENT + ASCEND_SUGGEST_STEP_PERCENT * ascension.getAscensions();
+    if (threshold > ASCEND_SUGGEST_MAX_PERCENT)
+    {
+        threshold = ASCEND_SUGGEST_MAX_PERCENT;
+    }
+    return getAscendGainPercent() >= threshold || totalGoldEarned == UINT64_MAX;
 }
 
 // Bought BUILDING_BOOST upgrades per building; each one doubles that building's output
@@ -375,6 +380,17 @@ bool GameState::isGoldUpgradeBought(uint8_t id) const
     return id < GOLD_UPGRADE_COUNT && goldUpgradesBought[id];
 }
 
+// 1 for the first zone map in the table, 2 for the next...; Old Maps keeps them in this order
+static uint8_t mapRank(uint8_t id)
+{
+    uint8_t rank = 0;
+    for (uint8_t i = 0; i <= id; i++)
+    {
+        rank += GOLD_UPGRADES[i].target == UpgradeTarget::UNLOCK_ZONE;
+    }
+    return rank;
+}
+
 bool GameState::isGoldUpgradeUnlocked(uint8_t id) const
 {
     if (id >= GOLD_UPGRADE_COUNT)
@@ -384,7 +400,7 @@ bool GameState::isGoldUpgradeUnlocked(uint8_t id) const
 
     const GoldUpgradeDef &def = GOLD_UPGRADES[id];
     // A map Old Maps keeps is never on sale
-    if (def.target == UpgradeTarget::UNLOCK_ZONE && def.bonusPercent <= ascension.getPercent(TalentEffect::KEEP_MAPS))
+    if (def.target == UpgradeTarget::UNLOCK_ZONE && mapRank(id) <= ascension.getPercent(TalentEffect::KEEP_MAPS))
     {
         return false;
     }
@@ -548,18 +564,12 @@ uint32_t GameState::getMaxHpBonusPercent() const
 
 bool GameState::isZoneUnlockedByUpgrade(uint8_t zoneId) const
 {
-    if (zoneId <= ascension.getPercent(TalentEffect::KEEP_MAPS))
-    {
-        return true;
-    }
     // UNLOCK_ZONE upgrades carry the zone index in bonusPercent instead of a percentage
     for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
     {
-        if (goldUpgradesBought[i] &&
-            GOLD_UPGRADES[i].target == UpgradeTarget::UNLOCK_ZONE &&
-            GOLD_UPGRADES[i].bonusPercent == zoneId)
+        if (GOLD_UPGRADES[i].target == UpgradeTarget::UNLOCK_ZONE && GOLD_UPGRADES[i].bonusPercent == zoneId)
         {
-            return true;
+            return goldUpgradesBought[i] || mapRank(i) <= ascension.getPercent(TalentEffect::KEEP_MAPS);
         }
     }
     return false;

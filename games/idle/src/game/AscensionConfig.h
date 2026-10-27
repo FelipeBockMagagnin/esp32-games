@@ -9,12 +9,13 @@
 // awards, the items and the talents. Points follow Cookie Clicker's prestige curve: the
 // lifetime total is floor(cbrt(lifetime gold / ASCEND_GOLD_PER_POINT)), and ascending
 // banks whatever that total has gained, so ascending early never costs points.
-// Measured with tools/sim --suggest (ascending when the game suggests it): the first run
-// ascends on day 4 with ~26 points, the next ones on days 4.5-6 with 40, 60, 90, 135 and
-// 205, and Deep Delver's zones open around days 13.5 and 23.5. From about week six a run's gold
-// fills 64 bits within days, so points per run shrink and the suggestion comes on the full
-// total instead. The talent prices grow geometrically, so late points buy a few more levels
-// of each rather than the deep ones.
+// Measured with tools/sim --suggest (ascending when the game suggests it): runs grow as
+// NGU's rebirths do, the first ending on day 1 with 4 points, the next after 1.2, 1.7, 1.5,
+// 2.5 and 2.2 days with 7, 11, 15, 30 and 34, then 1-3 days a run. Deep Delver's zones
+// open around days 10.5 and 18, its second level priced for the wait to outgrow the one
+// before it. From about week five a run's gold fills 64 bits within days, so points per
+// run shrink and the suggestion comes on the full total instead. The talent prices grow
+// geometrically, so late points buy a few more levels of each rather than the deep ones.
 static const uint64_t ASCEND_GOLD_PER_POINT = 20000000000ULL;
 
 // Every point earned, spent or not, also adds this much gold production, as Cookie
@@ -23,10 +24,14 @@ static const uint64_t ASCEND_GOLD_PER_POINT = 20000000000ULL;
 // days earns the most points (tools/sim --days N --runs M); at 3 the bonus compounds away.
 static const uint32_t ASCEND_PRODUCTION_PER_POINT = 2;
 
-// Ascending is suggested once the new points would raise that share by this much, which
-// lands on days 4-6 of a run, after the last building, as the run goes quiet. Points shrink
-// run after run (the cube root), so "until it doubles" would never come round.
-static const uint32_t ASCEND_SUGGEST_GAIN_PERCENT = 50;
+// Ascending is suggested once the new points would raise that share by the gain percent,
+// plus the step for every ascension so far up to the max. A small first gain makes the
+// first runs short, with the zone maps up to the Depths bought anew each time, and the
+// rising bar stretches the later ones, the share growing by at most half each run. Points
+// shrink run after run (the cube root), so "until it doubles" would never come round.
+static const uint32_t ASCEND_SUGGEST_GAIN_PERCENT = 8;
+static const uint32_t ASCEND_SUGGEST_STEP_PERCENT = 4;
+static const uint32_t ASCEND_SUGGEST_MAX_PERCENT = 50;
 
 // Most effects add a percentage; the rest change a mechanic, and their per-level value
 // means what the comment says
@@ -49,7 +54,7 @@ enum class TalentEffect : uint8_t
     SECOND_WIND,         // Minutes taken off SECOND_WIND_BASE_MS
     TWIN_DROP,           // Percent chance a drop lands twice
     RELIC_HUNT,          // Relics that can drop, in ITEMS order
-    KEEP_MAPS,           // Zone maps kept, from the Forest's
+    KEEP_MAPS,           // Zone maps kept, in GOLD_UPGRADES order
     DEEP_ZONES,          // Zones past the Molten Core opened (ZoneDef::reqDelveLevel)
     VEIN_LINGER,         // Seconds a gold vein stays up beyond VEIN_VISIBLE_MS
     THEMES,              // Themes opened beyond the free ones, in THEMES order (ui/Themes.h)
@@ -122,7 +127,7 @@ static constexpr TalentDef TALENTS[] = {
     {"Twin Drop",   "5% drops count twice",    TalentEffect::TWIN_DROP,             5,   10, 4,   150,  TALENT_KEEN_EYE,     image_item_gold_ring_pixels},
     {"Relic Sense", "One relic per level",     TalentEffect::RELIC_HUNT,            1,   7,  6,   150,  TALENT_KEEN_EYE,     image_award_skull_pixels},
     {"Old Maps",    "Keep zone maps",          TalentEffect::KEEP_MAPS,             1,   4,  3,   150,  TALENT_WAR_SPIRIT,   image_upgrade_map_pixels},
-    {"Deep Delver", "Opens deeper zones",      TalentEffect::DEEP_ZONES,            1,   2,  50,  300,  TALENT_OLD_MAPS,     image_zone_depths_pixels},
+    {"Deep Delver", "Opens deeper zones",      TalentEffect::DEEP_ZONES,            1,   2,  50,  1500,  TALENT_OLD_MAPS,     image_zone_depths_pixels},
 
     {"Dowser",      "Veins 5% more often",     TalentEffect::VEIN_FREQUENCY,        5,   20, 1,   135,  NO_TALENT,           image_icon_gold_vein_pixels},
     {"Vein Lore",   "Vein bonuses +5% a lvl",  TalentEffect::VEIN_POWER,            5,   20, 2,   135,  TALENT_DOWSER,       image_icon_gold_vein_pixels},

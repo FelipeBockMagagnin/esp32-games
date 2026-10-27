@@ -84,7 +84,7 @@ static const uint16_t *iconFor(const AchievementDef &def)
         // The set's body armour stands for it
         for (uint8_t i = 0; i < ITEM_COUNT; i++)
         {
-            if (ITEMS[i].slot == EquipSlot::BODY && ITEMS[i].tier == def.target)
+            if (ITEMS[i].slot == EquipSlot::BODY && isZoneSetPiece(def.target, i))
             {
                 return ITEMS[i].iconPixels;
             }

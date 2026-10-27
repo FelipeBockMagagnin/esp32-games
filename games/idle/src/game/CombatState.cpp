@@ -40,6 +40,7 @@ CombatState::CombatState(GameState &game, Inventory &inventory)
       spellReadyAt(0),
       wardEndsAt(0),
       midasArmed(false),
+      seekArmed(false),
       guardReadyAt(0),
       guardEndsAt(0),
       respawnAt(0),
@@ -135,7 +136,8 @@ bool CombatState::isZoneUnlocked(uint8_t zoneId) const
     {
         return false;
     }
-    return zoneKills[zoneId - 1] >= def.reqPrevZoneKills;
+    // In order, so a Deep Delver zone waits for the Core's map to be bought again
+    return isZoneUnlocked(zoneId - 1);
 }
 
 // Health carries over from the last zone, so hopping between zones never heals; only the
@@ -404,6 +406,11 @@ uint16_t CombatState::getDropChanceBp(const DropDef &drop) const
     {
         chance *= NEW_ITEM_DROP_MULTIPLIER;
     }
+    const SpellDef *spell = getSpell();
+    if (seekArmed && spell != nullptr && spell->effect == SpellEffect::SEEK)
+    {
+        chance *= spell->power;
+    }
     return chance < 10000 ? (uint16_t)chance : 10000;
 }
 
@@ -453,6 +460,8 @@ bool CombatState::isSpellUseless() const
         return playerHp >= cachedStats.maxHp;
     case SpellEffect::MIDAS:
         return midasArmed;
+    case SpellEffect::SEEK:
+        return seekArmed;
     default:
         return false;
     }
@@ -474,7 +483,7 @@ uint32_t CombatState::getEnemyAttackDamage() const
     {
         return 0;
     }
-    return damageThrough(getEnemy().attack, cachedStats.defense);
+    return hurtThrough(getEnemy().attack, cachedStats.defense);
 }
 
 uint32_t CombatState::getEnemyHitDamage(unsigned long now) const
@@ -560,6 +569,7 @@ void CombatState::onEnemyKilled(unsigned long now)
             drops.anyNew = drops.anyNew || isNew;
         }
     }
+    seekArmed = false;
     if (drops.count > 0)
     {
         lastDrops = drops;
@@ -777,6 +787,9 @@ bool CombatState::castSpell(unsigned long now)
         break;
     case SpellEffect::MIDAS:
         midasArmed = true;
+        break;
+    case SpellEffect::SEEK:
+        seekArmed = true;
         break;
     case SpellEffect::WARD:
         wardEndsAt = now + spell->power;

@@ -378,7 +378,6 @@ void CombatScreen::refreshStatus(unsigned long now, bool fighting)
 // player; the rest explains a state that is easy to misread at any stage.
 Color CombatScreen::hint(unsigned long now, char *buf, size_t size)
 {
-    const Stats &player = combat.getPlayerStats();
     uint32_t defense = combat.getEnemyDefense();
     bool learning = combat.getTotalKills() < HINT_KILLS;
     bool hitComing = combat.getEnemyAttackDamage() > 0 && !combat.isWarded(now) &&
@@ -414,11 +413,6 @@ Color CombatScreen::hint(unsigned long now, char *buf, size_t size)
     {
         snprintf(buf, size, "UP casts %s", spell->name);
         return CombatStyle::READY;
-    }
-    if (combat.getAutoAttackDamage() == 0)
-    {
-        snprintf(buf, size, "ATK %s vs DEF %s: use STRIKE", formatCompact(player.attack).c_str(),
-                 formatCompact(defense).c_str());
     }
     return Theme::TEXT_2;
 }
@@ -521,6 +515,11 @@ void CombatScreen::onUpPress()
         snprintf(buf, sizeof(buf), "Warded for %us", (unsigned)(spell->power / 1000));
         showMessage(now, buf, CombatStyle::ACTIVE, KILL_MESSAGE_MS);
         enemyPanel.onCast(CombatStyle::ACTIVE, false);
+        break;
+    case SpellEffect::SEEK:
+        snprintf(buf, sizeof(buf), "Next kill drops x%u", (unsigned)spell->power);
+        showMessage(now, buf, Theme::GOOD, KILL_MESSAGE_MS);
+        enemyPanel.onCast(Theme::GOOD, false);
         break;
     }
     forceRefresh();
