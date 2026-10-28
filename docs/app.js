@@ -87,6 +87,29 @@
     });
   }
 
+  function fillInfo(game) {
+    $("name").textContent = game.name;
+    $("tagline").textContent = game.tagline;
+    $("desc").textContent = game.description;
+    $("version").textContent = game.version ? `versão ${game.version} · ${game.date}` : "ainda não publicado";
+  }
+
+  // The card keeps the height of the longest game's text, so picking another cartridge never
+  // moves the shelf under it
+  function fitInfo() {
+    if (games.length === 0) {
+      return;
+    }
+    info.style.minHeight = "";
+    let tallest = 0;
+    games.forEach((game) => {
+      fillInfo(game);
+      tallest = Math.max(tallest, info.getBoundingClientRect().height);
+    });
+    info.style.minHeight = `${Math.ceil(tallest)}px`;
+    fillInfo(games[current]);
+  }
+
   function select(i) {
     if (games.length === 0) {
       return;
@@ -97,10 +120,7 @@
     const game = games[i];
 
     document.documentElement.style.setProperty("--accent", game.accent);
-    $("name").textContent = game.name;
-    $("tagline").textContent = game.tagline;
-    $("desc").textContent = game.description;
-    $("version").textContent = game.version ? `versão ${game.version} · ${game.date}` : "ainda não publicado";
+    fillInfo(game);
     shot.src = game.image;
     shot.alt = `Tela do ${game.name}`;
     info.scrollTop = 0;
@@ -189,6 +209,14 @@
     renderCarts();
     const linked = games.findIndex((g) => `#${g.id}` === location.hash);
     select(linked >= 0 ? linked : 0);
+    fitInfo();
+    // The pixel fonts change every line's width once they load
+    document.fonts.ready.then(fitInfo);
+    let resizeFrame = 0;
+    window.addEventListener("resize", () => {
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(fitInfo);
+    });
   } else {
     $("name").textContent = "Nenhum jogo";
     $("desc").textContent = "Rode ./publish.sh para compilar os jogos e montar a lista.";

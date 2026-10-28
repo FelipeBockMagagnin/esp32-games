@@ -516,10 +516,16 @@ b {
   box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.45);
 }
 
+/* Held at the longest game's height by app.js, with the help link kept at the bottom */
 .info {
-  max-height: 340px;
-  overflow-y: auto;
-  scrollbar-color: var(--mid) var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.info .help-link {
+  margin-top: auto;
+  padding-top: 18px;
 }
 
 .tag {
@@ -602,17 +608,20 @@ h1 {
   color: var(--paper-2);
 }
 
+/* One row whatever the number of games: the cartridges narrow instead of wrapping below the fold */
 .carts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 26px 22px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 148px);
+  justify-content: start;
+  gap: 18px;
   padding: 16px 4px 10px;
 }
 
 .cart {
   --shell: color-mix(in srgb, var(--cart) 30%, #161616);
   position: relative;
-  width: 148px;
+  min-width: 0;
   border: 0;
   padding: 0;
   background: none;
@@ -897,11 +906,6 @@ h1 {
     padding-top: 20px;
   }
 
-  .info {
-    max-height: none;
-    overflow: visible;
-  }
-
   .carts {
     justify-content: center;
   }
@@ -931,10 +935,6 @@ h1 {
 
   h1 {
     font-size: 26px;
-  }
-
-  .cart {
-    width: 136px;
   }
 }
 
