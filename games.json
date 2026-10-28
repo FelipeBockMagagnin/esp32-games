@@ -8,7 +8,7 @@
     "env": "esp32dev",
     "image": "img/idle.png",
     "accent": "#f7b542",
-    "thumb": "50% 30%"
+    "thumb": "50% 46%"
   },
   {
     "id": "pet",

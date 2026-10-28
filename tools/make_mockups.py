@@ -2,8 +2,9 @@
 """Draws docs/img/<id>.png, a 240x320 picture of each game's screen for the site, from the
 games' own sprites and colours instead of a photo of the board.
 
-The pet's tiles are redrawn here after its TileArt.cpp, with the same art colours; the idle
-game's combat screen uses its enemy and background PNGs. Decaf Inferno's floor is filmed by the
+The pet's tiles are redrawn here after its TileArt.cpp, with the same art colours. Idle Miner's
+is no drawing but its Mining screen read back from a board (tools/captures/idle.png, taken with
+esp32-idle-game's tools/screenshot.py), since a redrawing fell behind the game. Decaf Inferno's floor is filmed by the
 game's own renderer (its tools/sim/film.sh, which needs g++) and turned upright, since that game
 holds the board on its side. Run from the repo root:
 python3 tools/make_mockups.py
@@ -16,7 +17,8 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
-IDLE = ROOT.parent / "esp32-idle-game" / "src" / "assets" / "png" / "sprites"
+# Screens read back from a board by esp32-idle-game's tools/screenshot.py
+CAPTURES = ROOT / "tools" / "captures"
 DECAF = ROOT.parent / "esp32-decaf"
 # Steps of the solver's route through B1: the mantis charging, the player jumping over him
 DECAF_STEPS = 900
@@ -65,37 +67,8 @@ def header(img, title, back, nxt):
     text(d, (W - 4, 6), nxt + " >", T["TEXT_2"], "ra")
 
 
-def bar(d, x, y, w, h, frac, fill, track, label):
-    d.rectangle((x, y, x + w - 1, y + h - 1), fill=track, outline=T["FRAME"])
-    d.rectangle((x + 1, y + 1, x + 1 + int((w - 3) * frac), y + h - 2), fill=fill)
-    text(d, (x + w // 2, y + h // 2 + 1), label, T["TEXT"], "mm")
-
-
 def idle():
-    img = Image.new("RGB", (W, H), T["BG"])
-    header(img, "Combat", "Zones", "Inventory")
-    d = ImageDraw.Draw(img)
-    d.rectangle((8, 36, W - 9, 220), fill=T["CARD"], outline=T["FRAME"])
-    scale = 2
-    bg = Image.open(IDLE / "backgrounds" / "stone.png").convert("RGBA")
-    bg = bg.resize((bg.width * scale, bg.height * scale), Image.NEAREST)
-    enemy = Image.open(IDLE / "enemies" / "goblin.png").convert("RGBA")
-    enemy = enemy.resize((enemy.width * scale, enemy.height * scale), Image.NEAREST)
-    left, top = (W - bg.width) // 2, 62
-    img.paste(bg, (left, top), bg)
-    img.paste(enemy, (left, top), enemy)
-    text(d, (W // 2, 44), "GOBLIN", T["ENEMY_NAME"], "ma")
-    bar(d, 20, 196, W - 40, 12, 0.62, T["ENEMY_HP_BAR"], T["ENEMY_HP_TRACK"], "HP 31/50")
-
-    d.rectangle((8, 228, W - 9, 312), fill=T["CARD"], outline=T["FRAME"])
-    text(d, (16, 236), "You", T["TEXT_2"])
-    text(d, (W - 16, 236), "12.4K gold", T["GOLD"], "ra")
-    bar(d, 16, 250, W - 32, 12, 0.85, T["HP_BAR"], T["HP_TRACK"], "HP 85/100")
-    text(d, (16, 272), "ATK 24   DEF 11", T["TEXT"])
-    d.ellipse((W - 46, 272, W - 18, 300), fill=rgb(0xE309), outline=T["TEXT"])
-    text(d, (W - 32, 287), "HIT", T["TEXT"], "mm")
-    text(d, (16, 290), "Kills 214", T["TEXT_2"])
-    return img
+    return Image.open(CAPTURES / "idle.png").convert("RGB")
 
 
 # TileArt.cpp's terrain, RGB565 in WorldConfig.h

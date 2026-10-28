@@ -6,7 +6,7 @@ window.GAMES = [
     "description": "Minere ouro, erga construções e compre melhorias. Depois leve seu equipamento pelas zonas: os inimigos deixam itens e os amuletos lançam feitiços. Ascenda para recomeçar mais forte.",
     "image": "img/idle.png",
     "accent": "#f7b542",
-    "thumb": "50% 30%",
+    "thumb": "50% 46%",
     "version": "e02e0b8",
     "date": "2026-10-26",
     "manifest": "firmware/idle/manifest.json"
