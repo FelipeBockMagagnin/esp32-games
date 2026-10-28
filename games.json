@@ -20,5 +20,16 @@
     "image": "img/pet.png",
     "accent": "#8cc96b",
     "thumb": "50% 46%"
+  },
+  {
+    "id": "decaf",
+    "name": "Decaf Inferno",
+    "tagline": "Plataforma no escritório",
+    "description": "A máquina de café quebrou e o RH se recusa a comprar outra. Desça os andares do escritório, inspirados nos círculos do inferno de Dante, pulando na cabeça dos colegas e fugindo da impressora atrás de um café. Jogue com o aparelho deitado.",
+    "path": "../esp32-decaf",
+    "env": "esp32dev",
+    "image": "img/decaf.png",
+    "accent": "#c08552",
+    "thumb": "50% 12%"
   }
 ]

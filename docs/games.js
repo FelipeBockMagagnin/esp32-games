@@ -22,5 +22,17 @@ window.GAMES = [
     "version": "3e62f27",
     "date": "2026-10-28",
     "manifest": "firmware/pet/manifest.json"
+  },
+  {
+    "id": "decaf",
+    "name": "Decaf Inferno",
+    "tagline": "Plataforma no escritório",
+    "description": "A máquina de café quebrou e o RH se recusa a comprar outra. Desça os andares do escritório, inspirados nos círculos do inferno de Dante, pulando na cabeça dos colegas e fugindo da impressora atrás de um café. Jogue com o aparelho deitado.",
+    "image": "img/decaf.png",
+    "accent": "#c08552",
+    "thumb": "50% 12%",
+    "version": "ecd5773",
+    "date": "2026-10-28",
+    "manifest": "firmware/decaf/manifest.json"
   }
 ];

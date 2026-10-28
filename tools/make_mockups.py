@@ -3,16 +3,23 @@
 games' own sprites and colours instead of a photo of the board.
 
 The pet's tiles are redrawn here after its TileArt.cpp, with the same art colours; the idle
-game's combat screen uses its enemy and background PNGs. Run from the repo root:
+game's combat screen uses its enemy and background PNGs. Decaf Inferno's floor is filmed by the
+game's own renderer (its tools/sim/film.sh, which needs g++) and turned upright, since that game
+holds the board on its side. Run from the repo root:
 python3 tools/make_mockups.py
 """
 import random
+import subprocess
+import tempfile
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
 IDLE = ROOT.parent / "esp32-idle-game" / "src" / "assets" / "png" / "sprites"
+DECAF = ROOT.parent / "esp32-decaf"
+# Steps of the solver's route through B1: the mantis charging, the player jumping over him
+DECAF_STEPS = 900
 OUT = ROOT / "docs" / "img"
 W, H = 240, 320
 FONT = ImageFont.load_default_imagefont()
@@ -242,8 +249,27 @@ def pet():
     return img
 
 
+def decaf():
+    with tempfile.TemporaryDirectory() as tmp:
+        shot = Path(tmp) / "frame.png"
+        subprocess.run([DECAF / "tools" / "sim" / "film.sh", "frame", "0", str(DECAF_STEPS), str(shot)],
+                       check=True, stdout=subprocess.DEVNULL, env={"TMPDIR": tmp, "PATH": "/usr/bin:/bin"})
+        play = Image.open(shot).convert("RGB")
+    img = Image.new("RGB", (H, W), T["HEADER"])
+    img.paste(play, (0, 16))
+    d = ImageDraw.Draw(img)
+    text(d, (4, 4), "B1 LIMBO", T["GOLD"])
+    text(d, (H // 2, 4), "0:15.0", T["TEXT"], "ma")
+    text(d, (206, 4), "BOSS", T["BAD"])
+    for i in range(3):
+        d.rectangle((232 + i * 7, 5, 236 + i * 7, 9), fill=T["BAD"])
+    text(d, (H - 4, 4), "DEATHS 0", T["TEXT_2"], "ra")
+    # Held on its side with the D-pad on the left, the picture's top is the board's left edge
+    return img.rotate(90, expand=True)
+
+
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
-    for name, draw in (("idle", idle), ("pet", pet)):
+    for name, draw in (("idle", idle), ("pet", pet), ("decaf", decaf)):
         draw().save(OUT / f"{name}.png", optimize=True)
         print(OUT / f"{name}.png")
