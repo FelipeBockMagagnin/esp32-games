@@ -2,14 +2,17 @@
   const BOOT_MS = 1500;
   const FRAME_MS = 500; // The splash's frame time on the board
   const SCROLL_PX = 80;
+  const SEEN_HELP_KEY = "seen-help";
 
   const $ = (id) => document.getElementById(id);
+  const device = $("device");
   const screenMsg = $("screen-msg");
   const shot = $("shot");
   const install = $("install");
-  const activate = install.querySelector('[slot="activate"]');
+  const activate = $("activate");
   const cartsEl = $("carts");
   const info = document.querySelector(".info");
+  const help = $("help");
 
   // Opened as a file, the page shows its games but cannot fetch a manifest to flash with
   const fromFile = location.protocol === "file:";
@@ -50,10 +53,14 @@
     }
     shot.classList.add("show");
     if (flicker) {
-      shot.classList.remove("flicker");
-      void shot.offsetWidth; // Restarts the animation
-      shot.classList.add("flicker");
+      restartAnimation(shot, "flicker");
     }
+  }
+
+  function restartAnimation(el, cls) {
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
   }
 
   function renderCarts() {
@@ -62,11 +69,20 @@
       const cart = document.createElement("button");
       cart.className = "cart";
       cart.setAttribute("role", "tab");
-      cart.style.setProperty("--cart-accent", game.accent);
-      cart.innerHTML = `<span class="grip"></span><span class="label"><b></b><small></small></span>`;
-      cart.querySelector("b").textContent = game.name;
+      cart.style.setProperty("--cart", game.accent);
+      cart.style.setProperty("--i", i);
+      if (game.thumb) cart.style.setProperty("--thumb", game.thumb);
+      cart.innerHTML =
+        '<span class="cart-body"><span class="cart-shell"><span class="cart-label"><img alt="">' +
+        '<span class="cart-title"><span class="n"></span><small></small></span></span>' +
+        '<span class="cart-pins"></span></span></span>';
+      cart.querySelector("img").src = game.image;
+      cart.querySelector(".n").textContent = game.name;
       cart.querySelector("small").textContent = game.version ? `v ${game.version}` : "em breve";
       cart.addEventListener("click", () => select(i));
+      cart.addEventListener("animationend", (ev) => {
+        if (ev.animationName === "insert") cart.classList.remove("inserting");
+      });
       cartsEl.append(cart);
     });
   }
@@ -84,9 +100,7 @@
     $("name").textContent = game.name;
     $("tagline").textContent = game.tagline;
     $("desc").textContent = game.description;
-    $("version").textContent = game.version
-      ? `versão ${game.version} · ${game.date}`
-      : "ainda não publicado";
+    $("version").textContent = game.version ? `versão ${game.version} · ${game.date}` : "ainda não publicado";
     shot.src = game.image;
     shot.alt = `Tela do ${game.name}`;
     info.scrollTop = 0;
@@ -100,41 +114,74 @@
     activate.disabled = !ready || !usbOk;
     activate.classList.toggle("off", !ready || !usbOk);
     activate.setAttribute("aria-label", ready ? `Instalar ${game.name}` : `${game.name} ainda não publicado`);
-    $("confirm-label").textContent = fromFile ? "SÓ VIA HTTP" : !usbOk ? "SEM USB" : ready ? "INSTALAR" : "EM BREVE";
+    $("confirm-label").textContent = fromFile ? "só via http" : !usbOk ? "sem usb" : ready ? "instalar" : "em breve";
 
     [...cartsEl.children].forEach((cart, n) => cart.setAttribute("aria-selected", String(n === i)));
     history.replaceState(null, "", `#${game.id}`);
     if (changed) {
+      restartAnimation(cartsEl.children[i], "inserting");
+      device.classList.remove("flipped");
+      $("flip").setAttribute("aria-pressed", "false");
       showScreen(true);
     }
   }
 
   function press(dir) {
-    const pad = document.querySelector(`.pad[data-dir="${dir}"]`);
-    pad.classList.add("pressed");
-    setTimeout(() => pad.classList.remove("pressed"), 120);
+    const cap = document.querySelector(`.cap[data-dir="${dir}"]`);
+    cap.classList.add("pressed");
+    setTimeout(() => cap.classList.remove("pressed"), 120);
     if (dir === "left") select(current - 1);
     if (dir === "right") select(current + 1);
     if (dir === "up") info.scrollBy({ top: -SCROLL_PX });
     if (dir === "down") info.scrollBy({ top: SCROLL_PX });
   }
 
-  document.querySelectorAll(".pad[data-dir]").forEach((pad) =>
-    pad.addEventListener("click", () => press(pad.dataset.dir))
+  document.querySelectorAll(".cap[data-dir]").forEach((cap) =>
+    cap.addEventListener("click", () => press(cap.dataset.dir))
   );
 
   document.addEventListener("keydown", (ev) => {
     const dirs = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };
-    if (!dirs[ev.key] || ev.altKey || ev.ctrlKey || ev.metaKey || document.querySelector("ewt-install-dialog")) {
+    if (!dirs[ev.key] || ev.altKey || ev.ctrlKey || ev.metaKey || help.open || document.querySelector("ewt-install-dialog")) {
       return;
     }
     ev.preventDefault();
     press(dirs[ev.key]);
   });
 
-  // The LED lights while the install dialog is talking to the board
+  $("flip").addEventListener("click", () => {
+    const flipped = device.classList.toggle("flipped");
+    $("flip").setAttribute("aria-pressed", String(flipped));
+  });
+
+  // The tutorial
+  const openHelp = () => {
+    help.showModal();
+    try {
+      localStorage.setItem(SEEN_HELP_KEY, "1");
+    } catch (e) {}
+    $("help-open").classList.remove("hint");
+  };
+  $("help-open").addEventListener("click", openHelp);
+  $("help-link").addEventListener("click", openHelp);
+  $("help-close").addEventListener("click", () => help.close());
+  // A click on the backdrop lands on the dialog itself, outside its content box
+  help.addEventListener("click", (ev) => {
+    const box = help.getBoundingClientRect();
+    const inside = ev.clientX >= box.left && ev.clientX <= box.right && ev.clientY >= box.top && ev.clientY <= box.bottom;
+    if (ev.target === help && !inside) help.close();
+  });
+  let seenHelp = false;
+  try {
+    seenHelp = localStorage.getItem(SEEN_HELP_KEY) === "1";
+  } catch (e) {}
+  if (!seenHelp) {
+    $("help-open").classList.add("hint");
+  }
+
+  // The screen glows while the install dialog is talking to the board
   new MutationObserver(() => {
-    $("led").classList.toggle("on", Boolean(document.querySelector("ewt-install-dialog")));
+    device.classList.toggle("flashing", Boolean(document.querySelector("ewt-install-dialog")));
   }).observe(document.body, { childList: true });
 
   games = Array.isArray(window.GAMES) ? window.GAMES : [];

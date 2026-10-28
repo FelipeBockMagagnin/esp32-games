@@ -6,6 +6,7 @@ window.GAMES = [
     "description": "Minere ouro, erga construções e compre melhorias. Depois leve seu equipamento pelas zonas: os inimigos deixam itens e os amuletos lançam feitiços. Ascenda para recomeçar mais forte.",
     "image": "img/idle.png",
     "accent": "#f7b542",
+    "thumb": "50% 30%",
     "version": "e02e0b8",
     "date": "2026-10-26",
     "manifest": "firmware/idle/manifest.json"
@@ -17,6 +18,7 @@ window.GAMES = [
     "description": "Abra espaço no mato, plante e cave lagos. Os bichinhos colhem, dormem nas tocas e rendem moedas enquanto estão felizes. Se passarem fome por muito tempo, vão embora.",
     "image": "img/pet.png",
     "accent": "#8cc96b",
+    "thumb": "50% 46%",
     "version": "3e62f27",
     "date": "2026-10-28",
     "manifest": "firmware/pet/manifest.json"

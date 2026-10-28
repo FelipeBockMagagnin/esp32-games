@@ -23,9 +23,17 @@ erase every game's save. Every game must keep the default partition table for th
 
 ## Add a game
 
-1. A row in `games.json`: `id`, `name`, `tagline`, `description`, `path`, `env`, `image`, `accent`.
+1. A row in `games.json`: `id`, `name`, `tagline`, `description`, `path`, `env`, `image`, `accent`
+   (the cartridge's colour) and `thumb` (the `object-position` of its label's crop of the screen).
 2. A 240x320 screen in `docs/img/<id>.png` (`tools/make_mockups.py` draws the current two).
 3. `./publish.sh <id>`.
+
+## The console
+
+The console on the page is the printed case: its proportions, window and D-pad come from
+`hardware/case/case.scad` in esp32-idle-game, measured in `--mm` (5.5556px, so the display's
+43.2mm come out at its 240 pixels). `tools/make_brand.py` draws the engraved wordmark, the back's
+character and the favicons from that repo's `brand.scad`; rerun it if the case art changes.
 
 ## Preview
 

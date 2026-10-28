@@ -7,7 +7,8 @@
     "path": "../esp32-idle-game",
     "env": "esp32dev",
     "image": "img/idle.png",
-    "accent": "#f7b542"
+    "accent": "#f7b542",
+    "thumb": "50% 30%"
   },
   {
     "id": "pet",
@@ -17,6 +18,7 @@
     "path": "../esp32-pet",
     "env": "esp32dev",
     "image": "img/pet.png",
-    "accent": "#8cc96b"
+    "accent": "#8cc96b",
+    "thumb": "50% 46%"
   }
 ]

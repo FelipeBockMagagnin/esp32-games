@@ -5,7 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>dotcompany Games</title>
   <meta name="description" content="Escolha um jogo e grave na sua placa ESP32 pela USB, direto do navegador.">
-  <link rel="icon" href="img/brand/hood_0.png">
+  <meta name="theme-color" content="#5d5d5d">
+  <link rel="icon" type="image/png" sizes="32x32" href="img/brand/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="img/brand/favicon-48.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="img/brand/favicon-96.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="img/brand/favicon-192.png">
+  <link rel="apple-touch-icon" href="img/brand/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
@@ -15,74 +20,108 @@
 <body>
   <header class="top">
     <img class="wordmark" src="img/brand/wordmark.png" alt="dotcompany" width="930" height="160">
-    <p class="kicker">Jogos para a sua placa. Escolha, conecte, instale.</p>
+    <p class="kicker">Jogos para o seu console. Escolha um cartucho e instale.</p>
+    <button class="help-button" id="help-open" aria-haspopup="dialog" aria-controls="help" title="Como instalar">?</button>
   </header>
 
   <main class="stage">
-    <section class="console" aria-label="Console">
-      <div class="console-body">
-        <div class="bezel">
-          <span class="led" id="led" aria-hidden="true"></span>
-          <div class="screen" id="screen">
-            <div class="boot" id="boot" aria-hidden="true">
-              <div class="logo">
-                <img class="hood" id="hood" src="img/brand/hood_0.png" alt="">
-                <img class="boot-mark" src="img/brand/wordmark_small.png" alt="">
+    <section class="device-area" aria-label="Console">
+      <div class="device" id="device">
+        <div class="flipper">
+          <!-- The printed case's front: proportions from hardware/case/case.scad, in mm -->
+          <div class="case front">
+            <img class="case-mark" src="img/brand/case_wordmark.png" alt="dotcompany">
+            <span class="usb" aria-hidden="true"></span>
+            <span class="notch" aria-hidden="true"></span>
+
+            <div class="window">
+              <div class="screen" id="screen">
+                <div class="boot" id="boot" aria-hidden="true">
+                  <div class="logo">
+                    <img class="hood" id="hood" src="img/brand/hood_0.png" alt="">
+                    <img class="boot-mark" src="img/brand/wordmark_small.png" alt="">
+                  </div>
+                </div>
+                <img class="shot" id="shot" alt="">
+                <div class="screen-msg" id="screen-msg" hidden></div>
               </div>
             </div>
-            <img class="shot" id="shot" alt="">
-            <div class="screen-msg" id="screen-msg" hidden></div>
-          </div>
-        </div>
 
-        <div class="controls">
-          <div class="dpad" role="group" aria-label="Escolher jogo">
-            <button class="pad up" data-dir="up" aria-label="Rolar a descrição para cima"></button>
-            <button class="pad left" data-dir="left" aria-label="Jogo anterior"></button>
-            <span class="pad mid" aria-hidden="true"></span>
-            <button class="pad right" data-dir="right" aria-label="Próximo jogo"></button>
-            <button class="pad down" data-dir="down" aria-label="Rolar a descrição para baixo"></button>
+            <div class="dpad" role="group" aria-label="Botões do console">
+              <button class="cap" data-dir="up" aria-label="Rolar a descrição para cima"></button>
+              <button class="cap" data-dir="left" aria-label="Jogo anterior"></button>
+              <button class="cap" data-dir="right" aria-label="Próximo jogo"></button>
+              <button class="cap" data-dir="down" aria-label="Rolar a descrição para baixo"></button>
+              <esp-web-install-button id="install" class="cap-confirm">
+                <button slot="activate" class="cap red" id="activate" aria-label="Instalar o jogo selecionado"></button>
+                <span slot="unsupported" class="cap red off" aria-hidden="true"></span>
+                <span slot="not-allowed" class="cap red off" aria-hidden="true"></span>
+              </esp-web-install-button>
+            </div>
           </div>
 
-          <div class="confirm-wrap">
-            <esp-web-install-button id="install">
-              <button slot="activate" class="confirm" aria-label="Instalar o jogo selecionado"></button>
-              <span slot="unsupported" class="confirm off" aria-hidden="true"></span>
-              <span slot="not-allowed" class="confirm off" aria-hidden="true"></span>
-            </esp-web-install-button>
-            <span class="confirm-label" id="confirm-label">INSTALAR</span>
+          <div class="case back" aria-hidden="true">
+            <img class="back-art" src="img/brand/case_back.png" alt="">
+            <img class="back-mark" src="img/brand/case_wordmark.png" alt="">
           </div>
         </div>
       </div>
 
-      <div class="slot" aria-hidden="true"></div>
-      <div class="carts" id="carts" role="tablist" aria-label="Jogos"></div>
+      <div class="legend">
+        <span><i class="key">◀</i><i class="key">▶</i> trocar jogo</span>
+        <span><i class="key red"></i> <b id="confirm-label">instalar</b></span>
+        <button class="flip-button" id="flip" aria-pressed="false">virar <span class="glyph" aria-hidden="true">↻</span></button>
+      </div>
     </section>
 
-    <section class="info card" aria-live="polite">
-      <p class="tag" id="tagline"></p>
-      <h1 id="name">&nbsp;</h1>
-      <p class="version" id="version"></p>
-      <div class="desc" id="desc"></div>
+    <section class="side">
+      <article class="info card" aria-live="polite">
+        <p class="tag" id="tagline"></p>
+        <h1 id="name">&nbsp;</h1>
+        <p class="version" id="version"></p>
+        <div class="desc" id="desc"></div>
+        <button class="help-link" id="help-link" aria-haspopup="dialog" aria-controls="help">
+          <span class="q">?</span> Como instalar na placa
+        </button>
+      </article>
 
-      <h2>Como instalar</h2>
-      <ol class="steps">
-        <li><span><b>Chrome ou Edge</b> no computador. Firefox e Safari não falam com a USB.</span></li>
-        <li><span><b>Conecte a placa</b> no cabo USB.</span></li>
-        <li><span><b>Aperte o botão vermelho</b> e escolha a porta da placa.</span></li>
-      </ol>
-
-      <h2>Bom saber</h2>
-      <ul class="notes">
-        <li>O progresso de cada jogo fica salvo na placa. Trocar de jogo <b>não apaga</b> o save do outro; só se você marcar "apagar" ao instalar.</li>
-        <li>A porta não aparece? Instale o driver da placa (<b>CP2102</b> ou <b>CH340</b>).</li>
-        <li>Travou em "conectando"? Segure o botão <b>BOOT</b> da placa enquanto a gravação começa.</li>
-      </ul>
+      <h2 class="shelf-title">Cartuchos</h2>
+      <div class="carts" id="carts" role="tablist" aria-label="Jogos"></div>
     </section>
   </main>
 
+  <dialog class="help card" id="help" aria-labelledby="help-title">
+    <button class="close" id="help-close" aria-label="Fechar">×</button>
+    <p class="tag">Tutorial</p>
+    <h2 id="help-title">Como instalar</h2>
+    <ol class="steps">
+      <li>
+        <span class="step-icon">⌂</span>
+        <span><b>Abra no Chrome ou no Edge</b>, num computador. Firefox, Safari e celular não acessam a USB.</span>
+      </li>
+      <li>
+        <span class="step-icon">⇄</span>
+        <span><b>Ligue o console</b> no computador pelo cabo USB, pela abertura na lateral do case.</span>
+      </li>
+      <li>
+        <span class="step-icon">▣</span>
+        <span><b>Escolha um cartucho</b> clicando nele, ou com ◀ e ▶ no D-pad do console da página.</span>
+      </li>
+      <li>
+        <span class="step-icon red"></span>
+        <span><b>Aperte o botão vermelho</b>, escolha a porta da placa e confirme. A gravação leva cerca de um minuto.</span>
+      </li>
+    </ol>
+    <h3>Bom saber</h3>
+    <ul class="notes">
+      <li>Cada jogo guarda o próprio save. Trocar de jogo <b>não apaga</b> o do outro, a menos que você marque "apagar" ao instalar.</li>
+      <li>A porta não aparece? Instale o driver da placa: <b>CP2102</b> ou <b>CH340</b>.</li>
+      <li>Parou em "conectando"? Segure o botão <b>BOOT</b> da placa quando a gravação começar.</li>
+    </ul>
+  </dialog>
+
   <footer class="foot">
-    <img src="img/brand/hood_1.png" alt="" width="22" height="38">
+    <img src="img/brand/favicon-32.png" alt="" width="32" height="32">
     <span>dotcompany</span>
   </footer>
 

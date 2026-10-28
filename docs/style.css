@@ -7,12 +7,19 @@
   --mid: #8b8b8b;
   --paper: #ffffff;
   --paper-2: #d4d4d4;
-  /* The board's red Confirm cap, CONFIRM in the games' themes: the one colour of the page */
+  /* The printed case (export_3mf.py's materials) */
+  --case: #f2f2f2;
+  --case-edge: #d9d9d9;
+  --logo: #1a1a1a;
+  /* The board's red Confirm cap, CONFIRM in the games' themes: the one bright colour */
   --confirm: #e06048;
-  --confirm-deep: #8f3324;
+  --confirm-deep: #a83c2a;
   /* Set per game by app.js */
   --accent: #f7b542;
-  --s: 1; /* Screen scale: the 240x320 panel at 1x or 2x, never in between */
+
+  /* One millimetre of the case. 5.5556px puts the display's 43.2mm visible area at its
+     240 pixels; a narrow phone shrinks the whole console with it. */
+  --mm: min(5.5556px, calc((100vw - 32px) / 67));
 
   --mdc-theme-primary: var(--confirm);
   --esp-tools-button-color: var(--confirm);
@@ -45,11 +52,22 @@ img {
   image-rendering: pixelated;
 }
 
+button {
+  font: inherit;
+  color: inherit;
+}
+
+b {
+  color: var(--paper);
+  font-weight: normal;
+}
+
 /* ---- Header ---- */
 
 .top {
+  position: relative;
   text-align: center;
-  padding: 40px 16px 8px;
+  padding: 40px 72px 8px;
 }
 
 .wordmark {
@@ -66,73 +84,162 @@ img {
   margin: 12px 0 0;
 }
 
+/* A white cap like the console's, with the question on it */
+.help-button {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 20;
+  width: 52px;
+  height: 52px;
+  border: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0 30%, var(--case) 60%, #cfcfcf 100%);
+  box-shadow: 0 0 0 3px var(--ink), 0 5px 0 3px var(--ink);
+  color: var(--logo);
+  font-family: "VT323", monospace;
+  font-size: 38px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 80ms;
+}
+
+.help-button:hover {
+  transform: translateY(-2px);
+}
+
+.help-button:active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 3px var(--ink), 0 2px 0 3px var(--ink);
+}
+
+.help-button.hint {
+  animation: hint 1.4s steps(4, end) 3;
+}
+
+@keyframes hint {
+  50% { box-shadow: 0 0 0 3px var(--ink), 0 5px 0 3px var(--ink), 0 0 0 12px rgba(224, 96, 72, 0.5); }
+}
+
 /* ---- Stage ---- */
 
 .stage {
   flex: 1;
   display: grid;
-  grid-template-columns: auto minmax(0, 460px);
+  grid-template-columns: auto minmax(0, 480px);
   justify-content: center;
   align-items: start;
-  gap: 56px;
+  gap: 64px;
   padding: 32px 16px 48px;
 }
 
-/* ---- Console ---- */
+/* ---- The console ---- */
 
-.console {
+.device-area {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 22px;
 }
 
-.console-body {
-  width: calc(240px * var(--s) + 80px);
-  max-width: 100%;
-  background: var(--ink);
-  padding: 20px;
-  border-radius: 18px 18px 18px 56px;
-  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.45), inset -6px -6px 0 var(--ink-2);
+.device {
+  width: calc(67 * var(--mm));
+  height: calc(122.2 * var(--mm));
+  perspective: 1400px;
+}
+
+.flipper {
   position: relative;
-  z-index: 2;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 700ms cubic-bezier(0.3, 1.4, 0.5, 1);
 }
 
-.bezel {
-  background: var(--ink-2);
-  padding: 18px 20px 22px;
-  border-radius: 10px 10px 10px 32px;
-  position: relative;
+.device.flipped .flipper {
+  transform: rotateY(180deg);
 }
 
-.led {
+.case {
   position: absolute;
-  top: 8px;
-  left: 10px;
-  width: 6px;
-  height: 6px;
-  background: var(--ink-3);
+  inset: 0;
+  border-radius: calc(5.5 * var(--mm));
+  backface-visibility: hidden;
+  /* FDM layer lines over the white PLA */
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.03) 0 1px, transparent 1px 3px),
+    var(--case);
+  box-shadow:
+    inset calc(0.6 * var(--mm)) calc(0.6 * var(--mm)) 0 #fff,
+    inset calc(-0.9 * var(--mm)) calc(-0.9 * var(--mm)) 0 var(--case-edge),
+    10px 12px 0 rgba(0, 0, 0, 0.35);
 }
 
-.led.on {
-  background: var(--confirm);
-  box-shadow: 0 0 6px var(--confirm);
+.case.back {
+  transform: rotateY(180deg);
+}
+
+/* Engraved: a shade lighter below each pixel, as the pocket's lit edge */
+.case-mark {
+  position: absolute;
+  left: calc(6.2 * var(--mm));
+  top: calc(4.8 * var(--mm));
+  width: calc(54.6 * var(--mm));
+  height: auto;
+  filter: drop-shadow(0 1px 0 #fff);
+}
+
+.usb {
+  position: absolute;
+  left: 0;
+  top: calc(34.2 * var(--mm));
+  width: calc(1.4 * var(--mm));
+  height: calc(12 * var(--mm));
+  background: #3a3a3a;
+  border-radius: 0 2px 2px 0;
+}
+
+.notch {
+  position: absolute;
+  right: 0;
+  top: calc(55.1 * var(--mm));
+  width: calc(1 * var(--mm));
+  height: calc(12 * var(--mm));
+  background: var(--case-edge);
+}
+
+/* The bezel's window with its chamfer, and the display's black glass inside it */
+.window {
+  position: absolute;
+  left: calc(10.5 * var(--mm));
+  top: calc(14.5 * var(--mm));
+  width: calc(46 * var(--mm));
+  height: calc(62 * var(--mm));
+  background: #0b0b0b;
+  box-shadow: 0 0 0 calc(0.9 * var(--mm)) #cfcfcf, 0 calc(-0.9 * var(--mm)) 0 calc(0.9 * var(--mm)) #bdbdbd;
 }
 
 .screen {
-  width: calc(240px * var(--s));
-  height: calc(320px * var(--s));
-  max-width: 100%;
-  aspect-ratio: 3 / 4;
-  margin: 0 auto;
+  position: absolute;
+  left: calc(1.4 * var(--mm));
+  top: calc(2.2 * var(--mm));
+  width: calc(43.2 * var(--mm));
+  height: calc(57.6 * var(--mm));
   background: #5a5d5a; /* The splash's backdrop on the board */
-  position: relative;
   overflow: hidden;
-  outline: 2px solid #000;
 }
 
 .screen > * {
   position: absolute;
   inset: 0;
+}
+
+.device.flashing .screen {
+  animation: flashing 900ms steps(2, end) infinite;
+}
+
+@keyframes flashing {
+  50% { box-shadow: 0 0 0 2px var(--confirm), 0 0 18px var(--confirm); }
 }
 
 .shot {
@@ -147,12 +254,12 @@ img {
 }
 
 .shot.flicker {
-  animation: flicker 220ms steps(3, end);
+  animation: flicker 260ms steps(3, end);
 }
 
 @keyframes flicker {
   0% { opacity: 0; }
-  50% { opacity: 0.4; filter: brightness(2); }
+  50% { opacity: 0.5; filter: brightness(2.2); }
   100% { opacity: 1; }
 }
 
@@ -172,18 +279,18 @@ img {
   position: relative;
 }
 
+/* As on the board's splash: the character at 4x, the wordmark at 2x crossing it 21 rows down */
 .hood {
   display: block;
-  width: calc(88px * var(--s));
+  width: calc(88 / 240 * 43.2 * var(--mm));
   height: auto;
 }
 
-/* As on the board's splash: at 2x, crossing the 4x character 21 rows below its hood */
 .boot-mark {
   position: absolute;
   left: 50%;
-  top: calc(86px * var(--s));
-  width: calc(168px * var(--s));
+  top: calc(86 / 240 * 43.2 * var(--mm));
+  width: calc(168 / 240 * 43.2 * var(--mm));
   height: auto;
   transform: translateX(-50%);
 }
@@ -198,12 +305,17 @@ img {
   text-align: center;
   background: var(--ink);
   font-family: "Silkscreen", monospace;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.5;
 }
 
 .screen-msg[hidden] {
   display: none;
+}
+
+.screen-msg strong {
+  color: var(--confirm);
+  font-size: 17px;
 }
 
 .screen-msg.band {
@@ -220,182 +332,192 @@ img {
   font-size: 11px;
 }
 
-.screen-msg strong {
-  color: var(--confirm);
-  font-size: 18px;
-}
-
-/* ---- Controls: the board's D-pad and red cap ---- */
-
-.controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 22px 6px 6px;
-}
-
+/* The D-pad: five round caps in a cross, 10.5mm apart, Confirm in the middle */
 .dpad {
-  display: grid;
-  grid-template-columns: repeat(3, 34px);
-  grid-template-rows: repeat(3, 34px);
+  position: absolute;
+  left: calc(33.5 * var(--mm));
+  top: calc(104.5 * var(--mm));
+  width: 0;
+  height: 0;
 }
 
-.pad {
+.cap,
+.cap-confirm {
+  position: absolute;
+  width: calc(8.5 * var(--mm));
+  height: calc(8.5 * var(--mm));
+  margin: calc(-4.25 * var(--mm)) 0 0 calc(-4.25 * var(--mm));
+}
+
+.cap {
+  display: block;
   border: 0;
   padding: 0;
-  background: var(--paper-2);
-  box-shadow: inset -3px -3px 0 var(--mid), 0 4px 0 #000;
+  border-radius: 50%;
   cursor: pointer;
-  position: relative;
+  background: radial-gradient(circle at 35% 30%, #fff 0 25%, #ececec 55%, #c9c9c9 100%);
+  /* The bezel's hole around it, and the stem's travel below */
+  box-shadow:
+    0 0 0 calc(0.3 * var(--mm)) #b8b8b8,
+    0 calc(0.7 * var(--mm)) 0 calc(0.3 * var(--mm)) #8f8f8f;
+  transition: transform 60ms;
 }
 
-.pad::after {
+.cap::after {
   content: "";
   position: absolute;
   inset: 0;
   margin: auto;
   width: 0;
   height: 0;
-  border: 7px solid transparent;
+  border: calc(1.1 * var(--mm)) solid transparent;
+  opacity: 0.35;
 }
 
-.pad.up { grid-area: 1 / 2; }
-.pad.left { grid-area: 2 / 1; }
-.pad.mid { grid-area: 2 / 2; box-shadow: inset -3px -3px 0 var(--mid), 0 4px 0 #000; cursor: default; }
-.pad.right { grid-area: 2 / 3; }
-.pad.down { grid-area: 3 / 2; }
+.cap[data-dir="up"] { left: 0; top: calc(-10.5 * var(--mm)); }
+.cap[data-dir="down"] { left: 0; top: calc(10.5 * var(--mm)); }
+.cap[data-dir="left"] { left: calc(-10.5 * var(--mm)); top: 0; }
+.cap[data-dir="right"] { left: calc(10.5 * var(--mm)); top: 0; }
 
-.pad.up::after { border-bottom-color: var(--ink); top: -6px; }
-.pad.down::after { border-top-color: var(--ink); top: 6px; }
-.pad.left::after { border-right-color: var(--ink); left: -6px; }
-.pad.right::after { border-left-color: var(--ink); left: 6px; }
+.cap[data-dir="up"]::after { border-bottom-color: var(--logo); top: calc(-1.1 * var(--mm)); }
+.cap[data-dir="down"]::after { border-top-color: var(--logo); top: calc(1.1 * var(--mm)); }
+.cap[data-dir="left"]::after { border-right-color: var(--logo); left: calc(-1.1 * var(--mm)); }
+.cap[data-dir="right"]::after { border-left-color: var(--logo); left: calc(1.1 * var(--mm)); }
 
-.pad:active,
-.pad.pressed {
-  transform: translateY(3px);
-  box-shadow: inset -3px -3px 0 var(--mid), 0 1px 0 #000;
+.cap:hover::after {
+  opacity: 0.7;
 }
 
-.pad:focus-visible,
-.confirm:focus-visible,
-.cart:focus-visible {
+.cap-confirm {
+  left: 0;
+  top: 0;
+}
+
+.cap-confirm .cap {
+  position: static;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.cap.red {
+  background: radial-gradient(circle at 35% 30%, #ffb3a3 0 15%, var(--confirm) 50%, var(--confirm-deep) 100%);
+  animation: ready 2.4s ease-in-out infinite;
+}
+
+@keyframes ready {
+  50% {
+    box-shadow:
+      0 0 0 calc(0.3 * var(--mm)) #b8b8b8,
+      0 calc(0.7 * var(--mm)) 0 calc(0.3 * var(--mm)) #8f8f8f,
+      0 0 0 calc(1.8 * var(--mm)) rgba(224, 96, 72, 0.35);
+  }
+}
+
+.cap.red.off {
+  background: radial-gradient(circle at 35% 30%, #bdbdbd 0 15%, #9a8f8d 50%, #6f6664 100%);
+  animation: none;
+  cursor: not-allowed;
+}
+
+.cap:active,
+.cap.pressed {
+  transform: translateY(calc(0.6 * var(--mm)));
+  box-shadow: 0 0 0 calc(0.3 * var(--mm)) #b8b8b8, 0 calc(0.1 * var(--mm)) 0 calc(0.3 * var(--mm)) #8f8f8f;
+}
+
+.cap:focus-visible,
+.cart:focus-visible,
+.help-button:focus-visible,
+.help-link:focus-visible,
+.flip-button:focus-visible,
+.close:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 3px;
 }
 
-.confirm-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
+/* The back: the character and wordmark the case carries, around its middle */
+.back-art {
+  position: absolute;
+  left: calc(20.3 * var(--mm));
+  top: calc(34.8 * var(--mm));
+  width: calc(26.4 * var(--mm));
+  height: auto;
 }
 
-.confirm {
-  display: block;
-  width: 68px;
-  height: 68px;
-  border: 0;
-  border-radius: 50%;
-  background: var(--confirm);
-  box-shadow: inset -6px -6px 0 var(--confirm-deep), inset 5px 5px 0 rgba(255, 255, 255, 0.25), 0 6px 0 #000;
-  cursor: pointer;
+.back-mark {
+  position: absolute;
+  left: calc(6.2 * var(--mm));
+  top: calc(84.2 * var(--mm));
+  width: calc(54.6 * var(--mm));
+  height: auto;
 }
 
-.confirm:active,
-.confirm.pressed {
-  transform: translateY(4px);
-  box-shadow: inset -6px -6px 0 var(--confirm-deep), inset 5px 5px 0 rgba(255, 255, 255, 0.25), 0 2px 0 #000;
-}
-
-.confirm.off {
-  background: var(--ink-3);
-  box-shadow: inset -6px -6px 0 #000, 0 6px 0 #000;
-  cursor: not-allowed;
-}
-
-.confirm-label {
-  font-family: "Silkscreen", monospace;
-  font-size: 12px;
-  letter-spacing: 0.1em;
-  color: var(--mid);
-}
-
-/* ---- Cartridges ---- */
-
-.slot {
-  width: calc(240px * var(--s) - 20px);
-  max-width: 80%;
-  height: 10px;
-  background: #000;
-  margin-top: -2px;
-}
-
-.carts {
+.legend {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 16px;
-  padding-top: 28px;
-  max-width: 100%;
-}
-
-.cart {
-  width: 132px;
-  border: 0;
-  padding: 10px 10px 12px;
-  background: var(--ink-2);
-  color: var(--paper);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  filter: drop-shadow(5px 5px 0 rgba(0, 0, 0, 0.45));
-  transition: transform 160ms steps(3, end);
-}
-
-.cart .grip {
-  display: block;
-  height: 6px;
-  margin: 0 18px 8px;
-  background: repeating-linear-gradient(90deg, var(--ink-3) 0 4px, transparent 4px 8px);
-}
-
-.cart .label {
-  display: block;
-  background: var(--cart-accent);
-  color: var(--ink);
-  padding: 8px 8px 6px;
-}
-
-.cart .label b {
-  display: block;
-  color: var(--ink);
+  align-items: center;
+  gap: 8px 20px;
   font-family: "Silkscreen", monospace;
-  font-size: 13px;
-  line-height: 1.2;
+  font-size: 12px;
+  color: var(--paper-2);
 }
 
-.cart .label small {
-  font-size: 17px;
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.cart[aria-selected="true"] {
-  transform: translateY(-20px);
+.key {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--case);
+  color: var(--logo);
+  font-style: normal;
+  font-size: 9px;
 }
 
-.cart[aria-selected="false"] .label {
-  filter: saturate(0.4) brightness(0.8);
+.key.red {
+  background: var(--confirm);
 }
 
-/* ---- Info card ---- */
+.legend b {
+  color: var(--paper-2);
+}
+
+.flip-button {
+  border: 0;
+  background: transparent;
+  color: var(--paper-2);
+  font-family: "Silkscreen", monospace;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 4px;
+}
+
+/* ---- Info ---- */
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
 
 .card {
   background: var(--ink);
   padding: 28px 28px 24px;
-  filter: drop-shadow(8px 8px 0 rgba(0, 0, 0, 0.45));
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.45);
 }
 
 .info {
-  max-height: calc(320px * var(--s) + 260px);
+  max-height: 340px;
   overflow-y: auto;
   scrollbar-color: var(--mid) var(--ink);
 }
@@ -419,25 +541,290 @@ h1 {
 }
 
 .version {
-  margin: 0 0 16px;
+  margin: 0 0 14px;
   color: var(--mid);
   font-size: 19px;
 }
 
 .desc {
   color: var(--paper-2);
-  margin-bottom: 8px;
 }
 
-h2 {
+.help-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--paper);
   font-family: "Silkscreen", monospace;
-  font-size: 14px;
-  letter-spacing: 0.1em;
-  color: var(--mid);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.help-link .q,
+.glyph {
+  font-family: "VT323", monospace;
+}
+
+.help-link .q {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--case);
+  color: var(--logo);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.glyph {
+  font-size: 18px;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.help-link:hover {
+  color: var(--accent);
+}
+
+/* ---- Cartridges ---- */
+
+.shelf-title {
+  margin: 14px 0 0;
+  font-family: "Silkscreen", monospace;
+  font-size: 13px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+  color: var(--paper-2);
+}
+
+.carts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px 22px;
+  padding: 16px 4px 10px;
+}
+
+.cart {
+  --shell: color-mix(in srgb, var(--cart) 30%, #161616);
+  position: relative;
+  width: 148px;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  animation: float 3.2s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * -1.1s);
+}
+
+.cart-body {
+  display: block;
+  filter: drop-shadow(6px 7px 0 rgba(0, 0, 0, 0.4));
+}
+
+@keyframes float {
+  from { transform: translateY(0); }
+  to { transform: translateY(-7px); }
+}
+
+.cart-shell {
+  display: block;
+  position: relative;
+  height: 178px;
+  padding: 26px 12px 0;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.25)),
+    var(--shell);
+  /* The cut corner that keys a cartridge into its slot */
+  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
+  transform-origin: 50% 100%;
+  transition: transform 260ms cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+/* The grip ridges along the top */
+.cart-shell::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 30px;
+  top: 8px;
+  height: 11px;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.45) 0 2px, rgba(255, 255, 255, 0.08) 2px 4px);
+}
+
+.cart-label {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  background: var(--case);
+  padding: 5px;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.15);
+}
+
+.cart-label img {
+  display: block;
+  width: 100%;
+  height: 78px;
+  object-fit: none;
+  object-position: var(--thumb, 50% 42%);
+  background: #000;
+}
+
+.cart-title {
+  display: block;
+  margin-top: 5px;
+  padding: 4px 6px 3px;
+  background: var(--cart);
+  color: var(--ink);
+  font-family: "Silkscreen", monospace;
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1.15;
+  min-height: 34px;
+}
+
+.cart-title small {
+  display: block;
+  font-family: "VT323", monospace;
+  font-weight: normal;
+  font-size: 15px;
+  opacity: 0.75;
+}
+
+/* A sweep of light over the label, like the games' header notices */
+.cart-label::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -60%;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: skewX(-12deg);
+  opacity: 0;
+}
+
+/* The edge connector's gold pins */
+.cart-pins {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 0;
+  height: 14px;
+  background:
+    repeating-linear-gradient(90deg, #e8bf4a 0 5px, #9c7a1c 5px 6px, transparent 6px 9px),
+    #0e0e0e;
+  border-top: 2px solid #0e0e0e;
+}
+
+.cart:hover .cart-shell {
+  transform: perspective(500px) rotateX(9deg) rotateY(-10deg) translateY(-6px);
+}
+
+.cart[aria-selected="true"] .cart-body {
+  filter: drop-shadow(0 0 10px var(--cart)) drop-shadow(6px 7px 0 rgba(0, 0, 0, 0.4));
+}
+
+.cart[aria-selected="true"] .cart-label::after {
+  animation: shine 3s steps(14, end) infinite;
+}
+
+@keyframes shine {
+  0% { left: -60%; opacity: 1; }
+  45%, 100% { left: 130%; opacity: 1; }
+}
+
+.cart[aria-selected="true"]::before {
+  content: "▲ no console";
+  position: absolute;
+  left: 50%;
+  top: -22px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: "Silkscreen", monospace;
+  font-size: 10px;
+  color: var(--cart);
+  text-shadow: 1px 1px 0 #000;
+}
+
+.cart[aria-selected="false"] .cart-label img {
+  filter: grayscale(0.7) brightness(0.75);
+}
+
+.cart.inserting .cart-shell {
+  animation: insert 420ms cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+@keyframes insert {
+  0% { transform: scale(1); }
+  30% { transform: scale(0.9, 1.08) translateY(-14px); }
+  60% { transform: scale(1.06, 0.94); }
+  100% { transform: scale(1); }
+}
+
+/* ---- Tutorial dialog ---- */
+
+.help {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  border: 0;
+  color: var(--paper);
+  overflow-y: auto;
+}
+
+.help[open] {
+  animation: pop 220ms steps(4, end);
+}
+
+@keyframes pop {
+  from { transform: scale(0.85); opacity: 0; }
+}
+
+.help::backdrop {
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0 2px, transparent 2px 4px),
+    rgba(30, 30, 30, 0.72);
+}
+
+.help h2 {
+  font-family: "Silkscreen", monospace;
+  font-size: 28px;
+  margin: 6px 0 18px;
+  text-shadow: 3px 3px 0 #000;
+}
+
+.help h3 {
+  font-family: "Silkscreen", monospace;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mid);
   margin: 22px 0 10px;
   border-top: 2px dashed var(--ink-3);
   padding-top: 18px;
+}
+
+.close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: var(--ink-3);
+  color: var(--paper);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--confirm);
 }
 
 .steps,
@@ -447,33 +834,28 @@ h2 {
   list-style: none;
 }
 
-.steps {
-  counter-reset: step;
-}
-
 .steps li {
-  counter-increment: step;
   display: grid;
-  grid-template-columns: 30px 1fr;
-  gap: 10px;
-  margin-bottom: 8px;
+  grid-template-columns: 36px 1fr;
+  gap: 12px;
+  align-items: start;
+  margin-bottom: 12px;
   color: var(--paper-2);
 }
 
-.steps li::before {
-  content: counter(step);
-  font-family: "Silkscreen", monospace;
-  font-size: 14px;
-  background: var(--paper);
-  color: var(--ink);
-  height: 26px;
+.step-icon {
   display: grid;
   place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--case);
+  color: var(--logo);
+  font-size: 22px;
 }
 
-.steps li:last-child::before {
-  background: var(--confirm);
-  color: var(--paper);
+.step-icon.red {
+  background: radial-gradient(circle at 35% 30%, #ffb3a3 0 15%, var(--confirm) 50%, var(--confirm-deep) 100%);
 }
 
 .notes li {
@@ -493,11 +875,6 @@ h2 {
   background: var(--accent);
 }
 
-b {
-  color: var(--paper);
-  font-weight: normal;
-}
-
 /* ---- Footer ---- */
 
 .foot {
@@ -511,18 +888,12 @@ b {
   color: var(--paper-2);
 }
 
-/* ---- Sizes ---- */
+/* ---- Narrow screens ---- */
 
-@media (min-width: 1120px) and (min-height: 980px) {
-  :root {
-    --s: 2;
-  }
-}
-
-@media (max-width: 860px) {
+@media (max-width: 920px) {
   .stage {
     grid-template-columns: minmax(0, 1fr);
-    gap: 40px;
+    gap: 36px;
     padding-top: 20px;
   }
 
@@ -530,27 +901,40 @@ b {
     max-height: none;
     overflow: visible;
   }
+
+  .carts {
+    justify-content: center;
+  }
+
+  .shelf-title {
+    text-align: center;
+  }
+
+  /* The cartridges right under the console they go into */
+  .carts {
+    order: -1;
+  }
+
+  .shelf-title {
+    order: -2;
+  }
 }
 
-@media (max-width: 380px) {
-  .console-body {
-    padding: 14px;
+@media (max-width: 420px) {
+  .top {
+    padding: 72px 16px 8px;
   }
 
-  .bezel {
-    padding: 16px 12px 18px;
-  }
-
-  .screen {
-    height: auto;
-  }
-
-  .cart {
-    width: calc(50% - 8px);
+  .card {
+    padding: 22px 18px 18px;
   }
 
   h1 {
-    font-size: 28px;
+    font-size: 26px;
+  }
+
+  .cart {
+    width: 136px;
   }
 }
 
