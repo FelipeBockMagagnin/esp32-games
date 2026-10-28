@@ -1,0 +1,550 @@
+:root {
+  /* The dotcompany brand art: a grey field, the hood's blacks, the mask's white */
+  --field: #5d5d5d;
+  --ink: #121212;
+  --ink-2: #1c1c1c;
+  --ink-3: #2b2b2b;
+  --mid: #8b8b8b;
+  --paper: #ffffff;
+  --paper-2: #d4d4d4;
+  /* The board's red Confirm cap, CONFIRM in the games' themes: the one colour of the page */
+  --confirm: #e06048;
+  --confirm-deep: #8f3324;
+  /* Set per game by app.js */
+  --accent: #f7b542;
+  --s: 1; /* Screen scale: the 240x320 panel at 1x or 2x, never in between */
+
+  --mdc-theme-primary: var(--confirm);
+  --esp-tools-button-color: var(--confirm);
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  background: var(--field);
+  color: var(--paper);
+  font-family: "VT323", ui-monospace, monospace;
+  font-size: 22px;
+  line-height: 1.15;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+img {
+  image-rendering: pixelated;
+}
+
+/* ---- Header ---- */
+
+.top {
+  text-align: center;
+  padding: 40px 16px 8px;
+}
+
+.wordmark {
+  width: min(465px, 100%);
+  height: auto;
+  filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.35));
+}
+
+.kicker {
+  font-family: "Silkscreen", monospace;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: var(--paper-2);
+  margin: 12px 0 0;
+}
+
+/* ---- Stage ---- */
+
+.stage {
+  flex: 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 460px);
+  justify-content: center;
+  align-items: start;
+  gap: 56px;
+  padding: 32px 16px 48px;
+}
+
+/* ---- Console ---- */
+
+.console {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.console-body {
+  width: calc(240px * var(--s) + 80px);
+  max-width: 100%;
+  background: var(--ink);
+  padding: 20px;
+  border-radius: 18px 18px 18px 56px;
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.45), inset -6px -6px 0 var(--ink-2);
+  position: relative;
+  z-index: 2;
+}
+
+.bezel {
+  background: var(--ink-2);
+  padding: 18px 20px 22px;
+  border-radius: 10px 10px 10px 32px;
+  position: relative;
+}
+
+.led {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  width: 6px;
+  height: 6px;
+  background: var(--ink-3);
+}
+
+.led.on {
+  background: var(--confirm);
+  box-shadow: 0 0 6px var(--confirm);
+}
+
+.screen {
+  width: calc(240px * var(--s));
+  height: calc(320px * var(--s));
+  max-width: 100%;
+  aspect-ratio: 3 / 4;
+  margin: 0 auto;
+  background: #5a5d5a; /* The splash's backdrop on the board */
+  position: relative;
+  overflow: hidden;
+  outline: 2px solid #000;
+}
+
+.screen > * {
+  position: absolute;
+  inset: 0;
+}
+
+.shot {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+}
+
+.shot.show {
+  opacity: 1;
+}
+
+.shot.flicker {
+  animation: flicker 220ms steps(3, end);
+}
+
+@keyframes flicker {
+  0% { opacity: 0; }
+  50% { opacity: 0.4; filter: brightness(2); }
+  100% { opacity: 1; }
+}
+
+.boot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 160ms steps(2, end);
+}
+
+.boot.gone {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.logo {
+  position: relative;
+}
+
+.hood {
+  display: block;
+  width: calc(88px * var(--s));
+  height: auto;
+}
+
+/* As on the board's splash: at 2x, crossing the 4x character 21 rows below its hood */
+.boot-mark {
+  position: absolute;
+  left: 50%;
+  top: calc(86px * var(--s));
+  width: calc(168px * var(--s));
+  height: auto;
+  transform: translateX(-50%);
+}
+
+.screen-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  background: var(--ink);
+  font-family: "Silkscreen", monospace;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.screen-msg[hidden] {
+  display: none;
+}
+
+.screen-msg strong {
+  color: var(--confirm);
+  font-size: 18px;
+}
+
+/* ---- Controls: the board's D-pad and red cap ---- */
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22px 6px 6px;
+}
+
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 34px);
+  grid-template-rows: repeat(3, 34px);
+}
+
+.pad {
+  border: 0;
+  padding: 0;
+  background: var(--paper-2);
+  box-shadow: inset -3px -3px 0 var(--mid), 0 4px 0 #000;
+  cursor: pointer;
+  position: relative;
+}
+
+.pad::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 0;
+  height: 0;
+  border: 7px solid transparent;
+}
+
+.pad.up { grid-area: 1 / 2; }
+.pad.left { grid-area: 2 / 1; }
+.pad.mid { grid-area: 2 / 2; box-shadow: inset -3px -3px 0 var(--mid), 0 4px 0 #000; cursor: default; }
+.pad.right { grid-area: 2 / 3; }
+.pad.down { grid-area: 3 / 2; }
+
+.pad.up::after { border-bottom-color: var(--ink); top: -6px; }
+.pad.down::after { border-top-color: var(--ink); top: 6px; }
+.pad.left::after { border-right-color: var(--ink); left: -6px; }
+.pad.right::after { border-left-color: var(--ink); left: 6px; }
+
+.pad:active,
+.pad.pressed {
+  transform: translateY(3px);
+  box-shadow: inset -3px -3px 0 var(--mid), 0 1px 0 #000;
+}
+
+.pad:focus-visible,
+.confirm:focus-visible,
+.cart:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.confirm-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.confirm {
+  display: block;
+  width: 68px;
+  height: 68px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--confirm);
+  box-shadow: inset -6px -6px 0 var(--confirm-deep), inset 5px 5px 0 rgba(255, 255, 255, 0.25), 0 6px 0 #000;
+  cursor: pointer;
+}
+
+.confirm:active,
+.confirm.pressed {
+  transform: translateY(4px);
+  box-shadow: inset -6px -6px 0 var(--confirm-deep), inset 5px 5px 0 rgba(255, 255, 255, 0.25), 0 2px 0 #000;
+}
+
+.confirm.off {
+  background: var(--ink-3);
+  box-shadow: inset -6px -6px 0 #000, 0 6px 0 #000;
+  cursor: not-allowed;
+}
+
+.confirm-label {
+  font-family: "Silkscreen", monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--mid);
+}
+
+/* ---- Cartridges ---- */
+
+.slot {
+  width: calc(240px * var(--s) - 20px);
+  max-width: 80%;
+  height: 10px;
+  background: #000;
+  margin-top: -2px;
+}
+
+.carts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  padding-top: 28px;
+  max-width: 100%;
+}
+
+.cart {
+  width: 132px;
+  border: 0;
+  padding: 10px 10px 12px;
+  background: var(--ink-2);
+  color: var(--paper);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  filter: drop-shadow(5px 5px 0 rgba(0, 0, 0, 0.45));
+  transition: transform 160ms steps(3, end);
+}
+
+.cart .grip {
+  display: block;
+  height: 6px;
+  margin: 0 18px 8px;
+  background: repeating-linear-gradient(90deg, var(--ink-3) 0 4px, transparent 4px 8px);
+}
+
+.cart .label {
+  display: block;
+  background: var(--cart-accent);
+  color: var(--ink);
+  padding: 8px 8px 6px;
+}
+
+.cart .label b {
+  display: block;
+  color: var(--ink);
+  font-family: "Silkscreen", monospace;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.cart .label small {
+  font-size: 17px;
+}
+
+.cart[aria-selected="true"] {
+  transform: translateY(-20px);
+}
+
+.cart[aria-selected="false"] .label {
+  filter: saturate(0.4) brightness(0.8);
+}
+
+/* ---- Info card ---- */
+
+.card {
+  background: var(--ink);
+  padding: 28px 28px 24px;
+  filter: drop-shadow(8px 8px 0 rgba(0, 0, 0, 0.45));
+}
+
+.info {
+  max-height: calc(320px * var(--s) + 260px);
+  overflow-y: auto;
+  scrollbar-color: var(--mid) var(--ink);
+}
+
+.tag {
+  margin: 0;
+  color: var(--accent);
+  font-family: "Silkscreen", monospace;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+h1 {
+  font-family: "Silkscreen", monospace;
+  font-weight: 700;
+  font-size: 34px;
+  line-height: 1.1;
+  margin: 6px 0 4px;
+  text-shadow: 3px 3px 0 #000;
+}
+
+.version {
+  margin: 0 0 16px;
+  color: var(--mid);
+  font-size: 19px;
+}
+
+.desc {
+  color: var(--paper-2);
+  margin-bottom: 8px;
+}
+
+h2 {
+  font-family: "Silkscreen", monospace;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  color: var(--mid);
+  text-transform: uppercase;
+  margin: 22px 0 10px;
+  border-top: 2px dashed var(--ink-3);
+  padding-top: 18px;
+}
+
+.steps,
+.notes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps {
+  counter-reset: step;
+}
+
+.steps li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 10px;
+  margin-bottom: 8px;
+  color: var(--paper-2);
+}
+
+.steps li::before {
+  content: counter(step);
+  font-family: "Silkscreen", monospace;
+  font-size: 14px;
+  background: var(--paper);
+  color: var(--ink);
+  height: 26px;
+  display: grid;
+  place-items: center;
+}
+
+.steps li:last-child::before {
+  background: var(--confirm);
+  color: var(--paper);
+}
+
+.notes li {
+  color: var(--paper-2);
+  padding-left: 18px;
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.notes li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+}
+
+b {
+  color: var(--paper);
+  font-weight: normal;
+}
+
+/* ---- Footer ---- */
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 16px 28px;
+  font-family: "Silkscreen", monospace;
+  font-size: 12px;
+  color: var(--paper-2);
+}
+
+/* ---- Sizes ---- */
+
+@media (min-width: 1120px) and (min-height: 980px) {
+  :root {
+    --s: 2;
+  }
+}
+
+@media (max-width: 860px) {
+  .stage {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
+    padding-top: 20px;
+  }
+
+  .info {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 380px) {
+  .console-body {
+    padding: 14px;
+  }
+
+  .bezel {
+    padding: 16px 12px 18px;
+  }
+
+  .screen {
+    height: auto;
+  }
+
+  .cart {
+    width: calc(50% - 8px);
+  }
+
+  h1 {
+    font-size: 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

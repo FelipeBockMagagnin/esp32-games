@@ -1,0 +1,22 @@
+[
+  {
+    "id": "idle",
+    "name": "Idle Miner",
+    "tagline": "Minere, construa, lute",
+    "description": "Minere ouro, erga construções e compre melhorias. Depois leve seu equipamento pelas zonas: os inimigos deixam itens e os amuletos lançam feitiços. Ascenda para recomeçar mais forte.",
+    "path": "../esp32-idle-game",
+    "env": "esp32dev",
+    "image": "img/idle.png",
+    "accent": "#f7b542"
+  },
+  {
+    "id": "pet",
+    "name": "Burrow Colony",
+    "tagline": "Fazenda e colônia",
+    "description": "Abra espaço no mato, plante e cave lagos. Os bichinhos colhem, dormem nas tocas e rendem moedas enquanto estão felizes. Se passarem fome por muito tempo, vão embora.",
+    "path": "../esp32-pet",
+    "env": "esp32dev",
+    "image": "img/pet.png",
+    "accent": "#8cc96b"
+  }
+]

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>dotcompany Games</title>
+  <meta name="description" content="Escolha um jogo e grave na sua placa ESP32 pela USB, direto do navegador.">
+  <link rel="icon" href="img/brand/hood_0.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js?module"></script>
+</head>
+<body>
+  <header class="top">
+    <img class="wordmark" src="img/brand/wordmark.png" alt="dotcompany" width="930" height="160">
+    <p class="kicker">Jogos para a sua placa. Escolha, conecte, instale.</p>
+  </header>
+
+  <main class="stage">
+    <section class="console" aria-label="Console">
+      <div class="console-body">
+        <div class="bezel">
+          <span class="led" id="led" aria-hidden="true"></span>
+          <div class="screen" id="screen">
+            <div class="boot" id="boot" aria-hidden="true">
+              <div class="logo">
+                <img class="hood" id="hood" src="img/brand/hood_0.png" alt="">
+                <img class="boot-mark" src="img/brand/wordmark_small.png" alt="">
+              </div>
+            </div>
+            <img class="shot" id="shot" alt="">
+            <div class="screen-msg" id="screen-msg" hidden></div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="dpad" role="group" aria-label="Escolher jogo">
+            <button class="pad up" data-dir="up" aria-label="Rolar a descrição para cima"></button>
+            <button class="pad left" data-dir="left" aria-label="Jogo anterior"></button>
+            <span class="pad mid" aria-hidden="true"></span>
+            <button class="pad right" data-dir="right" aria-label="Próximo jogo"></button>
+            <button class="pad down" data-dir="down" aria-label="Rolar a descrição para baixo"></button>
+          </div>
+
+          <div class="confirm-wrap">
+            <esp-web-install-button id="install">
+              <button slot="activate" class="confirm" aria-label="Instalar o jogo selecionado"></button>
+              <span slot="unsupported" class="confirm off" aria-hidden="true"></span>
+              <span slot="not-allowed" class="confirm off" aria-hidden="true"></span>
+            </esp-web-install-button>
+            <span class="confirm-label" id="confirm-label">INSTALAR</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="slot" aria-hidden="true"></div>
+      <div class="carts" id="carts" role="tablist" aria-label="Jogos"></div>
+    </section>
+
+    <section class="info card" aria-live="polite">
+      <p class="tag" id="tagline"></p>
+      <h1 id="name">&nbsp;</h1>
+      <p class="version" id="version"></p>
+      <div class="desc" id="desc"></div>
+
+      <h2>Como instalar</h2>
+      <ol class="steps">
+        <li><span><b>Chrome ou Edge</b> no computador. Firefox e Safari não falam com a USB.</span></li>
+        <li><span><b>Conecte a placa</b> no cabo USB.</span></li>
+        <li><span><b>Aperte o botão vermelho</b> e escolha a porta da placa.</span></li>
+      </ol>
+
+      <h2>Bom saber</h2>
+      <ul class="notes">
+        <li>O progresso de cada jogo fica salvo na placa. Trocar de jogo <b>não apaga</b> o save do outro; só se você marcar "apagar" ao instalar.</li>
+        <li>A porta não aparece? Instale o driver da placa (<b>CP2102</b> ou <b>CH340</b>).</li>
+        <li>Travou em "conectando"? Segure o botão <b>BOOT</b> da placa enquanto a gravação começa.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <img src="img/brand/hood_1.png" alt="" width="22" height="38">
+    <span>dotcompany</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
