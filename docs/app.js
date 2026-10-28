@@ -11,7 +11,9 @@
   const cartsEl = $("carts");
   const info = document.querySelector(".info");
 
-  const usbOk = "serial" in navigator && window.isSecureContext;
+  // Opened as a file, the page shows its games but cannot fetch a manifest to flash with
+  const fromFile = location.protocol === "file:";
+  const usbOk = "serial" in navigator && window.isSecureContext && !fromFile;
   let games = [];
   let current = -1;
   let booted = false;
@@ -35,9 +37,13 @@
     if (!booted) {
       return;
     }
-    if (!usbOk) {
+    if (fromFile) {
       screenMsg.hidden = false;
-      screenMsg.innerHTML = window.isSecureContext
+      screenMsg.classList.add("band");
+      screenMsg.innerHTML = "<strong>ABERTO DO DISCO</strong><span>Para gravar: python3 -m http.server -d docs</span>";
+    } else if (!usbOk) {
+      screenMsg.hidden = false;
+      screenMsg.innerHTML = !("serial" in navigator)
         ? "<strong>SEM USB AQUI</strong><span>Abra no Chrome ou no Edge, num computador.</span>"
         : "<strong>SEM HTTPS</strong><span>A gravação só funciona em HTTPS ou localhost.</span>";
       return;
@@ -91,10 +97,10 @@
     } else {
       install.removeAttribute("manifest");
     }
-    activate.disabled = !ready;
-    activate.classList.toggle("off", !ready);
+    activate.disabled = !ready || !usbOk;
+    activate.classList.toggle("off", !ready || !usbOk);
     activate.setAttribute("aria-label", ready ? `Instalar ${game.name}` : `${game.name} ainda não publicado`);
-    $("confirm-label").textContent = !usbOk ? "SEM USB" : ready ? "INSTALAR" : "EM BREVE";
+    $("confirm-label").textContent = fromFile ? "SÓ VIA HTTP" : !usbOk ? "SEM USB" : ready ? "INSTALAR" : "EM BREVE";
 
     [...cartsEl.children].forEach((cart, n) => cart.setAttribute("aria-selected", String(n === i)));
     history.replaceState(null, "", `#${game.id}`);
@@ -131,22 +137,15 @@
     $("led").classList.toggle("on", Boolean(document.querySelector("ewt-install-dialog")));
   }).observe(document.body, { childList: true });
 
-  if (!usbOk) {
-    activate.classList.add("off");
+  games = Array.isArray(window.GAMES) ? window.GAMES : [];
+  if (games.length > 0) {
+    renderCarts();
+    const linked = games.findIndex((g) => `#${g.id}` === location.hash);
+    select(linked >= 0 ? linked : 0);
+  } else {
+    $("name").textContent = "Nenhum jogo";
+    $("desc").textContent = "Rode ./publish.sh para compilar os jogos e montar a lista.";
   }
-
-  fetch("games.json")
-    .then((r) => r.json())
-    .then((list) => {
-      games = list;
-      renderCarts();
-      const linked = games.findIndex((g) => `#${g.id}` === location.hash);
-      select(linked >= 0 ? linked : 0);
-    })
-    .catch(() => {
-      $("name").textContent = "Erro";
-      $("desc").textContent = "Não foi possível carregar a lista de jogos.";
-    });
 
   boot();
 })();

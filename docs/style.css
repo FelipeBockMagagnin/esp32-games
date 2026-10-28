@@ -206,6 +206,20 @@ img {
   display: none;
 }
 
+.screen-msg.band {
+  inset: auto 0 0 0;
+  gap: 4px;
+  padding: 8px 10px;
+  font-size: 10px;
+  line-height: 1.4;
+  background: rgba(18, 18, 18, 0.92);
+  border-top: 2px solid var(--confirm);
+}
+
+.screen-msg.band strong {
+  font-size: 11px;
+}
+
 .screen-msg strong {
   color: var(--confirm);
   font-size: 18px;

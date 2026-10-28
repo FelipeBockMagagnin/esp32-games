@@ -2,7 +2,7 @@
 """Writes the ESP Web Tools manifest of one game, or the public games.json.
 
 make_manifest.py <id> <commit> <date>   docs/firmware/<id>/manifest.json
-make_manifest.py --games                docs/games.json, with each game's version
+make_manifest.py --games                docs/games.js, the list with each game's version
 
 The four images go at their own offsets rather than merged into one: merge_bin pads the gap
 between the partition table (0x8000) and boot_app0 (0xE000) with 0xFF, which is where NVS
@@ -56,7 +56,9 @@ def write_games():
             entry["date"] = m["date"]
             entry["manifest"] = f"firmware/{g['id']}/manifest.json"
         public.append(entry)
-    (DOCS / "games.json").write_text(json.dumps(public, indent=2, ensure_ascii=False) + "\n")
+    # A script rather than JSON to fetch, so the list also loads from index.html opened as a file
+    body = json.dumps(public, indent=2, ensure_ascii=False)
+    (DOCS / "games.js").write_text(f"window.GAMES = {body};\n")
 
 
 if __name__ == "__main__":

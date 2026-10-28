@@ -15,7 +15,7 @@ git add docs && git commit -m "publish firmware" && git push
 `publish.sh` builds each game from its local folder (`path` in `games.json`) with
 PlatformIO, refusing a repo with uncommitted changes so a published version is always a
 commit. It copies the four images to `docs/firmware/<id>/` and writes their manifest and
-`docs/games.json`.
+`docs/games.js`.
 
 The images keep their own offsets (bootloader 0x1000, partitions 0x8000, boot_app0 0xE000,
 app 0x10000) instead of one merged image, whose 0xFF padding would cover NVS at 0x9000 and

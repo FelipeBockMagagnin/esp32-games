@@ -1,4 +1,4 @@
-[
+window.GAMES = [
   {
     "id": "idle",
     "name": "Idle Miner",
@@ -21,4 +21,4 @@
     "date": "2026-10-28",
     "manifest": "firmware/pet/manifest.json"
   }
-]
+];
