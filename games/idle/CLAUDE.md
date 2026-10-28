@@ -17,7 +17,8 @@ An idle/clicker game for an ESP32 with a 240x320 ILI9341 SPI display, five push 
 ```bash
 pio run                       # Build
 pio run -t upload -t monitor  # Flash and open the serial monitor (115200)
-pio run -e dev -t upload -t monitor  # Dev build: serial cheats (gold, level, zone, unlock, items, points)
+pio run -e dev -t upload -t monitor  # Dev build: serial cheats (gold, level, zone, unlock, items, points), screen <i>, shot
+~/.platformio/penv/bin/python tools/screenshot.py out.png [--screen 5]  # Dev build on the board: the display read back as a PNG
 tools/sim/run.sh [--days 3] [--seed 1] [--session 5] [--cps 3] [--runs 1] [--suggest] [--log]
 tools/sim/test.sh             # Logic tests: save slots, zone changes, saturation
 tools/sim/ladder.sh [factor] [minutes] [zone]  # Difficulty ladder: each zone at stages of gear, active and idle
