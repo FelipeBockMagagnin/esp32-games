@@ -27,9 +27,10 @@ static uint64_t parseAmount(const char *text)
 }
 
 DevConsole::DevConsole(GameState &game, Inventory &inventory, CombatState &combat, Achievements &achievements,
-                       Unlocks &unlocks, Ascension &ascension, void (*changed)())
+                       Unlocks &unlocks, Ascension &ascension, TFT_eSPI &tft, ScreenManager &screens,
+                       void (*changed)())
     : game(game), inventory(inventory), combat(combat), achievements(achievements), unlocks(unlocks),
-      ascension(ascension), changed(changed), length(0)
+      ascension(ascension), tft(tft), screens(screens), changed(changed), length(0)
 {
 }
 
@@ -63,6 +64,22 @@ void DevConsole::apply()
 {
     applySave(blob, game, inventory, combat, achievements, unlocks, ascension);
     changed();
+}
+
+// The panel read back over MISO, row by row, as raw RGB565 after a "SHOT w h" line, for
+// tools/screenshot.py. Blocks for the ~13 s it takes at 115200 baud; dev builds only.
+void DevConsole::sendScreen()
+{
+    static uint16_t row[TFT_WIDTH];
+    int16_t w = tft.width(), h = tft.height();
+    Serial.printf("SHOT %d %d\n", w, h);
+    for (int16_t y = 0; y < h; y++)
+    {
+        tft.readRect(0, y, w, 1, row);
+        Serial.write((const uint8_t *)row, w * sizeof(uint16_t));
+    }
+    Serial.println();
+    Serial.println("END");
 }
 
 void DevConsole::run(char *command)
@@ -155,9 +172,19 @@ void DevConsole::run(char *command)
         apply();
         Serial.printf("points: %u available\n", ascension.getPointsAvailable());
     }
+    else if (strcmp(name, "screen") == 0)
+    {
+        screens.setScreen((int)n);
+        Serial.printf("screen: %d\n", screens.getCurrentIndex());
+    }
+    else if (strcmp(name, "shot") == 0)
+    {
+        sendScreen();
+    }
     else
     {
-        Serial.println("gold <n> | level <n> | zone <n> | unlock | items <lv> | points <n>   (n: 5k 2m 3b 1t 1e15)");
+        Serial.println("gold <n> | level <n> | zone <n> | unlock | items <lv> | points <n> | screen <i> | shot"
+                       "   (n: 5k 2m 3b 1t 1e15)");
     }
 }
 

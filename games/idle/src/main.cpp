@@ -96,7 +96,7 @@ SaveBlob saveBuffer;
 
 #ifdef DEV_MODE
 void devChanged();
-DevConsole devConsole(game, inventory, combat, achievements, unlocks, ascension, devChanged);
+DevConsole devConsole(game, inventory, combat, achievements, unlocks, ascension, tft, screenManager, devChanged);
 #endif
 
 // tone() drives LEDC channel 0, and channel 1 shares its timer
