@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A turn-based dungeon crawler for an ESP32 with a 240x320 ILI9341 SPI display, five push buttons and a passive buzzer (the same carrier board as `../esp32-idle-game`, whose UI framework this started from). PlatformIO + Arduino framework, C++. Floors are generated from a seed; every step is a turn; death ends the run and only the records survive.
+Deepwell, a turn-based dungeon crawler for an ESP32 with a 240x320 ILI9341 SPI display, five push buttons and a passive buzzer (the same carrier board as `../esp32-idle-game`, whose UI framework this started from). PlatformIO + Arduino framework, C++. Floors are generated from a seed; every step is a turn; death ends the run and only the records survive.
 
 ## Code style
 
