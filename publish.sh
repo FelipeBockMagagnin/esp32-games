@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Builds the games listed in games.json and puts their firmware under docs/, for GitHub
-# Pages. Usage: ./publish.sh [id...]   (no id: every game). Commits nothing.
+# Builds the games listed in games.json, and the menu that boots them when several share a
+# board (../esp32-launcher, id `launcher`), and puts their firmware under docs/, for GitHub
+# Pages. Usage: ./publish.sh [id...]   (no id: every game and the launcher). Commits nothing.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 PIO="${PIO:-$HOME/.platformio/penv/bin/pio}"
@@ -13,6 +14,8 @@ wanted = sys.argv[2:]
 for g in games:
     if not wanted or g["id"] in wanted:
         print(g["id"], g["path"], g["env"])
+if not wanted or "launcher" in wanted:
+    print("launcher", "../esp32-launcher", "esp32dev")
 ' "$ROOT/games.json" "$@")
 
 if [ "${#GAMES[@]}" -eq 0 ]; then
@@ -42,10 +45,16 @@ for line in "${GAMES[@]}"; do
     out="$ROOT/docs/firmware/$id"
     mkdir -p "$out"
     build="$src/.pio/build/$env"
+    commit="$(git -C "$src" rev-parse --short HEAD)"
+    date="$(git -C "$src" log -1 --format=%cs)"
+    if [ "$id" = launcher ]; then
+        cp "$build/bootloader.bin" "$build/firmware.bin" "$out/"
+        python3 "$ROOT/tools/make_manifest.py" --launcher "$commit" "$date"
+        continue
+    fi
     cp "$build/bootloader.bin" "$build/partitions.bin" "$build/firmware.bin" "$out/"
     cp "$BOOT_APP0" "$out/"
-    python3 "$ROOT/tools/make_manifest.py" "$id" "$(git -C "$src" rev-parse --short HEAD)" \
-        "$(git -C "$src" log -1 --format=%cs)"
+    python3 "$ROOT/tools/make_manifest.py" "$id" "$commit" "$date"
 done
 
 python3 "$ROOT/tools/make_manifest.py" --games

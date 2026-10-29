@@ -24,8 +24,10 @@ erase every game's save. Every game must keep the default partition table for th
 
 ## Add a game
 
-1. A row in `games.json`: `id`, `name`, `tagline`, `description`, `path`, `env`, `image`, `accent`
-   (the cartridge's colour) and `thumb` (the `object-position` of its label's crop of the screen).
+1. A row in `games.json`: `id`, `name`, `tagline`, `category` (a shelf of `CATEGORIES` in
+   `docs/app.js`: `autorais`, `apps`, `mini`, `teste`, `ports`, `publicos`, `comunidade`),
+   `description`, `path`, `env`, `image`, `accent` and `icon` (`[x, y, factor]`: the 64x64 icon
+   the launcher and the site show is a crop of the screen, `64 * factor` wide).
 2. A 240x320 screen in `docs/img/<id>.png` (`tools/make_mockups.py` makes every game's).
 3. `./publish.sh <id>`.
 

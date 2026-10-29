@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>dotcompany Games</title>
-  <meta name="description" content="Escolha um jogo e grave na sua placa ESP32 pela USB, direto do navegador.">
+  <meta name="description" content="Monte uma coletânea de jogos e grave na sua placa ESP32 pela USB, direto do navegador.">
   <meta name="theme-color" content="#5d5d5d">
   <link rel="icon" type="image/png" sizes="32x32" href="img/brand/favicon-32.png">
   <link rel="icon" type="image/png" sizes="48x48" href="img/brand/favicon-48.png">
@@ -20,7 +20,7 @@
 <body>
   <header class="top">
     <img class="wordmark" src="img/brand/wordmark.png" alt="dotcompany" width="930" height="160">
-    <p class="kicker">Jogos para o seu console. Escolha um cartucho e instale.</p>
+    <p class="kicker">Monte sua coletânea e grave no console.</p>
     <button class="help-button" id="help-open" aria-haspopup="dialog" aria-controls="help" title="Como instalar">?</button>
   </header>
 
@@ -42,7 +42,15 @@
                     <img class="boot-mark" src="img/brand/wordmark_small.png" alt="">
                   </div>
                 </div>
-                <img class="shot" id="shot" alt="">
+                <div class="menu" id="menu" aria-live="polite">
+                  <div class="menu-head"><span>dotcompany</span><span id="menu-count"></span></div>
+                  <div class="menu-body">
+                    <span class="icon menu-icon" id="menu-icon"></span>
+                    <p class="menu-name" id="menu-name"></p>
+                    <p class="menu-tag" id="menu-tag"></p>
+                    <p class="menu-desc" id="menu-desc"></p>
+                  </div>
+                </div>
                 <div class="screen-msg" id="screen-msg" hidden></div>
               </div>
             </div>
@@ -53,7 +61,7 @@
               <button class="cap" data-dir="right" aria-label="Próximo jogo"></button>
               <button class="cap" data-dir="down" aria-label="Rolar a descrição para baixo"></button>
               <esp-web-install-button id="install" class="cap-confirm">
-                <button slot="activate" class="cap red" id="activate" aria-label="Instalar o jogo selecionado"></button>
+                <button slot="activate" class="cap red" id="activate" aria-label="Gravar a coletânea na placa"></button>
                 <span slot="unsupported" class="cap red off" aria-hidden="true"></span>
                 <span slot="not-allowed" class="cap red off" aria-hidden="true"></span>
               </esp-web-install-button>
@@ -68,25 +76,36 @@
       </div>
 
       <div class="legend">
-        <span><i class="key">◀</i><i class="key">▶</i> trocar jogo</span>
-        <span><i class="key red"></i> <b id="confirm-label">instalar</b></span>
+        <span><i class="key">◀</i><i class="key">▶</i> navegar</span>
+        <span><i class="key">▲</i><i class="key">▼</i> descrição</span>
+        <span><i class="key red"></i> <b id="confirm-label">gravar</b></span>
         <button class="flip-button" id="flip" aria-pressed="false">virar <span class="glyph" aria-hidden="true">↻</span></button>
       </div>
     </section>
 
     <section class="side">
-      <article class="info card" aria-live="polite">
-        <p class="tag" id="tagline"></p>
-        <h1 id="name">&nbsp;</h1>
-        <p class="version" id="version"></p>
-        <div class="desc" id="desc"></div>
+      <p class="intro">
+        Passe o mouse num jogo para ver na tela do console e clique para pôr na coletânea. Com
+        dois ou mais, a placa abre um menu ao ligar.
         <button class="help-link" id="help-link" aria-haspopup="dialog" aria-controls="help">
-          <span class="q">?</span> Como instalar na placa
+          <span class="q">?</span> Como instalar
         </button>
-      </article>
+      </p>
 
-      <h2 class="shelf-title">Cartuchos</h2>
-      <div class="carts" id="carts" role="tablist" aria-label="Jogos"></div>
+      <div class="categories" id="categories"></div>
+
+      <article class="summary card" aria-labelledby="summary-title">
+        <p class="tag">Coletânea</p>
+        <h2 id="summary-title">Memória da placa</h2>
+        <div class="meter" id="meter" aria-hidden="true"></div>
+        <p class="meter-label" id="meter-label"></p>
+        <p class="picked" id="picked"></p>
+        <esp-web-install-button id="combo-install">
+          <button slot="activate" class="combo-button" id="combo-activate" disabled>Gravar na placa</button>
+          <span slot="unsupported" class="combo-button off">sem usb aqui</span>
+          <span slot="not-allowed" class="combo-button off">só em https</span>
+        </esp-web-install-button>
+      </article>
     </section>
   </main>
 
@@ -105,16 +124,17 @@
       </li>
       <li>
         <span class="step-icon">▣</span>
-        <span><b>Escolha um cartucho</b> clicando nele, ou com ◀ e ▶ no D-pad do console da página.</span>
+        <span><b>Monte a coletânea</b> clicando nos jogos. A barra mostra quanto da memória da placa eles ocupam; o que não cabe fica bloqueado.</span>
       </li>
       <li>
         <span class="step-icon red"></span>
-        <span><b>Aperte o botão vermelho</b>, escolha a porta da placa e confirme. A gravação leva cerca de um minuto.</span>
+        <span><b>Grave na placa</b> pelo botão vermelho ou por "Gravar na placa", escolha a porta e confirme. Leva cerca de um minuto.</span>
       </li>
     </ol>
     <h3>Bom saber</h3>
     <ul class="notes">
-      <li>Cada jogo guarda o próprio save. Trocar de jogo <b>não apaga</b> o do outro, a menos que você marque "apagar" ao instalar.</li>
+      <li>Com <b>um jogo</b> só, a placa liga direto nele. Com <b>dois ou mais</b>, abre um menu para escolher, e o item <b>Menu</b> de cada jogo volta para ele.</li>
+      <li>Cada jogo guarda o próprio save. Gravar outra coletânea <b>não apaga</b> os saves, a menos que você marque "apagar" ao instalar.</li>
       <li>A porta não aparece? Instale o driver da placa: <b>CP2102</b> ou <b>CH340</b>.</li>
       <li>Parou em "conectando"? Segure o botão <b>BOOT</b> da placa quando a gravação começar.</li>
     </ul>
@@ -126,6 +146,7 @@
   </footer>
 
   <script src="games.js"></script>
+  <script src="bundle.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

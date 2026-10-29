@@ -14,7 +14,7 @@
   /* The board's red Confirm cap, CONFIRM in the games' themes: the one bright colour */
   --confirm: #e06048;
   --confirm-deep: #a83c2a;
-  /* Set per game by app.js */
+  /* The game on the console's screen, set by app.js */
   --accent: #f7b542;
 
   /* One millimetre of the case. 5.5556px puts the display's 43.2mm visible area at its
@@ -135,7 +135,10 @@ b {
 
 /* ---- The console ---- */
 
+/* Kept in view, so the screen shows the game under the mouse however far the list scrolls */
 .device-area {
+  position: sticky;
+  top: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -242,27 +245,6 @@ b {
   50% { box-shadow: 0 0 0 2px var(--confirm), 0 0 18px var(--confirm); }
 }
 
-.shot {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  opacity: 0;
-}
-
-.shot.show {
-  opacity: 1;
-}
-
-.shot.flicker {
-  animation: flicker 260ms steps(3, end);
-}
-
-@keyframes flicker {
-  0% { opacity: 0; }
-  50% { opacity: 0.5; filter: brightness(2.2); }
-  100% { opacity: 1; }
-}
-
 .boot {
   display: flex;
   align-items: center;
@@ -293,6 +275,95 @@ b {
   width: calc(168 / 240 * 43.2 * var(--mm));
   height: auto;
   transform: translateX(-50%);
+}
+
+/* The launcher's menu, in the board's pixels: --px is one of the display's 240 */
+.menu {
+  --px: calc(43.2 * var(--mm) / 240);
+  display: flex;
+  flex-direction: column;
+  background: var(--ink);
+  opacity: 0;
+}
+
+.menu.show {
+  opacity: 1;
+}
+
+.menu.flicker {
+  animation: flicker 260ms steps(3, end);
+}
+
+@keyframes flicker {
+  0% { opacity: 0; }
+  50% { opacity: 0.5; filter: brightness(2.2); }
+  100% { opacity: 1; }
+}
+
+.menu-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: calc(24 * var(--px));
+  padding: 0 calc(8 * var(--px));
+  background: var(--ink-3);
+  font-family: "Silkscreen", monospace;
+  font-size: calc(12 * var(--px));
+}
+
+.menu-head span + span {
+  color: var(--mid);
+  font-size: calc(9 * var(--px));
+}
+
+.menu-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: calc(14 * var(--px));
+}
+
+.menu-icon {
+  --size: calc(128 * var(--px));
+  flex: none;
+  outline: calc(2 * var(--px)) solid var(--accent);
+  outline-offset: calc(2 * var(--px));
+}
+
+.menu-icon[hidden] {
+  display: none;
+}
+
+.menu-name {
+  margin: calc(12 * var(--px)) 0 0;
+  padding: 0 calc(8 * var(--px));
+  font-family: "Silkscreen", monospace;
+  font-weight: 700;
+  font-size: calc(15 * var(--px));
+  color: var(--accent);
+  text-align: center;
+}
+
+.menu-tag {
+  margin: calc(2 * var(--px)) 0 calc(8 * var(--px));
+  font-family: "Silkscreen", monospace;
+  font-size: calc(9 * var(--px));
+  color: var(--mid);
+}
+
+.menu-desc {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0 calc(12 * var(--px)) calc(8 * var(--px));
+  overflow-y: auto;
+  scrollbar-width: none;
+  font-size: calc(16 * var(--px));
+  line-height: 1.1;
+  color: var(--paper-2);
+  text-align: center;
 }
 
 .screen-msg {
@@ -427,7 +498,7 @@ b {
 }
 
 .cap:focus-visible,
-.cart:focus-visible,
+.tile:focus-visible,
 .help-button:focus-visible,
 .help-link:focus-visible,
 .flip-button:focus-visible,
@@ -516,18 +587,6 @@ b {
   box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.45);
 }
 
-/* Held at the longest game's height by app.js, with the help link kept at the bottom */
-.info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.info .help-link {
-  margin-top: auto;
-  padding-top: 18px;
-}
-
 .tag {
   margin: 0;
   color: var(--accent);
@@ -535,25 +594,6 @@ b {
   font-size: 13px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-}
-
-h1 {
-  font-family: "Silkscreen", monospace;
-  font-weight: 700;
-  font-size: 34px;
-  line-height: 1.1;
-  margin: 6px 0 4px;
-  text-shadow: 3px 3px 0 #000;
-}
-
-.version {
-  margin: 0 0 14px;
-  color: var(--mid);
-  font-size: 19px;
-}
-
-.desc {
-  color: var(--paper-2);
 }
 
 .help-link {
@@ -597,186 +637,175 @@ h1 {
   color: var(--accent);
 }
 
-/* ---- Cartridges ---- */
+/* A game's icon: a crop of its screen, [x, y] and --crop pixels wide, drawn --size wide */
+.icon {
+  display: block;
+  width: var(--size);
+  height: var(--size);
+  background-repeat: no-repeat;
+  background-size: calc(var(--size) * 240 / var(--crop)) calc(var(--size) * 320 / var(--crop));
+  background-position: calc(var(--size) * var(--ix) / var(--crop) * -1) calc(var(--size) * var(--iy) / var(--crop) * -1);
+  image-rendering: pixelated;
+}
 
-.shelf-title {
-  margin: 14px 0 0;
+.intro {
+  margin: 0;
+  color: var(--paper-2);
+}
+
+.intro .help-link {
+  display: flex;
+  margin-top: 10px;
+}
+
+.categories {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.category-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 10px;
   font-family: "Silkscreen", monospace;
+  font-weight: 400;
   font-size: 13px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--paper-2);
 }
 
-/* As many cartridges to a row as fit at a readable size, the rest on the next row: narrowed
-   further, five abreast, they read as squeezed. A cartridge scales whole with its column. */
-.carts {
+.category-title small {
+  color: var(--mid);
+  font-size: 11px;
+}
+
+.empty {
+  margin: 0;
+  padding: 12px 14px;
+  border: 2px dashed var(--ink-3);
+  color: var(--mid);
+}
+
+.tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  justify-content: start;
-  gap: 30px 18px;
-  padding: 16px 4px 10px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
 }
 
-.cart {
-  --shell: color-mix(in srgb, var(--cart) 30%, #161616);
-  position: relative;
+.tile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   min-width: 0;
-  container-type: inline-size;
-  border: 0;
-  padding: 0;
-  background: none;
-  cursor: pointer;
+  padding: 8px 10px;
+  border: 2px solid var(--ink-3);
+  background: var(--ink-2);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
   text-align: left;
-  animation: float 3.2s ease-in-out infinite alternate;
-  animation-delay: calc(var(--i) * -1.1s);
+  cursor: pointer;
 }
 
-.cart-body {
-  /* One pixel of the 148px cartridge, so a narrower one keeps its proportions */
-  --u: calc(100cqi / 148);
-  display: block;
-  filter: drop-shadow(6px 7px 0 rgba(0, 0, 0, 0.4));
+.tile .icon {
+  --size: 48px;
+  flex: none;
 }
 
-@keyframes float {
-  from { transform: translateY(0); }
-  to { transform: translateY(-7px); }
+.tile-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.cart-shell {
-  display: block;
-  position: relative;
-  height: calc(var(--u) * 178);
-  padding: calc(var(--u) * 26) calc(var(--u) * 12) 0;
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.25)),
-    var(--shell);
-  /* The cut corner that keys a cartridge into its slot */
-  clip-path: polygon(0 0, calc(100% - var(--u) * 20) 0, 100% calc(var(--u) * 20), 100% 100%, 0 100%);
-  transform-origin: 50% 100%;
-  transition: transform 260ms cubic-bezier(0.3, 1.6, 0.5, 1);
-}
-
-/* The grip ridges along the top */
-.cart-shell::before {
-  content: "";
-  position: absolute;
-  left: calc(var(--u) * 14);
-  right: calc(var(--u) * 30);
-  top: calc(var(--u) * 8);
-  height: calc(var(--u) * 11);
-  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.45) 0 2px, rgba(255, 255, 255, 0.08) 2px 4px);
-}
-
-.cart-label {
-  display: block;
-  position: relative;
+.tile-name {
+  font-family: "Silkscreen", monospace;
+  font-size: 12px;
   overflow: hidden;
-  background: var(--case);
-  padding: calc(var(--u) * 5);
-  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.15);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.cart-label img {
-  display: block;
-  width: 100%;
-  height: calc(var(--u) * 78);
-  object-fit: none;
-  object-position: var(--thumb, 50% 42%);
-  background: #000;
+.tile-size {
+  color: var(--mid);
+  font-size: 18px;
 }
 
-.cart-title {
-  display: block;
-  margin-top: calc(var(--u) * 5);
-  padding: calc(var(--u) * 4) calc(var(--u) * 6) calc(var(--u) * 3);
+.check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--ink-3);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.tile:hover,
+.tile.current {
+  border-color: var(--cart);
+}
+
+.tile[aria-pressed="true"] {
+  border-color: var(--cart);
+  background: color-mix(in srgb, var(--cart) 18%, var(--ink-2));
+}
+
+.tile[aria-pressed="true"] .check {
+  border-color: var(--cart);
   background: var(--cart);
   color: var(--ink);
+}
+
+.tile[aria-pressed="true"] .check::before {
+  content: "✓";
+}
+
+.tile[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+.tile[aria-disabled="true"] .icon,
+.tile[aria-disabled="true"] .tile-text {
+  opacity: 0.45;
+}
+
+.tile.full .tile-size {
+  color: var(--confirm);
+}
+
+.tile.refused {
+  animation: refused 300ms steps(6, end);
+}
+
+@keyframes refused {
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.summary {
+  position: sticky;
+  bottom: 16px;
+}
+
+.summary h2 {
   font-family: "Silkscreen", monospace;
   font-weight: 700;
-  font-size: calc(var(--u) * 11);
-  line-height: 1.15;
-  min-height: calc(var(--u) * 34);
+  font-size: 22px;
+  margin: 6px 0 0;
+  text-shadow: 3px 3px 0 #000;
 }
 
-.cart-title small {
-  display: block;
-  font-family: "VT323", monospace;
-  font-weight: normal;
-  font-size: calc(var(--u) * 15);
-  opacity: 0.75;
+.picked {
+  margin: 0 0 16px;
+  color: var(--paper-2);
 }
 
-/* A sweep of light over the label, like the games' header notices */
-.cart-label::after {
-  content: "";
-  position: absolute;
-  top: -20%;
-  bottom: -20%;
-  left: -60%;
-  width: 40%;
-  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent);
-  transform: skewX(-12deg);
-  opacity: 0;
-}
-
-/* The edge connector's gold pins */
-.cart-pins {
-  position: absolute;
-  left: calc(var(--u) * 18);
-  right: calc(var(--u) * 18);
-  bottom: 0;
-  height: calc(var(--u) * 14);
-  background:
-    repeating-linear-gradient(90deg, #e8bf4a 0 5px, #9c7a1c 5px 6px, transparent 6px 9px),
-    #0e0e0e;
-  border-top: 2px solid #0e0e0e;
-}
-
-.cart:hover .cart-shell {
-  transform: perspective(500px) rotateX(9deg) rotateY(-10deg) translateY(-6px);
-}
-
-.cart[aria-selected="true"] .cart-body {
-  filter: drop-shadow(0 0 10px var(--cart)) drop-shadow(6px 7px 0 rgba(0, 0, 0, 0.4));
-}
-
-.cart[aria-selected="true"] .cart-label::after {
-  animation: shine 3s steps(14, end) infinite;
-}
-
-@keyframes shine {
-  0% { left: -60%; opacity: 1; }
-  45%, 100% { left: 130%; opacity: 1; }
-}
-
-.cart[aria-selected="true"]::before {
-  content: "▲ no console";
-  position: absolute;
-  left: 50%;
-  top: -22px;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  font-family: "Silkscreen", monospace;
-  font-size: 10px;
-  color: var(--cart);
-  text-shadow: 1px 1px 0 #000;
-}
-
-.cart[aria-selected="false"] .cart-label img {
-  filter: grayscale(0.7) brightness(0.75);
-}
-
-.cart.inserting .cart-shell {
-  animation: insert 420ms cubic-bezier(0.3, 1.6, 0.5, 1);
-}
-
-@keyframes insert {
-  0% { transform: scale(1); }
-  30% { transform: scale(0.9, 1.08) translateY(-14px); }
-  60% { transform: scale(1.06, 0.94); }
-  100% { transform: scale(1); }
+.picked:empty {
+  display: none;
 }
 
 /* ---- Tutorial dialog ---- */
@@ -900,6 +929,57 @@ h1 {
   color: var(--paper-2);
 }
 
+/* ---- Collection ---- */
+
+.meter {
+  display: flex;
+  height: 14px;
+  margin-top: 18px;
+  background: var(--ink-3);
+}
+
+.meter span {
+  background: var(--mid);
+  box-shadow: inset -2px 0 0 var(--ink);
+}
+
+.meter-label {
+  margin: 6px 0 16px;
+  color: var(--mid);
+  font-size: 19px;
+}
+
+.combo-button {
+  display: inline-block;
+  padding: 10px 18px;
+  border: 0;
+  background: var(--confirm);
+  color: var(--paper);
+  font-family: "Silkscreen", monospace;
+  font-size: 13px;
+  box-shadow: 4px 4px 0 var(--confirm-deep);
+  cursor: pointer;
+}
+
+.combo-button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--confirm-deep);
+}
+
+.combo-button:disabled,
+.combo-button.off {
+  background: var(--ink-3);
+  color: var(--mid);
+  box-shadow: 4px 4px 0 #000;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.combo-button:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 3px;
+}
+
 /* ---- Narrow screens ---- */
 
 @media (max-width: 920px) {
@@ -909,22 +989,11 @@ h1 {
     padding-top: 20px;
   }
 
-  .carts {
-    justify-content: center;
+  .device-area,
+  .summary {
+    position: static;
   }
 
-  .shelf-title {
-    text-align: center;
-  }
-
-  /* The cartridges right under the console they go into */
-  .carts {
-    order: -1;
-  }
-
-  .shelf-title {
-    order: -2;
-  }
 }
 
 @media (max-width: 420px) {
@@ -936,8 +1005,8 @@ h1 {
     padding: 22px 18px 18px;
   }
 
-  h1 {
-    font-size: 26px;
+  .tiles {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

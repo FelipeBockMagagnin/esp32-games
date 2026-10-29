@@ -3,77 +3,84 @@
     "id": "idle",
     "name": "Idle Miner",
     "tagline": "Minere, construa, lute",
+    "category": "autorais",
     "description": "Minere ouro, erga construções e compre melhorias. Depois leve seu equipamento pelas zonas: os inimigos deixam itens e os amuletos lançam feitiços. Ascenda para recomeçar mais forte.",
     "path": "../esp32-idle-game",
     "env": "esp32dev",
     "image": "img/idle.png",
     "accent": "#f7b542",
-    "thumb": "50% 46%"
+    "icon": [56, 72, 2]
   },
   {
     "id": "pet",
     "name": "Burrow Colony",
     "tagline": "Fazenda e colônia",
+    "category": "teste",
     "description": "Abra espaço no mato, plante e cave lagos. Os bichinhos colhem, dormem nas tocas e rendem moedas enquanto estão felizes. Se passarem fome por muito tempo, vão embora.",
     "path": "../esp32-pet",
     "env": "esp32dev",
     "image": "img/pet.png",
     "accent": "#8cc96b",
-    "thumb": "50% 46%"
+    "icon": [40, 84, 1]
   },
   {
     "id": "decaf",
     "name": "Decaf Inferno",
     "tagline": "Plataforma no escritório",
+    "category": "autorais",
     "description": "A máquina de café quebrou e o RH se recusa a comprar outra. Desça os andares do escritório, inspirados nos círculos do inferno de Dante, pulando na cabeça dos colegas e fugindo da impressora atrás de um café. Jogue com o aparelho deitado.",
     "path": "../esp32-decaf",
     "env": "esp32dev",
     "image": "img/decaf.png",
     "accent": "#c08552",
-    "thumb": "50% 12%"
+    "icon": [96, 2, 1]
   },
   {
     "id": "deepwell",
     "name": "Deepwell",
     "tagline": "Masmorra em turnos",
+    "category": "teste",
     "description": "Desça um poço de masmorras geradas a cada partida. Cada passo é um turno: ande pelo direcional, ataque o que estiver no caminho, junte poções, ouro e equipamento e ache a escada. Morreu, acabou; só o recorde fica.",
     "path": "../esp32-roguelike",
     "env": "esp32dev",
     "image": "img/deepwell.png",
     "accent": "#6f8fd8",
-    "thumb": "42% 17%"
+    "icon": [70, 30, 1]
   },
   {
     "id": "pomodoro",
     "name": "Pomodoro",
     "tagline": "Foco e relógio",
+    "category": "apps",
     "description": "Um timer pomodoro: 25 minutos de foco, uma pausa, e uma pausa longa a cada quatro focos, com alarme e estatísticas da semana. O relógio precisa de WiFi, que esta versão não tem: para ele, compile o projeto com a sua rede.",
     "path": "../esp32-pomodoro",
     "env": "esp32dev",
     "image": "img/pomodoro.png",
     "accent": "#e0604f",
-    "thumb": "50% 47%"
+    "icon": [56, 72, 2]
   },
   {
     "id": "tilde",
     "name": "Tilde",
     "tagline": "Bichinho virtual",
+    "category": "teste",
     "description": "Choque um ovo e cuide do bichinho que nasce: dê comida e carinho, brinque, limpe a casinha e apague a luz para ele dormir. Ele cresce de jeitos diferentes conforme o cuidado. Aqui ninguém morre: no pior caso ele fica tristinho, e um carinho resolve.",
     "path": "../esp32-tilde",
     "env": "esp32dev",
     "image": "img/tilde.png",
     "accent": "#ff8fa3",
-    "thumb": "50% 42%"
+    "icon": [38, 104, 2]
   },
   {
     "id": "jackhammer",
     "name": "JackHammer",
     "tagline": "Gire e acerte",
+    "category": "autorais",
     "description": "Uma britadeira no meio da arena gira de um quarto em um quarto. Os inimigos chegam pelos quatro lados: acerte-os com a ponta antes que encostem no corpo. Cada dez pontos aumentam as moedas por acerto, e elas compram estilos e músicas. Port do jogo para celular feito em Unity.",
     "path": "../esp32-jackhammer",
     "env": "esp32dev",
     "image": "img/jackhammer.png",
     "accent": "#e8433a",
-    "thumb": "50% 50%"
+    "icon": [96, 168, 1]
   }
 ]
