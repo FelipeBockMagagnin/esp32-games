@@ -42,7 +42,7 @@ window.GAMES = [
     "description": "Desça um poço de masmorras geradas a cada partida. Cada passo é um turno: ande pelo direcional, ataque o que estiver no caminho, junte poções, ouro e equipamento e ache a escada. Morreu, acabou; só o recorde fica.",
     "image": "img/deepwell.png",
     "accent": "#6f8fd8",
-    "thumb": "50% 50%",
+    "thumb": "42% 17%",
     "version": "c882cf4",
     "date": "2026-10-28",
     "manifest": "firmware/deepwell/manifest.json"

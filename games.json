@@ -41,7 +41,7 @@
     "env": "esp32dev",
     "image": "img/deepwell.png",
     "accent": "#6f8fd8",
-    "thumb": "50% 50%"
+    "thumb": "42% 17%"
   },
   {
     "id": "pomodoro",
