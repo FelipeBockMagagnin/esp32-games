@@ -1,0 +1,539 @@
+#include "CombatScreen.h"
+#include "combat/CombatStyle.h"
+#include "../game/Format.h"
+
+// A new item holds the stage longer than a duplicate that only levelled one up
+static const unsigned long NEW_DROP_MS = 3500;
+static const unsigned long LEVEL_DROP_MS = 2800;
+static const unsigned long KILL_MESSAGE_MS = 1500;
+static const unsigned long BOSS_MESSAGE_MS = 2500;
+
+// The player's bar flashes for the first part of a hit's text, so a hit taken is noticed
+// even when the eyes are elsewhere
+static const unsigned long HIT_TEXT_MS = 800;
+static const unsigned long HURT_FLASH_MS = 300;
+// Outlasts one 10 Hz refresh, so every hit shows it
+static const unsigned long ENEMY_FLASH_MS = 130;
+static const unsigned long HEAL_GLOW_MS = 450;
+// Enough warning to see the enemy's hit coming and press Down in time
+static const unsigned long WARN_MS = 600;
+// Below this many kills in all, the status line coaches the basic presses
+static const uint32_t HINT_KILLS = 30;
+
+// Warm belongs to the enemy, cool to the player
+static constexpr Color ENEMY_HP_COLOR = Theme::ENEMY_HP_BAR;
+static constexpr Color ENEMY_HP_BG = Theme::ENEMY_HP_TRACK;
+static constexpr Color ENEMY_HP_BORDER = Theme::ENEMY_HP_BORDER;
+static constexpr Color ENEMY_ATTACK_COLOR = Theme::ENEMY_ATK_BAR;
+static constexpr Color ENEMY_ATTACK_BG = Theme::ENEMY_ATK_TRACK;
+static constexpr Color ENEMY_ATTACK_BORDER = Theme::ENEMY_ATK_BORDER;
+static constexpr Color PLAYER_HP_COLOR = Theme::HP_BAR;
+static constexpr Color PLAYER_HP_BG = Theme::HP_TRACK;
+static constexpr Color PLAYER_HP_BORDER = Theme::HP_BORDER;
+static constexpr Color INERT_COLOR = Theme::INERT_BAR;
+
+static const int16_t CENTER_X = 120;
+
+// Bars leave room on their right for the damage of the last hit
+static const int16_t BAR_X = 6;
+static const int16_t HP_BAR_W = 196;
+static const int16_t HIT_TEXT_X = 234;
+static const int16_t ENEMY_HP_Y = 182;
+static const int16_t ENEMY_HP_H = 14;
+static const int16_t ENEMY_ATK_BAR_Y = 199;
+static const int16_t ENEMY_ATK_BAR_W = 228;
+static const int16_t ENEMY_ATK_BAR_H = 13;
+
+static const int16_t MESSAGE_Y = 215;
+
+static const int16_t STATS_Y = 298;
+static const int16_t GOLD_RIGHT_X = 234;
+static const int16_t GOLD_COIN_R = 3;
+static const int16_t PLAYER_HP_Y = 308;
+static const int16_t PLAYER_HP_H = 11;
+
+CombatScreen::CombatScreen(CombatState &combat, const GameState &game, SoundManager &sound)
+    : header("Combat"),
+      enemyPanel(combat),
+      enemyHpBar(BAR_X, ENEMY_HP_Y, HP_BAR_W, ENEMY_HP_H, 0, 1, ENEMY_HP_COLOR, ENEMY_HP_BG, ENEMY_HP_BORDER),
+      enemyHitText(HIT_TEXT_X, ENEMY_HP_Y + 3, "", Theme::GOLD, 1, TR_DATUM),
+      enemyAttackBar(BAR_X, ENEMY_ATK_BAR_Y, ENEMY_ATK_BAR_W, ENEMY_ATK_BAR_H, 0, 1, ENEMY_ATTACK_COLOR,
+                     ENEMY_ATTACK_BG, ENEMY_ATTACK_BORDER),
+      messageText(CENTER_X, MESSAGE_Y, "", Theme::TEXT, 1, TC_DATUM),
+      actionPanel(combat),
+      atkLabel(8, STATS_Y, "ATK", Theme::TEXT_2, 1),
+      atkValue(28, STATS_Y, "", Theme::ATTACK, 1),
+      defLabel(60, STATS_Y, "DEF", Theme::TEXT_2, 1),
+      defValue(80, STATS_Y, "", Theme::DEFENSE, 1),
+      regenLabel(112, STATS_Y, "RGN", Theme::TEXT_2, 1),
+      regenValue(132, STATS_Y, "", Theme::HP, 1),
+      goldCoin(GOLD_RIGHT_X, STATS_Y + 3, GOLD_COIN_R, GOLD_COIN_R, Theme::GOLD),
+      goldText(GOLD_RIGHT_X, STATS_Y, "", Theme::GOLD, 1, TR_DATUM),
+      playerHpBar(BAR_X, PLAYER_HP_Y, HP_BAR_W, PLAYER_HP_H, 0, 1, PLAYER_HP_COLOR, PLAYER_HP_BG, PLAYER_HP_BORDER),
+      playerHitText(HIT_TEXT_X, PLAYER_HP_Y + 2, "", CombatStyle::BLOCKED, 1, TR_DATUM),
+      combat(combat),
+      game(game),
+      sound(sound),
+      seenKills(0),
+      seenDrops(0),
+      seenHits(0),
+      seenHurts(0),
+      seenSecondWinds(0),
+      seenWeakPoints(0),
+      seenFuries(0),
+      seenBosses(0),
+      seenBossFled(0),
+      messageUntil(0),
+      enemyHitUntil(0),
+      playerHitUntil(0),
+      playerFlashUntil(0),
+      playerHealUntil(0),
+      enemyFlashUntil(0)
+{
+    addElement(&header);
+    setHeader(&header);
+
+    enemyPanel.addTo(*this);
+    addElement(&enemyHpBar);
+    addElement(&enemyHitText);
+    addElement(&enemyAttackBar);
+    addElement(&messageText);
+    actionPanel.addTo(*this);
+    addElement(&atkLabel);
+    addElement(&atkValue);
+    addElement(&defLabel);
+    addElement(&defValue);
+    addElement(&regenLabel);
+    addElement(&regenValue);
+    addElement(&goldCoin);
+    addElement(&goldText);
+    addElement(&playerHpBar);
+    addElement(&playerHitText);
+
+    enemyHpBar.enableTrail(Theme::HIT_TRAIL);
+    playerHpBar.enableTrail(Theme::HIT_TRAIL);
+}
+
+void CombatScreen::onEnter(TFT_eSPI &tft)
+{
+    combat.rerollEnemy(millis());
+    // Events from while the player was elsewhere must not replay their sounds or banners
+    seenKills = combat.getKillEvents();
+    seenDrops = combat.getDropEvents();
+    seenHits = combat.getHitEvents();
+    seenHurts = combat.getHurtEvents();
+    seenSecondWinds = combat.getSecondWindEvents();
+    seenWeakPoints = combat.getWeakPointEvents();
+    seenFuries = combat.getFuryEvents();
+    seenBosses = combat.getBossEvents();
+    seenBossFled = combat.getBossFledEvents();
+    messageUntil = 0;
+    enemyHitUntil = 0;
+    playerHitUntil = 0;
+    playerFlashUntil = 0;
+    playerHealUntil = 0;
+    enemyFlashUntil = 0;
+    forceRefresh();
+    enemyPanel.hideBanner();
+    enemyPanel.stopAnimations();
+    Screen::onEnter(tft);
+}
+
+// Leaves out the elements whose visibility their own refresh decides (the hit numbers),
+// which would otherwise be toggled twice per refresh and flicker
+void CombatScreen::showFightElements(bool visible)
+{
+    enemyPanel.setVisible(visible);
+    enemyHpBar.setVisible(visible);
+    enemyAttackBar.setVisible(visible);
+    actionPanel.setVisible(visible);
+    atkLabel.setVisible(visible);
+    atkValue.setVisible(visible);
+    defLabel.setVisible(visible);
+    defValue.setVisible(visible);
+    regenLabel.setVisible(visible && combat.getPlayerStats().regen > 0);
+    regenValue.setVisible(visible && combat.getPlayerStats().regen > 0);
+    playerHpBar.setVisible(visible);
+}
+
+void CombatScreen::showMessage(unsigned long now, const char *text, Color color, unsigned long durationMs)
+{
+    messageText.setText(text);
+    messageText.setColor(color);
+    messageUntil = now + durationMs;
+}
+
+// Diffs the engine's monotonic counters against the last values this screen saw
+void CombatScreen::handleEvents(unsigned long now)
+{
+    char buf[40];
+
+    if (combat.getHitEvents() != seenHits)
+    {
+        seenHits = combat.getHitEvents();
+        snprintf(buf, sizeof(buf), "-%u", (unsigned)combat.getLastHitDamage());
+        enemyHitText.setText(buf);
+        enemyHitUntil = now + HIT_TEXT_MS;
+        CombatState::HitKind kind = combat.getLastHitKind();
+        enemyPanel.onHit(combat.getLastHitDamage(), kind != CombatState::HIT_AUTO);
+        enemyFlashUntil = now + ENEMY_FLASH_MS;
+        if (kind == CombatState::HIT_CRIT)
+        {
+            snprintf(buf, sizeof(buf), "CRITICAL! -%u", (unsigned)combat.getLastHitDamage());
+            showMessage(now, buf, Theme::GOLD, HIT_TEXT_MS);
+        }
+        forceRefresh();
+    }
+
+    if (combat.getWeakPointEvents() != seenWeakPoints)
+    {
+        seenWeakPoints = combat.getWeakPointEvents();
+        enemyPanel.onWeakPoint();
+        sound.playMenu();
+        forceRefresh();
+    }
+
+    if (combat.getFuryEvents() != seenFuries)
+    {
+        seenFuries = combat.getFuryEvents();
+        sound.playUnlock();
+        forceRefresh();
+    }
+
+    if (combat.getHurtEvents() != seenHurts)
+    {
+        seenHurts = combat.getHurtEvents();
+        snprintf(buf, sizeof(buf), "-%u", (unsigned)combat.getLastHurtDamage());
+        playerHitText.setText(buf);
+        playerHitUntil = now + HIT_TEXT_MS;
+        playerFlashUntil = now + HURT_FLASH_MS;
+        enemyPanel.onAttack();
+        sound.playHurt();
+    }
+
+    if (combat.getSecondWindEvents() != seenSecondWinds)
+    {
+        seenSecondWinds = combat.getSecondWindEvents();
+        showMessage(now, "Second Wind!", Theme::HP, KILL_MESSAGE_MS);
+        sound.playLevelUp();
+    }
+
+    if (combat.getBossFledEvents() != seenBossFled)
+    {
+        seenBossFled = combat.getBossFledEvents();
+        showMessage(now, "The boss got away...", Theme::BAD, BOSS_MESSAGE_MS);
+    }
+
+    bool killed = combat.getKillEvents() != seenKills;
+    if (killed)
+    {
+        seenKills = combat.getKillEvents();
+        enemyPanel.onKill();
+        bool midas = combat.wasLastKillMidas();
+        bool swift = combat.wasLastKillSwift();
+        snprintf(buf, sizeof(buf), midas ? "MIDAS! +%s gold" : swift ? "SWIFT! +%s gold" : "Defeated! +%s gold",
+                 formatAmount(combat.getLastKillGold()).c_str());
+        showMessage(now, buf, midas || swift ? Theme::GOLD : Theme::GOOD, KILL_MESSAGE_MS);
+    }
+
+    // After the kill, whose respawn is what brings the boss in
+    if (combat.getBossEvents() != seenBosses)
+    {
+        seenBosses = combat.getBossEvents();
+        snprintf(buf, sizeof(buf), "BOSS! Beat it in %lus: x%u gold", BOSS_SWIFT_MS / 1000,
+                 (unsigned)BOSS_SWIFT_GOLD_MULTIPLIER);
+        showMessage(now, buf, Theme::BAD, BOSS_MESSAGE_MS);
+        enemyPanel.onCast(Theme::BAD, true);
+        sound.playBoss();
+    }
+
+    // A drop outranks the kill sound: it gets its own fanfare and the big card
+    bool dropped = combat.getDropEvents() != seenDrops;
+    if (dropped)
+    {
+        seenDrops = combat.getDropEvents();
+        const CombatState::KillDrops &drops = combat.getLastDrops();
+        enemyPanel.showDrop(drops.itemId, drops.isNew, drops.level, drops.count - 1,
+                            now + (drops.anyNew ? NEW_DROP_MS : LEVEL_DROP_MS));
+        if (drops.anyNew)
+        {
+            sound.playDrop();
+        }
+        else
+        {
+            sound.playBuy();
+        }
+    }
+    else if (killed)
+    {
+        sound.playKill();
+    }
+}
+
+// The enemy's next hit charges up rather than counting down, so the bar filling reads as
+// "something is coming"; it turns red just before it lands
+void CombatScreen::refreshEnemyAttack(unsigned long now, bool fighting)
+{
+    char buf[32];
+    bool warn = false;
+
+    if (!fighting)
+    {
+        enemyAttackBar.setProgress(0, 1);
+        enemyAttackBar.setFillColor(ENEMY_ATTACK_COLOR);
+        enemyAttackBar.setBorderColor(ENEMY_ATTACK_BORDER);
+        enemyAttackBar.setLabel("");
+    }
+    else if (combat.getEnemyAttackDamage() == 0)
+    {
+        // A full static bar rather than an empty one: counting up to nothing read as a bug
+        enemyAttackBar.setProgress(1, 1);
+        enemyAttackBar.setFillColor(INERT_COLOR);
+        enemyAttackBar.setBorderColor(ENEMY_ATTACK_BORDER);
+        enemyAttackBar.setLabel("0 dmg");
+    }
+    else
+    {
+        unsigned long interval = combat.getEnemy().attackIntervalMs;
+        unsigned long left = combat.getEnemyAttackRemaining(now);
+        uint32_t damage = combat.getEnemyHitDamage(now);
+        // A stun pushed the hit more than one interval away: the bar waits empty until the
+        // enemy starts winding up again. A ward makes the hit harmless, so no red warning.
+        bool stunned = left > interval;
+        bool warded = combat.isWarded(now);
+        warn = !stunned && !warded && left < WARN_MS;
+
+        enemyAttackBar.setProgress(stunned ? 0 : (int32_t)(interval - left), (int32_t)interval);
+        enemyAttackBar.setFillColor(warn ? CombatStyle::BLOCKED : warded ? CombatStyle::ACTIVE : ENEMY_ATTACK_COLOR);
+        enemyAttackBar.setBorderColor(warn ? CombatStyle::BLOCKED : warded ? CombatStyle::ACTIVE : ENEMY_ATTACK_BORDER);
+        if (stunned)
+        {
+            enemyAttackBar.setLabel("stunned");
+        }
+        else if (warded)
+        {
+            enemyAttackBar.setLabel("warded - no damage");
+        }
+        else
+        {
+            snprintf(buf, sizeof(buf), "hits you for %u", (unsigned)damage);
+            enemyAttackBar.setLabel(buf);
+        }
+    }
+}
+
+void CombatScreen::refreshPlayer(unsigned long now)
+{
+    char buf[24];
+    const Stats &player = combat.getPlayerStats();
+
+    atkValue.setText(formatCompact(player.attack));
+    defValue.setText(formatCompact(player.defense));
+    snprintf(buf, sizeof(buf), "%u.%u/s", (unsigned)(player.regen / 10), (unsigned)(player.regen % 10));
+    regenValue.setText(buf);
+
+    bool flash = (long)(now - playerFlashUntil) < 0;
+    bool glow = !flash && (long)(now - playerHealUntil) < 0;
+    playerHpBar.setProgress((int32_t)combat.getPlayerHp(), (int32_t)player.maxHp);
+    playerHpBar.setFillColor(flash ? CombatStyle::BLOCKED : glow ? Theme::GOOD : PLAYER_HP_COLOR);
+    playerHpBar.setBorderColor(flash ? CombatStyle::BLOCKED : glow ? Theme::GOOD : PLAYER_HP_BORDER);
+    snprintf(buf, sizeof(buf), "%u/%u", (unsigned)combat.getPlayerHp(), (unsigned)player.maxHp);
+    playerHpBar.setLabel(buf);
+
+    playerHitText.setVisible((long)(now - playerHitUntil) < 0);
+    enemyHitText.setVisible((long)(now - enemyHitUntil) < 0);
+}
+
+void CombatScreen::refreshGold()
+{
+    String gold = formatAmount(game.getGold());
+    goldText.setText(gold);
+    goldCoin.setCenter(GOLD_RIGHT_X - (int16_t)gold.length() * 6 - GOLD_COIN_R - 2, STATS_Y + 3);
+}
+
+void CombatScreen::refreshStatus(unsigned long now, bool fighting)
+{
+    if (messageUntil != 0 && (long)(now - messageUntil) < 0)
+    {
+        return;
+    }
+    messageUntil = 0;
+    char buf[40];
+    Color color = Theme::TEXT_2;
+    buf[0] = '\0';
+    if (combat.getPhase() == CombatState::DEAD)
+    {
+        unsigned long remaining = combat.getReviveRemaining(now);
+        snprintf(buf, sizeof(buf), "Defeated - reviving in %lu.%lus", remaining / 1000, (remaining % 1000) / 100);
+    }
+    else if (fighting)
+    {
+        color = hint(now, buf, sizeof(buf));
+    }
+    messageText.setColor(color);
+    messageText.setText(buf);
+}
+
+// What to do right now, most urgent first. The basic presses are only coached to a new
+// player; the rest explains a state that is easy to misread at any stage.
+Color CombatScreen::hint(unsigned long now, char *buf, size_t size)
+{
+    uint32_t defense = combat.getEnemyDefense();
+    bool learning = combat.getTotalKills() < HINT_KILLS;
+    bool hitComing = combat.getEnemyAttackDamage() > 0 && !combat.isWarded(now) &&
+                     combat.getEnemyAttackRemaining(now) < WARN_MS;
+
+    if (combat.getStrikeDamage() == 0)
+    {
+        snprintf(buf, size, "DEF %s blocks even STRIKE: gear up", formatCompact(defense).c_str());
+        return CombatStyle::BLOCKED;
+    }
+    if (combat.isWeakPointOpen(now))
+    {
+        snprintf(buf, size, "WEAK POINT! Strike now");
+        return Theme::GOLD;
+    }
+    if (combat.isFuryActive(now))
+    {
+        snprintf(buf, size, "FURY! Mash STRIKE");
+        return Theme::BAD;
+    }
+    if (learning && hitComing && combat.getGuardCooldownRemaining(now) == 0 && !combat.isGuarding(now))
+    {
+        snprintf(buf, size, "Hit coming: DOWN to GUARD");
+        return CombatStyle::ACTIVE;
+    }
+    if (learning && combat.getStrikeCooldownRemaining(now) == 0)
+    {
+        snprintf(buf, size, "Press the red button: STRIKE");
+        return CombatStyle::READY;
+    }
+    const SpellDef *spell = combat.getSpell();
+    if (learning && spell != nullptr && combat.getSpellCooldownRemaining(now) == 0 && !combat.isSpellUseless())
+    {
+        snprintf(buf, size, "UP casts %s", spell->name);
+        return CombatStyle::READY;
+    }
+    return Theme::TEXT_2;
+}
+
+// Events are picked up every loop rather than at the refresh rate, so a hit's animation
+// starts with the hit
+void CombatScreen::update(unsigned long now)
+{
+    if (combat.isInZone())
+    {
+        handleEvents(now);
+    }
+    enemyPanel.animate(now);
+    enemyHpBar.update(now);
+    playerHpBar.update(now);
+
+    if (!refreshDue(now))
+    {
+        return;
+    }
+    refreshGold();
+
+    if (!combat.isInZone())
+    {
+        header.setTitle("Combat");
+        showFightElements(false);
+        enemyHitText.setVisible(false);
+        playerHitText.setVisible(false);
+        messageText.setColor(Theme::TEXT);
+        messageText.setText("Pick a zone on the Zones screen");
+        return;
+    }
+
+    const EnemyDef &enemy = combat.getEnemy();
+    bool fighting = combat.getPhase() == CombatState::FIGHTING;
+
+    header.setTitle(combat.getZone().name);
+    showFightElements(true);
+    enemyPanel.refresh(now);
+
+    char buf[24];
+    enemyHpBar.setProgress((int32_t)combat.getEnemyHp(), (int32_t)enemy.maxHp);
+    bool enemyFlash = (long)(now - enemyFlashUntil) < 0;
+    enemyHpBar.setFillColor(enemyFlash ? Theme::TEXT : ENEMY_HP_COLOR);
+    enemyHpBar.setBorderColor(enemyFlash ? Theme::TEXT : ENEMY_HP_BORDER);
+    snprintf(buf, sizeof(buf), "%u/%u", (unsigned)combat.getEnemyHp(), (unsigned)enemy.maxHp);
+    enemyHpBar.setLabel(buf);
+
+    refreshEnemyAttack(now, fighting);
+    actionPanel.refresh(now, fighting);
+    refreshPlayer(now);
+    refreshStatus(now, fighting);
+}
+
+void CombatScreen::onConfirmPress()
+{
+    if (combat.strike(millis()))
+    {
+        sound.playStrike();
+    }
+    else
+    {
+        sound.playError();
+    }
+    forceRefresh();
+}
+
+// Casting says what it did in the status line, since a heal or a ward is easy to miss
+void CombatScreen::onUpPress()
+{
+    unsigned long now = millis();
+    const SpellDef *spell = combat.getSpell();
+    uint32_t hpBefore = combat.getPlayerHp();
+    if (spell == nullptr || !combat.castSpell(now))
+    {
+        sound.playError();
+        forceRefresh();
+        return;
+    }
+
+    sound.playLevelUp();
+    char buf[32];
+    switch (spell->effect)
+    {
+    case SpellEffect::HEAL:
+        snprintf(buf, sizeof(buf), "Healed %u HP", (unsigned)(combat.getPlayerHp() - hpBefore));
+        showMessage(now, buf, Theme::GOOD, KILL_MESSAGE_MS);
+        playerHealUntil = now + HEAL_GLOW_MS;
+        break;
+    case SpellEffect::STUN:
+        showMessage(now, "Enemy stunned!", CombatStyle::ACTIVE, KILL_MESSAGE_MS);
+        enemyPanel.onCast(CombatStyle::ACTIVE, true);
+        break;
+    case SpellEffect::MIDAS:
+        snprintf(buf, sizeof(buf), "Next kill pays x%u gold", (unsigned)spell->power);
+        showMessage(now, buf, Theme::GOLD, KILL_MESSAGE_MS);
+        enemyPanel.onCast(Theme::GOLD, false);
+        break;
+    case SpellEffect::WARD:
+        snprintf(buf, sizeof(buf), "Warded for %us", (unsigned)(spell->power / 1000));
+        showMessage(now, buf, CombatStyle::ACTIVE, KILL_MESSAGE_MS);
+        enemyPanel.onCast(CombatStyle::ACTIVE, false);
+        break;
+    case SpellEffect::SEEK:
+        snprintf(buf, sizeof(buf), "Next kill drops x%u", (unsigned)spell->power);
+        showMessage(now, buf, Theme::GOOD, KILL_MESSAGE_MS);
+        enemyPanel.onCast(Theme::GOOD, false);
+        break;
+    }
+    forceRefresh();
+}
+
+void CombatScreen::onDownPress()
+{
+    if (combat.guard(millis()))
+    {
+        sound.playMenu();
+    }
+    else
+    {
+        sound.playError();
+    }
+    forceRefresh();
+}

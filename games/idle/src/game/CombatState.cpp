@@ -1,0 +1,900 @@
+#include "CombatState.h"
+#include "GameState.h"
+#include "Inventory.h"
+#include "Achievements.h"
+#include "Ascension.h"
+#include "SatMath.h"
+
+// Every deadline is compared with a signed difference so the fight survives a
+// millis() rollover, the same way GameState::update does
+static bool reached(unsigned long now, unsigned long deadline)
+{
+    return (long)(now - deadline) >= 0;
+}
+
+static unsigned long remainingUntil(unsigned long now, unsigned long deadline)
+{
+    return reached(now, deadline) ? 0 : deadline - now;
+}
+
+static unsigned long cutBy(unsigned long ms, uint32_t percent)
+{
+    return percent >= 100 ? 0 : ms * (100 - percent) / 100;
+}
+
+CombatState::CombatState(GameState &game, Inventory &inventory)
+    : game(game),
+      inventory(inventory),
+      currentZone(0),
+      inZone(false),
+      currentEnemy(0),
+      enemyHp(0),
+      playerHp(0),
+      hpStarted(false),
+      phase(IDLE),
+      cachedStats({BASE_ATTACK, BASE_DEFENSE, BASE_MAX_HP}),
+      seenStatsSignature(UINT32_MAX),
+      autoAttackAt(0),
+      enemyAttackAt(0),
+      strikeReadyAt(0),
+      spellReadyAt(0),
+      wardEndsAt(0),
+      midasArmed(false),
+      seekArmed(false),
+      guardReadyAt(0),
+      guardEndsAt(0),
+      respawnAt(0),
+      reviveAt(0),
+      reviveMs(REVIVE_MS),
+      deathAt(0),
+      regenAt(0),
+      regenCarry(0),
+      killEvents(0),
+      lastKillGold(0),
+      lastKillMidas(false),
+      hitEvents(0),
+      lastHitDamage(0),
+      lastHitKind(HIT_AUTO),
+      hurtEvents(0),
+      lastHurtDamage(0),
+      lastHurtGuarded(false),
+      dropEvents(0),
+      lastDrops(),
+      bossIndex(0xFF),
+      killsToBoss(0),
+      bossStartedAt(0),
+      bossEvents(0),
+      bossFledEvents(0),
+      lastKillSwift(false),
+      bossKills(0),
+      secondWindReadyAt(0),
+      secondWindEvents(0),
+      armorBreak(0),
+      weakOpensAt(0),
+      weakClosesAt(0),
+      weakPointEvents(0),
+      fury(0),
+      furyEndsAt(0),
+      furyEvents(0)
+{
+    for (uint8_t i = 0; i < ZONE_COUNT; i++)
+    {
+        zoneKills[i] = 0;
+    }
+}
+
+// Folds everything resolvePlayerStats() reads into one number: gear, upgrades, the awards
+// that pay attack and defense, and talents. Each only grows during a run, so the sum
+// cannot come back to a value already seen; load() forgets it for a new run.
+uint32_t CombatState::statsSignature() const
+{
+    return inventory.getRevision() + game.getUpgradesBoughtCount() + game.getAchievements().getUnlockedCount() +
+           game.getAscension().getRevision();
+}
+
+void CombatState::refreshStats()
+{
+    uint32_t signature = statsSignature();
+    if (signature == seenStatsSignature && cachedStats.maxHp > 0)
+    {
+        return;
+    }
+    seenStatsSignature = signature;
+
+    uint32_t previousMax = cachedStats.maxHp;
+    cachedStats = resolvePlayerStats(game, inventory);
+
+    // Gear that raises max health grants the difference right away rather than
+    // leaving the bar looking half empty
+    if (cachedStats.maxHp > previousMax)
+    {
+        playerHp += cachedStats.maxHp - previousMax;
+    }
+    if (playerHp > cachedStats.maxHp)
+    {
+        playerHp = cachedStats.maxHp;
+    }
+}
+
+bool CombatState::isZoneUnlocked(uint8_t zoneId) const
+{
+    if (zoneId >= ZONE_COUNT)
+    {
+        return false;
+    }
+    if (zoneId == 0)
+    {
+        return true;
+    }
+
+    const ZoneDef &def = ZONES[zoneId];
+    if (def.requiresUnlockUpgrade && !game.isZoneUnlockedByUpgrade(zoneId))
+    {
+        return false;
+    }
+    if (def.reqDelveLevel > game.getAscension().getEffectLevel(TalentEffect::DEEP_ZONES))
+    {
+        return false;
+    }
+    // In order, so a Deep Delver zone waits for the Core's map to be bought again
+    return isZoneUnlocked(zoneId - 1);
+}
+
+// Health carries over from the last zone, so hopping between zones never heals; only the
+// first entry after boot starts full. A death moves along with the player, its revive
+// wait still running.
+bool CombatState::enterZone(uint8_t zoneId, unsigned long now)
+{
+    if (!isZoneUnlocked(zoneId))
+    {
+        return false;
+    }
+
+    currentZone = zoneId;
+    inZone = true;
+    const ZoneDef &zone = ZONES[zoneId];
+    bossIndex = 0xFF;
+    for (uint8_t i = 0; i < zone.enemyCount; i++)
+    {
+        if (zone.enemies[i].boss)
+        {
+            bossIndex = i;
+        }
+    }
+    resetBossCount();
+    pickEnemy();
+    if (phase == DEAD)
+    {
+        return true;
+    }
+
+    refreshStats();
+    if (!hpStarted)
+    {
+        hpStarted = true;
+        playerHp = cachedStats.maxHp;
+    }
+    startRespawn(now);
+    return true;
+}
+
+void CombatState::leaveZone()
+{
+    inZone = false;
+    phase = IDLE;
+}
+
+// A boss stands its ground: it starts over rather than giving way to another enemy
+void CombatState::rerollEnemy(unsigned long now)
+{
+    if (!inZone || phase != FIGHTING)
+    {
+        return;
+    }
+    pickEnemy(currentEnemy == bossIndex ? 0xFF : currentEnemy);
+    startFight(now);
+}
+
+void CombatState::resetBossCount()
+{
+    killsToBoss = hasBoss() ? ZONES[currentZone].enemyCount - 1 : 0;
+}
+
+// Without a boss due, the pick is an even draw from the others, the one to avoid aside
+void CombatState::pickEnemy(uint8_t avoid)
+{
+    const ZoneDef &zone = ZONES[currentZone];
+    if (hasBoss() && killsToBoss == 0)
+    {
+        currentEnemy = bossIndex;
+    }
+    else
+    {
+        uint8_t candidates = 0;
+        for (uint8_t i = 0; i < zone.enemyCount; i++)
+        {
+            candidates += i != bossIndex && i != avoid ? 1 : 0;
+        }
+        // Nothing else to pick: the one to avoid comes again rather than the boss
+        currentEnemy = avoid < zone.enemyCount && avoid != bossIndex ? avoid : 0;
+        if (candidates > 0)
+        {
+            uint8_t pick = (uint8_t)random(candidates);
+            for (uint8_t i = 0; i < zone.enemyCount; i++)
+            {
+                if (i == bossIndex || i == avoid)
+                {
+                    continue;
+                }
+                if (pick == 0)
+                {
+                    currentEnemy = i;
+                    break;
+                }
+                pick--;
+            }
+        }
+    }
+    enemyHp = zone.enemies[currentEnemy].maxHp;
+    armorBreak = 0;
+}
+
+void CombatState::startFight(unsigned long now)
+{
+    phase = FIGHTING;
+    autoAttackAt = now + AUTO_ATTACK_MS;
+    enemyAttackAt = now + getEnemy().attackIntervalMs;
+    scheduleWeakPoint(now);
+    if (getEnemy().boss)
+    {
+        bossStartedAt = now;
+        bossEvents++;
+    }
+}
+
+unsigned long CombatState::getBossSwiftRemaining(unsigned long now) const
+{
+    return phase == FIGHTING && getEnemy().boss ? remainingUntil(now, bossStartedAt + BOSS_SWIFT_MS) : 0;
+}
+
+static uint32_t capped(uint32_t value, uint32_t cap)
+{
+    return value < cap ? value : cap;
+}
+
+uint32_t CombatState::getArmorBreakPerk() const
+{
+    return capped(inventory.getPerkPercent(ItemPerk::ARMOR_BREAK), MAX_ARMOR_BREAK_PERCENT);
+}
+
+uint32_t CombatState::getWeakPointPerk() const
+{
+    return capped(inventory.getPerkPercent(ItemPerk::WEAK_POINT), MAX_WEAK_POINT_PERCENT);
+}
+
+uint32_t CombatState::getFuryPerk() const
+{
+    return capped(inventory.getPerkPercent(ItemPerk::FURY), MAX_FURY_PERCENT);
+}
+
+uint32_t CombatState::getEnemyDefense() const
+{
+    // Rounded, so a single strike's break shows even on the Sewers' defense of a dozen
+    uint32_t defense = getEnemy().defense;
+    return defense - (uint32_t)(((uint64_t)defense * armorBreak + 50) / 100);
+}
+
+void CombatState::scheduleWeakPoint(unsigned long now)
+{
+    weakClosesAt = 0;
+    weakOpensAt = getWeakPointPerk() == 0 ? 0 : now + (unsigned long)random(WEAK_POINT_MIN_GAP_MS, WEAK_POINT_MAX_GAP_MS + 1);
+}
+
+bool CombatState::isWeakPointOpen(unsigned long now) const
+{
+    return weakClosesAt != 0 && !reached(now, weakClosesAt);
+}
+
+// A weak point equipped mid-fight starts its clock here, one taken off stops it
+void CombatState::updateWeakPoint(unsigned long now)
+{
+    if (getWeakPointPerk() == 0)
+    {
+        weakOpensAt = 0;
+        weakClosesAt = 0;
+        return;
+    }
+    if (weakClosesAt != 0)
+    {
+        if (reached(now, weakClosesAt))
+        {
+            scheduleWeakPoint(now);
+        }
+        return;
+    }
+    if (weakOpensAt == 0)
+    {
+        scheduleWeakPoint(now);
+    }
+    else if (reached(now, weakOpensAt))
+    {
+        weakOpensAt = 0;
+        weakClosesAt = now + WEAK_POINT_OPEN_MS;
+        weakPointEvents++;
+    }
+}
+
+bool CombatState::isFuryActive(unsigned long now) const
+{
+    return furyEndsAt != 0 && !reached(now, furyEndsAt);
+}
+
+unsigned long CombatState::getFuryRemaining(unsigned long now) const
+{
+    return isFuryActive(now) ? furyEndsAt - now : 0;
+}
+
+// The meter stays still during a fury, which brings the strike back at once
+void CombatState::addFury(uint16_t amount, unsigned long now)
+{
+    uint32_t perk = getFuryPerk();
+    if (perk == 0 || isFuryActive(now))
+    {
+        return;
+    }
+    uint32_t filled = fury + (uint32_t)amount * (100 + perk);
+    if (filled < (uint32_t)FURY_FULL * 100)
+    {
+        fury = (uint16_t)filled;
+        return;
+    }
+    fury = 0;
+    furyEndsAt = now + FURY_MS;
+    furyEvents++;
+    strikeReadyAt = now;
+}
+
+uint64_t CombatState::getKillGold(const EnemyDef &enemy, uint8_t zone) const
+{
+    uint64_t seconds = (uint64_t)ZONES[zone].killSeconds * (enemy.boss ? BOSS_KILL_SECONDS : 1);
+    uint64_t gold = satAdd(enemy.goldReward, mulDiv(game.getBaseProductionPerSecond(), seconds, GOLD_SCALE));
+    return mulDiv(gold, 100 + getReward(AchReward::KILL_GOLD), 100);
+}
+
+// Talents and item perks that pay the same kind of bonus as an award add to it
+uint32_t CombatState::getReward(AchReward reward) const
+{
+    uint32_t percent = game.getAchievements().getRewardPercent(reward);
+    if (reward == AchReward::DROP_CHANCE)
+    {
+        percent += game.getAscension().getPercent(TalentEffect::DROP_CHANCE);
+    }
+    else if (reward == AchReward::KILL_GOLD)
+    {
+        percent += game.getAscension().getPercent(TalentEffect::KILL_GOLD) + inventory.getPerkPercent(ItemPerk::KILL_GOLD);
+    }
+    return percent;
+}
+
+unsigned long CombatState::getGuardDurationMs() const
+{
+    return GUARD_DURATION_MS * (100 + getReward(AchReward::GUARD_TIME)) / 100;
+}
+
+unsigned long CombatState::getStrikeCooldownMs() const
+{
+    return STRIKE_COOLDOWN_MS;
+}
+
+// Never shorter than the guard it follows plus a second, so a guard cannot be held up
+unsigned long CombatState::getGuardCooldownMs() const
+{
+    unsigned long floor = getGuardDurationMs() + 1000;
+    return GUARD_COOLDOWN_MS > floor ? GUARD_COOLDOWN_MS : floor;
+}
+
+unsigned long CombatState::getSpellCooldownMs(const SpellDef &spell) const
+{
+    return cutBy(spell.cooldownMs, getReward(AchReward::SPELL_COOLDOWN_CUT));
+}
+
+uint16_t CombatState::getDropChanceBp(const DropDef &drop) const
+{
+    uint32_t bonus = getReward(AchReward::DROP_CHANCE) + inventory.getPerkPercent(ItemPerk::DROP);
+    uint32_t chance = (uint32_t)drop.chanceBp * (100 + bonus) / 100;
+    if (!inventory.isOwned(drop.itemId))
+    {
+        chance *= NEW_ITEM_DROP_MULTIPLIER;
+    }
+    const SpellDef *spell = getSpell();
+    if (seekArmed && spell != nullptr && spell->effect == SpellEffect::SEEK)
+    {
+        chance *= spell->power;
+    }
+    return chance < 10000 ? (uint16_t)chance : 10000;
+}
+
+void CombatState::startRespawn(unsigned long now)
+{
+    phase = RESPAWNING;
+    uint32_t cut = inventory.getPerkPercent(ItemPerk::RESPAWN_CUT) + getReward(AchReward::RESPAWN_CUT);
+    respawnAt = now + cutBy(RESPAWN_MS, cut < MAX_RESPAWN_CUT_PERCENT ? cut : MAX_RESPAWN_CUT_PERCENT);
+}
+
+uint32_t CombatState::damageTo(uint32_t defense, uint8_t multiplier) const
+{
+    return damageThrough(cachedStats.attack * multiplier, defense);
+}
+
+uint32_t CombatState::getAutoAttackDamage() const
+{
+    return phase == IDLE ? 0 : damageTo(getEnemyDefense(), 1);
+}
+
+uint32_t CombatState::getStrikeDamage() const
+{
+    return phase == IDLE ? 0 : damageTo(getEnemyDefense(), STRIKE_MULTIPLIER);
+}
+
+uint32_t CombatState::getBestAttackDamage() const
+{
+    // Spells deal no damage, so the strike is the hardest hit there is
+    return getStrikeDamage();
+}
+
+const SpellDef *CombatState::getSpell() const
+{
+    return spellForItem(inventory.getEquipped(EquipSlot::AMULET));
+}
+
+bool CombatState::isSpellUseless() const
+{
+    const SpellDef *spell = getSpell();
+    if (spell == nullptr)
+    {
+        return true;
+    }
+    switch (spell->effect)
+    {
+    case SpellEffect::HEAL:
+        return playerHp >= cachedStats.maxHp;
+    case SpellEffect::MIDAS:
+        return midasArmed;
+    case SpellEffect::SEEK:
+        return seekArmed;
+    default:
+        return false;
+    }
+}
+
+bool CombatState::isWarded(unsigned long now) const
+{
+    return wardEndsAt != 0 && !reached(now, wardEndsAt);
+}
+
+unsigned long CombatState::getWardRemaining(unsigned long now) const
+{
+    return isWarded(now) ? wardEndsAt - now : 0;
+}
+
+uint32_t CombatState::getEnemyAttackDamage() const
+{
+    if (phase == IDLE)
+    {
+        return 0;
+    }
+    return hurtThrough(getEnemy().attack, cachedStats.defense);
+}
+
+uint32_t CombatState::getEnemyHitDamage(unsigned long now) const
+{
+    uint32_t damage = getEnemyAttackDamage();
+    return isGuarding(now) ? damage * GUARD_DAMAGE_PERCENT / 100 : damage;
+}
+
+// Every hit on the enemy goes through here, so the screen hears about each one
+void CombatState::hitEnemy(uint32_t damage, HitKind kind, unsigned long now)
+{
+    lastHitDamage = damage;
+    lastHitKind = kind;
+    hitEvents++;
+
+    enemyHp = enemyHp > damage ? enemyHp - damage : 0;
+    if (enemyHp == 0)
+    {
+        onEnemyKilled(now);
+    }
+}
+
+void CombatState::onEnemyKilled(unsigned long now)
+{
+    const EnemyDef &enemy = getEnemy();
+
+    // An armed Midas multiplies this kill's gold and is spent by it
+    lastKillMidas = midasArmed;
+    lastKillGold = getKillGold(enemy, currentZone);
+    lastKillSwift = enemy.boss && !reached(now, bossStartedAt + BOSS_SWIFT_MS);
+    if (lastKillSwift)
+    {
+        lastKillGold = satMul(lastKillGold, BOSS_SWIFT_GOLD_MULTIPLIER);
+    }
+    if (enemy.boss)
+    {
+        bossKills++;
+        resetBossCount();
+    }
+    else if (killsToBoss > 0)
+    {
+        killsToBoss--;
+    }
+    if (midasArmed)
+    {
+        const SpellDef *spell = getSpell();
+        lastKillGold = satMul(lastKillGold, spell != nullptr && spell->effect == SpellEffect::MIDAS ? spell->power : 1);
+        midasArmed = false;
+    }
+    game.addGold(lastKillGold);
+    if (zoneKills[currentZone] < UINT16_MAX)
+    {
+        zoneKills[currentZone]++;
+    }
+    killEvents++;
+
+    uint32_t twinChance = game.getAscension().getPercent(TalentEffect::TWIN_DROP);
+    KillDrops drops = {};
+    for (uint8_t i = 0; i < enemy.dropCount; i++)
+    {
+        const DropDef &drop = enemy.drops[i];
+        // A maxed item has nothing left to gain, so it would only show a false level-up
+        if (!canDrop(drop.itemId) || inventory.getItemLevel(drop.itemId) >= ITEM_MAX_LEVEL)
+        {
+            continue;
+        }
+        if ((uint16_t)random(10000) < getDropChanceBp(drop))
+        {
+            bool isNew = inventory.addDrop(drop.itemId);
+            if (twinChance > 0 && (uint32_t)random(100) < twinChance)
+            {
+                inventory.addDrop(drop.itemId);
+            }
+            uint8_t tier = ITEMS[drop.itemId].tier;
+            if (drops.count == 0 || tier > ITEMS[drops.itemId].tier ||
+                (tier == ITEMS[drops.itemId].tier && isNew && !drops.isNew))
+            {
+                drops.itemId = drop.itemId;
+                drops.isNew = isNew;
+                drops.level = inventory.getItemLevel(drop.itemId);
+            }
+            drops.count++;
+            drops.anyNew = drops.anyNew || isNew;
+        }
+    }
+    seekArmed = false;
+    if (drops.count > 0)
+    {
+        lastDrops = drops;
+        dropEvents++;
+    }
+
+    startRespawn(now);
+}
+
+void CombatState::regenerate(unsigned long now)
+{
+    if (!reached(now, regenAt))
+    {
+        return;
+    }
+    regenAt = now + REGEN_TICK_MS;
+
+    uint32_t tenths = regenCarry + cachedStats.regen;
+    uint32_t gained = tenths / 10;
+    regenCarry = (uint8_t)(tenths % 10);
+    playerHp = playerHp + gained < cachedStats.maxHp ? playerHp + gained : cachedStats.maxHp;
+}
+
+bool CombatState::canDrop(uint8_t itemId) const
+{
+    return relicRank(itemId) <= game.getAscension().getEffectLevel(TalentEffect::RELIC_HUNT);
+}
+
+bool CombatState::isSecondWindReady(unsigned long now) const
+{
+    return game.getAscension().getEffectLevel(TalentEffect::SECOND_WIND) > 0 &&
+           (secondWindReadyAt == 0 || reached(now, secondWindReadyAt));
+}
+
+unsigned long CombatState::getSecondWindRemaining(unsigned long now) const
+{
+    return secondWindReadyAt == 0 ? 0 : remainingUntil(now, secondWindReadyAt);
+}
+
+void CombatState::onPlayerDied(unsigned long now)
+{
+    if (isSecondWindReady(now))
+    {
+        playerHp = cachedStats.maxHp * SECOND_WIND_HP_PERCENT / 100;
+        unsigned long cut = game.getAscension().getPercent(TalentEffect::SECOND_WIND) * 60000UL;
+        secondWindReadyAt = now + (cut < SECOND_WIND_BASE_MS ? SECOND_WIND_BASE_MS - cut : 0) + 1;
+        secondWindEvents++;
+        return;
+    }
+
+    if (getEnemy().boss)
+    {
+        resetBossCount();
+        bossFledEvents++;
+    }
+    playerHp = 0;
+    phase = DEAD;
+    deathAt = now;
+    reviveMs = cutBy(REVIVE_MS, getReward(AchReward::REVIVE_CUT));
+    reviveAt = now + reviveMs;
+    guardEndsAt = 0; // Losing the fight drops the guard, the ward and the fury
+    wardEndsAt = 0;
+    fury = 0;
+    furyEndsAt = 0;
+}
+
+void CombatState::update(unsigned long now)
+{
+    if (!inZone)
+    {
+        return;
+    }
+
+    refreshStats();
+
+    switch (phase)
+    {
+    case DEAD:
+        // Fill the bar as the timer runs down so the wait reads as healing
+        if (reached(now, reviveAt))
+        {
+            playerHp = cachedStats.maxHp;
+            pickEnemy();
+            startFight(now);
+        }
+        else
+        {
+            unsigned long elapsed = now - deathAt;
+            playerHp = (uint32_t)((uint64_t)cachedStats.maxHp * elapsed / reviveMs);
+        }
+        return;
+
+    case RESPAWNING:
+        regenerate(now);
+        if (reached(now, respawnAt))
+        {
+            pickEnemy();
+            startFight(now);
+        }
+        return;
+
+    case FIGHTING:
+        regenerate(now);
+        break;
+
+    default:
+        return;
+    }
+
+    // Clearing it here keeps isGuarding() from misreading a stale deadline across a rollover
+    if (guardEndsAt != 0 && reached(now, guardEndsAt))
+    {
+        guardEndsAt = 0;
+    }
+    if (wardEndsAt != 0 && reached(now, wardEndsAt))
+    {
+        wardEndsAt = 0;
+    }
+    if (furyEndsAt != 0 && reached(now, furyEndsAt))
+    {
+        furyEndsAt = 0;
+    }
+    updateWeakPoint(now);
+
+    const EnemyDef &enemy = getEnemy();
+
+    if (reached(now, autoAttackAt))
+    {
+        // Deadlines are pushed forward from now instead of accumulated, so a long
+        // frame never produces a burst of catch-up hits
+        autoAttackAt = now + AUTO_ATTACK_MS;
+
+        uint32_t damage = damageTo(getEnemyDefense(), 1);
+        if (damage > 0)
+        {
+            hitEnemy(damage, HIT_AUTO, now);
+            if (phase != FIGHTING)
+            {
+                return;
+            }
+        }
+    }
+
+    if (reached(now, enemyAttackAt))
+    {
+        enemyAttackAt = now + enemy.attackIntervalMs;
+
+        uint32_t damage = getEnemyHitDamage(now);
+        bool guarded = isGuarding(now);
+        if (isWarded(now))
+        {
+            damage = 0;
+        }
+
+        if (damage > 0)
+        {
+            lastHurtDamage = damage;
+            lastHurtGuarded = guarded;
+            hurtEvents++;
+            if (playerHp > damage)
+            {
+                playerHp -= damage;
+                addFury(FURY_PER_HURT, now);
+            }
+            else
+            {
+                onPlayerDied(now);
+            }
+        }
+    }
+}
+
+bool CombatState::strike(unsigned long now)
+{
+    if (phase != FIGHTING || !reached(now, strikeReadyAt))
+    {
+        return false;
+    }
+    uint32_t damage = damageTo(getEnemyDefense(), STRIKE_MULTIPLIER);
+    if (damage == 0)
+    {
+        return false;
+    }
+    bool crit = isWeakPointOpen(now);
+    if (crit)
+    {
+        damage = (uint32_t)((uint64_t)damage * (100 + getWeakPointPerk()) / 100);
+        scheduleWeakPoint(now);
+    }
+    strikeReadyAt = now + (isFuryActive(now) ? FURY_STRIKE_COOLDOWN_MS : getStrikeCooldownMs());
+    armorBreak = (uint8_t)capped(armorBreak + getArmorBreakPerk(), MAX_ARMOR_BREAK_PERCENT);
+    addFury(FURY_PER_STRIKE, now);
+    hitEnemy(damage, crit ? HIT_CRIT : HIT_STRIKE, now);
+    return true;
+}
+
+bool CombatState::castSpell(unsigned long now)
+{
+    const SpellDef *spell = getSpell();
+    if (phase != FIGHTING || spell == nullptr || !reached(now, spellReadyAt) || isSpellUseless())
+    {
+        return false;
+    }
+
+    switch (spell->effect)
+    {
+    case SpellEffect::HEAL:
+    {
+        uint32_t heal = cachedStats.maxHp * spell->power / 100;
+        playerHp = playerHp + heal < cachedStats.maxHp ? playerHp + heal : cachedStats.maxHp;
+        break;
+    }
+    case SpellEffect::STUN:
+        enemyAttackAt += getEnemy().attackIntervalMs * spell->power;
+        break;
+    case SpellEffect::MIDAS:
+        midasArmed = true;
+        break;
+    case SpellEffect::SEEK:
+        seekArmed = true;
+        break;
+    case SpellEffect::WARD:
+        wardEndsAt = now + spell->power;
+        break;
+    }
+
+    spellReadyAt = now + getSpellCooldownMs(*spell);
+    return true;
+}
+
+bool CombatState::guard(unsigned long now)
+{
+    if (phase != FIGHTING || !reached(now, guardReadyAt))
+    {
+        return false;
+    }
+    guardReadyAt = now + getGuardCooldownMs();
+    guardEndsAt = now + getGuardDurationMs();
+    return true;
+}
+
+uint16_t CombatState::getZoneKills(uint8_t zoneId) const
+{
+    return zoneId < ZONE_COUNT ? zoneKills[zoneId] : 0;
+}
+
+uint32_t CombatState::getTotalKills() const
+{
+    uint32_t total = 0;
+    for (uint8_t i = 0; i < ZONE_COUNT; i++)
+    {
+        total += zoneKills[i];
+    }
+    return total;
+}
+
+unsigned long CombatState::getAutoAttackRemaining(unsigned long now) const
+{
+    return phase == FIGHTING ? remainingUntil(now, autoAttackAt) : 0;
+}
+
+unsigned long CombatState::getEnemyAttackRemaining(unsigned long now) const
+{
+    return phase == FIGHTING ? remainingUntil(now, enemyAttackAt) : 0;
+}
+
+unsigned long CombatState::getStrikeCooldownRemaining(unsigned long now) const
+{
+    return remainingUntil(now, strikeReadyAt);
+}
+
+unsigned long CombatState::getSpellCooldownRemaining(unsigned long now) const
+{
+    return remainingUntil(now, spellReadyAt);
+}
+
+unsigned long CombatState::getGuardCooldownRemaining(unsigned long now) const
+{
+    return remainingUntil(now, guardReadyAt);
+}
+
+unsigned long CombatState::getReviveRemaining(unsigned long now) const
+{
+    return phase == DEAD ? remainingUntil(now, reviveAt) : 0;
+}
+
+unsigned long CombatState::getRespawnRemaining(unsigned long now) const
+{
+    return phase == RESPAWNING ? remainingUntil(now, respawnAt) : 0;
+}
+
+bool CombatState::isGuarding(unsigned long now) const
+{
+    return guardEndsAt != 0 && !reached(now, guardEndsAt);
+}
+
+unsigned long CombatState::getGuardRemaining(unsigned long now) const
+{
+    return isGuarding(now) ? guardEndsAt - now : 0;
+}
+
+void CombatState::save(Snapshot &out) const
+{
+    out.currentZone = currentZone;
+    out.inZone = inZone;
+    for (uint8_t i = 0; i < ZONE_COUNT; i++)
+    {
+        out.zoneKills[i] = zoneKills[i];
+    }
+}
+
+void CombatState::load(const Snapshot &in)
+{
+    currentZone = in.currentZone < ZONE_COUNT ? in.currentZone : 0;
+    seenStatsSignature = UINT32_MAX;
+    for (uint8_t i = 0; i < ZONE_COUNT; i++)
+    {
+        zoneKills[i] = in.zoneKills[i];
+    }
+
+    // A fight is never resumed mid-swing; re-entering the zone starts a fresh one
+    inZone = false;
+    phase = IDLE;
+    if (in.inZone)
+    {
+        enterZone(currentZone, millis());
+    }
+}

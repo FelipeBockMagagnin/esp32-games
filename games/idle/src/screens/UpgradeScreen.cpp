@@ -1,0 +1,415 @@
+#include "UpgradeScreen.h"
+#include "../game/SatMath.h"
+#include "../game/Format.h"
+#include "../game/CombatConfig.h" // ZONES, for the zone an unlock opens
+
+
+static constexpr Color PANEL_BORDER = Theme::FRAME; // Dark slate
+static constexpr Color LINE_COLOR = Theme::TEXT_2;
+static constexpr Color HINT_COLOR = Theme::TEXT_2;
+static constexpr Color AFFORD_COLOR = Theme::GOOD;
+static constexpr Color TOO_DEAR_COLOR = Theme::TEXT_DIM;
+static constexpr Color SAVINGS_COLOR = Theme::GOLD_BAR; // Amber fill, dark enough for the white label
+static constexpr Color SAVINGS_BG = Theme::GOLD_TRACK;
+static constexpr Color SAVINGS_BORDER = Theme::GOLD_BORDER;
+static constexpr Color READY_FILL = Theme::DONE_BAR; // Dark green once the price is covered
+
+// How each upgrade category looks, indexed by UpgradeTarget. The colors echo where the
+// bonus lands: gold for production, the combat screen's red/blue/green for its stats.
+struct CategoryStyle
+{
+    const char *label;
+    Color accent;
+    const uint16_t *icon;
+};
+
+static const CategoryStyle CATEGORY_STYLES[] = {
+    {"PRODUCTION", Theme::GOLD, image_upgrade_production_pixels}, // PRODUCTION
+    {"MINING", Theme::GOLD_BAR, image_upgrade_click_pixels},    // CLICK
+    {"ATTACK", Theme::ATTACK, image_sword_02b_pixels},          // ATTACK
+    {"DEFENSE", Theme::DEFENSE, image_armor_01b_pixels},        // DEFENSE
+    {"HEALTH", Theme::HP, image_upgrade_heart_pixels},          // MAX_HP
+    {"NEW ZONE", Theme::EPIC, image_upgrade_map_pixels},        // UNLOCK_ZONE
+    {"MINING", Theme::GOLD_BAR, image_upgrade_click_pixels},    // CLICK_PRODUCTION
+    {"BUILDING", Theme::INFO, image_upgrade_production_pixels}, // BUILDING_BOOST, icon per building
+    {"GOLD VEIN", Theme::GOLD, image_icon_gold_vein_pixels},    // VEIN_FREQUENCY
+    {"GOLD VEIN", Theme::GOLD, image_icon_gold_vein_pixels},    // VEIN_POWER
+    {"AWARDS", Theme::GOLD, image_award_trophy_pixels},         // AWARD_PRODUCTION
+};
+
+static const CategoryStyle &styleFor(UpgradeTarget target)
+{
+    return CATEGORY_STYLES[(uint8_t)target];
+}
+
+// A building boost shows the building it boosts rather than the category's icon
+static const uint16_t *iconFor(const GoldUpgradeDef &def)
+{
+    if (def.target == UpgradeTarget::BUILDING_BOOST && def.reqBuilding < BUILDING_COUNT)
+    {
+        return BUILDINGS[def.reqBuilding].icon;
+    }
+    return styleFor(def.target).icon;
+}
+
+static const int16_t CARD_X = 5;
+static const int16_t CARD_Y = 31;
+static const int16_t CARD_W = 230;
+static const int16_t CARD_H = 22;
+
+static const int16_t ROW_X = 5;
+static const int16_t LIST_TOP = 57;
+static const int16_t ROW_PITCH = 28;
+
+static const int16_t PANEL_X = 5;
+static const int16_t PANEL_Y = 254;
+static const int16_t PANEL_W = 230;
+static const int16_t PANEL_H = 64;
+static const int16_t TEXT_X = PANEL_X + 5;
+static const int16_t TEXT_RIGHT = PANEL_X + PANEL_W - 5;
+static const int16_t CATEGORY_Y = PANEL_Y + 5;
+static const int16_t LINE1_Y = PANEL_Y + 16;
+static const int16_t LINE2_Y = PANEL_Y + 26;
+static const int16_t BUY_ROW_Y = PANEL_Y + 38;
+static const int16_t BADGE_OFFSET_Y = (8 - ButtonBadge::SIZE) / 2;
+static const int16_t SAVINGS_Y = PANEL_Y + 48;
+static const int16_t SAVINGS_H = 13;
+
+// Size 1 characters are 6px wide, so this many fit inside the detail panel
+static const uint8_t DETAIL_LINE_CHARS = 36;
+
+static const uint8_t NO_UPGRADE = 0xFF;
+
+UpgradeScreen::UpgradeScreen(GameState &game, SoundManager &sound)
+    : header("Upgrade"),
+
+      goldCard(CARD_X, CARD_Y, CARD_W, CARD_H),
+
+      list(ROWS),
+
+      detailPanel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, PANEL_BORDER, true, Theme::CARD, true, 3),
+      categoryText(TEXT_X, CATEGORY_Y, "", Theme::TEXT, 1),
+      countText(TEXT_RIGHT, CATEGORY_Y, "", HINT_COLOR, 1, TR_DATUM),
+      detailLine1(TEXT_X, LINE1_Y, "", LINE_COLOR, 1),
+      detailLine2(TEXT_X, LINE2_Y, "", LINE_COLOR, 1),
+      buyBadge(TEXT_X, BUY_ROW_Y + BADGE_OFFSET_Y, ButtonBadge::CONFIRM),
+      buyLabel(TEXT_X + ButtonBadge::SIZE + 4, BUY_ROW_Y, "Buy", Theme::TEXT, 1),
+      priceText(TEXT_RIGHT, BUY_ROW_Y, "", Theme::GOLD, 1, TR_DATUM),
+      savingsBar(TEXT_X, SAVINGS_Y, TEXT_RIGHT - TEXT_X, SAVINGS_H, 0, 100, SAVINGS_COLOR, SAVINGS_BG, SAVINGS_BORDER),
+
+      game(game),
+      sound(sound),
+      visibleCount(0),
+      shownUpgrade(NO_UPGRADE)
+{
+    addElement(&header);
+    setHeader(&header);
+
+    goldCard.addTo(*this);
+
+    for (uint8_t i = 0; i < ROWS; i++)
+    {
+        rows[i].setPosition(ROW_X, LIST_TOP + i * ROW_PITCH);
+        rows[i].setShowCoin(true);
+        rowUpgrade[i] = NO_UPGRADE;
+        addElement(&rows[i]);
+    }
+
+    addElement(&detailPanel);
+    addElement(&categoryText, Theme::CARD);
+    addElement(&countText, Theme::CARD);
+    addElement(&detailLine1, Theme::CARD);
+    addElement(&detailLine2, Theme::CARD);
+    addElement(&buyBadge, Theme::CARD);
+    addElement(&buyLabel, Theme::CARD);
+    addElement(&priceText, Theme::CARD);
+    addElement(&savingsBar, Theme::CARD);
+
+    rebuildVisible();
+    refreshDetails();
+}
+
+// The available upgrades, cheapest first, so the list reads as a shopping list: the top
+// row is always the next thing the player can afford. The selection follows its upgrade
+// when a cheaper one appears above it; once bought, it falls on the next one down.
+void UpgradeScreen::rebuildVisible()
+{
+    uint8_t selectedId = list.getCount() > 0 ? visibleIds[list.getSelected()] : NO_UPGRADE;
+
+    visibleCount = 0;
+    for (uint8_t i = 0; i < GOLD_UPGRADE_COUNT; i++)
+    {
+        if (!game.isGoldUpgradeUnlocked(i) || game.isGoldUpgradeBought(i))
+        {
+            continue;
+        }
+        uint8_t pos = visibleCount;
+        while (pos > 0 && GOLD_UPGRADES[visibleIds[pos - 1]].cost > GOLD_UPGRADES[i].cost)
+        {
+            visibleIds[pos] = visibleIds[pos - 1];
+            pos--;
+        }
+        visibleIds[pos] = i;
+        visibleCount++;
+    }
+
+    list.setCount(visibleCount);
+    for (uint8_t i = 0; i < visibleCount; i++)
+    {
+        if (visibleIds[i] == selectedId)
+        {
+            list.setSelected(i);
+            break;
+        }
+    }
+}
+
+void UpgradeScreen::showDetailElements(bool visible)
+{
+    buyBadge.setVisible(visible);
+    buyLabel.setVisible(visible);
+    priceText.setVisible(visible);
+    savingsBar.setVisible(visible);
+}
+
+// What buying the upgrade changes, in the player's own numbers where the screen has them
+void UpgradeScreen::formatEffect(const GoldUpgradeDef &def, char *buf, size_t size) const
+{
+    switch (def.target)
+    {
+    case UpgradeTarget::PRODUCTION:
+    {
+        uint64_t now = game.getProductionPerSecond();
+        uint32_t bonus = game.getProductionBonusPercent();
+        if (now == 0)
+        {
+            snprintf(buf, size, "Production bonus +%lu%% > +%lu%%", (unsigned long)bonus,
+                     (unsigned long)(bonus + def.bonusPercent));
+            return;
+        }
+        uint64_t after = mulDiv(now, 100 + bonus + def.bonusPercent, 100 + bonus);
+        snprintf(buf, size, "Income %s > %s", formatPerSecond(now).c_str(), formatPerSecond(after).c_str());
+        return;
+    }
+    case UpgradeTarget::CLICK:
+    case UpgradeTarget::CLICK_PRODUCTION:
+    {
+        // Both add to what a click already earns: the ore's base value scaled up, or a
+        // share of production per second
+        uint64_t added = def.target == UpgradeTarget::CLICK
+                             ? (uint64_t)ORE_TIERS[game.getOreTier()].clickAmount * def.bonusPercent / 100
+                             : mulDiv(game.getProductionPerSecond(), def.bonusPercent, 100 * GOLD_SCALE);
+        uint64_t now = game.getClickAmount();
+        snprintf(buf, size, "Per click +%s > +%s", formatAmount(now).c_str(), formatAmount(satAdd(now, added)).c_str());
+        return;
+    }
+    case UpgradeTarget::ATTACK:
+    case UpgradeTarget::DEFENSE:
+    case UpgradeTarget::MAX_HP:
+    {
+        uint32_t now = def.target == UpgradeTarget::ATTACK    ? game.getAttackBonusPercent()
+                       : def.target == UpgradeTarget::DEFENSE ? game.getDefenseBonusPercent()
+                                                              : game.getMaxHpBonusPercent();
+        const char *stat = def.target == UpgradeTarget::ATTACK    ? "Attack"
+                           : def.target == UpgradeTarget::DEFENSE ? "Defense"
+                                                                  : "Max HP";
+        snprintf(buf, size, "%s bonus +%lu%% > +%lu%%", stat, (unsigned long)now,
+                 (unsigned long)(now + def.bonusPercent));
+        return;
+    }
+    case UpgradeTarget::UNLOCK_ZONE:
+        // bonusPercent carries the zone index for this target
+        snprintf(buf, size, "Opens zone: %s", def.bonusPercent < ZONE_COUNT ? ZONES[def.bonusPercent].name : "?");
+        return;
+    case UpgradeTarget::VEIN_FREQUENCY:
+    {
+        // The base range shortened by the frequency bonus, before and after
+        uint32_t now = 100 + game.getVeinFrequencyPercent();
+        uint32_t after = now + def.bonusPercent;
+        snprintf(buf, size, "Every %lu-%lus > %lu-%lus", VEIN_MIN_INTERVAL_MS / 10 / now, VEIN_MAX_INTERVAL_MS / 10 / now,
+                 VEIN_MIN_INTERVAL_MS / 10 / after, VEIN_MAX_INTERVAL_MS / 10 / after);
+        return;
+    }
+    case UpgradeTarget::VEIN_POWER:
+    {
+        uint32_t now = 100 + game.getVeinPowerPercent();
+        snprintf(buf, size, "Frenzy %lus > %lus", VEIN_FRENZY_MS * now / 100000,
+                 VEIN_FRENZY_MS * (now + def.bonusPercent) / 100000);
+        return;
+    }
+    case UpgradeTarget::BUILDING_BOOST:
+    {
+        uint64_t now = game.getBuildingProduction(def.reqBuilding);
+        snprintf(buf, size, "%s %s > %s", BUILDINGS[def.reqBuilding].name, formatPerSecond(now).c_str(),
+                 formatPerSecond(satMul(now, 2)).c_str());
+        return;
+    }
+    }
+    buf[0] = '\0';
+}
+
+void UpgradeScreen::refreshDetails()
+{
+    char buf[48];
+
+    snprintf(buf, sizeof(buf), "%u/%u bought", (unsigned)game.getUpgradesBoughtCount(), (unsigned)GOLD_UPGRADE_COUNT);
+    countText.setText(buf);
+
+    if (visibleCount == 0)
+    {
+        showDetailElements(false);
+        shownUpgrade = NO_UPGRADE;
+        categoryText.setText("ALL CAUGHT UP");
+        categoryText.setColor(Theme::TEXT);
+        detailLine1.setText("Buy buildings and mine deeper");
+        detailLine2.setText("to unlock more upgrades.");
+        return;
+    }
+
+    showDetailElements(true);
+
+    uint8_t id = visibleIds[list.getSelected()];
+    const GoldUpgradeDef &def = GOLD_UPGRADES[id];
+
+    if (shownUpgrade != id)
+    {
+        shownUpgrade = id;
+        const CategoryStyle &style = styleFor(def.target);
+        categoryText.setText(style.label);
+        categoryText.setColor(style.accent);
+
+        // Wrap the description at the last space that fits on the first line
+        String description = def.description;
+        if (description.length() <= DETAIL_LINE_CHARS)
+        {
+            detailLine1.setText(description);
+            detailLine2.setText("");
+        }
+        else
+        {
+            int split = description.lastIndexOf(' ', DETAIL_LINE_CHARS);
+            if (split <= 0)
+            {
+                split = DETAIL_LINE_CHARS;
+            }
+            detailLine1.setText(description.substring(0, split));
+            detailLine2.setText(description.substring(split + 1));
+        }
+    }
+
+    // Savings toward the price, so a far-off upgrade still shows how close it is
+    uint64_t gold = game.getGold();
+    bool affordable = game.canAffordGoldUpgrade(id);
+    uint64_t cost = game.getGoldUpgradeCost(id);
+    uint32_t percent = (affordable || cost == 0) ? 100 : (uint32_t)mulDiv(gold, 100, cost);
+    savingsBar.setProgress(percent, 100);
+    savingsBar.setFillColor(affordable ? READY_FILL : SAVINGS_COLOR);
+    if (affordable)
+    {
+        savingsBar.setLabel("Ready to buy");
+    }
+    else
+    {
+        snprintf(buf, sizeof(buf), "%s / %s  (%lu%%)", formatAmount(gold).c_str(), formatAmount(cost).c_str(),
+                 (unsigned long)percent);
+        savingsBar.setLabel(buf);
+    }
+
+    buyBadge.setDimmed(!affordable);
+    if (affordable)
+    {
+        snprintf(buf, sizeof(buf), "%s gold", formatAmount(cost).c_str());
+    }
+    else
+    {
+        // Not affordable means the cost is above the balance, so this cannot underflow
+        snprintf(buf, sizeof(buf), "need %s more", formatAmount(cost - gold).c_str());
+    }
+    priceText.setText(buf);
+    priceText.setColor(affordable ? AFFORD_COLOR : HINT_COLOR);
+}
+
+void UpgradeScreen::onEnter(TFT_eSPI &tft)
+{
+    goldCard.enter(game);
+    Screen::onEnter(tft);
+}
+
+void UpgradeScreen::update(unsigned long now)
+{
+    feedback.update(now);
+    goldCard.animate(now, game);
+    if (!refreshDue(now))
+    {
+        return;
+    }
+
+    goldCard.refresh(game);
+
+    rebuildVisible();
+
+    uint8_t visible = list.getVisibleCount();
+    for (uint8_t i = 0; i < ROWS; i++)
+    {
+        ListRow &row = rows[i];
+        if (i >= visible)
+        {
+            row.setVisible(false);
+            continue;
+        }
+        row.setVisible(true);
+
+        uint16_t index = list.getFirstVisible() + i;
+        uint8_t id = visibleIds[index];
+        const GoldUpgradeDef &def = GOLD_UPGRADES[id];
+
+        if (rowUpgrade[i] != id)
+        {
+            rowUpgrade[i] = id;
+            row.setTitle(def.name);
+            row.setIconPixels(iconFor(def), 16, 16);
+        }
+
+        char buf[48];
+        formatEffect(def, buf, sizeof(buf));
+        row.setSubtitle(buf);
+        row.setValue(formatAmount(game.getGoldUpgradeCost(id)));
+        row.setValueColor(game.canAffordGoldUpgrade(id) ? AFFORD_COLOR : TOO_DEAR_COLOR);
+        row.setState(index == list.getSelected() ? ListRow::SELECTED : ListRow::NORMAL);
+    }
+
+    refreshDetails();
+}
+
+void UpgradeScreen::onUpPress()
+{
+    list.previous();
+    forceRefresh();
+}
+
+void UpgradeScreen::onDownPress()
+{
+    list.next();
+    forceRefresh();
+}
+
+void UpgradeScreen::onConfirmPress()
+{
+    // buyGoldUpgrade only spends gold when the upgrade is unlocked, unowned and affordable
+    uint8_t id = visibleCount > 0 ? visibleIds[list.getSelected()] : 0;
+    uint64_t cost = visibleCount > 0 ? game.getGoldUpgradeCost(id) : 0;
+    if (visibleCount > 0 && game.buyGoldUpgrade(id))
+    {
+        sound.playBuy();
+        goldCard.spend(cost, millis());
+    }
+    else
+    {
+        sound.playError();
+        if (visibleCount > 0)
+        {
+            feedback.shake(rows[list.getSelected() - list.getFirstVisible()]);
+        }
+    }
+    forceRefresh();
+}

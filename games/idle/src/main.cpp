@@ -1,0 +1,556 @@
+#include <Arduino.h>
+#include <SPI.h>
+#include <TFT_eSPI.h>
+#include "pitches.h"
+#include "managers/ButtonManager.h"
+#include "managers/ScreenManager.h"
+#include "managers/Launcher.h"
+#include "game/GameState.h"
+#include "game/Inventory.h"
+#include "game/Achievements.h"
+#include "game/Unlocks.h"
+#include "game/CombatState.h"
+#include "game/Ascension.h"
+#include "game/SaveGame.h"
+#include "game/Format.h"
+#include "managers/SoundManager.h"
+#include "screens/InventoryScreen.h"
+#include "screens/MiningScreen.h"
+#include "screens/CombatScreen.h"
+#include "screens/BuildingScreen.h"
+#include "screens/UpgradeScreen.h"
+#include "screens/ZoneScreen.h"
+#include "screens/AchievementScreen.h"
+#include "screens/AscendScreen.h"
+#include "screens/ConfirmScreen.h"
+#include "screens/SettingsScreen.h"
+#include "screens/SplashScreen.h"
+#include "screens/AscensionScreen.h"
+#include "ui/Themes.h"
+#include "debug/DevConsole.h"
+
+// The buttons form a D-pad: Confirm in the middle, Up/Down for in-screen actions,
+// Right/Left to step forward/backward through the screens
+const int RIGHT_BUTTON_PIN = 23;   // Next screen
+const int CONFIRM_BUTTON_PIN = 27; // Confirms on the current screen: mines / buys
+const int UP_BUTTON_PIN = 19;      // Navigates up inside the current screen
+const int DOWN_BUTTON_PIN = 22;    // Navigates down inside the current screen
+const int LEFT_BUTTON_PIN = 26;    // Previous screen, or out of a sub-list
+const int BUZZER_PIN = 32;
+
+TFT_eSPI tft = TFT_eSPI();
+Button rightButton = Button(RIGHT_BUTTON_PIN);
+Button confirmButton = Button(CONFIRM_BUTTON_PIN);
+Button upButton = Button(UP_BUTTON_PIN);
+Button downButton = Button(DOWN_BUTTON_PIN);
+Button leftButton = Button(LEFT_BUTTON_PIN);
+
+// Declared before GameState, which reads them for its bonuses. Globals in one
+// translation unit initialize in declaration order, so the order here matters.
+Achievements achievements;
+Unlocks unlocks;
+Inventory inventory;
+Ascension ascension;
+GameState game(inventory, achievements, ascension);
+CombatState combat(game, inventory);
+SoundManager sound(BUZZER_PIN);
+ScreenManager screenManager(tft);
+
+InventoryScreen inventoryScreen(game, inventory, sound);
+MiningScreen miningScreen(game, unlocks, sound);
+CombatScreen combatScreen(combat, game, sound);
+BuildingScreen buildingScreen(game, sound);
+UpgradeScreen upgradeScreen(game, sound);
+ZoneScreen zoneScreen(game, inventory, combat, sound, screenManager);
+AchievementScreen achievementScreen(achievements, game, inventory, combat, sound);
+
+// Not in the rotation: modals, the first opened by holding Up and Down (see checkResetGesture)
+// or from Settings, which holding Left opens (see checkSettingsGesture)
+void resetGame();
+void showAscension();
+void ascendGame();
+void applySettings();
+void openGameMenu();
+ConfirmScreen resetScreen({"Reset", "Reset game?", "All progress will be lost,", "ascension and awards too.",
+                           "Erase the save and restart", "Resetting..."},
+                          Theme::BAD, resetGame, screenManager, sound);
+ConfirmScreen ascendConfirm({"Ascend", "Ascend now?", "Gold, buildings and upgrades reset.",
+                            "Awards, items and talents stay.", "Restart with the points", "Ascending..."},
+                           Theme::EPIC, showAscension, screenManager, sound, true);
+AscensionScreen ascensionScreen(game, ascension, sound, ascendGame);
+AscendScreen ascendScreen(game, ascension, sound, screenManager, ascendConfirm);
+Settings settings = {(uint8_t)SoundMode::ON, DIM_DEFAULT, 0};
+SettingsScreen settingsScreen(settings, applySettings, openGameMenu, ascension, screenManager, sound, resetScreen);
+SplashScreen splashScreen(screenManager, sound);
+
+static constexpr Color UNLOCK_ACCENT = Theme::INFO; // Cyan, so a new screen never reads as an achievement
+
+// Last achievement count the loop played a sound for
+uint8_t seenAchievements = 0;
+// Last Unlocks revision the screen locks were applied for
+uint8_t seenUnlocks = 0;
+// Unlock notice the loop last saw, so its sound plays once when it appears
+const char *shownUnlockNotice = nullptr;
+
+AutoSaver autoSaver(game, inventory, combat, achievements, unlocks, ascension);
+// Holds the save read at boot, and the one an ascension writes
+SaveBlob saveBuffer;
+
+#ifdef DEV_MODE
+void devChanged();
+DevConsole devConsole(game, inventory, combat, achievements, unlocks, ascension, tft, screenManager, devChanged);
+#endif
+
+// tone() drives LEDC channel 0, and channel 1 shares its timer
+static const uint8_t BACKLIGHT_CHANNEL = 4;
+static const uint8_t BACKLIGHT_FULL = 255;
+static const uint8_t BACKLIGHT_DIM = 20;
+unsigned long lastInputAt = 0;
+bool dimmed = false;
+
+void applySettings()
+{
+    if (settings.sound >= (uint8_t)SoundMode::COUNT)
+    {
+        settings.sound = (uint8_t)SoundMode::ON;
+    }
+    if (settings.dimAfter >= DIM_OPTION_COUNT)
+    {
+        settings.dimAfter = DIM_DEFAULT;
+    }
+    // A theme past the opened ones: the save it was opened in is gone
+    if (settings.theme >= unlockedThemes(ascension.getEffectLevel(TalentEffect::THEMES)))
+    {
+        settings.theme = 0;
+    }
+    Theme::setActive(settings.theme);
+    sound.setMode((SoundMode)settings.sound);
+    saveSettings(settings);
+}
+
+// True when the press only woke the screen, so it must not reach the game
+bool wakeOnInput(unsigned long now, bool pressed, bool held)
+{
+    if (pressed || held)
+    {
+        lastInputAt = now;
+    }
+    if (dimmed && pressed)
+    {
+        dimmed = false;
+        ledcWrite(BACKLIGHT_CHANNEL, BACKLIGHT_FULL);
+        return true;
+    }
+    unsigned long dimAfter = DIM_AFTER_MS[settings.dimAfter];
+    if (!dimmed && dimAfter > 0 && now - lastInputAt >= dimAfter)
+    {
+        dimmed = true;
+        ledcWrite(BACKLIGHT_CHANNEL, BACKLIGHT_DIM);
+    }
+    return false;
+}
+
+void resetGame()
+{
+    eraseSave();
+    ESP.restart();
+}
+
+void openGameMenu()
+{
+    captureSave(saveBuffer, game, inventory, combat, achievements, unlocks, ascension);
+    if (!saveGame(saveBuffer))
+    {
+        Serial.println("Save failed");
+    }
+    returnToLauncher();
+}
+
+void showAscension()
+{
+    screenManager.replaceModal(&ascensionScreen);
+}
+
+// The next run starts from a save rather than by resetting every object in place, so it
+// begins exactly like a boot does. A failed write restarts into the old save, which only
+// loses the ascension, never the run.
+void ascendGame()
+{
+    if (ascension.ascend(game.getTotalGoldEarned()))
+    {
+        captureSave(saveBuffer, game, inventory, combat, achievements, unlocks, ascension);
+        clearRun(saveBuffer);
+        if (!saveGame(saveBuffer))
+        {
+            Serial.println("Save failed");
+        }
+    }
+    ESP.restart();
+}
+
+// Holding Up and Down this long in game asks whether to reset. The first touch of each
+// still reaches the screen as an ordinary press; only the long hold opens the question.
+static const unsigned long RESET_HOLD_MS = 3000;
+unsigned long resetHoldStart = 0;
+bool resetHolding = false;
+bool resetHoldFired = false; // Latched until a button is released, so one hold opens it once
+
+void checkResetGesture(unsigned long now)
+{
+    if (!upButton.isDown() || !downButton.isDown())
+    {
+        resetHolding = false;
+        resetHoldFired = false;
+        return;
+    }
+    if (!resetHolding)
+    {
+        resetHolding = true;
+        resetHoldStart = now;
+    }
+    if (!resetHoldFired && now - resetHoldStart >= RESET_HOLD_MS && !screenManager.hasModal())
+    {
+        resetHoldFired = true;
+        sound.playMenu();
+        screenManager.openModal(&resetScreen);
+    }
+}
+
+static const unsigned long SETTINGS_HOLD_MS = 1500;
+unsigned long settingsHoldStart = 0;
+bool settingsHolding = false;
+bool settingsHoldFired = false;
+
+void checkSettingsGesture(unsigned long now)
+{
+    if (!leftButton.isDown() || upButton.isDown() || downButton.isDown())
+    {
+        settingsHolding = false;
+        settingsHoldFired = false;
+        return;
+    }
+    if (!settingsHolding)
+    {
+        settingsHolding = true;
+        settingsHoldStart = now;
+    }
+    if (!settingsHoldFired && now - settingsHoldStart >= SETTINGS_HOLD_MS && !screenManager.hasModal())
+    {
+        settingsHoldFired = true;
+        sound.playMenu();
+        screenManager.openModal(&settingsScreen);
+    }
+}
+
+// A gold vein can be caught from any screen by holding Up; on Mining a tap does it. Like the
+// reset gesture, the first touch still reaches the screen as an ordinary press.
+static const unsigned long VEIN_HOLD_MS = 600;
+static const unsigned long VEIN_RESULT_MS = 3000;
+unsigned long veinHoldStart = 0;
+bool veinHolding = false;
+bool veinHoldFired = false;
+uint32_t seenVeinSpawns = 0;
+// What a vein caught off the Mining screen gave, shown in the header
+const char *veinResultCaption = nullptr;
+char veinResult[24];
+unsigned long veinResultUntil = 0;
+
+void checkVeinGesture(unsigned long now)
+{
+    if (!upButton.isDown() || downButton.isDown())
+    {
+        veinHolding = false;
+        veinHoldFired = false;
+        return;
+    }
+    if (!veinHolding)
+    {
+        veinHolding = true;
+        veinHoldStart = now;
+    }
+    if (veinHoldFired || now - veinHoldStart < VEIN_HOLD_MS || screenManager.hasModal() ||
+        screenManager.getCurrentScreen() == &miningScreen)
+    {
+        return;
+    }
+    veinHoldFired = true;
+
+    VeinEffect effect = game.catchVein(now);
+    switch (effect)
+    {
+    case VeinEffect::NONE:
+        return;
+    case VeinEffect::LUCKY:
+        veinResultCaption = "LUCKY!";
+        snprintf(veinResult, sizeof(veinResult), "+%s gold", formatAmount(game.getLastLuckyGold()).c_str());
+        break;
+    case VeinEffect::FRENZY:
+        veinResultCaption = "FRENZY!";
+        snprintf(veinResult, sizeof(veinResult), "Gold/s x%u %lus", (unsigned)VEIN_FRENZY_MULTIPLIER,
+                 (game.getBuffRemaining(now) + 999) / 1000);
+        break;
+    case VeinEffect::CLICK_FRENZY:
+        veinResultCaption = "CLICK FRENZY!";
+        snprintf(veinResult, sizeof(veinResult), "Clicks x%u %lus", (unsigned)VEIN_CLICK_MULTIPLIER,
+                 (game.getBuffRemaining(now) + 999) / 1000);
+        break;
+    }
+    veinResultUntil = now + VEIN_RESULT_MS;
+    sound.playDrop();
+}
+
+// Holding Confirm repeats it on screens that ask for it (buying building levels), starting
+// slow so a tap stays a single press
+static const unsigned long REPEAT_DELAY_MS = 400;
+static const unsigned long REPEAT_FIRST_MS = 160;
+static const unsigned long REPEAT_FASTEST_MS = 40;
+bool confirmRepeating = false;
+unsigned long confirmRepeatAt = 0;
+unsigned long confirmRepeatStep = 0;
+
+void checkConfirmRepeat(unsigned long now, bool pressed)
+{
+    if (pressed)
+    {
+        confirmRepeating = true;
+        confirmRepeatAt = now + REPEAT_DELAY_MS;
+        confirmRepeatStep = REPEAT_FIRST_MS;
+        return;
+    }
+    if (!confirmButton.isDown())
+    {
+        confirmRepeating = false;
+    }
+    if (!confirmRepeating || (long)(now - confirmRepeatAt) < 0)
+    {
+        return;
+    }
+    if (!screenManager.handleConfirmRepeat())
+    {
+        confirmRepeating = false;
+        return;
+    }
+    confirmRepeatStep = confirmRepeatStep * 4 / 5 > REPEAT_FASTEST_MS ? confirmRepeatStep * 4 / 5 : REPEAT_FASTEST_MS;
+    confirmRepeatAt = now + confirmRepeatStep;
+}
+
+// Holding Up and Down while the board powers on wipes the save and starts a new game.
+// True when a save was loaded into saveBuffer.
+bool loadOrReset()
+{
+    if (digitalRead(UP_BUTTON_PIN) == LOW && digitalRead(DOWN_BUTTON_PIN) == LOW)
+    {
+        eraseSave();
+        Serial.println("Save erased");
+        return false;
+    }
+    if (loadGame(saveBuffer))
+    {
+        applySave(saveBuffer, game, inventory, combat, achievements, unlocks, ascension);
+        Serial.println("Save loaded");
+        return true;
+    }
+    Serial.println("No save, starting fresh");
+    return false;
+}
+
+// Applies the progression to the rotation: a screen stays out of it until its feature opens
+void applyUnlocks()
+{
+    screenManager.setLocked(&buildingScreen, !unlocks.isUnlocked(Feature::BUILDINGS));
+    screenManager.setLocked(&upgradeScreen, !unlocks.isUnlocked(Feature::UPGRADES));
+    screenManager.setLocked(&achievementScreen, !unlocks.isUnlocked(Feature::AWARDS));
+    screenManager.setLocked(&inventoryScreen, !unlocks.isUnlocked(Feature::INVENTORY));
+    screenManager.setLocked(&ascendScreen, !unlocks.isUnlocked(Feature::ASCEND));
+    // Zones and Combat open together: entering a zone jumps straight to the next screen
+    screenManager.setLocked(&zoneScreen, !unlocks.isUnlocked(Feature::COMBAT));
+    screenManager.setLocked(&combatScreen, !unlocks.isUnlocked(Feature::COMBAT));
+}
+
+#ifdef DEV_MODE
+void devChanged()
+{
+    seenUnlocks = unlocks.getRevision();
+    applyUnlocks();
+    screenManager.repaint();
+}
+#endif
+
+void setup()
+{
+    Serial.begin(115200);
+
+    // Drop rolls and enemy picks come from random(); without a seed every boot
+    // would roll the same sequence
+    randomSeed(esp_random());
+
+    rightButton.setup();
+    confirmButton.setup();
+    upButton.setup();
+    downButton.setup();
+    leftButton.setup();
+    delay(100);
+
+    // Holding Confirm while the board powers on opens the game menu, if the site installed one:
+    // the way out should a game fail before its Settings
+    if (digitalRead(CONFIRM_BUTTON_PIN) == LOW)
+    {
+        returnToLauncher();
+    }
+
+    // Before the screens and counters below take their first look at the state
+    bool loaded = loadOrReset();
+    loadSettings(settings);
+    applySettings();
+    seenAchievements = achievements.getUnlockedCount();
+    seenVeinSpawns = game.getVeinSpawns();
+    autoSaver.begin(millis(), loaded ? &saveBuffer : nullptr);
+
+    tft.init();
+    tft.setRotation(2);
+    tft.fillScreen(Theme::BG);
+    ledcSetup(BACKLIGHT_CHANNEL, 5000, 8);
+    ledcAttachPin(TFT_BL, BACKLIGHT_CHANNEL);
+
+    // This order is the navigation order. Every screen but Mining starts locked and joins
+    // the rotation as the player progresses (see Unlocks); the header labels follow.
+    screenManager.addScreen(&miningScreen, "Mining");
+    screenManager.addScreen(&buildingScreen, "Buildings", true);
+    screenManager.addScreen(&upgradeScreen, "Upgrade", true);
+    screenManager.addScreen(&achievementScreen, "Awards", true);
+    screenManager.addScreen(&zoneScreen, "Zones", true);
+    screenManager.addScreen(&combatScreen, "Combat", true);
+    screenManager.addScreen(&inventoryScreen, "Inventory", true);
+    screenManager.addScreen(&ascendScreen, "Ascend", true);
+    applyUnlocks();
+    seenUnlocks = unlocks.getRevision();
+
+    // Lit only once the splash covers the Mining screen that addScreen() just painted
+    screenManager.openModal(&splashScreen);
+    ledcWrite(BACKLIGHT_CHANNEL, BACKLIGHT_FULL);
+}
+
+void loop()
+{
+    unsigned long now = millis();
+
+    rightButton.loop();
+    confirmButton.loop();
+    upButton.loop();
+    downButton.loop();
+    leftButton.loop();
+
+    bool right = rightButton.wasPressed();
+    bool confirm = confirmButton.wasPressed();
+    bool up = upButton.wasPressed();
+    bool down = downButton.wasPressed();
+    bool left = leftButton.wasPressed();
+    bool held = rightButton.isDown() || confirmButton.isDown() || upButton.isDown() || downButton.isDown() ||
+                leftButton.isDown();
+    if (wakeOnInput(now, right || confirm || up || down || left, held))
+    {
+        right = confirm = up = down = left = false;
+    }
+
+    checkResetGesture(now);
+    checkVeinGesture(now);
+    checkSettingsGesture(now);
+#ifdef DEV_MODE
+    devConsole.update();
+#endif
+
+    if (right && !screenManager.hasModal())
+    {
+        sound.playMenu();
+        screenManager.nextScreen();
+    }
+
+    if (confirm)
+    {
+        screenManager.handleConfirmPress();
+    }
+    checkConfirmRepeat(now, confirm);
+
+    if (up)
+    {
+        screenManager.handleUpPress();
+    }
+
+    if (down)
+    {
+        screenManager.handleDownPress();
+    }
+
+    if (left)
+    {
+        if (!screenManager.handleBackPress())
+        {
+            sound.playMenu();
+        }
+    }
+
+    // Game progress runs every loop, whichever screen is visible
+    game.update(now);
+    combat.update(now);
+
+    // Achievements can unlock from anything, so they are checked centrally and the
+    // notice is handed to whichever screen is open rather than to a specific one
+    achievements.evaluate(now, game, inventory, combat);
+    if (achievements.getUnlockedCount() != seenAchievements)
+    {
+        seenAchievements = achievements.getUnlockedCount();
+        sound.playAchievement();
+    }
+
+    // Screens open as the player progresses. An unlock's notice waits while an achievement
+    // owns the header, since the first achievement is also what opens the Awards screen.
+    const char *achievementNotice = achievements.getNotice(now);
+    unlocks.evaluate(now, game, inventory, combat, achievements, achievementNotice != nullptr);
+    if (unlocks.getRevision() != seenUnlocks)
+    {
+        seenUnlocks = unlocks.getRevision();
+        applyUnlocks();
+    }
+
+    const char *unlockNotice = unlocks.getNotice(now);
+    if (unlockNotice != nullptr && unlockNotice != shownUnlockNotice)
+    {
+        sound.playUnlock();
+    }
+    shownUnlockNotice = unlockNotice;
+
+    if (game.getVeinSpawns() != seenVeinSpawns)
+    {
+        seenVeinSpawns = game.getVeinSpawns();
+        sound.playUnlock();
+    }
+
+    Screen *current = screenManager.getCurrentScreen();
+    if (current != nullptr)
+    {
+        if (unlockNotice != nullptr)
+        {
+            current->applyNotice("NEW SCREEN - PRESS RIGHT >", unlockNotice, UNLOCK_ACCENT);
+        }
+        else if (achievementNotice != nullptr)
+        {
+            current->applyNotice("ACHIEVEMENT", achievementNotice, Theme::GOLD);
+        }
+        else if ((long)(now - veinResultUntil) < 0)
+        {
+            current->applyNotice(veinResultCaption, veinResult, Theme::GOLD);
+        }
+        else if (game.isVeinVisible() && current != &miningScreen && !screenManager.hasModal())
+        {
+            current->applyNotice("HOLD UP TO CATCH IT", "GOLD VEIN!", Theme::GOLD);
+        }
+        else
+        {
+            current->applyNotice(nullptr, nullptr, Theme::GOLD);
+        }
+    }
+
+    screenManager.update(now);
+
+    autoSaver.update(now);
+}
