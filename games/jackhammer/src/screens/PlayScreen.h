@@ -1,0 +1,80 @@
+#ifndef PLAY_SCREEN_H
+#define PLAY_SCREEN_H
+
+#include "Screen.h"
+#include "../ui/Text.h"
+#include "../jack/Round.h"
+#include "../jack/Profile.h"
+#include "../render/ArenaRenderer.h"
+#include "../core/ScreenManager.h"
+#include "../core/SoundManager.h"
+
+// The game: a HUD, the square arena pushed in DMA bands, and a footer. On the title the
+// hammer waits for Confirm; in a round Left and Right turn it (Confirm turns clockwise, like
+// the Unity game's Space). A death freezes the field a moment, then `died` runs.
+class PlayScreen : public Screen
+{
+public:
+    static const int16_t ARENA_TOP = 40;
+
+    PlayScreen(Round &round, const Profile &profile, SoundManager &sound, ScreenManager &screenManager,
+               Screen &shop, Screen &settings, void (*died)());
+
+    void toTitle();
+    void newRound();
+    void continueRound();
+    // After the style changed in the shop
+    void styleChanged();
+
+    void onEnter(TFT_eSPI &tft) override;
+    void update(unsigned long now) override;
+    void render(TFT_eSPI &tft) override;
+
+    void onConfirmPress() override;
+    void onUpPress() override;
+    void onDownPress() override;
+    bool onBackPress() override;
+    bool onRightPress() override;
+
+private:
+    enum class Mode : uint8_t
+    {
+        TITLE,
+        PLAY,
+        DYING
+    };
+
+    Text leftText;
+    Text scoreText;
+    Text coinText;
+    Text footerTop;
+    Text footerBottom;
+
+    Round &round;
+    const Profile &profile;
+    SoundManager &sound;
+    ScreenManager &screenManager;
+    Screen &shop;
+    Screen &settings;
+    void (*died)();
+
+    ArenaRenderer renderer;
+    Effects effects;
+    Rng rng{0xC0FFEE};
+    Mode mode = Mode::TITLE;
+    uint8_t backgroundIndex = 0;
+    uint8_t tick = 0;
+    unsigned long lastStepAt = 0;
+    uint32_t stepCredit = 0;
+    unsigned long dyingSince = 0;
+    bool deathReported = false;
+    bool frameDue = true;
+
+    void turn(int8_t direction);
+    void playEvents();
+    void nextBackground();
+    void refreshText();
+    void pushFrame(TFT_eSPI &tft);
+};
+
+#endif // PLAY_SCREEN_H
