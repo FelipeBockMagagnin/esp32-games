@@ -9,8 +9,7 @@
 #include "../core/ScreenManager.h"
 #include "../core/SoundManager.h"
 
-// A modal, opened from the title: sound, screen dimming, the theme, and the way to the reset
-// question
+// Sound, screen dimming, the theme, and the way to the reset question; a screen of the rotation
 class SettingsScreen : public Screen
 {
 public:
@@ -23,7 +22,6 @@ public:
     void onUpPress() override;
     void onDownPress() override;
     void onConfirmPress() override;
-    bool onBackPress() override;
 
 private:
     static const uint8_t ROW_COUNT = 4;

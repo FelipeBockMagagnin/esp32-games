@@ -193,6 +193,8 @@ void ScreenManager::update(unsigned long now)
     {
         screen->updateHeader(now);
         screen->update(now);
+        // The update may have opened or closed a modal, which then owns the panel
+        screen = getCurrentScreen();
         screen->render(tft);
     }
 }

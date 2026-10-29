@@ -117,16 +117,10 @@ void SettingsScreen::onConfirmPress()
         return;
     case ROW_RESET:
         sound.playMenu();
-        screenManager.replaceModal(&resetScreen);
+        screenManager.openModal(&resetScreen);
         return;
     }
     changed();
     refreshRows();
     sound.playMenu();
-}
-
-bool SettingsScreen::onBackPress()
-{
-    screenManager.closeModal();
-    return true;
 }

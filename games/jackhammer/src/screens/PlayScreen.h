@@ -10,16 +10,15 @@
 #include "../core/SoundManager.h"
 
 // The game: a HUD over the square arena, which is pushed in DMA bands. On the title the hammer
-// stands in its style's start particles with the Confirm dot above it; in a round Left and
-// Right turn it (Confirm turns clockwise, like the Unity game's Space). A death freezes the
-// field a moment, then `died` runs.
+// stands in its style's start particles, Confirm starts a round and Left/Right go round the
+// screens; in a round Left and Right turn it (Confirm turns clockwise, like the Unity game's
+// Space). A death freezes the field a moment, then `died` runs.
 class PlayScreen : public Screen
 {
 public:
     static const int16_t ARENA_TOP = 80;
 
-    PlayScreen(Round &round, const Profile &profile, SoundManager &sound, ScreenManager &screenManager,
-               Screen &shop, Screen &settings, void (*died)());
+    PlayScreen(Round &round, const Profile &profile, SoundManager &sound, void (*died)());
 
     void toTitle();
     void newRound();
@@ -31,8 +30,6 @@ public:
     void render(TFT_eSPI &tft) override;
 
     void onConfirmPress() override;
-    void onUpPress() override;
-    void onDownPress() override;
     bool onBackPress() override;
     bool onRightPress() override;
 
@@ -47,8 +44,8 @@ private:
     Text titleText;
     Text titleBest;
     Text titleCoins;
-    Text shopHint;
-    Text settingsHint;
+    Text musicHint;
+    Text styleHint;
     Text multiplierText;
     Text scoreText;
     Text coinText;
@@ -57,9 +54,6 @@ private:
     Round &round;
     const Profile &profile;
     SoundManager &sound;
-    ScreenManager &screenManager;
-    Screen &shop;
-    Screen &settings;
     void (*died)();
 
     ArenaRenderer renderer;

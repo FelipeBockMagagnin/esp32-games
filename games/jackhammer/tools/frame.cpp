@@ -71,7 +71,7 @@ int main(int argc, char **argv)
         {
             effects.step();
         }
-        ArenaRenderer::Scene title = {&style, style.backgrounds[0], &round, &effects, 0, true, 8, 0xE309};
+        ArenaRenderer::Scene title = {&style, style.backgrounds[0], &round, &effects, 0, true};
         render(title, canvas, canvasW, s * (ARENA_PX + GAP), 0);
 
         effects.reset();
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
             tick++;
         }
         ArenaRenderer::Scene play = {&style, style.backgrounds[s % style.backgroundCount], &round, &effects, tick,
-                                     true, 0, 0};
+                                     true};
         render(play, canvas, canvasW, s * (ARENA_PX + GAP), ARENA_PX + GAP);
     }
 
@@ -112,7 +112,7 @@ int main(int argc, char **argv)
             round.turn(1);
         }
         const StyleArt &style = STYLE_ART[3];
-        ArenaRenderer::Scene scene = {&style, style.backgrounds[0], &round, &effects, 0, true, 0, 0};
+        ArenaRenderer::Scene scene = {&style, style.backgrounds[0], &round, &effects, 0, true};
         render(scene, canvas, canvasW, f * (ARENA_PX + GAP), 2 * (ARENA_PX + GAP));
     }
 

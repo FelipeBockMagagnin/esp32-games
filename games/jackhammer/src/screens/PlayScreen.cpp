@@ -8,9 +8,6 @@ static const unsigned long DYING_MS = 900;
 static const uint8_t KILL_SHAKE_STEPS = 10;
 static const uint8_t DEATH_SHAKE_STEPS = 30;
 static const uint8_t MAX_COINS = 8;
-static const float PROMPT_RADIUS = 7;
-static const float PROMPT_SWELL = 2;
-static const float PROMPT_HZ = 1.5f;
 
 static const int16_t CENTER_X = 120;
 static const int16_t LEFT_X = 8;
@@ -18,13 +15,12 @@ static const int16_t RIGHT_X = 232;
 
 static uint16_t bands[2][ARENA_PX * ArenaRenderer::BAND_H];
 
-PlayScreen::PlayScreen(Round &round, const Profile &profile, SoundManager &sound, ScreenManager &screenManager,
-                       Screen &shop, Screen &settings, void (*died)())
+PlayScreen::PlayScreen(Round &round, const Profile &profile, SoundManager &sound, void (*died)())
     : titleText(CENTER_X, 10, "JackHammer", Theme::TEXT, 3, TC_DATUM),
       titleBest(LEFT_X, 46, "", Theme::TEXT_2, 1, TL_DATUM),
       titleCoins(RIGHT_X, 46, "", Theme::GOLD, 1, TR_DATUM),
-      shopHint(LEFT_X, 62, "^ Shop", Theme::TEXT_DIM, 1, TL_DATUM),
-      settingsHint(RIGHT_X, 62, "Settings v", Theme::TEXT_DIM, 1, TR_DATUM),
+      musicHint(LEFT_X, 62, "< Music", Theme::TEXT_DIM, 1, TL_DATUM),
+      styleHint(RIGHT_X, 62, "Styles >", Theme::TEXT_DIM, 1, TR_DATUM),
       multiplierText(LEFT_X, 20, "", Theme::TEXT_2, 2, TL_DATUM),
       scoreText(CENTER_X, 8, "", Theme::TEXT, 4, TC_DATUM),
       coinText(RIGHT_X, 20, "", Theme::GOLD, 2, TR_DATUM),
@@ -32,16 +28,13 @@ PlayScreen::PlayScreen(Round &round, const Profile &profile, SoundManager &sound
       round(round),
       profile(profile),
       sound(sound),
-      screenManager(screenManager),
-      shop(shop),
-      settings(settings),
       died(died)
 {
     addElement(&titleText);
     addElement(&titleBest);
     addElement(&titleCoins);
-    addElement(&shopHint);
-    addElement(&settingsHint);
+    addElement(&musicHint);
+    addElement(&styleHint);
     addElement(&multiplierText);
     addElement(&scoreText);
     addElement(&coinText);
@@ -214,8 +207,8 @@ void PlayScreen::refreshText()
     titleText.setVisible(title);
     titleBest.setVisible(title);
     titleCoins.setVisible(title);
-    shopHint.setVisible(title);
-    settingsHint.setVisible(title);
+    musicHint.setVisible(title);
+    styleHint.setVisible(title);
     multiplierText.setVisible(!title);
     scoreText.setVisible(!title);
     coinText.setVisible(!title);
@@ -255,20 +248,8 @@ void PlayScreen::render(TFT_eSPI &tft)
 void PlayScreen::pushFrame(TFT_eSPI &tft)
 {
     const StyleArt &art = style();
-    uint8_t prompt = 0;
-    if (mode == Mode::TITLE)
-    {
-        float swell = (sinf(tick * (6.2832f * PROMPT_HZ / 60)) + 1) / 2;
-        prompt = (uint8_t)(PROMPT_RADIUS + PROMPT_SWELL * swell + 0.5f);
-    }
-    ArenaRenderer::Scene scene = {&art,
-                                  art.backgrounds[backgroundIndex % art.backgroundCount],
-                                  &round,
-                                  &effects,
-                                  tick,
-                                  !(mode == Mode::DYING && round.isDead()),
-                                  prompt,
-                                  (uint16_t)Theme::CONFIRM};
+    ArenaRenderer::Scene scene = {&art, art.backgrounds[backgroundIndex % art.backgroundCount], &round, &effects,
+                                  tick, !(mode == Mode::DYING && round.isDead())};
     tft.startWrite();
     for (uint8_t b = 0; b < ArenaRenderer::BAND_COUNT; b++)
     {
@@ -293,32 +274,23 @@ void PlayScreen::onConfirmPress()
     }
 }
 
-void PlayScreen::onUpPress()
-{
-    if (mode == Mode::TITLE)
-    {
-        sound.playMenu();
-        screenManager.openModal(&shop);
-    }
-}
-
-void PlayScreen::onDownPress()
-{
-    if (mode == Mode::TITLE)
-    {
-        sound.playMenu();
-        screenManager.openModal(&settings);
-    }
-}
-
+// On the title Left and Right fall through to the rotation
 bool PlayScreen::onBackPress()
 {
+    if (mode == Mode::TITLE)
+    {
+        return false;
+    }
     turn(-1);
     return true;
 }
 
 bool PlayScreen::onRightPress()
 {
+    if (mode == Mode::TITLE)
+    {
+        return false;
+    }
     turn(1);
     return true;
 }

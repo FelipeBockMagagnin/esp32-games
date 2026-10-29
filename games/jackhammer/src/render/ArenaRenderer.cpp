@@ -3,7 +3,6 @@
 static const int16_t CENTER = ARENA_PX / 2;
 // Ticks per frame of the animated art (Pen and Watercolor), at 60 ticks a second
 static const uint8_t ANIM_TICKS = 8;
-static const int16_t PROMPT_ABOVE = 52;
 
 static inline uint16_t swapped(uint16_t c)
 {
@@ -101,10 +100,6 @@ void ArenaRenderer::renderBand(const Scene &scene, uint8_t band, uint16_t *out) 
         blit(art, (uint8_t)((scene.tick / ANIM_TICKS) % art.frames), cx, cy, round.getFacing(), top, out);
     }
     particles(*scene.effects, true, top, out);
-    if (scene.prompt > 0)
-    {
-        prompt(cx, cy - PROMPT_ABOVE, scene.prompt, scene.promptColor, top, out);
-    }
 }
 
 void ArenaRenderer::background(const Scene &scene, int16_t top, uint16_t *out) const
@@ -297,29 +292,6 @@ void ArenaRenderer::particles(const Effects &effects, bool coins, int16_t top, u
                 }
                 uint16_t c = multiply(swapped(pgm_read_word(t.pixels + texel)), color);
                 row[px] = swapped(mode == Blend::OPAQUE ? c : blend(swapped(row[px]), c, a + 1, mode));
-            }
-        }
-    }
-}
-
-void ArenaRenderer::prompt(int16_t x, int16_t y, uint8_t radius, uint16_t color, int16_t top, uint16_t *out) const
-{
-    uint16_t fill = swapped(color);
-    uint16_t rim = swapped(0xFFFF);
-    int16_t r = radius, inner = (r - 2) * (r - 2), outer = r * r;
-    for (int16_t py = y - r; py <= y + r; py++)
-    {
-        if (py < top || py >= top + BAND_H)
-        {
-            continue;
-        }
-        uint16_t *row = out + (py - top) * ARENA_PX;
-        for (int16_t px = x - r; px <= x + r; px++)
-        {
-            int16_t d = (px - x) * (px - x) + (py - y) * (py - y);
-            if (px >= 0 && px < ARENA_PX && d <= outer)
-            {
-                row[px] = d <= inner ? fill : rim;
             }
         }
     }

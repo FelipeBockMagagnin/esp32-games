@@ -52,8 +52,9 @@ ConfirmScreen resetScreen({"Reset", "Reset game?", "Coins, best and purchases", 
                            "Erase the save and restart", "Resetting..."},
                           Theme::BAD, resetGame, screenManager, sound);
 SettingsScreen settingsScreen(settings, applySettings, screenManager, sound, resetScreen);
-ShopScreen shopScreen(profile, screenManager, sound, shopChanged);
-PlayScreen playScreen(currentRound, profile, sound, screenManager, shopScreen, settingsScreen, died);
+ShopScreen musicScreen(Shelf::SONGS, profile, sound, shopChanged);
+ShopScreen styleScreen(Shelf::STYLES, profile, sound, shopChanged);
+PlayScreen playScreen(currentRound, profile, sound, died);
 GameOverScreen gameOverScreen(currentRound, profile, playScreen, screenManager, sound);
 
 void saveNow()
@@ -198,7 +199,12 @@ void setup()
     backlight.begin();
 
     playScreen.toTitle();
-    screenManager.addScreen(&playScreen, "Play");
+    // A loop, Left going back: Music <- Home -> Styles -> Settings -> Music
+    screenManager.addScreen(&musicScreen, "Music");
+    screenManager.addScreen(&playScreen, "Home");
+    screenManager.addScreen(&styleScreen, "Styles");
+    screenManager.addScreen(&settingsScreen, "Settings");
+    screenManager.setScreen(1);
     backlight.setFull();
 }
 

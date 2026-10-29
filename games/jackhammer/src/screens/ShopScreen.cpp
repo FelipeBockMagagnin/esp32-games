@@ -7,32 +7,21 @@ static const int16_t FIRST_ROW_Y = 36;
 static const int16_t ROW_PITCH = ListRow::DEFAULT_H + 6;
 static const int16_t COIN_Y = 248;
 
-ShopScreen::ShopScreen(Profile &profile, ScreenManager &screenManager, SoundManager &sound, void (*changed)())
-    : header("Shop"),
+ShopScreen::ShopScreen(Shelf shelf, Profile &profile, SoundManager &sound, void (*changed)())
+    : header(shelf == Shelf::STYLES ? "Styles" : "Music"),
       coinText(120, COIN_Y, "", Theme::GOLD, 2, TC_DATUM),
+      shelf(shelf),
       profile(profile),
-      screenManager(screenManager),
       sound(sound),
       changed(changed)
 {
     addElement(&header);
     setHeader(&header);
+    bool styles = shelf == Shelf::STYLES;
     for (uint8_t i = 0; i < MAX_ROWS; i++)
     {
         rows[i].setPosition(ROW_X, FIRST_ROW_Y + i * ROW_PITCH);
         addElement(&rows[i]);
-    }
-    addElement(&coinText);
-}
-
-void ShopScreen::build()
-{
-    bool styles = shelf == Shelf::STYLES;
-    header.setTitle(styles ? "Styles" : "Music");
-    header.setBackLabel("Back");
-    header.setNextLabel(styles ? "Music" : "Styles");
-    for (uint8_t i = 0; i < MAX_ROWS; i++)
-    {
         rows[i].setVisible(i < shelfSize(shelf));
         if (i >= shelfSize(shelf))
         {
@@ -49,6 +38,7 @@ void ShopScreen::build()
             rows[i].setIconBitmap(image_Note_bits, 8, 12, Theme::INFO);
         }
     }
+    addElement(&coinText);
 }
 
 void ShopScreen::refreshRows()
@@ -88,7 +78,6 @@ void ShopScreen::refreshRows()
 void ShopScreen::onEnter(TFT_eSPI &tft)
 {
     selected = shelf == Shelf::STYLES ? profile.style : profile.song;
-    build();
     refreshRows();
     Screen::onEnter(tft);
 }
@@ -125,21 +114,4 @@ void ShopScreen::onConfirmPress()
     {
         sound.playMenu();
     }
-}
-
-bool ShopScreen::onBackPress()
-{
-    sound.playMenu();
-    screenManager.closeModal();
-    return true;
-}
-
-bool ShopScreen::onRightPress()
-{
-    shelf = shelf == Shelf::STYLES ? Shelf::SONGS : Shelf::STYLES;
-    selected = shelf == Shelf::STYLES ? profile.style : profile.song;
-    build();
-    refreshRows();
-    sound.playMenu();
-    return true;
 }

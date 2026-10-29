@@ -8,8 +8,8 @@
 
 // Composites the square arena one horizontal band at a time into byte-swapped RGB565 ready to
 // push: the background, the glows the hammer carries, the enemies, the particles, the hammer
-// turned to its facing, the coins, then the title's prompt. No frame buffer: the whole 240x240
-// would not fit in one allocation beside the rest.
+// turned to its facing, then the coins. No frame buffer: the whole 240x240 would not fit in one
+// allocation beside the rest.
 class ArenaRenderer
 {
 public:
@@ -24,8 +24,6 @@ public:
         const Effects *effects;
         uint8_t tick; // Advances the animated art
         bool showPlayer;
-        uint8_t prompt; // Radius of the Confirm dot above the hammer, 0 for none
-        uint16_t promptColor;
     };
 
     void renderBand(const Scene &scene, uint8_t band, uint16_t *out) const;
@@ -38,7 +36,6 @@ private:
     void blit(const Art &art, uint8_t frame, int16_t x, int16_t y, uint8_t turns, int16_t top, uint16_t *out) const;
     void glow(const Glow &glow, int16_t x, int16_t y, uint8_t turns, int16_t top, uint16_t *out) const;
     void particles(const Effects &effects, bool coins, int16_t top, uint16_t *out) const;
-    void prompt(int16_t x, int16_t y, uint8_t radius, uint16_t color, int16_t top, uint16_t *out) const;
 };
 
 #endif // ARENA_RENDERER_H
