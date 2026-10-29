@@ -42,10 +42,10 @@ window.GAMES = [
       2
     ],
     "image": "img/idle.png",
-    "version": "e02e0b8",
-    "date": "2026-10-26",
+    "version": "b7028b5",
+    "date": "2026-10-29",
     "manifest": "firmware/idle/manifest.json",
-    "size": 669904
+    "size": 670640
   },
   {
     "id": "pet",
@@ -60,8 +60,8 @@ window.GAMES = [
       1
     ],
     "image": "img/pet.png",
-    "version": "3e62f27",
-    "date": "2026-10-28",
+    "version": "b7028b5",
+    "date": "2026-10-29",
     "manifest": "firmware/pet/manifest.json",
     "size": 382752
   },
@@ -78,8 +78,8 @@ window.GAMES = [
       1
     ],
     "image": "img/decaf.png",
-    "version": "ecd5773",
-    "date": "2026-10-28",
+    "version": "b7028b5",
+    "date": "2026-10-29",
     "manifest": "firmware/decaf/manifest.json",
     "size": 492928
   },
@@ -96,8 +96,8 @@ window.GAMES = [
       1
     ],
     "image": "img/deepwell.png",
-    "version": "c882cf4",
-    "date": "2026-10-28",
+    "version": "b7028b5",
+    "date": "2026-10-29",
     "manifest": "firmware/deepwell/manifest.json",
     "size": 369456
   },
@@ -114,8 +114,8 @@ window.GAMES = [
       2
     ],
     "image": "img/pomodoro.png",
-    "version": "089abc3",
-    "date": "2026-10-28",
+    "version": "b7028b5",
+    "date": "2026-10-29",
     "manifest": "firmware/pomodoro/manifest.json",
     "size": 839328
   },
@@ -132,7 +132,7 @@ window.GAMES = [
       2
     ],
     "image": "img/tilde.png",
-    "version": "c0fef59",
+    "version": "b7028b5",
     "date": "2026-10-29",
     "manifest": "firmware/tilde/manifest.json",
     "size": 437248
@@ -150,10 +150,10 @@ window.GAMES = [
       1
     ],
     "image": "img/jackhammer.png",
-    "version": "9e55a62",
+    "version": "b7028b5",
     "date": "2026-10-29",
     "manifest": "firmware/jackhammer/manifest.json",
     "size": 437552
   }
 ];
-window.LAUNCHER = {"version": "c702972", "date": "2026-10-29", "size": 309712};
+window.LAUNCHER = {"version": "b7028b5", "date": "2026-10-29", "size": 309712};

@@ -1,7 +1,7 @@
 {
   "name": "Pomodoro",
-  "version": "089abc3",
-  "date": "2026-10-28",
+  "version": "b7028b5",
+  "date": "2026-10-29",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 0,
   "builds": [
