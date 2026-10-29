@@ -3,7 +3,7 @@
   "name": "Pomodoro",
   "tagline": "Foco e relógio",
   "category": "apps",
-  "description": "Um timer pomodoro: 25 minutos de foco, uma pausa, e uma pausa longa a cada quatro focos, com alarme e estatísticas da semana. O relógio precisa de WiFi, que esta versão não tem: para ele, compile o projeto com a sua rede.",
+  "description": "Timer pomodoro com alarme e estatísticas da semana. O relógio precisa de WiFi, que esta versão não tem.",
   "accent": "#e0604f",
   "icon": [56, 72, 2]
 }

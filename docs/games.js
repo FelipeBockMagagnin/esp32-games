@@ -34,7 +34,7 @@ window.GAMES = [
     "name": "Idle Miner",
     "tagline": "Minere, construa, lute",
     "category": "autorais",
-    "description": "Minere ouro, erga construções e compre melhorias. Depois leve seu equipamento pelas zonas: os inimigos deixam itens e os amuletos lançam feitiços. Ascenda para recomeçar mais forte.",
+    "description": "Minere ouro, erga construções e lute pelas zonas atrás de itens. Ascenda para recomeçar mais forte.",
     "accent": "#f7b542",
     "icon": [
       56,
@@ -52,7 +52,7 @@ window.GAMES = [
     "name": "Burrow Colony",
     "tagline": "Fazenda e colônia",
     "category": "teste",
-    "description": "Abra espaço no mato, plante e cave lagos. Os bichinhos colhem, dormem nas tocas e rendem moedas enquanto estão felizes. Se passarem fome por muito tempo, vão embora.",
+    "description": "Plante, cave lagos e mantenha os bichinhos da colônia felizes. Com fome, eles vão embora.",
     "accent": "#8cc96b",
     "icon": [
       40,
@@ -70,7 +70,7 @@ window.GAMES = [
     "name": "Decaf Inferno",
     "tagline": "Plataforma no escritório",
     "category": "autorais",
-    "description": "A máquina de café quebrou e o RH se recusa a comprar outra. Desça os andares do escritório, inspirados nos círculos do inferno de Dante, pulando na cabeça dos colegas e fugindo da impressora atrás de um café. Jogue com o aparelho deitado.",
+    "description": "Desça os andares do escritório pulando nos colegas atrás de um café. Jogue com o aparelho deitado.",
     "accent": "#c08552",
     "icon": [
       96,
@@ -88,7 +88,7 @@ window.GAMES = [
     "name": "Deepwell",
     "tagline": "Masmorra em turnos",
     "category": "teste",
-    "description": "Desça um poço de masmorras geradas a cada partida. Cada passo é um turno: ande pelo direcional, ataque o que estiver no caminho, junte poções, ouro e equipamento e ache a escada. Morreu, acabou; só o recorde fica.",
+    "description": "Masmorras geradas a cada partida, um turno por passo. Morreu, acabou.",
     "accent": "#6f8fd8",
     "icon": [
       70,
@@ -106,7 +106,7 @@ window.GAMES = [
     "name": "Pomodoro",
     "tagline": "Foco e relógio",
     "category": "apps",
-    "description": "Um timer pomodoro: 25 minutos de foco, uma pausa, e uma pausa longa a cada quatro focos, com alarme e estatísticas da semana. O relógio precisa de WiFi, que esta versão não tem: para ele, compile o projeto com a sua rede.",
+    "description": "Timer pomodoro com alarme e estatísticas da semana. O relógio precisa de WiFi, que esta versão não tem.",
     "accent": "#e0604f",
     "icon": [
       56,
@@ -124,7 +124,7 @@ window.GAMES = [
     "name": "Tilde",
     "tagline": "Bichinho virtual",
     "category": "teste",
-    "description": "Choque um ovo e cuide do bichinho que nasce: dê comida e carinho, brinque, limpe a casinha e apague a luz para ele dormir. Ele cresce de jeitos diferentes conforme o cuidado. Aqui ninguém morre: no pior caso ele fica tristinho, e um carinho resolve.",
+    "description": "Choque um ovo e cuide do bichinho. Ele cresce conforme o cuidado, e ninguém morre.",
     "accent": "#ff8fa3",
     "icon": [
       38,
@@ -142,7 +142,7 @@ window.GAMES = [
     "name": "JackHammer",
     "tagline": "Gire e acerte",
     "category": "autorais",
-    "description": "Uma britadeira no meio da arena gira de um quarto em um quarto. Os inimigos chegam pelos quatro lados: acerte-os com a ponta antes que encostem no corpo. Cada dez pontos aumentam as moedas por acerto, e elas compram estilos e músicas. Port do jogo para celular feito em Unity.",
+    "description": "Gire a britadeira e acerte os inimigos que chegam pelos quatro lados.",
     "accent": "#e8433a",
     "icon": [
       96,

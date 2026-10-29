@@ -3,7 +3,7 @@
   "name": "JackHammer",
   "tagline": "Gire e acerte",
   "category": "autorais",
-  "description": "Uma britadeira no meio da arena gira de um quarto em um quarto. Os inimigos chegam pelos quatro lados: acerte-os com a ponta antes que encostem no corpo. Cada dez pontos aumentam as moedas por acerto, e elas compram estilos e músicas. Port do jogo para celular feito em Unity.",
+  "description": "Gire a britadeira e acerte os inimigos que chegam pelos quatro lados.",
   "accent": "#e8433a",
   "icon": [96, 168, 1]
 }

@@ -123,7 +123,7 @@
       if (members.length === 0) {
         const empty = document.createElement("p");
         empty.className = "empty";
-        empty.textContent = "Em breve: futuramente esta categoria terá jogos.";
+        empty.textContent = "Em breve";
         section.append(empty);
       } else {
         const grid = document.createElement("div");
@@ -348,7 +348,6 @@
     $("help-open").classList.remove("hint");
   };
   $("help-open").addEventListener("click", openHelp);
-  $("help-link").addEventListener("click", openHelp);
   $("help-close").addEventListener("click", () => help.close());
   // A click on the backdrop lands on the dialog itself, outside its content box
   help.addEventListener("click", (ev) => {

@@ -500,7 +500,6 @@ b {
 .cap:focus-visible,
 .tile:focus-visible,
 .help-button:focus-visible,
-.help-link:focus-visible,
 .flip-button:focus-visible,
 .close:focus-visible {
   outline: 3px solid var(--accent);
@@ -596,45 +595,11 @@ b {
   text-transform: uppercase;
 }
 
-.help-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 18px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--paper);
-  font-family: "Silkscreen", monospace;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.help-link .q,
 .glyph {
   font-family: "VT323", monospace;
-}
-
-.help-link .q {
-  display: inline-grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--case);
-  color: var(--logo);
-  font-size: 24px;
-  line-height: 1;
-}
-
-.glyph {
   font-size: 18px;
   text-decoration: none;
   display: inline-block;
-}
-
-.help-link:hover {
-  color: var(--accent);
 }
 
 /* A game's icon: a crop of its screen, [x, y] and --crop pixels wide, drawn --size wide */
@@ -646,16 +611,6 @@ b {
   background-size: calc(var(--size) * 240 / var(--crop)) calc(var(--size) * 320 / var(--crop));
   background-position: calc(var(--size) * var(--ix) / var(--crop) * -1) calc(var(--size) * var(--iy) / var(--crop) * -1);
   image-rendering: pixelated;
-}
-
-.intro {
-  margin: 0;
-  color: var(--paper-2);
-}
-
-.intro .help-link {
-  display: flex;
-  margin-top: 10px;
 }
 
 .categories {

@@ -3,7 +3,7 @@
   "name": "Deepwell",
   "tagline": "Masmorra em turnos",
   "category": "teste",
-  "description": "Desça um poço de masmorras geradas a cada partida. Cada passo é um turno: ande pelo direcional, ataque o que estiver no caminho, junte poções, ouro e equipamento e ache a escada. Morreu, acabou; só o recorde fica.",
+  "description": "Masmorras geradas a cada partida, um turno por passo. Morreu, acabou.",
   "accent": "#6f8fd8",
   "icon": [70, 30, 1]
 }
