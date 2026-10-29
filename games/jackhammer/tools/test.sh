@@ -4,5 +4,5 @@
 set -e
 cd "$(dirname "$0")/.."
 out="${TMPDIR:-/tmp}/jackhammer-test"
-g++ -std=c++17 -O1 -Wall -Wextra -I tools/stub -o "$out" tools/test.cpp src/jack/*.cpp src/core/SlotStore.cpp
+g++ -std=c++17 -O1 -Wall -Wextra -I tools/stub -I ../../lib/dotcore/src -o "$out" tools/test.cpp src/jack/*.cpp ../../lib/dotcore/src/SlotStore.cpp
 "$out"

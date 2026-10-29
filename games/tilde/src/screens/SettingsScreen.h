@@ -3,7 +3,7 @@
 
 #include "Screen.h"
 #include "Game.h"
-#include "../core/Settings.h"
+#include "Settings.h"
 
 // A modal, opened by holding Left: sound, screen dimming, the theme, passing a grown pet's
 // egg on, and the way to the reset question

@@ -8,8 +8,8 @@ out="${1:-${TMPDIR:-/tmp}/tilde-shots}"
 rm -rf "$out"
 mkdir -p "$out"
 bin="${TMPDIR:-/tmp}/tilde-shots-bin"
-g++ -std=c++17 -O2 -Wall -Wextra -Wno-unused-parameter -DPET_TOOLS -I tools/stub -I ../../shared -o "$bin" tools/shots.cpp \
-    src/pet/*.cpp src/art/*.cpp src/gfx/*.cpp src/screens/*.cpp src/core/ScreenManager.cpp src/core/SlotStore.cpp -lz
+g++ -std=c++17 -O2 -Wall -Wextra -Wno-unused-parameter -DPET_TOOLS -I tools/stub -I ../../lib/dotcore/src -o "$bin" tools/shots.cpp \
+    src/pet/*.cpp src/art/*.cpp src/gfx/*.cpp src/screens/*.cpp src/core/ScreenManager.cpp ../../lib/dotcore/src/SlotStore.cpp -lz
 "$bin" "$out" ${2:-} > /dev/null
 python3 - "$out" "${2:-66}" <<'PY'
 import os, sys

@@ -5,7 +5,7 @@
 #include "../ui/Text.h"
 #include "../ui/Header.h"
 #include "../ui/ListRow.h"
-#include "../core/Settings.h"
+#include "Settings.h"
 #include "../core/ScreenManager.h"
 #include "../core/SoundManager.h"
 

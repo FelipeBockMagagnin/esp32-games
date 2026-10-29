@@ -2,7 +2,7 @@
 #define JACK_SAVE_H
 
 #include "Profile.h"
-#include "../core/SlotStore.h"
+#include "SlotStore.h"
 
 // One raw blob, which only works because Profile holds primitives and indices into the
 // config tables. Adding a field means bumping SAVE_VERSION; a new shop row changes `layout`.

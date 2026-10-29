@@ -2,11 +2,11 @@
 #include <SPI.h>
 #include <TFT_eSPI.h>
 #include "audio/Songs.h"
-#include "core/Backlight.h"
-#include "core/ButtonManager.h"
+#include "Backlight.h"
+#include "ButtonManager.h"
 #include "core/ScreenManager.h"
-#include "core/Settings.h"
-#include "core/SlotStore.h"
+#include "Settings.h"
+#include "SlotStore.h"
 #include "core/SoundManager.h"
 #include "jack/Profile.h"
 #include "jack/Round.h"

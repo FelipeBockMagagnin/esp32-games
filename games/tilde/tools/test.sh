@@ -4,6 +4,6 @@
 set -e
 cd "$(dirname "$0")/.."
 out="${TMPDIR:-/tmp}/tilde-test"
-g++ -std=c++17 -O1 -Wall -Wextra -DPET_TOOLS -I tools/stub -o "$out" tools/test.cpp src/pet/*.cpp src/art/Rig.cpp \
-    src/gfx/Canvas.cpp src/gfx/Icons.cpp src/gfx/FontData.cpp src/gfx/Theme.cpp src/core/SlotStore.cpp
+g++ -std=c++17 -O1 -Wall -Wextra -DPET_TOOLS -I tools/stub -I ../../lib/dotcore/src -o "$out" tools/test.cpp src/pet/*.cpp src/art/Rig.cpp \
+    src/gfx/Canvas.cpp src/gfx/Icons.cpp src/gfx/FontData.cpp src/gfx/Theme.cpp ../../lib/dotcore/src/SlotStore.cpp
 "$out"

@@ -3,7 +3,7 @@
 
 #include "Pet.h"
 #include "Album.h"
-#include "../core/SlotStore.h"
+#include "SlotStore.h"
 
 // The save is one raw blob, which only works because the snapshots hold primitives and
 // indices into the config tables, never a String or a pointer. Adding a field means bumping

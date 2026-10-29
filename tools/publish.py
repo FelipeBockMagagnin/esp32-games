@@ -31,7 +31,7 @@ FIRMWARE = DOCS / "firmware"
 PIO = os.environ.get("PIO", str(Path.home() / ".platformio/penv/bin/pio"))
 BOOT_APP0 = Path.home() / ".platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin"
 # Every firmware also builds these, so a change to one is a change to all
-COMMON = ["shared", "common.ini"]
+COMMON = ["lib", "common.ini"]
 REQUIRED = ["name", "tagline", "category", "description", "accent"]
 
 PARTS = [

@@ -4,5 +4,5 @@
 set -e
 cd "$(dirname "$0")/.."
 out="${TMPDIR:-/tmp}/tilde-sim"
-g++ -std=c++17 -O2 -Wall -Wextra -DPET_TOOLS -I tools/stub -o "$out" tools/sim.cpp src/pet/*.cpp src/core/SlotStore.cpp
+g++ -std=c++17 -O2 -Wall -Wextra -DPET_TOOLS -I tools/stub -I ../../lib/dotcore/src -o "$out" tools/sim.cpp src/pet/*.cpp ../../lib/dotcore/src/SlotStore.cpp
 "$out" "$@"

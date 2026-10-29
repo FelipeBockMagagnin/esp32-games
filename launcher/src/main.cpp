@@ -5,8 +5,8 @@
 #include <esp_ota_ops.h>
 #include "Catalog.h"
 #include "Menu.h"
-#include "core/Backlight.h"
-#include "core/ButtonManager.h"
+#include "Backlight.h"
+#include "ButtonManager.h"
 #include "pitches.h"
 
 // The same carrier board as the idle game: a D-pad with Confirm in the middle
