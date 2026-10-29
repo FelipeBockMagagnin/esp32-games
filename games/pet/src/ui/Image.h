@@ -1,0 +1,95 @@
+#ifndef UI_IMAGE_H
+#define UI_IMAGE_H
+
+#include "UI.h"
+
+enum ImageType
+{
+    IMAGE_RGB565,
+    IMAGE_BITMAP_1BIT
+};
+
+class Image : public UI
+{
+public:
+    ImageType type;
+    const uint16_t *pixels;
+    const uint8_t *bitmap;
+    Color color;        // Foreground color for 1-bit bitmap or transparent key for RGB565
+    Color bgColor;      // Background color for 1-bit bitmap
+    bool useTransparent;   // True if RGB565 has transparent color key or 1-bit has transparent bg
+
+    Image()
+        : UI(0, 0, 0, 0),
+          type(IMAGE_RGB565),
+          pixels(nullptr),
+          bitmap(nullptr),
+          color(Theme::TEXT),
+          bgColor(Theme::BG),
+          useTransparent(false)
+    {
+    }
+
+    // 16-bit RGB565 Image constructor
+    Image(int16_t x, int16_t y, int16_t w, int16_t h, const uint16_t *pixels, bool hasTransparent = false, Color transColor = 0)
+        : UI(x, y, w, h),
+          type(IMAGE_RGB565),
+          pixels(pixels),
+          bitmap(nullptr),
+          color(transColor),
+          bgColor(0x0000),
+          useTransparent(hasTransparent)
+    {
+    }
+
+    // 1-bit Monochrome Bitmap constructor
+    Image(int16_t x, int16_t y, int16_t w, int16_t h, const uint8_t *bitmap, Color color = Theme::TEXT, bool transparentBg = true, Color bgColor = Theme::BG)
+        : UI(x, y, w, h),
+          type(IMAGE_BITMAP_1BIT),
+          pixels(nullptr),
+          bitmap(bitmap),
+          color(color),
+          bgColor(bgColor),
+          useTransparent(transparentBg)
+    {
+    }
+
+    // Like every other setter in src/ui, a no-op when nothing changed: pushing an
+    // unchanged 128x128 sprite every refresh would cost a full SPI blit for nothing
+    void setPixels(const uint16_t *newPixels, int16_t newW, int16_t newH, bool hasTrans = false, Color transColor = 0)
+    {
+        if (type == IMAGE_RGB565 && pixels == newPixels && w == newW && h == newH &&
+            useTransparent == hasTrans && color == transColor)
+        {
+            return;
+        }
+        pixels = newPixels;
+        w = newW;
+        h = newH;
+        type = IMAGE_RGB565;
+        useTransparent = hasTrans;
+        color = transColor;
+        markDirty();
+    }
+
+    void setBitmap(const uint8_t *newBitmap, int16_t newW, int16_t newH, Color newColor = Theme::TEXT, bool transBg = true, Color newBg = Theme::BG)
+    {
+        if (type == IMAGE_BITMAP_1BIT && bitmap == newBitmap && w == newW && h == newH &&
+            color == newColor && useTransparent == transBg && bgColor == newBg)
+        {
+            return;
+        }
+        bitmap = newBitmap;
+        w = newW;
+        h = newH;
+        type = IMAGE_BITMAP_1BIT;
+        color = newColor;
+        bgColor = newBg;
+        useTransparent = transBg;
+        markDirty();
+    }
+
+    void draw(TFT_eSPI &tft) override;
+};
+
+#endif // UI_IMAGE_H
