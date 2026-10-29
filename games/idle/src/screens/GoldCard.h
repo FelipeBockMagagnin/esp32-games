@@ -4,7 +4,7 @@
 #include "Screen.h"
 #include "Box.h"
 #include "Ellipse.h"
-#include "../ui/Text.h"
+#include "Text.h"
 #include "../ui/GoldRoll.h"
 #include "../game/GameState.h"
 

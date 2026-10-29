@@ -5,7 +5,7 @@
 #include <TFT_eSPI.h>
 #include <vector>
 #include "UI.h"
-#include "../ui/Header.h"
+#include "Header.h"
 #include "../ui/Theme.h"
 
 enum class Arrow : uint8_t

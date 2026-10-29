@@ -3,9 +3,9 @@
 
 #include "Screen.h"
 #include "DungeonScreen.h"
-#include "../ui/Header.h"
+#include "Header.h"
 #include "ListRow.h"
-#include "../ui/Text.h"
+#include "Text.h"
 
 // The actions that are not a step (descend, drink, wait, settings) above a character sheet.
 // A modal over the dungeon; Left closes it.

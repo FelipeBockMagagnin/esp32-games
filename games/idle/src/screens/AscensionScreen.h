@@ -2,7 +2,7 @@
 #define ASCENSION_SCREEN_H
 
 #include "Screen.h"
-#include "../ui/Text.h"
+#include "Text.h"
 #include "../ui/StarRise.h"
 #include "../game/GameState.h"
 #include "../game/Ascension.h"

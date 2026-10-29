@@ -3,9 +3,9 @@
 
 #include "Screen.h"
 #include "Box.h"
-#include "../ui/Text.h"
+#include "Text.h"
 #include "Image.h"
-#include "../ui/Header.h"
+#include "Header.h"
 #include "ListRow.h"
 #include "ListView.h"
 #include "ProgressBar.h"

@@ -2,9 +2,9 @@
 #define SHOP_SCREEN_H
 
 #include "Screen.h"
-#include "../ui/Header.h"
+#include "Header.h"
 #include "ListRow.h"
-#include "../ui/Text.h"
+#include "Text.h"
 #include "../jack/Profile.h"
 #include "../core/SoundManager.h"
 

@@ -2,11 +2,11 @@
 #define CONFIRM_SCREEN_H
 
 #include "Screen.h"
-#include "../ui/Text.h"
-#include "../ui/Header.h"
+#include "Text.h"
+#include "Header.h"
 #include "Box.h"
 #include "ListRow.h"
-#include "../ui/ScreenWipe.h"
+#include "ScreenWipe.h"
 #include "../managers/ScreenManager.h"
 #include "../managers/SoundManager.h"
 

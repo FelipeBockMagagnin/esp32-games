@@ -2,8 +2,8 @@
 #define COMBAT_SCREEN_H
 
 #include "Screen.h"
-#include "../ui/Text.h"
-#include "../ui/Header.h"
+#include "Text.h"
+#include "Header.h"
 #include "ProgressBar.h"
 #include "Ellipse.h"
 #include "../game/GameState.h"

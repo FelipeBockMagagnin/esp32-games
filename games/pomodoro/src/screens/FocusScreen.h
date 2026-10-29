@@ -2,8 +2,8 @@
 #define FOCUS_SCREEN_H
 
 #include "Screen.h"
-#include "../ui/Text.h"
-#include "../ui/Header.h"
+#include "Text.h"
+#include "Header.h"
 #include "../ui/TimerRing.h"
 #include "../ui/CycleDots.h"
 #include "../app/FocusTimer.h"

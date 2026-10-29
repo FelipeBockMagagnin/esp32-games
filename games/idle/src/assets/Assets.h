@@ -3,14 +3,10 @@
 
 #include <Arduino.h>
 
-// 3x5 small arrow pointing left
-extern const unsigned char image_ButtonLeftSmall_bits[];
-
 // 9x9 Ok button
 extern const unsigned char image_Ok_btn_bits[];
 
 extern const uint16_t image_armor_01b_pixels[];
-extern const unsigned char image_ButtonRightSmall_bits[];
 extern const unsigned char image_cards_hearts_bits[];
 extern const uint16_t image_sword_02b_pixels[];
 

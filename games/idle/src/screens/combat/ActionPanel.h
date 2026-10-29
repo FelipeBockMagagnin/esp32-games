@@ -2,7 +2,7 @@
 #define ACTION_PANEL_H
 
 #include "../Screen.h"
-#include "../../ui/Text.h"
+#include "Text.h"
 #include "Box.h"
 #include "Image.h"
 #include "../../ui/CooldownRing.h"

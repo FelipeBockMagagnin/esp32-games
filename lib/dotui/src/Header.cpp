@@ -1,6 +1,8 @@
 #include "Header.h"
-#include "../assets/Assets.h"
 #include "Theme.h"
+
+static const unsigned char PROGMEM ARROW_LEFT_BITS[] = {0x20, 0x60, 0xe0, 0x60, 0x20};
+static const unsigned char PROGMEM ARROW_RIGHT_BITS[] = {0x80, 0xc0, 0xe0, 0xc0, 0x80};
 
 static constexpr Color COLOR = Theme::TEXT;
 static constexpr Color NAV_COLOR = Theme::TEXT_2; // The neighbours are secondary to the title
@@ -126,14 +128,14 @@ void Header::paintBar(TFT_eSPI &tft, uint16_t band)
 
     if (backLabel.length() > 0)
     {
-        tft.drawBitmap(x + 4, y + ARROW_Y, image_ButtonLeftSmall_bits, 3, 5, NAV_COLOR);
+        tft.drawBitmap(x + 4, y + ARROW_Y, ARROW_LEFT_BITS, 3, 5, NAV_COLOR);
         tft.setTextDatum(TL_DATUM);
         tft.drawString(backLabel, x + 10, y + NAV_Y);
     }
 
     if (nextLabel.length() > 0)
     {
-        tft.drawBitmap(x + w - 7, y + ARROW_Y, image_ButtonRightSmall_bits, 3, 5, NAV_COLOR);
+        tft.drawBitmap(x + w - 7, y + ARROW_Y, ARROW_RIGHT_BITS, 3, 5, NAV_COLOR);
         tft.setTextDatum(TR_DATUM);
         tft.drawString(nextLabel, x + w - 10, y + NAV_Y);
     }

@@ -2,7 +2,7 @@
 #define LEVEL_SCREEN_H
 
 #include "Screen.h"
-#include "../ui/Text.h"
+#include "Text.h"
 #include "Box.h"
 #include "../game/Stage.h"
 #include "../game/SaveGame.h"

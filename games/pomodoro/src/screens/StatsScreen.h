@@ -2,8 +2,8 @@
 #define STATS_SCREEN_H
 
 #include "Screen.h"
-#include "../ui/Text.h"
-#include "../ui/Header.h"
+#include "Text.h"
+#include "Header.h"
 #include "Box.h"
 #include "../ui/WeekChart.h"
 #include "../app/Clock.h"

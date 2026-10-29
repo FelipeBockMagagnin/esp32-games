@@ -2,7 +2,7 @@
 #define DUNGEON_SCREEN_H
 
 #include "Screen.h"
-#include "../ui/Text.h"
+#include "Text.h"
 #include "ProgressBar.h"
 #include "../ui/TileMap.h"
 #include "../rogue/Run.h"

@@ -2,7 +2,7 @@
 #define ENEMY_PANEL_H
 
 #include "../Screen.h"
-#include "../../ui/Text.h"
+#include "Text.h"
 #include "Image.h"
 #include "../../ui/EnemySprite.h"
 #include "../../ui/DropBanner.h"

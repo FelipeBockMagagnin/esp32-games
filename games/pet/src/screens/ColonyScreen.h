@@ -2,7 +2,7 @@
 #define COLONY_SCREEN_H
 
 #include "Screen.h"
-#include "../ui/Text.h"
+#include "Text.h"
 #include "ListRow.h"
 #include "ListView.h"
 #include "../game/World.h"

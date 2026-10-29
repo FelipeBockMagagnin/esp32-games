@@ -3,8 +3,8 @@
 
 #include "Screen.h"
 #include "PressFeedback.h"
-#include "../ui/Text.h"
-#include "../ui/Header.h"
+#include "Text.h"
+#include "Header.h"
 #include "GoldCard.h"
 #include "Box.h"
 #include "Ellipse.h"

@@ -3,8 +3,8 @@
 
 #include "Screen.h"
 #include "Box.h"
-#include "../ui/Text.h"
-#include "../ui/Header.h"
+#include "Text.h"
+#include "Header.h"
 #include "../ui/CoinWell.h"
 #include "../ui/OreDisplay.h"
 #include "ProgressBar.h"

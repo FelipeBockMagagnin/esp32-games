@@ -2,7 +2,7 @@
 #define TITLE_SCREEN_H
 
 #include "Screen.h"
-#include "../ui/Text.h"
+#include "Text.h"
 #include "../ui/SheetImage.h"
 #include "../game/SaveGame.h"
 #include "../managers/ScreenManager.h"

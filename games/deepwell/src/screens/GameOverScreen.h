@@ -2,9 +2,9 @@
 #define GAME_OVER_SCREEN_H
 
 #include "Screen.h"
-#include "../ui/Header.h"
+#include "Header.h"
 #include "Box.h"
-#include "../ui/Text.h"
+#include "Text.h"
 #include "../rogue/Run.h"
 #include "../rogue/Save.h"
 #include "../core/SoundManager.h"

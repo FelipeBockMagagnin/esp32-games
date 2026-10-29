@@ -2,7 +2,7 @@
 #define PLAY_SCREEN_H
 
 #include "Screen.h"
-#include "../ui/Text.h"
+#include "Text.h"
 #include "../jack/Round.h"
 #include "../jack/Profile.h"
 #include "../render/ArenaRenderer.h"

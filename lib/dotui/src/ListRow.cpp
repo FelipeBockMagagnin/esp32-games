@@ -9,6 +9,13 @@ static constexpr Color OWNED_COLOR = Theme::GOOD;
 static constexpr Color DIMMED_COLOR = Theme::TEXT_DIM;
 static constexpr Color SUBTITLE_COLOR = Theme::TEXT_2; // Secondary to the title
 
+#ifdef LISTROW_CENTER_LONE
+// A title alone in its row sits in the row's middle, and so does a value without a subtitle
+static const bool CENTER_LONE = true;
+#else
+static const bool CENTER_LONE = false;
+#endif
+
 // Icon cell on the left, then the text column; values are right-aligned
 static const int16_t ICON_CELL_W = 26;
 static const int16_t TEXT_DX = 31;
@@ -143,7 +150,7 @@ void ListRow::draw(TFT_eSPI &tft)
     {
         tft.setTextColor(titleColor);
         tft.setTextSize(2);
-        tft.drawString(title, x + TEXT_DX, y + 2);
+        tft.drawString(title, x + TEXT_DX, CENTER_LONE && subtitle.length() == 0 ? y + (h - 16) / 2 : y + 2);
     }
 
     tft.setTextSize(1);
@@ -155,17 +162,18 @@ void ListRow::draw(TFT_eSPI &tft)
     }
 
     int16_t valueRight = x + w - VALUE_MARGIN;
+    int16_t valueY = CENTER_LONE && subtitle.length() == 0 && valueSub.length() == 0 ? y + (h - 8) / 2 : y + 3;
     tft.setTextDatum(TR_DATUM);
 
     if (value.length() > 0)
     {
         tft.setTextColor(state == DIMMED ? DIMMED_COLOR : valueColor);
-        tft.drawString(value, valueRight, y + 3);
+        tft.drawString(value, valueRight, valueY);
 
         if (showCoin)
         {
             int16_t coinX = valueRight - tft.textWidth(value) - COIN_RADIUS - 3;
-            tft.drawEllipse(coinX, y + 6, COIN_RADIUS, COIN_RADIUS, Theme::GOLD);
+            tft.drawEllipse(coinX, valueY + 3, COIN_RADIUS, COIN_RADIUS, Theme::GOLD);
         }
 
         int16_t trendX = valueRight - tft.textWidth(value) - TREND_HALF_W - 4;

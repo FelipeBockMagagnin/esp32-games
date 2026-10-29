@@ -2,7 +2,7 @@
 #define BUILD_MENU_SCREEN_H
 
 #include "Screen.h"
-#include "../ui/Text.h"
+#include "Text.h"
 #include "ListRow.h"
 #include "../game/World.h"
 #include "../managers/ScreenManager.h"

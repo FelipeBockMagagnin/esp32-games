@@ -2,8 +2,8 @@
 #define CLOCK_SCREEN_H
 
 #include "Screen.h"
-#include "../ui/Text.h"
-#include "../ui/Header.h"
+#include "Text.h"
+#include "Header.h"
 #include "Box.h"
 #include "ProgressBar.h"
 #include "../app/Clock.h"

@@ -2,8 +2,8 @@
 #define SETTINGS_SCREEN_H
 
 #include "Screen.h"
-#include "../ui/Text.h"
-#include "../ui/Header.h"
+#include "Text.h"
+#include "Header.h"
 #include "ListRow.h"
 #include "../game/SaveGame.h"
 #include "../game/Ascension.h"

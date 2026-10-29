@@ -2,7 +2,7 @@
 #define HABITAT_SCREEN_H
 
 #include "Screen.h"
-#include "../ui/Text.h"
+#include "Text.h"
 #include "Box.h"
 #include "../game/World.h"
 #include "../game/Colony.h"
