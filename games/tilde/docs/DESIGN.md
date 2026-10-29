@@ -1,6 +1,6 @@
 # ~tilde~ — design
 
-Um pet virtual cozy em estilo kawaii vetorial, para a placa dos jogos dotcompany: ESP32, display ILI9341 240×320, D-pad de 5 botões e buzzer. É um repositório próprio, como os outros jogos em `~/Projects`, e começou do motor do `esp32-idle-game`, por meio do `esp32-roguelike`.
+Um pet virtual cozy em estilo kawaii vetorial, para a placa dos jogos dotcompany: ESP32, display ILI9341 240×320, D-pad de 5 botões e buzzer. Vive em `games/tilde` do monorepo, como os outros jogos, e começou do motor do Idle Miner (`games/idle`), por meio do Deepwell (`games/deepwell`).
 
 ## Princípios
 

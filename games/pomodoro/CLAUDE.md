@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A pomodoro timer and clock for the board of `esp32-idle-game`: an ESP32 with a 240x320 ILI9341 SPI display, five push buttons and a passive buzzer. PlatformIO + Arduino framework, C++. The UI framework (`src/ui/`, `Screen`, `ScreenManager`, themes) is ported from that game and works the same way.
+A pomodoro timer and clock for the board of `games/idle`: an ESP32 with a 240x320 ILI9341 SPI display, five push buttons and a passive buzzer. PlatformIO + Arduino framework, C++. The UI framework (`src/ui/`, `Screen`, `ScreenManager`, themes) is ported from that game and works the same way.
 
 ## Code style
 
@@ -25,7 +25,7 @@ pio run -e dev -t upload -t monitor  # Dev build: serial commands end (finish th
 
 ## Hardware
 
-- **All TFT_eSPI setup lives in `platformio.ini` `build_flags`.** Fonts 1 (GLCD) and 7 (48px seven-segment digits, only `0-9 : - .`) are loaded.
+- **All TFT_eSPI setup lives in the repo root's `common.ini` (`[board]`), shared by every game.** Fonts 1 (GLCD) and 7 (48px seven-segment digits, only `0-9 : - .`, added in its own `platformio.ini`) are loaded.
 - **Pins are `const int` at the top of `src/main.cpp`**, the same as the idle game's. D-pad: right (23) next screen, left (26) previous screen / back, confirm (27), up (19), down (22). Buzzer on 32.
 - **Hold Left 1.5 s** opens Settings from any screen.
 - **Backlight** (`TFT_BL`, 21) is PWM on LEDC channel 4, since `tone()` owns channel 0 and its timer. It dims after the Settings delay; the press that wakes it is swallowed, and so is the press that silences an alarm.

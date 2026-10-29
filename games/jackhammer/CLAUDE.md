@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-*The Surviving JackHammer*, a port of the user's Unity mobile game (`~/Downloads/TheSurvivingJackHammer-master`) to an ESP32 with a 240x320 ILI9341 SPI display, five push buttons and a passive buzzer, the same board as `../esp32-idle-game`. The engine (core, UI, settings, saves) came from `../esp32-roguelike`; the DMA band renderer and the 60 Hz step clock from `../esp32-decaf`. PlatformIO + Arduino framework, C++.
+*The Surviving JackHammer*, a port of the user's Unity mobile game (`~/Downloads/TheSurvivingJackHammer-master`) to an ESP32 with a 240x320 ILI9341 SPI display, five push buttons and a passive buzzer, the same board as `games/idle`. The engine (core, UI, settings, saves) came from `games/deepwell`; the DMA band renderer and the 60 Hz step clock from `games/decaf`. PlatformIO + Arduino framework, C++.
 
 A jackhammer stands in the middle of a square arena and turns a quarter at a time. Enemies walk in from the four sides; one that meets its head dies (a point and coins), one that reaches its body ends the round. Coins buy the Unity game's styles and songs. The game needs little explaining: menus are names and values without descriptions, and there is no tutorial text.
 
@@ -30,7 +30,7 @@ python3 tools/convert_sprites.py     # src/assets/png/sprites/ -> src/assets/Spr
 
 ## Hardware
 
-- **All TFT_eSPI setup lives in `platformio.ini` `build_flags`**, not a `User_Setup.h`. Only the GLCD font (font 1) is loaded.
+- **All TFT_eSPI setup lives in the repo root's `common.ini` (`[board]`), shared by every game**, not a `User_Setup.h`. Only the GLCD font (font 1) is loaded.
 - **Pins are `const int` at the top of `src/main.cpp`**: right 23, left 26, confirm 27, up 19, down 22, buzzer 32. Buttons debounce at 15 ms, not the engine's 50, since a turn must land at once.
 - **The buzzer is not driven by `tone()`** (`core/Buzzer`): the core queues `tone()` notes and plays each to its end, so an effect would wait behind a song note. A FreeRTOS task on core 0 owns LEDC channel 0 and plays the song, an effect cutting in over it while the song keeps time underneath.
 - **Backlight** (`TFT_BL`, 21) is PWM on LEDC channel 4. It dims after the Settings delay, and the press that wakes it is swallowed.

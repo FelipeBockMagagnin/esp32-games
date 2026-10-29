@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-*Decaf Inferno*, a side-scrolling platformer for an ESP32 with a 240x320 ILI9341 SPI display, five push buttons and a passive buzzer: the same board as `esp32-idle-game`, whose engine (UI, screens, saves, themes) this project started from, by way of `esp32-pet`. The coffee machine broke and HR won't buy another: a programmer with an empty mug runs each floor of the office left to right, and at the end a coworker (Bea) tells him this floor's machine is broken too, so he goes one floor down. The floors are Dante's nine circles; B1 Limbo is built, with its boss. The game design comes from the Godot prototype in `../jogo-cafe`, whose physics constants are ported as they are (`Stage.cpp`).
+*Decaf Inferno*, a side-scrolling platformer for an ESP32 with a 240x320 ILI9341 SPI display, five push buttons and a passive buzzer: the same board as `games/idle`, whose engine (UI, screens, saves, themes) this project started from, by way of `games/pet`. The coffee machine broke and HR won't buy another: a programmer with an empty mug runs each floor of the office left to right, and at the end a coworker (Bea) tells him this floor's machine is broken too, so he goes one floor down. The floors are Dante's nine circles; B1 Limbo is built, with its boss. The game design comes from the Godot prototype in `../jogo-cafe`, whose physics constants are ported as they are (`Stage.cpp`).
 
 ## Code style
 
@@ -27,7 +27,7 @@ The tests compile the real `src/game/` against `tools/sim/stub/` (which fakes `A
 
 ## Hardware
 
-- **All TFT_eSPI setup lives in `platformio.ini` `build_flags`**, not a `User_Setup.h`. Only the GLCD font (font 1) is loaded.
+- **All TFT_eSPI setup lives in the repo root's `common.ini` (`[board]`), shared by every game**, not a `User_Setup.h`. Only the GLCD font (font 1) is loaded.
 - **Landscape.** The board is held on its side, a quarter turn clockwise from the other games, so the D-pad is under the left thumb. `ROTATION` and the pins at the top of `src/main.cpp` are named for the way each button points held like that (the other games' Up pin is Right here). If the picture comes out upside down, the fix is `ROTATION` 1 ↔ 3, not the pins. The engine's `TFT_WIDTH`/`TFT_HEIGHT` stay the portrait panel's; screens lay out with `DISPLAY_W`/`DISPLAY_H` (`src/ui/UI.h`).
 - **Controls in a floor:** Left/Right run, Confirm (red) jumps (letting go early cuts the jump; held through a stomp, the bounce goes twice as high), Down dashes, Up pauses. Buttons debounce at 15 ms instead of the engine's 50, which a jump feels.
 - **Global gestures** (hold Left 1.5 s for Settings, Up + Down 3 s for reset) are **off during a floor**, where those buttons play; Settings is in the pause menu and on the title. Up + Down while powering on still erases the save.

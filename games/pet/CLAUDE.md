@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A colony/farm game for an ESP32 with a 240x320 ILI9341 SPI display, five push buttons and a passive buzzer: the same board as `esp32-idle-game`, whose engine (UI, screens, saves, themes) this project started from. A habitat of tiles holds crops and critters: crops feed the critters, critters earn coins, coins clear the wild and buy buildings, seeds, species and upgrades. The world only runs while the board is powered; there is no offline progress.
+A colony/farm game for an ESP32 with a 240x320 ILI9341 SPI display, five push buttons and a passive buzzer: the same board as `games/idle`, whose engine (UI, screens, saves, themes) this project started from. A habitat of tiles holds crops and critters: crops feed the critters, critters earn coins, coins clear the wild and buy buildings, seeds, species and upgrades. The world only runs while the board is powered; there is no offline progress.
 
 ## Code style
 
@@ -26,7 +26,7 @@ The **balance simulator** compiles the real `src/game/` for the PC (against `too
 
 ## Hardware
 
-- **All TFT_eSPI setup lives in `platformio.ini` `build_flags`**, not a `User_Setup.h`. Only the GLCD font (font 1) is loaded; enabling another costs flash.
+- **All TFT_eSPI setup lives in the repo root's `common.ini` (`[board]`), shared by every game**, not a `User_Setup.h`. Only the GLCD font (font 1) is loaded; enabling another costs flash.
 - **Pins are `const int` at the top of `src/main.cpp`**, the same as the idle game's board. Buttons are `INPUT_PULLUP`.
 - **D-pad:** right (23), left (26), confirm (27, red cap), up (19), down (22). Right/Left step through the screens, **except on the Habitat**, where every arrow moves the cursor and Left/Right leave only from the grid's edge.
 - **Global gestures** (in `main.cpp`): hold Left 1.5 s opens Settings (not on the Habitat, where a held Left sweeps the cursor); hold Up + Down 3 s opens reset; Up + Down while powering on erases the save.

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Deepwell, a turn-based dungeon crawler for an ESP32 with a 240x320 ILI9341 SPI display, five push buttons and a passive buzzer (the same carrier board as `../esp32-idle-game`, whose UI framework this started from). PlatformIO + Arduino framework, C++. Floors are generated from a seed; every step is a turn; death ends the run and only the records survive.
+Deepwell, a turn-based dungeon crawler for an ESP32 with a 240x320 ILI9341 SPI display, five push buttons and a passive buzzer (the same carrier board as `games/idle`, whose UI framework this started from). PlatformIO + Arduino framework, C++. Floors are generated from a seed; every step is a turn; death ends the run and only the records survive.
 
 ## Code style
 
@@ -27,7 +27,7 @@ python3 tools/convert_sprites.py     # Regenerates src/assets/Sprites.{h,cpp} fr
 
 ## Hardware
 
-- **All TFT_eSPI setup lives in `platformio.ini` `build_flags`**, not a `User_Setup.h`. Only the GLCD font (font 1) is loaded; enabling another costs flash.
+- **All TFT_eSPI setup lives in the repo root's `common.ini` (`[board]`), shared by every game**, not a `User_Setup.h`. Only the GLCD font (font 1) is loaded; enabling another costs flash.
 - **Pins are `const int` at the top of `src/main.cpp`**, the same as the idle game's: right 23, left 26, confirm 27, up 19, down 22, buzzer 32.
 - **Backlight** (`TFT_BL`, 21) is PWM on LEDC channel 4 (`core/Backlight`), since `tone()` owns channel 0 and its timer. It dims after the Settings delay, and the press that wakes it is swallowed.
 - Hold Up + Down while powering on to erase the save; Settings also has a reset.

@@ -7,7 +7,7 @@
 // The site writes this to the `catalog` partition (type 0x40), little-endian:
 // "GCAT", version, game count, two reserved bytes, then one CatalogEntry per game.
 // An icon is THUMB_W x THUMB_H RGB565, high byte first, at thumbOffset from the
-// partition's start. esp32-games-web/docs/bundle.js is the writer; keep the two in step.
+// partition's start. docs/bundle.js at the repo root is the writer; keep the two in step.
 struct __attribute__((packed)) CatalogEntry
 {
     char label[16];   // The game's app partition

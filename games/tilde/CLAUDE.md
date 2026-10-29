@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-*~tilde~*, a cozy virtual pet for an ESP32 with a 240x320 ILI9341 SPI display, five push buttons and a passive buzzer: the same board as `../esp32-idle-game`, whose engine (screens, buttons, saves, themes) this project started from, by way of `../esp32-roguelike`. The pet is a *glyph*: a soft, round kawaii creature drawn from anti-aliased shapes, in a room that moves a little all the time. It hatches, grows through eight forms chosen by how it is cared for, and never dies or leaves: neglect only makes it sad or sick, and one action mends each trouble. It lives only while the board is powered; there is no clock across power-off. The full scope and art direction are in `docs/DESIGN.md`.
+*~tilde~*, a cozy virtual pet for an ESP32 with a 240x320 ILI9341 SPI display, five push buttons and a passive buzzer: the same board as `games/idle`, whose engine (screens, buttons, saves, themes) this project started from, by way of `games/deepwell`. The pet is a *glyph*: a soft, round kawaii creature drawn from anti-aliased shapes, in a room that moves a little all the time. It hatches, grows through eight forms chosen by how it is cared for, and never dies or leaves: neglect only makes it sad or sick, and one action mends each trouble. It lives only while the board is powered; there is no clock across power-off. The full scope and art direction are in `docs/DESIGN.md`.
 
 ## Code style
 
@@ -29,7 +29,7 @@ The PC tools compile the real sources against `tools/stub/` (`Arduino.h`, an in-
 
 ## Hardware
 
-- **All TFT_eSPI setup lives in `platformio.ini` `build_flags`**, not a `User_Setup.h`. The game draws nothing through TFT_eSPI but `pushImageDMA`: every pixel comes from `src/gfx/Canvas`.
+- **All TFT_eSPI setup lives in the repo root's `common.ini` (`[board]`), shared by every game**, not a `User_Setup.h`. The game draws nothing through TFT_eSPI but `pushImageDMA`: every pixel comes from `src/gfx/Canvas`.
 - **Pins are `const int` at the top of `src/main.cpp`**, the same as the idle game's: right 23, left 26, confirm 27, up 19, down 22, buzzer 32. Portrait, rotation 2.
 - **Gestures** (`main.cpp`): hold Left 1.5 s for Settings, Up + Down 3 s for the reset question, both off while a screen's `allowsGestures()` is false (a minigame, naming). Up + Down while powering on erases the save.
 - **Backlight** (`TFT_BL`, 21) is PWM on LEDC channel 4 (`core/Backlight`), since `tone()` owns channel 0 and its timer. `tone()` queues its notes, so a jingle never blocks.

@@ -1,5 +1,5 @@
 // Several games on one board: the flash image for a collection, written in the browser for the
-// games picked. The launcher (../esp32-launcher) reads it back; its CLAUDE.md and Catalog.h
+// games picked. The launcher (launcher/) reads it back; its CLAUDE.md and Catalog.h
 // describe the layout and the catalog format, and the two must change together.
 (() => {
   const FLASH_SIZE = 0x400000;
