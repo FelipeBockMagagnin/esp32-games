@@ -42,10 +42,10 @@ window.GAMES = [
       2
     ],
     "image": "img/idle.png",
-    "version": "b7028b5",
+    "version": "13dc543",
     "date": "2026-10-29",
     "manifest": "firmware/idle/manifest.json",
-    "size": 670640
+    "size": 670704
   },
   {
     "id": "pet",
@@ -60,10 +60,10 @@ window.GAMES = [
       1
     ],
     "image": "img/pet.png",
-    "version": "b7028b5",
+    "version": "13dc543",
     "date": "2026-10-29",
     "manifest": "firmware/pet/manifest.json",
-    "size": 382752
+    "size": 382432
   },
   {
     "id": "decaf",
@@ -78,10 +78,10 @@ window.GAMES = [
       1
     ],
     "image": "img/decaf.png",
-    "version": "b7028b5",
+    "version": "13dc543",
     "date": "2026-10-29",
     "manifest": "firmware/decaf/manifest.json",
-    "size": 492928
+    "size": 492848
   },
   {
     "id": "deepwell",
@@ -96,10 +96,10 @@ window.GAMES = [
       1
     ],
     "image": "img/deepwell.png",
-    "version": "b7028b5",
+    "version": "13dc543",
     "date": "2026-10-29",
     "manifest": "firmware/deepwell/manifest.json",
-    "size": 369456
+    "size": 369504
   },
   {
     "id": "pomodoro",
@@ -114,10 +114,10 @@ window.GAMES = [
       2
     ],
     "image": "img/pomodoro.png",
-    "version": "b7028b5",
+    "version": "13dc543",
     "date": "2026-10-29",
     "manifest": "firmware/pomodoro/manifest.json",
-    "size": 839328
+    "size": 839344
   },
   {
     "id": "tilde",
@@ -132,7 +132,7 @@ window.GAMES = [
       2
     ],
     "image": "img/tilde.png",
-    "version": "b7028b5",
+    "version": "13dc543",
     "date": "2026-10-29",
     "manifest": "firmware/tilde/manifest.json",
     "size": 437248
@@ -150,10 +150,10 @@ window.GAMES = [
       1
     ],
     "image": "img/jackhammer.png",
-    "version": "b7028b5",
+    "version": "13dc543",
     "date": "2026-10-29",
     "manifest": "firmware/jackhammer/manifest.json",
-    "size": 437552
+    "size": 437600
   }
 ];
-window.LAUNCHER = {"version": "a0c530d", "date": "2026-10-29", "size": 309712};
+window.LAUNCHER = {"version": "13dc543", "date": "2026-10-29", "size": 309712};
