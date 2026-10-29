@@ -48,6 +48,9 @@ SNAKE_SCENE = "04_swallowed"
 GRIMHOLD = GAMES / "grimhold"
 # The scene of its tools/shots.sh the cartridge shows: a spell bursting on a goblin, a skeleton behind
 GRIMHOLD_SCENE = "04_spell"
+MINES = GAMES / "mines"
+# The scene of its tools/shots.sh the cartridge shows: a flood opened, a few flags planted
+MINES_SCENE = "06_playing"
 W, H = 240, 320
 FONT = ImageFont.load_default_imagefont()
 
@@ -457,9 +460,16 @@ def grimhold():
         return Image.open(Path(tmp) / f"{GRIMHOLD_SCENE}.png").convert("RGB").rotate(90, expand=True)
 
 
+def mines():
+    with tempfile.TemporaryDirectory() as tmp:
+        subprocess.run([str(MINES / "tools" / "shots.sh"), tmp], check=True, stdout=subprocess.DEVNULL,
+                       env={"TMPDIR": tmp, "PATH": "/usr/bin:/bin", "HOME": str(Path.home())})
+        return Image.open(Path(tmp) / f"{MINES_SCENE}.png").convert("RGB")
+
+
 if __name__ == "__main__":
     for name, draw in (("idle", idle), ("pet", pet), ("decaf", decaf), ("deepwell", deepwell),
                        ("pomodoro", pomodoro), ("tilde", tilde), ("jackhammer", jackhammer),
-                       ("dice", dice), ("snake", snake), ("grimhold", grimhold)):
+                       ("dice", dice), ("snake", snake), ("grimhold", grimhold), ("mines", mines)):
         draw().save(GAMES / name / "screen.png", optimize=True)
         print(GAMES / name / "screen.png")
