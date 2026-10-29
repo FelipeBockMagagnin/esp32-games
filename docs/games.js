@@ -20,10 +20,6 @@ window.CATEGORIES = [
     "name": "Ports"
   },
   {
-    "id": "publicos",
-    "name": "Jogos públicos"
-  },
-  {
     "id": "comunidade",
     "name": "Jogos da comunidade"
   }
@@ -60,10 +56,10 @@ window.GAMES = [
       1
     ],
     "image": "img/pet.png",
-    "version": "13dc543",
+    "version": "4d12dbc",
     "date": "2026-10-29",
     "manifest": "firmware/pet/manifest.json",
-    "size": 382432
+    "size": 383088
   },
   {
     "id": "decaf",
@@ -78,10 +74,10 @@ window.GAMES = [
       1
     ],
     "image": "img/decaf.png",
-    "version": "13dc543",
+    "version": "4d12dbc",
     "date": "2026-10-29",
     "manifest": "firmware/decaf/manifest.json",
-    "size": 492848
+    "size": 493424
   },
   {
     "id": "deepwell",
@@ -96,10 +92,10 @@ window.GAMES = [
       1
     ],
     "image": "img/deepwell.png",
-    "version": "13dc543",
+    "version": "4d12dbc",
     "date": "2026-10-29",
     "manifest": "firmware/deepwell/manifest.json",
-    "size": 369504
+    "size": 370096
   },
   {
     "id": "pomodoro",
@@ -132,10 +128,10 @@ window.GAMES = [
       2
     ],
     "image": "img/tilde.png",
-    "version": "13dc543",
+    "version": "4d12dbc",
     "date": "2026-10-29",
     "manifest": "firmware/tilde/manifest.json",
-    "size": 437248
+    "size": 437888
   },
   {
     "id": "jackhammer",
@@ -150,10 +146,46 @@ window.GAMES = [
       1
     ],
     "image": "img/jackhammer.png",
-    "version": "13dc543",
+    "version": "4d12dbc",
     "date": "2026-10-29",
     "manifest": "firmware/jackhammer/manifest.json",
-    "size": 437600
+    "size": 438096
+  },
+  {
+    "id": "dice",
+    "name": "Dice Bag",
+    "tagline": "Dados, sorteio e roleta",
+    "category": "apps",
+    "description": "Dados de RPG do d2 ao d100 com bônus, vantagem e críticos, sorteio de números sem repetição e uma roleta.",
+    "accent": "#b07cd8",
+    "icon": [
+      110,
+      119,
+      1
+    ],
+    "image": "img/dice.png",
+    "version": "c176611",
+    "date": "2026-10-29",
+    "manifest": "firmware/dice/manifest.json",
+    "size": 381552
+  },
+  {
+    "id": "grimhold",
+    "name": "Grimhold",
+    "tagline": "Masmorra em primeira pessoa",
+    "category": "teste",
+    "description": "Desça por masmorras sombrias em primeira pessoa, com espada e magia. O equipamento que você pega já entra no corpo se for melhor. Jogue com o aparelho deitado.",
+    "accent": "#c0303a",
+    "icon": [
+      20,
+      78,
+      1
+    ],
+    "image": "img/grimhold.png",
+    "version": "ee6dd23",
+    "date": "2026-10-29",
+    "manifest": "firmware/grimhold/manifest.json",
+    "size": 615440
   },
   {
     "id": "snake",
