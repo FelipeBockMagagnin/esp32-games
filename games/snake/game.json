@@ -3,7 +3,7 @@
   "name": "Snake",
   "tagline": "A cobrinha classica de LCD",
   "category": "mini",
-  "description": "A cobrinha de sempre numa tela de pontos de LCD: quatro níveis, de paredes que deixam passar a uma velocidade insana, recordes por nível e cinco temas retrô.",
+  "description": "A cobrinha de sempre numa tela de pontos de LCD: quatro níveis, de paredes que deixam passar a uma velocidade insana, recordes por nível e dez temas retrô.",
   "accent": "#8fbf5a",
   "icon": [6, 254, 1]
 }
