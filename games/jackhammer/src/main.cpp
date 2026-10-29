@@ -4,6 +4,7 @@
 #include "audio/Songs.h"
 #include "Backlight.h"
 #include "ButtonManager.h"
+#include "Launcher.h"
 #include "core/ScreenManager.h"
 #include "Settings.h"
 #include "SlotStore.h"
@@ -51,7 +52,7 @@ void died();
 ConfirmScreen resetScreen({"Reset", "Reset game?", "Coins, best and purchases", "will be erased.",
                            "Erase the save and restart", "Resetting..."},
                           Theme::BAD, resetGame, screenManager, sound);
-SettingsScreen settingsScreen(settings, applySettings, screenManager, sound, resetScreen);
+SettingsScreen settingsScreen(settings, applySettings, returnToLauncher, screenManager, sound, resetScreen);
 ShopScreen musicScreen(Shelf::SONGS, profile, sound, shopChanged);
 ShopScreen styleScreen(Shelf::STYLES, profile, sound, shopChanged);
 PlayScreen playScreen(currentRound, profile, sound, died);
@@ -185,6 +186,13 @@ void setup()
     downButton.setup();
     leftButton.setup();
     delay(100);
+
+    // Holding Confirm while the board powers on opens the game menu, if the site installed one:
+    // the way out should a game fail before its Settings
+    if (digitalRead(CONFIRM_BUTTON_PIN) == LOW)
+    {
+        returnToLauncher();
+    }
 
     loadOrReset();
     sound.begin(BUZZER_PIN);

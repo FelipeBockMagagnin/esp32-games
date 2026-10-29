@@ -32,6 +32,7 @@ The PC tools compile the real sources against `tools/stub/` (`Arduino.h`, an in-
 - **All TFT_eSPI setup lives in the repo root's `common.ini` (`[board]`), shared by every game**, not a `User_Setup.h`. The game draws nothing through TFT_eSPI but `pushImageDMA`: every pixel comes from `src/gfx/Canvas`.
 - **Pins are `const int` at the top of `src/main.cpp`**, the same as the idle game's: right 23, left 26, confirm 27, up 19, down 22, buzzer 32. Portrait, rotation 2.
 - **Gestures** (`main.cpp`): hold Left 1.5 s for Settings, Up + Down 3 s for the reset question, both off while a screen's `allowsGestures()` is false (a minigame, naming). Up + Down while powering on erases the save.
+- **The game menu:** when the site installed the launcher, Settings has a Game menu row, saving first (`returnToLauncher()` in `lib/dotcore`'s `Launcher.h`), and holding Confirm while powering on opens it.
 - **Backlight** (`TFT_BL`, 21) is PWM on LEDC channel 4 (`Backlight` in `lib/dotcore`), since `tone()` owns channel 0 and its timer. `tone()` queues its notes, so a jingle never blocks.
 
 ## Architecture

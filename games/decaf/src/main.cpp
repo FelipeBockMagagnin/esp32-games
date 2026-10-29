@@ -2,6 +2,7 @@
 #include <SPI.h>
 #include <TFT_eSPI.h>
 #include "ButtonManager.h"
+#include "Launcher.h"
 #include "managers/ScreenManager.h"
 #include "managers/SoundManager.h"
 #include "game/SaveGame.h"
@@ -45,7 +46,7 @@ ConfirmScreen resetScreen({"Reset", "Reset game?", "Every best time will be lost
                            "Erase the save and restart", "Resetting..."},
                           Theme::BAD, resetGame, screenManager, sound);
 Settings settings = {(uint8_t)SoundMode::ON, DIM_DEFAULT, 0};
-SettingsScreen settingsScreen(settings, applySettings, screenManager, sound, resetScreen);
+SettingsScreen settingsScreen(settings, applySettings, returnToLauncher, screenManager, sound, resetScreen);
 SplashScreen splashScreen(screenManager, sound);
 TitleScreen titleScreen(screenManager, sound, records, settingsScreen, startFloor);
 LevelScreen levelScreen(screenManager, sound, records, settingsScreen, backToTitle);
@@ -203,6 +204,13 @@ void setup()
     downButton.setup();
     leftButton.setup();
     delay(100);
+
+    // Holding Confirm while the board powers on opens the game menu, if the site installed one:
+    // the way out should a game fail before its Settings
+    if (digitalRead(CONFIRM_BUTTON_PIN) == LOW)
+    {
+        returnToLauncher();
+    }
 
     loadOrReset();
     loadSettings(settings);

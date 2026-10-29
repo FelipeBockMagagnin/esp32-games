@@ -2,6 +2,7 @@
 #include <SPI.h>
 #include <TFT_eSPI.h>
 #include "ButtonManager.h"
+#include "Launcher.h"
 #include "managers/ScreenManager.h"
 #include "managers/SoundManager.h"
 #include "game/World.h"
@@ -46,11 +47,12 @@ ShopScreen shopScreen(world, colony, sound);
 
 void resetGame();
 void applySettings();
+void openGameMenu();
 ConfirmScreen resetScreen({"Reset", "Reset game?", "The habitat and every critter", "will be lost.",
                            "Erase the save and restart", "Resetting..."},
                           Theme::BAD, resetGame, screenManager, sound);
 Settings settings = {(uint8_t)SoundMode::ON, DIM_DEFAULT, 0};
-SettingsScreen settingsScreen(settings, applySettings, screenManager, sound, resetScreen);
+SettingsScreen settingsScreen(settings, applySettings, openGameMenu, screenManager, sound, resetScreen);
 SplashScreen splashScreen(screenManager, sound);
 
 AutoSaver autoSaver(world, colony);
@@ -124,6 +126,16 @@ void resetGame()
 {
     eraseSave();
     ESP.restart();
+}
+
+void openGameMenu()
+{
+    captureSave(saveBuffer, world, colony);
+    if (!saveGame(saveBuffer))
+    {
+        Serial.println("Save failed");
+    }
+    returnToLauncher();
 }
 
 // Holding Up and Down this long in game asks whether to reset. The first touch of each
@@ -294,6 +306,13 @@ void setup()
     downButton.setup();
     leftButton.setup();
     delay(100);
+
+    // Holding Confirm while the board powers on opens the game menu, if the site installed one:
+    // the way out should a game fail before its Settings
+    if (digitalRead(CONFIRM_BUTTON_PIN) == LOW)
+    {
+        returnToLauncher();
+    }
 
     bool loaded = loadOrReset();
     loadSettings(settings);

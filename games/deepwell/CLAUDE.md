@@ -31,6 +31,7 @@ python3 tools/convert_sprites.py     # Regenerates src/assets/Sprites.{h,cpp} fr
 - **Pins are `const int` at the top of `src/main.cpp`**, the same as the idle game's: right 23, left 26, confirm 27, up 19, down 22, buzzer 32.
 - **Backlight** (`TFT_BL`, 21) is PWM on LEDC channel 4 (`Backlight` in `lib/dotcore`), since `tone()` owns channel 0 and its timer. It dims after the Settings delay, and the press that wakes it is swallowed.
 - Hold Up + Down while powering on to erase the save; Settings also has a reset.
+- **The game menu:** when the site installed the launcher, Settings has a Game menu row (`returnToLauncher()` in `lib/dotcore`'s `Launcher.h`), and holding Confirm while powering on opens it.
 
 ## Architecture
 

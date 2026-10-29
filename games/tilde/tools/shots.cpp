@@ -42,7 +42,8 @@ static SplashScreen splash(display, game);
 static ConfirmScreen confirm(display, game,
                              {"Reset", "Reset the game?", "The pet and the Album", "will be erased.", "Erase and restart"},
                              ALERT, nothing);
-static SettingsScreen settingsScreen(display, game, settings, nothing, confirm, confirm);
+static bool always() { return true; }
+static SettingsScreen settingsScreen(display, game, settings, nothing, nothing, always, confirm, confirm);
 
 static std::string outDir = ".";
 // What a frame lasts: 66 by default, longer to see the game as a slow board runs it

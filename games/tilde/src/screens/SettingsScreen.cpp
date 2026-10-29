@@ -8,6 +8,7 @@ enum Row : uint8_t
     ROW_DIM,
     ROW_THEME,
     ROW_EGG,
+    ROW_MENU,
     ROW_RESET,
     ROW_COUNT
 };
@@ -20,21 +21,28 @@ static const char *const DIM_NAMES[DIM_OPTION_COUNT] = {"1 min", "5 min", "Never
 void SettingsScreen::onEnter(TFT_eSPI &tft)
 {
     selected = 0;
+    menuShown = hasMenu();
     Screen::onEnter(tft);
+}
+
+void SettingsScreen::step(int8_t delta)
+{
+    do
+    {
+        selected = (selected + ROW_COUNT + delta) % ROW_COUNT;
+    } while (selected == ROW_MENU && !menuShown);
+    game.sound.playMenu();
+    forceFrame();
 }
 
 void SettingsScreen::onUpPress()
 {
-    selected = selected > 0 ? selected - 1 : ROW_COUNT - 1;
-    game.sound.playMenu();
-    forceFrame();
+    step(-1);
 }
 
 void SettingsScreen::onDownPress()
 {
-    selected = (selected + 1) % ROW_COUNT;
-    game.sound.playMenu();
-    forceFrame();
+    step(1);
 }
 
 bool SettingsScreen::onBackPress()
@@ -67,6 +75,10 @@ void SettingsScreen::onConfirmPress()
         }
         game.sound.playMenu();
         game.screens.replaceModal(&farewellScreen);
+        return;
+    case ROW_MENU:
+        game.sound.playMenu();
+        toMenu();
         return;
     case ROW_RESET:
         game.sound.playMenu();
@@ -104,29 +116,40 @@ void SettingsScreen::drawScene(Canvas &c) const
          "After no button is pressed"},
         {"Theme", theme.name, theme.note},
         {"Pass on an egg", pet.canLeaveEgg() ? "Ready" : "Not yet", eggNote},
+        {"Game menu", "", "Save and switch games"},
         {"Reset game", "", "Erase the pet and the Album"},
     };
+    // Six cards fit above the hint only a little shorter and closer
+    float pitch = menuShown ? 45 : 52;
+    float cardH = menuShown ? 42 : 44;
+    float inset = (44 - cardH) / 2;
+    uint8_t slot = 0;
     for (uint8_t i = 0; i < ROW_COUNT; i++)
     {
-        float y = 34 + i * 52;
-        if (!c.reaches(y - 3, y + 50))
+        if (i == ROW_MENU && !menuShown)
+        {
+            continue;
+        }
+        float y = 34 + slot++ * pitch;
+        if (!c.reaches(y - 3, y + cardH + 6))
         {
             continue;
         }
         bool on = i == selected;
         if (on)
         {
-            c.fillRoundRect(8, y - 2, 224, 48, 16, Theme::rgb(i == ROW_RESET ? ALERT : ACCENT));
+            c.fillRoundRect(8, y - 2, 224, cardH + 4, 16, Theme::rgb(i == ROW_RESET ? ALERT : ACCENT));
         }
-        Widgets::card(c, 10, y, 220, 44, 14);
+        Widgets::card(c, 10, y, 220, cardH, 14);
         bool dim = i == ROW_EGG && !pet.canLeaveEgg();
-        c.text(22, y + 7, lines[i].name, FONT_BODY, Theme::rgb(i == ROW_RESET ? ALERT : dim ? INK_FAINT : INK));
-        c.text(22, y + 25, lines[i].note, FONT_SMALL, Theme::rgb(INK_SOFT));
+        c.text(22, y + 7 - inset, lines[i].name, FONT_BODY,
+               Theme::rgb(i == ROW_RESET ? ALERT : dim ? INK_FAINT : INK));
+        c.text(22, y + 25 - inset, lines[i].note, FONT_SMALL, Theme::rgb(INK_SOFT));
         if (lines[i].value[0] != '\0')
         {
             float vw = Canvas::textWidth(lines[i].value, FONT_SMALL) + 16;
-            c.fillRoundRect(220 - vw, y + 6, vw, 17, 8.5f, Theme::rgb(on ? ACCENT : WALL_TOP));
-            c.text(220 - vw / 2, y + 8, lines[i].value, FONT_SMALL, Theme::rgb(on ? ACCENT_INK : INK_SOFT),
+            c.fillRoundRect(220 - vw, y + 6 - inset, vw, 17, 8.5f, Theme::rgb(on ? ACCENT : WALL_TOP));
+            c.text(220 - vw / 2, y + 8 - inset, lines[i].value, FONT_SMALL, Theme::rgb(on ? ACCENT_INK : INK_SOFT),
                    Canvas::CENTER);
         }
         if (i == ROW_THEME)
@@ -134,7 +157,7 @@ void SettingsScreen::drawScene(Canvas &c) const
             static const uint8_t SWATCH[] = {BODY_A, BODY_B, BODY_C, BODY_D, BLUSH, GOLD};
             for (uint8_t k = 0; k < sizeof(SWATCH); k++)
             {
-                c.fillCircle(170 + k * 10, y + 32, 3.8f, Theme::rgb(SWATCH[k]));
+                c.fillCircle(170 + k * 10, y + 32 - inset, 3.8f, Theme::rgb(SWATCH[k]));
             }
         }
     }

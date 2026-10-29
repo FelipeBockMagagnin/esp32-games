@@ -9,13 +9,15 @@
 #include "../core/ScreenManager.h"
 #include "../core/SoundManager.h"
 
-// Sound, screen dimming, the theme, and the way to the reset question; a screen of the rotation
+// Sound, screen dimming, the theme, the way back to the game menu when the board has one, and
+// the way to the reset question; a screen of the rotation
 class SettingsScreen : public Screen
 {
 public:
-    // `changed` runs after every change, to apply and store the settings
-    SettingsScreen(Settings &settings, void (*changed)(), ScreenManager &screenManager, SoundManager &sound,
-                   Screen &resetScreen);
+    // `changed` runs after every change, to apply and store the settings; `toMenu` boots the
+    // game menu
+    SettingsScreen(Settings &settings, void (*changed)(), void (*toMenu)(), ScreenManager &screenManager,
+                   SoundManager &sound, Screen &resetScreen);
 
     void onEnter(TFT_eSPI &tft) override;
 
@@ -24,7 +26,7 @@ public:
     void onConfirmPress() override;
 
 private:
-    static const uint8_t ROW_COUNT = 4;
+    static const uint8_t ROW_COUNT = 5;
     static const int16_t SWATCH_SIZE = 16;
 
     Header header;
@@ -32,13 +34,16 @@ private:
 
     Settings &settings;
     void (*changed)();
+    void (*toMenu)();
     ScreenManager &screenManager;
     SoundManager &sound;
     Screen &resetScreen;
     uint8_t selected;
+    bool menuShown = false;
     // Byte-swapped RGB565 like the icon assets: four of the theme's colours, in the Theme row
     uint16_t swatch[SWATCH_SIZE * SWATCH_SIZE];
 
+    void step(int8_t delta);
     void refreshRows();
     void paintSwatch();
 };

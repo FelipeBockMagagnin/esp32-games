@@ -3,6 +3,7 @@
 #include <TFT_eSPI.h>
 #include "Backlight.h"
 #include "ButtonManager.h"
+#include "Launcher.h"
 #include "core/ScreenManager.h"
 #include "Settings.h"
 #include "SlotStore.h"
@@ -53,6 +54,7 @@ void openPlay();
 void applySettings();
 void resetGame();
 void passOnEgg();
+void openGameMenu();
 HatchScreen hatchScreen(display, game);
 HomeScreen homeScreen(display, game, hatchScreen, openPlay);
 StatsScreen statsScreen(display, game);
@@ -66,7 +68,8 @@ ConfirmScreen farewellScreen(display, game,
                              {"Pass on", "Pass on an egg?", "Your pet keeps a page in the", "Album, and a new egg arrives.",
                               "Yes, a new egg"},
                              BLUSH, passOnEgg);
-SettingsScreen settingsScreen(display, game, settings, applySettings, farewellScreen, resetScreen);
+SettingsScreen settingsScreen(display, game, settings, applySettings, openGameMenu, launcherInstalled, farewellScreen,
+                              resetScreen);
 
 static const int PLAY_SCREEN_INDEX = 2;
 
@@ -104,6 +107,12 @@ void resetGame()
 {
     store.erase();
     ESP.restart();
+}
+
+void openGameMenu()
+{
+    saver.saveNow();
+    returnToLauncher();
 }
 
 void passOnEgg()
@@ -417,6 +426,13 @@ void setup()
     downButton.setup();
     leftButton.setup();
     delay(100);
+
+    // Holding Confirm while the board powers on opens the game menu, if the site installed one:
+    // the way out should a game fail before its Settings
+    if (digitalRead(CONFIRM_BUTTON_PIN) == LOW)
+    {
+        returnToLauncher();
+    }
 
     loadOrReset();
     loadSettings(store.getNamespace(), settings);

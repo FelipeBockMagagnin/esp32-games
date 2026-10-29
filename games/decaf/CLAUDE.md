@@ -31,6 +31,7 @@ The tests compile the real `src/game/` against `tools/sim/stub/` (which fakes `A
 - **Landscape.** The board is held on its side, a quarter turn clockwise from the other games, so the D-pad is under the left thumb. `ROTATION` and the pins at the top of `src/main.cpp` are named for the way each button points held like that (the other games' Up pin is Right here). If the picture comes out upside down, the fix is `ROTATION` 1 ↔ 3, not the pins. The engine's `TFT_WIDTH`/`TFT_HEIGHT` stay the portrait panel's; screens lay out with `DISPLAY_W`/`DISPLAY_H` (`src/ui/UI.h`).
 - **Controls in a floor:** Left/Right run, Confirm (red) jumps (letting go early cuts the jump; held through a stomp, the bounce goes twice as high), Down dashes, Up pauses. Buttons debounce at 15 ms instead of the engine's 50, which a jump feels.
 - **Global gestures** (hold Left 1.5 s for Settings, Up + Down 3 s for reset) are **off during a floor**, where those buttons play; Settings is in the pause menu and on the title. Up + Down while powering on still erases the save.
+- **The game menu:** when the site installed the launcher, Settings has a Game menu row (`returnToLauncher()` in `lib/dotcore`'s `Launcher.h`), and holding Confirm while powering on opens it.
 - **Backlight** (`TFT_BL`, 21) is PWM on LEDC channel 4, since `tone()` owns channel 0 and its timer. `tone()` queues its notes, so every sound heard in play is a few tens of milliseconds.
 
 ## Architecture

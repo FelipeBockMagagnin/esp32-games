@@ -35,6 +35,7 @@ python3 tools/convert_sprites.py     # src/assets/png/sprites/ -> src/assets/Spr
 - **The buzzer is not driven by `tone()`** (`core/Buzzer`): the core queues `tone()` notes and plays each to its end, so an effect would wait behind a song note. A FreeRTOS task on core 0 owns LEDC channel 0 and plays the song, an effect cutting in over it while the song keeps time underneath.
 - **Backlight** (`TFT_BL`, 21) is PWM on LEDC channel 4. It dims after the Settings delay, and the press that wakes it is swallowed.
 - Hold Up + Down while powering on to erase the save; Settings also has a reset.
+- **The game menu:** when the site installed the launcher, Settings has a Game menu row (`returnToLauncher()` in `lib/dotcore`'s `Launcher.h`), and holding Confirm while powering on opens it.
 
 ## Architecture
 

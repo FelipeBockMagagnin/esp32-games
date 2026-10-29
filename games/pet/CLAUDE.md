@@ -30,6 +30,7 @@ The **balance simulator** compiles the real `src/game/` for the PC (against `too
 - **Pins are `const int` at the top of `src/main.cpp`**, the same as the idle game's board. Buttons are `INPUT_PULLUP`.
 - **D-pad:** right (23), left (26), confirm (27, red cap), up (19), down (22). Right/Left step through the screens, **except on the Habitat**, where every arrow moves the cursor and Left/Right leave only from the grid's edge.
 - **Global gestures** (in `main.cpp`): hold Left 1.5 s opens Settings (not on the Habitat, where a held Left sweeps the cursor); hold Up + Down 3 s opens reset; Up + Down while powering on erases the save.
+- **The game menu:** when the site installed the launcher, Settings has a Game menu row, saving first (`returnToLauncher()` in `lib/dotcore`'s `Launcher.h`), and holding Confirm while powering on opens it.
 - **Backlight** (`TFT_BL`, 21) is PWM on LEDC channel 4, since `tone()` owns channel 0 and its timer.
 
 ## Architecture

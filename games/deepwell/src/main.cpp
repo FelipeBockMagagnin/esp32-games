@@ -3,6 +3,7 @@
 #include <TFT_eSPI.h>
 #include "Backlight.h"
 #include "ButtonManager.h"
+#include "Launcher.h"
 #include "core/ScreenManager.h"
 #include "Settings.h"
 #include "SlotStore.h"
@@ -48,7 +49,7 @@ void newRun();
 ConfirmScreen resetScreen({"Reset", "Reset game?", "The run and the records", "will be erased.",
                            "Erase the save and restart", "Resetting..."},
                           Theme::BAD, resetGame, screenManager, sound);
-SettingsScreen settingsScreen(settings, applySettings, screenManager, sound, resetScreen);
+SettingsScreen settingsScreen(settings, applySettings, returnToLauncher, screenManager, sound, resetScreen);
 MenuScreen menuScreen(run, screenManager, sound, settingsScreen);
 DungeonScreen dungeonScreen(run, sound, screenManager, menuScreen, floorReached, died);
 GameOverScreen gameOverScreen(run, records, sound, newRun);
@@ -229,6 +230,13 @@ void setup()
     downButton.setup();
     leftButton.setup();
     delay(100);
+
+    // Holding Confirm while the board powers on opens the game menu, if the site installed one:
+    // the way out should a game fail before its Settings
+    if (digitalRead(CONFIRM_BUTTON_PIN) == LOW)
+    {
+        returnToLauncher();
+    }
 
     loadOrReset();
     loadSettings(store.getNamespace(), settings);
