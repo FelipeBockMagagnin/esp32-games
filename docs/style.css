@@ -608,13 +608,13 @@ h1 {
   color: var(--paper-2);
 }
 
-/* One row whatever the number of games: the cartridges narrow instead of wrapping below the fold */
+/* As many cartridges to a row as fit at a readable size, the rest on the next row: narrowed
+   further, five abreast, they read as squeezed. A cartridge scales whole with its column. */
 .carts {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 148px);
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   justify-content: start;
-  gap: 12px;
+  gap: 30px 18px;
   padding: 16px 4px 10px;
 }
 
@@ -633,6 +633,8 @@ h1 {
 }
 
 .cart-body {
+  /* One pixel of the 148px cartridge, so a narrower one keeps its proportions */
+  --u: calc(100cqi / 148);
   display: block;
   filter: drop-shadow(6px 7px 0 rgba(0, 0, 0, 0.4));
 }
@@ -645,13 +647,13 @@ h1 {
 .cart-shell {
   display: block;
   position: relative;
-  height: 178px;
-  padding: 26px 7px 0;
+  height: calc(var(--u) * 178);
+  padding: calc(var(--u) * 26) calc(var(--u) * 12) 0;
   background:
     linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.25)),
     var(--shell);
   /* The cut corner that keys a cartridge into its slot */
-  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
+  clip-path: polygon(0 0, calc(100% - var(--u) * 20) 0, 100% calc(var(--u) * 20), 100% 100%, 0 100%);
   transform-origin: 50% 100%;
   transition: transform 260ms cubic-bezier(0.3, 1.6, 0.5, 1);
 }
@@ -660,10 +662,10 @@ h1 {
 .cart-shell::before {
   content: "";
   position: absolute;
-  left: 14px;
-  right: 30px;
-  top: 8px;
-  height: 11px;
+  left: calc(var(--u) * 14);
+  right: calc(var(--u) * 30);
+  top: calc(var(--u) * 8);
+  height: calc(var(--u) * 11);
   background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.45) 0 2px, rgba(255, 255, 255, 0.08) 2px 4px);
 }
 
@@ -672,14 +674,14 @@ h1 {
   position: relative;
   overflow: hidden;
   background: var(--case);
-  padding: 4px;
+  padding: calc(var(--u) * 5);
   box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.15);
 }
 
 .cart-label img {
   display: block;
   width: 100%;
-  height: 78px;
+  height: calc(var(--u) * 78);
   object-fit: none;
   object-position: var(--thumb, 50% 42%);
   background: #000;
@@ -687,24 +689,22 @@ h1 {
 
 .cart-title {
   display: block;
-  margin-top: 5px;
-  padding: 4px 3px 3px;
+  margin-top: calc(var(--u) * 5);
+  padding: calc(var(--u) * 4) calc(var(--u) * 6) calc(var(--u) * 3);
   background: var(--cart);
   color: var(--ink);
   font-family: "Silkscreen", monospace;
   font-weight: 700;
-  /* Scaled to the cartridge, so an eight-letter name still fits five abreast */
-  font-size: clamp(7px, 9cqi, 11px);
-  overflow-wrap: anywhere;
+  font-size: calc(var(--u) * 11);
   line-height: 1.15;
-  min-height: 34px;
+  min-height: calc(var(--u) * 34);
 }
 
 .cart-title small {
   display: block;
   font-family: "VT323", monospace;
   font-weight: normal;
-  font-size: 15px;
+  font-size: calc(var(--u) * 15);
   opacity: 0.75;
 }
 
@@ -724,10 +724,10 @@ h1 {
 /* The edge connector's gold pins */
 .cart-pins {
   position: absolute;
-  left: 18px;
-  right: 18px;
+  left: calc(var(--u) * 18);
+  right: calc(var(--u) * 18);
   bottom: 0;
-  height: 14px;
+  height: calc(var(--u) * 14);
   background:
     repeating-linear-gradient(90deg, #e8bf4a 0 5px, #9c7a1c 5px 6px, transparent 6px 9px),
     #0e0e0e;
@@ -917,18 +917,9 @@ h1 {
     text-align: center;
   }
 
-  /* The cartridges right under the console they go into, scrolling sideways rather than
-     shrinking past a readable label */
+  /* The cartridges right under the console they go into */
   .carts {
     order: -1;
-    grid-auto-columns: minmax(80px, 148px);
-    justify-content: safe center;
-    overflow-x: auto;
-    scroll-snap-type: x proximity;
-  }
-
-  .cart {
-    scroll-snap-align: center;
   }
 
   .shelf-title {
