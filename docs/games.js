@@ -104,9 +104,9 @@ window.GAMES = [
   {
     "id": "pomodoro",
     "name": "Pomodoro",
-    "tagline": "Foco e relógio",
+    "tagline": "Foco e estatísticas",
     "category": "apps",
-    "description": "Timer pomodoro com alarme e estatísticas da semana. O relógio precisa de WiFi, que esta versão não tem.",
+    "description": "Timer pomodoro com alarme e estatísticas da semana.",
     "accent": "#e0604f",
     "icon": [
       56,
@@ -114,10 +114,10 @@ window.GAMES = [
       2
     ],
     "image": "img/pomodoro.png",
-    "version": "13dc543",
+    "version": "eb881af",
     "date": "2026-10-29",
     "manifest": "firmware/pomodoro/manifest.json",
-    "size": 839344
+    "size": 836528
   },
   {
     "id": "tilde",
