@@ -28,7 +28,16 @@ for line in "${GAMES[@]}"; do
         echo "$id: $src has uncommitted changes; commit them first" >&2
         exit 1
     fi
+    # Nor build in a git-ignored source file, like a secrets.h with someone's WiFi password
+    ignored="$(git -C "$src" ls-files --others --ignored --exclude-standard -- src include)"
+    if [ -n "$ignored" ]; then
+        echo "$id: ignored files would go into the firmware:" >&2
+        echo "$ignored" >&2
+        exit 1
+    fi
     echo "== $id ($src, env $env)"
+    # From clean: a cached object may predate the commit, or have seen a file deleted since
+    "$PIO" run -d "$src" -e "$env" -t clean >/dev/null
     "$PIO" run -d "$src" -e "$env"
     out="$ROOT/docs/firmware/$id"
     mkdir -p "$out"

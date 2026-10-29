@@ -12,9 +12,10 @@ Served by GitHub Pages from `docs/`.
 git add docs && git commit -m "publish firmware" && git push
 ```
 
-`publish.sh` builds each game from its local folder (`path` in `games.json`) with
+`publish.sh` builds each game from clean, from its local folder (`path` in `games.json`), with
 PlatformIO, refusing a repo with uncommitted changes so a published version is always a
-commit. It copies the four images to `docs/firmware/<id>/` and writes their manifest and
+commit, and one with git-ignored files under `src/` or `include/` (the Pomodoro's
+`secrets.h` holds a WiFi password, which must never reach a public firmware). It copies the four images to `docs/firmware/<id>/` and writes their manifest and
 `docs/games.js`.
 
 The images keep their own offsets (bootloader 0x1000, partitions 0x8000, boot_app0 0xE000,
@@ -25,7 +26,7 @@ erase every game's save. Every game must keep the default partition table for th
 
 1. A row in `games.json`: `id`, `name`, `tagline`, `description`, `path`, `env`, `image`, `accent`
    (the cartridge's colour) and `thumb` (the `object-position` of its label's crop of the screen).
-2. A 240x320 screen in `docs/img/<id>.png` (`tools/make_mockups.py` draws the current two).
+2. A 240x320 screen in `docs/img/<id>.png` (`tools/make_mockups.py` makes every game's).
 3. `./publish.sh <id>`.
 
 ## The console

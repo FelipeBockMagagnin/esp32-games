@@ -34,5 +34,29 @@ window.GAMES = [
     "version": "ecd5773",
     "date": "2026-10-28",
     "manifest": "firmware/decaf/manifest.json"
+  },
+  {
+    "id": "deepwell",
+    "name": "Deepwell",
+    "tagline": "Masmorra em turnos",
+    "description": "Desça um poço de masmorras geradas a cada partida. Cada passo é um turno: ande pelo direcional, ataque o que estiver no caminho, junte poções, ouro e equipamento e ache a escada. Morreu, acabou; só o recorde fica.",
+    "image": "img/deepwell.png",
+    "accent": "#6f8fd8",
+    "thumb": "50% 50%",
+    "version": "c882cf4",
+    "date": "2026-10-28",
+    "manifest": "firmware/deepwell/manifest.json"
+  },
+  {
+    "id": "pomodoro",
+    "name": "Pomodoro",
+    "tagline": "Foco e relógio",
+    "description": "Um timer pomodoro: 25 minutos de foco, uma pausa, e uma pausa longa a cada quatro focos, com alarme e estatísticas da semana. O relógio precisa de WiFi, que esta versão não tem: para ele, compile o projeto com a sua rede.",
+    "image": "img/pomodoro.png",
+    "accent": "#e0604f",
+    "thumb": "50% 47%",
+    "version": "089abc3",
+    "date": "2026-10-28",
+    "manifest": "firmware/pomodoro/manifest.json"
   }
 ];
