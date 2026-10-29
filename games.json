@@ -53,5 +53,16 @@
     "image": "img/pomodoro.png",
     "accent": "#e0604f",
     "thumb": "50% 47%"
+  },
+  {
+    "id": "tilde",
+    "name": "Tilde",
+    "tagline": "Bichinho virtual",
+    "description": "Choque um ovo e cuide do bichinho que nasce: dê comida e carinho, brinque, limpe a casinha e apague a luz para ele dormir. Ele cresce de jeitos diferentes conforme o cuidado. Aqui ninguém morre: no pior caso ele fica tristinho, e um carinho resolve.",
+    "path": "../esp32-tilde",
+    "env": "esp32dev",
+    "image": "img/tilde.png",
+    "accent": "#ff8fa3",
+    "thumb": "50% 42%"
   }
 ]

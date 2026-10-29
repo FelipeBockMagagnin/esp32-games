@@ -58,5 +58,17 @@ window.GAMES = [
     "version": "089abc3",
     "date": "2026-10-28",
     "manifest": "firmware/pomodoro/manifest.json"
+  },
+  {
+    "id": "tilde",
+    "name": "Tilde",
+    "tagline": "Bichinho virtual",
+    "description": "Choque um ovo e cuide do bichinho que nasce: dê comida e carinho, brinque, limpe a casinha e apague a luz para ele dormir. Ele cresce de jeitos diferentes conforme o cuidado. Aqui ninguém morre: no pior caso ele fica tristinho, e um carinho resolve.",
+    "image": "img/tilde.png",
+    "accent": "#ff8fa3",
+    "thumb": "50% 42%",
+    "version": "c0fef59",
+    "date": "2026-10-29",
+    "manifest": "firmware/tilde/manifest.json"
   }
 ];
