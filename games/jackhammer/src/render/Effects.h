@@ -20,10 +20,11 @@ public:
         float y;
         float vx; // Pixels a step
         float vy;
-        const ParticleTexture *texture;
-        uint16_t tint; // RGB565
-        uint16_t life; // Steps left; 0 is free
-        uint8_t size;
+        const Emitter *emitter; // nullptr for a coin
+        uint16_t tint;          // RGB565
+        uint16_t life;          // Steps left; 0 is free
+        uint16_t lifetime;
+        uint8_t size; // Pixels, before the emitter's shrinking
         bool coin;
     };
 

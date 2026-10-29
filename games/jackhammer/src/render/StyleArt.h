@@ -4,8 +4,23 @@
 #include "../assets/Sprites.h"
 #include "../jack/Config.h"
 
+enum class Blend : uint8_t
+{
+    OPAQUE, // The texture's alpha cut in half
+    ALPHA,  // Mixed over what is behind by its alpha
+    ADD,    // Added to what is behind, the Neon material's glow
+};
+
+// A point of a colour over lifetime, `at` the share of the particle's life
+struct ColorKey
+{
+    float at;
+    uint16_t color; // RGB565
+};
+
 // A Unity particle system, in its own units: speeds in units a second, sizes in units, times in
-// seconds. Its shape threw particles in 3D; only their motion across the screen is kept.
+// seconds. Its shape threw particles in 3D; only their motion across the screen is kept. The
+// last fields are its Color, Size and Clamp Velocity modules, for the systems that had them.
 struct Emitter
 {
     const ParticleTexture *texture;
@@ -22,6 +37,13 @@ struct Emitter
     uint8_t burst; // Thrown at once every `period` seconds
     float period;
     float coneDegrees; // 0 for a sphere
+    Blend blend;
+    const ColorKey *gradient; // Times the tint over the particle's life; nullptr keeps the tint
+    uint8_t gradientCount;
+    float shrinkFrom; // The share of life its size holds before falling linearly to sizeEnd
+    float sizeEnd;
+    float maxSpeed; // Units a second, 0 for no limit
+    float dampen;   // The share of the speed above maxSpeed taken off each step
 };
 
 // What each STYLES row looks like. The background colours are the Unity ChangeBackgroundColor
@@ -46,21 +68,34 @@ static const uint16_t RED = 0xF800;
 static const uint16_t NEON_PINK = 0xFC5B; // DeadParticleNeon's F888DB
 static const float CONE = 36.56669f;
 
+static const ColorKey NEON_COLORS[] = {{0, 0xEA7D},     {0.168f, 0xEA9D}, {0.435f, 0x6FFF},
+                                       {0.609f, 0x6FFF}, {0.832f, 0xF58C}, {1, 0xFD8B}};
+static const ColorKey CREEPY_COLORS[] = {{0.506f, 0xF800}, {1, 0x0000}};
+static const ColorKey CREEPY_DEATH_COLORS[] = {{0, 0xFFFF}, {0.362f, 0xF800}, {0.903f, 0xF800}, {1, 0x0000}};
+
+#define PLAIN Blend::OPAQUE, nullptr, 0, 1, 1, 0, 0
 // The Pixel, Pen, Watercolor and Easter start systems share one shape and pace
-#define START(texture, tint) {&texture, WHITE, tint, 3, 6, 0.3f, 0.4f, 5, 5, 10, 30, 0, 5, CONE}
-#define DEATH(texture, small, large) {&texture, WHITE, RED, 5, 10, small, large, 5, 5, 0, 0, 30, 0, 0}
-static const Emitter PIXEL_START = START(PARTICLE_SQUARE, RED);
-static const Emitter PEN_START = START(PARTICLE_PEN, WHITE);
-static const Emitter WATERCOLOR_START = START(PARTICLE_WATERCOLOR, WHITE);
-static const Emitter CREEPY_START = {&PARTICLE_CIRCLE, WHITE, WHITE, 90, 200, 0.7f, 1.2f, 3, 5, 0, 10, 30, 5, CONE};
-static const Emitter NEON_START = {&PARTICLE_CIRCLE, WHITE, WHITE, 4, 7, 0.1f, 0.5f, 2, 5, 0, 10, 40, 1, 0};
-static const Emitter EASTER_START = START(PARTICLE_EGG, RED);
-static const Emitter PIXEL_DEATH = DEATH(PARTICLE_SQUARE, 0.2f, 0.3f);
-static const Emitter PEN_DEATH = DEATH(PARTICLE_PEN, 0.3f, 0.4f);
-static const Emitter WATERCOLOR_DEATH = DEATH(PARTICLE_WATERCOLOR, 0.3f, 0.4f);
-static const Emitter CREEPY_DEATH = {&PARTICLE_CIRCLE, WHITE, WHITE, 30, 60, 0.3f, 0.8f, 3, 6, 0, 0, 40, 0, 0};
-static const Emitter NEON_DEATH = {&PARTICLE_CIRCLE, WHITE, NEON_PINK, 5, 10, 0.1f, 0.5f, 3, 5, 0, 0, 30, 0, 0};
-static const Emitter EASTER_DEATH = DEATH(PARTICLE_EGG, 0.2f, 0.3f);
+#define START(texture, tint) &texture, WHITE, tint, 3, 6, 0.3f, 0.4f, 5, 5, 10, 30, 0, 5, CONE
+#define DEATH(texture, small, large) &texture, WHITE, RED, 5, 10, small, large, 5, 5, 0, 0, 30, 0, 0
+static const Emitter PIXEL_START = {START(PARTICLE_SQUARE, RED), PLAIN};
+static const Emitter PEN_START = {START(PARTICLE_PEN, WHITE), PLAIN};
+static const Emitter WATERCOLOR_START = {START(PARTICLE_WATERCOLOR, WHITE), PLAIN};
+static const Emitter CREEPY_START = {&PARTICLE_CIRCLE, WHITE, WHITE, 90, 200, 0.7f, 1.2f, 3, 5, 0, 10, 30, 5, CONE,
+                                     Blend::ALPHA, CREEPY_COLORS, 2, 0, 0.14f, 1, 0.5f};
+static const Emitter NEON_START = {&PARTICLE_CIRCLE, WHITE, WHITE, 4, 7, 0.1f, 0.5f, 2, 5, 0, 10, 40, 1, 0,
+                                   Blend::ADD, NEON_COLORS, 6, 0.96f, 0, 0, 0};
+// Twice the Unity size: at 0.3 units an egg was ~25 px on a phone, 7 here, and read as a dash
+static const Emitter EASTER_START = {&PARTICLE_EGG, WHITE, RED, 3, 6, 0.6f, 0.8f, 5, 5, 10, 30, 0, 5, CONE,
+                                     Blend::ALPHA, nullptr, 0, 0, 0.14f, 0, 0};
+static const Emitter PIXEL_DEATH = {DEATH(PARTICLE_SQUARE, 0.2f, 0.3f), PLAIN};
+static const Emitter PEN_DEATH = {DEATH(PARTICLE_PEN, 0.3f, 0.4f), PLAIN};
+static const Emitter WATERCOLOR_DEATH = {DEATH(PARTICLE_WATERCOLOR, 0.3f, 0.4f), PLAIN};
+static const Emitter CREEPY_DEATH = {&PARTICLE_CIRCLE, WHITE, WHITE, 30, 60, 0.3f, 0.8f, 3, 6, 0, 0, 40, 0, 0,
+                                     Blend::ALPHA, CREEPY_DEATH_COLORS, 4, 0, 0, 1, 0.5f};
+static const Emitter NEON_DEATH = {&PARTICLE_CIRCLE, WHITE, NEON_PINK, 5, 10, 0.1f, 0.5f, 3, 5, 0, 0, 30, 0, 0,
+                                   Blend::ADD, nullptr, 0, 1, 1, 0, 0};
+static const Emitter EASTER_DEATH = {DEATH(PARTICLE_EGG, 0.4f, 0.6f), Blend::ALPHA, nullptr, 0, 1, 1, 0, 0};
+#undef PLAIN
 #undef START
 #undef DEATH
 

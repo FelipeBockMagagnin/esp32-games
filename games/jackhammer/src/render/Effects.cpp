@@ -64,13 +64,15 @@ void Effects::emit(const Emitter &e, float x, float y, uint8_t count)
         float speed = between(e.speedMin, e.speedMax) * across * UNITS_TO_PX_PER_STEP;
         float angle = rng.unit() * 6.2832f;
         float size = between(e.sizeMin, e.sizeMax) * PX_PER_UNIT;
+        uint16_t life = (uint16_t)(between(e.lifeMin, e.lifeMax) / STEP_SECONDS);
         *p = {x,
               y,
               cosf(angle) * speed,
               sinf(angle) * speed,
-              e.texture,
+              &e,
               mix(e.tintFrom, e.tintTo, rng.unit()),
-              (uint16_t)(between(e.lifeMin, e.lifeMax) / STEP_SECONDS),
+              life,
+              life,
               (uint8_t)(size < 1 ? 1 : size + 0.5f),
               false};
     }
@@ -96,8 +98,8 @@ void Effects::coins(float x, float y, uint8_t count)
             return;
         }
         // A kick to the side first, then they home in on the counter
-        *p = {x, y, (rng.unit() - 0.5f) * 4.0f, (rng.unit() - 0.5f) * 4.0f, &PARTICLE_SQUARE, COIN_COLOR, 90,
-              COIN_SIZE, true};
+        *p = {x, y, (rng.unit() - 0.5f) * 4.0f, (rng.unit() - 0.5f) * 4.0f, nullptr, COIN_COLOR, 90, 90, COIN_SIZE,
+              true};
     }
     busy = true;
 }
@@ -146,6 +148,18 @@ void Effects::step()
             float d = sqrtf(dx * dx + dy * dy);
             p.vx = p.vx * 0.85f + dx / d * 1.2f;
             p.vy = p.vy * 0.85f + dy / d * 1.2f;
+        }
+        else if (p.emitter->maxSpeed > 0)
+        {
+            // Unity's Clamp Velocity: the speed over the limit loses `dampen` of itself each frame
+            float limit = p.emitter->maxSpeed * UNITS_TO_PX_PER_STEP;
+            float speed = sqrtf(p.vx * p.vx + p.vy * p.vy);
+            if (speed > limit)
+            {
+                float scale = (limit + (speed - limit) * (1 - p.emitter->dampen)) / speed;
+                p.vx *= scale;
+                p.vy *= scale;
+            }
         }
         p.x += p.vx;
         p.y += p.vy;

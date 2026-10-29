@@ -186,6 +186,55 @@ void ArenaRenderer::glow(const Glow &g, int16_t x, int16_t y, uint8_t turns, int
     }
 }
 
+static uint16_t multiply(uint16_t a, uint16_t b)
+{
+    uint16_t r = (a >> 11) * (b >> 11) / 31, g = ((a >> 5) & 63) * ((b >> 5) & 63) / 63, bl = (a & 31) * (b & 31) / 31;
+    return (uint16_t)((r << 11) | (g << 5) | bl);
+}
+
+static uint16_t gradientAt(const ColorKey *keys, uint8_t count, float t)
+{
+    if (t <= keys[0].at)
+    {
+        return keys[0].color;
+    }
+    for (uint8_t i = 1; i < count; i++)
+    {
+        if (t <= keys[i].at)
+        {
+            float f = (t - keys[i - 1].at) / (keys[i].at - keys[i - 1].at);
+            uint16_t a = keys[i - 1].color, b = keys[i].color;
+            int r = (a >> 11) + (int)(((b >> 11) - (a >> 11)) * f);
+            int g = ((a >> 5) & 63) + (int)((((b >> 5) & 63) - ((a >> 5) & 63)) * f);
+            int bl = (a & 31) + (int)(((b & 31) - (a & 31)) * f);
+            return (uint16_t)((r << 11) | (g << 5) | bl);
+        }
+    }
+    return keys[count - 1].color;
+}
+
+static uint16_t blend(uint16_t dst, uint16_t src, uint16_t a, Blend mode)
+{
+    int dr = dst >> 11, dg = (dst >> 5) & 63, db = dst & 31;
+    int sr = src >> 11, sg = (src >> 5) & 63, sb = src & 31;
+    if (mode == Blend::ADD)
+    {
+        dr += sr * a >> 8;
+        dg += sg * a >> 8;
+        db += sb * a >> 8;
+        dr = dr < 31 ? dr : 31;
+        dg = dg < 63 ? dg : 63;
+        db = db < 31 ? db : 31;
+    }
+    else
+    {
+        dr += (sr - dr) * a >> 8;
+        dg += (sg - dg) * a >> 8;
+        db += (sb - db) * a >> 8;
+    }
+    return (uint16_t)((dr << 11) | (dg << 5) | db);
+}
+
 void ArenaRenderer::particles(const Effects &effects, bool coins, int16_t top, uint16_t *out) const
 {
     int16_t sx = effects.getShakeX(), sy = effects.getShakeY();
@@ -196,10 +245,31 @@ void ArenaRenderer::particles(const Effects &effects, bool coins, int16_t top, u
         {
             continue;
         }
-        const ParticleTexture &t = *p.texture;
+        const Emitter *e = p.emitter;
+        const ParticleTexture &t = e != nullptr ? *e->texture : PARTICLE_SQUARE;
+        Blend mode = e != nullptr ? e->blend : Blend::OPAQUE;
+        float age = 1.0f - (float)p.life / p.lifetime;
+        float size = p.size;
+        uint16_t color = p.tint;
+        if (e != nullptr)
+        {
+            if (age > e->shrinkFrom)
+            {
+                size *= 1 + (e->sizeEnd - 1) * (age - e->shrinkFrom) / (1 - e->shrinkFrom);
+            }
+            if (e->gradient != nullptr)
+            {
+                color = multiply(color, gradientAt(e->gradient, e->gradientCount, age));
+            }
+        }
         // The size is the texture's long side, as Unity sized a particle's quad
-        int16_t w = t.w >= t.h ? p.size : (int16_t)(p.size * t.w / t.h);
-        int16_t h = t.h >= t.w ? p.size : (int16_t)(p.size * t.h / t.w);
+        int16_t longSide = (int16_t)(size + 0.5f);
+        if (longSide < 1)
+        {
+            continue;
+        }
+        int16_t w = t.w >= t.h ? longSide : (int16_t)(longSide * t.w / t.h);
+        int16_t h = t.h >= t.w ? longSide : (int16_t)(longSide * t.h / t.w);
         w = w > 0 ? w : 1;
         h = h > 0 ? h : 1;
         int16_t left = (int16_t)p.x + sx - w / 2, upper = (int16_t)p.y + sy - h / 2;
@@ -209,25 +279,24 @@ void ArenaRenderer::particles(const Effects &effects, bool coins, int16_t top, u
         {
             continue;
         }
-        uint16_t tr = p.tint >> 11, tg = (p.tint >> 5) & 63, tb = p.tint & 31;
         for (int16_t py = rowFrom; py < rowTo; py++)
         {
             uint16_t *row = out + (py - top) * ARENA_PX;
-            const uint16_t *src = t.pixels + ((py - upper) * t.h / h) * t.w;
+            int32_t srcRow = ((py - upper) * t.h / h) * t.w;
             for (int16_t px = left; px < left + w; px++)
             {
                 if (px < 0 || px >= ARENA_PX)
                 {
                     continue;
                 }
-                uint16_t texel = pgm_read_word(src + (px - left) * t.w / w);
-                if (texel == 0)
+                int32_t texel = srcRow + (px - left) * t.w / w;
+                uint16_t a = pgm_read_byte(t.alpha + texel);
+                if (mode == Blend::OPAQUE ? a < 128 : a == 0)
                 {
                     continue;
                 }
-                uint16_t c = swapped(texel);
-                uint16_t r = (c >> 11) * tr / 31, g = ((c >> 5) & 63) * tg / 63, b = (c & 31) * tb / 31;
-                row[px] = swapped((uint16_t)((r << 11) | (g << 5) | b));
+                uint16_t c = multiply(swapped(pgm_read_word(t.pixels + texel)), color);
+                row[px] = swapped(mode == Blend::OPAQUE ? c : blend(swapped(row[px]), c, a + 1, mode));
             }
         }
     }

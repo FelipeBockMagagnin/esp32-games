@@ -9,7 +9,8 @@ the opaque box they share, quantized to one palette per art, and stored as palet
 The backdrop is the centre square of the Creepy background at half the arena's size, drawn 2x.
 Each style also gets a 16x16 RGB565 icon of its enemy for the shop.
 
-Particle textures are RGB565, at most 16 px a side, scaled to each particle's size at runtime.
+Particle textures are RGB565 with an alpha per pixel, at most 16 px a side, scaled to each
+particle's size at runtime.
 Glows are white with an alpha per pixel: sprites the Unity Creepy character carried as children
 (a fog and a beam of light), placed, scaled and turned the way the prefab had them, with the
 character's pivot recorded so they turn with it.
@@ -151,19 +152,22 @@ def icon_words(frame):
     return out
 
 
-def particle_words(file):
+def particle_texture(file):
+    """Colours (RGB565, byte-swapped) and an alpha per pixel"""
     if file is None:
-        return PARTICLE_SIDE, PARTICLE_SIDE, [swap(0xFFFF)] * (PARTICLE_SIDE * PARTICLE_SIDE)
+        n = PARTICLE_SIDE * PARTICLE_SIDE
+        return PARTICLE_SIDE, PARTICLE_SIDE, [swap(0xFFFF)] * n, [255] * n
     im = Image.open(SRC / file).convert("RGBA")
-    im = im.crop(im.getchannel("A").point(lambda a: 255 if a >= ALPHA_CUTOFF else 0).getbbox())
+    im = im.crop(im.getchannel("A").point(lambda a: 255 if a >= GLOW_CUTOFF else 0).getbbox())
     s = PARTICLE_SIDE / max(im.size)
     im = scaled(im, (max(1, round(im.width * s)), max(1, round(im.height * s))), False)
-    out = []
+    words, alphas = [], []
     for y in range(im.height):
         for x in range(im.width):
             r, g, b, a = im.getpixel((x, y))
-            out.append(0 if a < ALPHA_CUTOFF else swap(rgb565(r, g, b) or NEAR_BLACK))
-    return im.width, im.height, out
+            words.append(swap(rgb565(r, g, b)))
+            alphas.append(a)
+    return im.width, im.height, words, alphas
 
 
 def glow(file, position, scale, angle, alpha, parent):
@@ -245,14 +249,17 @@ def main():
     total += len(indices) + len(palette) * 2
 
     for name, file in PARTICLES:
-        w, h, words = particle_words(file)
+        w, h, words, alphas = particle_texture(file)
         ident = f"PARTICLE_{name.upper()}"
         header.append(f"extern const ParticleTexture {ident}; // {w}x{h}")
         body.append(f"static const uint16_t PROGMEM particle_{name}_pixels[] = {{")
         body.append(array(words, lambda v: f"0x{v:04X}", 16))
         body.append("};")
-        body.append(f"const ParticleTexture {ident} = {{{w}, {h}, particle_{name}_pixels}};")
-        total += len(words) * 2
+        body.append(f"static const uint8_t PROGMEM particle_{name}_alpha[] = {{")
+        body.append(array(alphas, str, 32))
+        body.append("};")
+        body.append(f"const ParticleTexture {ident} = {{{w}, {h}, particle_{name}_pixels, particle_{name}_alpha}};")
+        total += len(words) * 3
 
     for name, file, position, scale, angle, alpha, parent in GLOWS:
         w, h, px, py, alphas = glow(file, position, scale, angle, alpha, parent)

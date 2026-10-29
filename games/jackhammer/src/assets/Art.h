@@ -24,12 +24,13 @@ struct Backdrop
     const uint8_t *pixels;
 };
 
-// RGB565 byte-swapped, 0 transparent; tinted and scaled to each particle
+// Tinted and scaled to each particle
 struct ParticleTexture
 {
     uint8_t w;
     uint8_t h;
-    const uint16_t *pixels;
+    const uint16_t *pixels; // RGB565 byte-swapped
+    const uint8_t *alpha;
 };
 
 // White light over what is behind it, one alpha per pixel
