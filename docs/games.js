@@ -154,6 +154,24 @@ window.GAMES = [
     "date": "2026-10-29",
     "manifest": "firmware/jackhammer/manifest.json",
     "size": 437600
+  },
+  {
+    "id": "snake",
+    "name": "Snake",
+    "tagline": "A cobrinha classica de LCD",
+    "category": "mini",
+    "description": "A cobrinha de sempre numa tela de pontos de LCD: quatro níveis, de paredes que deixam passar a uma velocidade insana, recordes por nível e dez temas retrô.",
+    "accent": "#8fbf5a",
+    "icon": [
+      6,
+      254,
+      1
+    ],
+    "image": "img/snake.png",
+    "version": "2c5e9b8",
+    "date": "2026-10-29",
+    "manifest": "firmware/snake/manifest.json",
+    "size": 350128
   }
 ];
 window.LAUNCHER = {"version": "13dc543", "date": "2026-10-29", "size": 309712};
