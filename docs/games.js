@@ -70,5 +70,17 @@ window.GAMES = [
     "version": "c0fef59",
     "date": "2026-10-29",
     "manifest": "firmware/tilde/manifest.json"
+  },
+  {
+    "id": "jackhammer",
+    "name": "JackHammer",
+    "tagline": "Gire e acerte",
+    "description": "Uma britadeira no meio da arena gira de um quarto em um quarto. Os inimigos chegam pelos quatro lados: acerte-os com a ponta antes que encostem no corpo. Cada dez pontos aumentam as moedas por acerto, e elas compram estilos e músicas. Port do jogo para celular feito em Unity.",
+    "image": "img/jackhammer.png",
+    "accent": "#e8433a",
+    "thumb": "50% 50%",
+    "version": "71224c3",
+    "date": "2026-10-29",
+    "manifest": "firmware/jackhammer/manifest.json"
   }
 ];
