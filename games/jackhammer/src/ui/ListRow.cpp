@@ -143,7 +143,8 @@ void ListRow::draw(TFT_eSPI &tft)
     {
         tft.setTextColor(titleColor);
         tft.setTextSize(2);
-        tft.drawString(title, x + TEXT_DX, y + 2);
+        // Alone in the row, the title sits in its middle
+        tft.drawString(title, x + TEXT_DX, subtitle.length() > 0 ? y + 2 : y + (h - 16) / 2);
     }
 
     tft.setTextSize(1);
@@ -159,13 +160,14 @@ void ListRow::draw(TFT_eSPI &tft)
 
     if (value.length() > 0)
     {
+        int16_t valueY = subtitle.length() == 0 && valueSub.length() == 0 ? y + (h - 8) / 2 : y + 3;
         tft.setTextColor(state == DIMMED ? DIMMED_COLOR : valueColor);
-        tft.drawString(value, valueRight, y + 3);
+        tft.drawString(value, valueRight, valueY);
 
         if (showCoin)
         {
             int16_t coinX = valueRight - tft.textWidth(value) - COIN_RADIUS - 3;
-            tft.drawEllipse(coinX, y + 6, COIN_RADIUS, COIN_RADIUS, Theme::GOLD);
+            tft.drawEllipse(coinX, valueY + 3, COIN_RADIUS, COIN_RADIUS, Theme::GOLD);
         }
 
         int16_t trendX = valueRight - tft.textWidth(value) - TREND_HALF_W - 4;

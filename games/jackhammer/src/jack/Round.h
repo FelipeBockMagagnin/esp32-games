@@ -48,8 +48,6 @@ public:
     };
 
     void start(uint32_t seed);
-    // After a death: the field is cleared and spawning starts over at the pace it had reached
-    void revive();
 
     // +1 clockwise, -1 counterclockwise; the head can hit an enemy as it swings onto it
     void turn(int8_t direction);
@@ -68,7 +66,7 @@ public:
     uint32_t getPoints() const { return points; }
     uint32_t getMultiplier() const { return points / POINTS_PER_MULTIPLIER + 1; }
     uint32_t getEarned() const { return earned; }
-    // The coins earned since the last takeUnbanked(), so a continued round is not banked twice
+    // The coins not banked yet: all of them until the round ends
     uint32_t getUnbanked() const { return earned - banked; }
     uint32_t takeUnbanked()
     {
@@ -76,8 +74,6 @@ public:
         banked = earned;
         return fresh;
     }
-    bool hasContinued() const { return continued; }
-    uint32_t getContinuePrice() const { return earned > CONTINUE_MIN_PRICE ? earned : CONTINUE_MIN_PRICE; }
     float getInterval() const { return interval; }
     float getSeconds() const { return seconds; }
     const Enemy &getEnemy(uint8_t i) const { return enemies[i]; }
@@ -90,7 +86,6 @@ private:
     Rng rng;
     bool active = false;
     bool dead = false;
-    bool continued = false;
     uint8_t facing = SIDE_UP;
     uint32_t points = 0;
     uint32_t earned = 0;
@@ -100,7 +95,6 @@ private:
     float harderIn = 0;
     float seconds = 0;
 
-    void clearField();
     void harder();
     void spawn();
     void collide();

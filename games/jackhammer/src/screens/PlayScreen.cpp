@@ -7,23 +7,28 @@ static const unsigned long MAX_CATCH_UP_MS = 100;
 static const unsigned long DYING_MS = 900;
 static const uint8_t KILL_SHAKE_STEPS = 10;
 static const uint8_t DEATH_SHAKE_STEPS = 30;
-static const uint8_t BURST_PARTICLES = 12;
 static const uint8_t MAX_COINS = 8;
+static const float PROMPT_RADIUS = 7;
+static const float PROMPT_SWELL = 2;
+static const float PROMPT_HZ = 1.5f;
 
 static const int16_t CENTER_X = 120;
-static const int16_t HUD_Y = 8;
-static const int16_t FOOTER_TOP_Y = ARENA_PX + PlayScreen::ARENA_TOP + 8;
-static const int16_t FOOTER_BOTTOM_Y = FOOTER_TOP_Y + 14;
+static const int16_t LEFT_X = 8;
+static const int16_t RIGHT_X = 232;
 
 static uint16_t bands[2][ARENA_PX * ArenaRenderer::BAND_H];
 
 PlayScreen::PlayScreen(Round &round, const Profile &profile, SoundManager &sound, ScreenManager &screenManager,
                        Screen &shop, Screen &settings, void (*died)())
-    : leftText(6, HUD_Y + 4, "", Theme::TEXT_2, 2, TL_DATUM),
-      scoreText(CENTER_X, HUD_Y, "", Theme::TEXT, 3, TC_DATUM),
-      coinText(234, HUD_Y + 4, "", Theme::GOLD, 2, TR_DATUM),
-      footerTop(CENTER_X, FOOTER_TOP_Y, "", Theme::TEXT_2, 1, TC_DATUM),
-      footerBottom(CENTER_X, FOOTER_BOTTOM_Y, "", Theme::TEXT_DIM, 1, TC_DATUM),
+    : titleText(CENTER_X, 10, "JackHammer", Theme::TEXT, 3, TC_DATUM),
+      titleBest(LEFT_X, 46, "", Theme::TEXT_2, 1, TL_DATUM),
+      titleCoins(RIGHT_X, 46, "", Theme::GOLD, 1, TR_DATUM),
+      shopHint(LEFT_X, 62, "^ Shop", Theme::TEXT_DIM, 1, TL_DATUM),
+      settingsHint(RIGHT_X, 62, "Settings v", Theme::TEXT_DIM, 1, TR_DATUM),
+      multiplierText(LEFT_X, 20, "", Theme::TEXT_2, 2, TL_DATUM),
+      scoreText(CENTER_X, 8, "", Theme::TEXT, 4, TC_DATUM),
+      coinText(RIGHT_X, 20, "", Theme::GOLD, 2, TR_DATUM),
+      bestText(CENTER_X, 50, "", Theme::TEXT_DIM, 1, TC_DATUM),
       round(round),
       profile(profile),
       sound(sound),
@@ -32,12 +37,22 @@ PlayScreen::PlayScreen(Round &round, const Profile &profile, SoundManager &sound
       settings(settings),
       died(died)
 {
-    addElement(&leftText);
+    addElement(&titleText);
+    addElement(&titleBest);
+    addElement(&titleCoins);
+    addElement(&shopHint);
+    addElement(&settingsHint);
+    addElement(&multiplierText);
     addElement(&scoreText);
     addElement(&coinText);
-    addElement(&footerTop);
-    addElement(&footerBottom);
+    addElement(&bestText);
     effects.reset();
+}
+
+void PlayScreen::startTitleParticles()
+{
+    effects.reset();
+    effects.setSource(style().start, ARENA_PX / 2, ARENA_PX / 2);
 }
 
 void PlayScreen::toTitle()
@@ -45,7 +60,7 @@ void PlayScreen::toTitle()
     mode = Mode::TITLE;
     // A fresh field for the hammer to stand in; it only steps once a round starts
     round.start(esp_random());
-    effects.reset();
+    startTitleParticles();
     frameDue = true;
     forceRefresh();
 }
@@ -53,18 +68,9 @@ void PlayScreen::toTitle()
 void PlayScreen::newRound()
 {
     round.start(esp_random());
+    // The Unity StyleManager destroyed the start particles as the round began
     effects.reset();
     nextBackground();
-    mode = Mode::PLAY;
-    sound.playStart();
-    frameDue = true;
-    forceRefresh();
-}
-
-void PlayScreen::continueRound()
-{
-    round.revive();
-    effects.reset();
     mode = Mode::PLAY;
     sound.playStart();
     frameDue = true;
@@ -74,12 +80,16 @@ void PlayScreen::continueRound()
 void PlayScreen::styleChanged()
 {
     backgroundIndex = 0;
+    if (mode == Mode::TITLE)
+    {
+        startTitleParticles();
+    }
     frameDue = true;
 }
 
 void PlayScreen::nextBackground()
 {
-    uint8_t count = STYLE_ART[profile.style].backgroundCount;
+    uint8_t count = style().backgroundCount;
     if (count < 2)
     {
         backgroundIndex = 0;
@@ -116,16 +126,15 @@ void PlayScreen::turn(int8_t direction)
 void PlayScreen::playEvents()
 {
     uint8_t events = round.takeEvents();
-    const StyleArt &style = STYLE_ART[profile.style];
     static const int8_t DX[SIDE_COUNT] = {0, 1, 0, -1};
     static const int8_t DY[SIDE_COUNT] = {-1, 0, 1, 0};
+    const Emitter &death = *style().death;
     for (uint8_t i = 0; i < round.getMarkCount(); i++)
     {
         const Round::Mark &m = round.getMark(i);
         float x = ARENA_PX / 2 + DX[m.side] * m.distance * PX_PER_UNIT;
         float y = ARENA_PX / 2 + DY[m.side] * m.distance * PX_PER_UNIT;
-        const Art &art = *style.enemies[m.look % style.enemyCount];
-        effects.burst(x, y, art.accents[0], art.accents[1], BURST_PARTICLES);
+        effects.emit(death, x, y, death.burst);
         if (!(events & EVENT_DEAD))
         {
             uint32_t coins = round.getMultiplier();
@@ -136,8 +145,7 @@ void PlayScreen::playEvents()
 
     if (events & EVENT_DEAD)
     {
-        const Art &player = *style.player;
-        effects.burst(ARENA_PX / 2, ARENA_PX / 2, player.accents[0], player.accents[1], 3 * BURST_PARTICLES);
+        effects.emit(death, ARENA_PX / 2, ARENA_PX / 2, 2 * death.burst);
         effects.shake(DEATH_SHAKE_STEPS);
         sound.playDeath();
         mode = Mode::DYING;
@@ -160,7 +168,6 @@ void PlayScreen::update(unsigned long now)
     lastStepAt = now;
     stepCredit += (elapsed < MAX_CATCH_UP_MS ? elapsed : MAX_CATCH_UP_MS) * 3;
     uint8_t steps = 0;
-    uint8_t art = STYLE_ART[profile.style].player->frames;
     while (stepCredit >= STEP_THIRDS && steps < MAX_STEPS_PER_FRAME)
     {
         stepCredit -= STEP_THIRDS;
@@ -181,12 +188,13 @@ void PlayScreen::update(unsigned long now)
     {
         stepCredit = 0;
     }
-    if (steps > 0 && (mode == Mode::PLAY || art > 1))
+    if (steps > 0 && (mode != Mode::DYING || style().player->frames > 1))
     {
         frameDue = true;
     }
 
-    if (mode == Mode::DYING && !deathReported && now - dyingSince >= DYING_MS && !effects.isBusy())
+    // Long enough for the burst to be seen; the particles that fly on are cut by the modal
+    if (mode == Mode::DYING && !deathReported && now - dyingSince >= DYING_MS)
     {
         // Stays DYING under the game-over modal, so the frozen field shows behind it
         deathReported = true;
@@ -202,34 +210,36 @@ void PlayScreen::update(unsigned long now)
 
 void PlayScreen::refreshText()
 {
+    bool title = mode == Mode::TITLE;
+    titleText.setVisible(title);
+    titleBest.setVisible(title);
+    titleCoins.setVisible(title);
+    shopHint.setVisible(title);
+    settingsHint.setVisible(title);
+    multiplierText.setVisible(!title);
+    scoreText.setVisible(!title);
+    coinText.setVisible(!title);
+    bestText.setVisible(!title);
+
     char buf[24];
-    if (mode == Mode::TITLE)
+    if (title)
     {
         snprintf(buf, sizeof(buf), "Best %lu", (unsigned long)profile.best);
-        leftText.setText(buf);
-        leftText.setSize(1);
-        scoreText.setText("JackHammer");
-        scoreText.setSize(2);
-        footerTop.setText("Confirm: start");
-        footerBottom.setText("Up: shop - Down: settings");
+        titleBest.setText(buf);
+        snprintf(buf, sizeof(buf), "%lu coins", (unsigned long)profile.coins);
+        titleCoins.setText(buf);
+        return;
     }
-    else
-    {
-        snprintf(buf, sizeof(buf), "x%lu", (unsigned long)round.getMultiplier());
-        leftText.setText(buf);
-        leftText.setSize(2);
-        snprintf(buf, sizeof(buf), "%lu", (unsigned long)round.getPoints());
-        scoreText.setText(buf);
-        scoreText.setSize(3);
-        snprintf(buf, sizeof(buf), "Best %lu", (unsigned long)(round.getPoints() > profile.best ? round.getPoints()
-                                                                                               : profile.best));
-        footerTop.setText(buf);
-        footerBottom.setText("Left/Right turn - Confirm turns too");
-    }
+    snprintf(buf, sizeof(buf), "x%lu", (unsigned long)round.getMultiplier());
+    multiplierText.setText(buf);
+    snprintf(buf, sizeof(buf), "%lu", (unsigned long)round.getPoints());
+    scoreText.setText(buf);
     // The round's coins show as they come, though they are banked at its end
-    uint32_t coins = profile.coins + round.getUnbanked();
-    snprintf(buf, sizeof(buf), "%lu", (unsigned long)coins);
+    snprintf(buf, sizeof(buf), "%lu", (unsigned long)(profile.coins + round.getUnbanked()));
     coinText.setText(buf);
+    uint32_t best = round.getPoints() > profile.best ? round.getPoints() : profile.best;
+    snprintf(buf, sizeof(buf), "BEST %lu", (unsigned long)best);
+    bestText.setText(buf);
 }
 
 void PlayScreen::render(TFT_eSPI &tft)
@@ -244,9 +254,21 @@ void PlayScreen::render(TFT_eSPI &tft)
 
 void PlayScreen::pushFrame(TFT_eSPI &tft)
 {
-    const StyleArt &style = STYLE_ART[profile.style];
-    ArenaRenderer::Scene scene = {&style, style.backgrounds[backgroundIndex % style.backgroundCount], &round,
-                                  &effects, tick, !(mode == Mode::DYING && round.isDead())};
+    const StyleArt &art = style();
+    uint8_t prompt = 0;
+    if (mode == Mode::TITLE)
+    {
+        float swell = (sinf(tick * (6.2832f * PROMPT_HZ / 60)) + 1) / 2;
+        prompt = (uint8_t)(PROMPT_RADIUS + PROMPT_SWELL * swell + 0.5f);
+    }
+    ArenaRenderer::Scene scene = {&art,
+                                  art.backgrounds[backgroundIndex % art.backgroundCount],
+                                  &round,
+                                  &effects,
+                                  tick,
+                                  !(mode == Mode::DYING && round.isDead()),
+                                  prompt,
+                                  (uint16_t)Theme::CONFIRM};
     tft.startWrite();
     for (uint8_t b = 0; b < ArenaRenderer::BAND_COUNT; b++)
     {

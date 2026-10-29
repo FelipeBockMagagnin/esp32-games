@@ -19,6 +19,13 @@ extern const Art ART_ENEMY_NEON_CYAN; // 22x22, 1 frame(s)
 extern const Art ART_ENEMY_NEON_ORANGE; // 22x22, 1 frame(s)
 extern const Art ART_ENEMY_EASTER; // 24x32, 1 frame(s)
 extern const Backdrop BACKDROP_CREEPY; // 120x120, drawn 2x
+extern const ParticleTexture PARTICLE_SQUARE; // 16x16
+extern const ParticleTexture PARTICLE_CIRCLE; // 16x16
+extern const ParticleTexture PARTICLE_PEN; // 15x16
+extern const ParticleTexture PARTICLE_WATERCOLOR; // 15x16
+extern const ParticleTexture PARTICLE_EGG; // 8x16
+extern const Glow GLOW_CREEPY_FOG; // 40x57
+extern const Glow GLOW_CREEPY_LIGHT; // 69x231
 extern const uint16_t ICON_ENEMY_PIXEL[]; // 16x16 RGB565, byte-swapped
 extern const uint16_t ICON_ENEMY_PEN[]; // 16x16 RGB565, byte-swapped
 extern const uint16_t ICON_ENEMY_WATERCOLOR[]; // 16x16 RGB565, byte-swapped

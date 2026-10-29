@@ -31,7 +31,6 @@ private:
 
     Header header;
     ListRow rows[ROW_COUNT];
-    Text hintText;
 
     Settings &settings;
     void (*changed)();

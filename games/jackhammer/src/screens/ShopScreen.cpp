@@ -6,12 +6,10 @@ static const int16_t ROW_X = 5;
 static const int16_t FIRST_ROW_Y = 36;
 static const int16_t ROW_PITCH = ListRow::DEFAULT_H + 6;
 static const int16_t COIN_Y = 248;
-static const int16_t HINT_Y = 300;
 
 ShopScreen::ShopScreen(Profile &profile, ScreenManager &screenManager, SoundManager &sound, void (*changed)())
     : header("Shop"),
       coinText(120, COIN_Y, "", Theme::GOLD, 2, TC_DATUM),
-      hintText(120, HINT_Y, "Confirm: buy or use - Right: shelf", Theme::TEXT_DIM, 1, TC_DATUM),
       profile(profile),
       screenManager(screenManager),
       sound(sound),
@@ -25,7 +23,6 @@ ShopScreen::ShopScreen(Profile &profile, ScreenManager &screenManager, SoundMana
         addElement(&rows[i]);
     }
     addElement(&coinText);
-    addElement(&hintText);
 }
 
 void ShopScreen::build()
@@ -43,7 +40,6 @@ void ShopScreen::build()
         }
         const ShopItem &item = shopItem(shelf, i);
         rows[i].setTitle(item.name);
-        rows[i].setSubtitle(item.note);
         if (styles)
         {
             rows[i].setIconPixels(STYLE_ART[i].icon, 16, 16);

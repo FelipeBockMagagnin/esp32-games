@@ -30,7 +30,6 @@ private:
     Header header;
     ListRow rows[MAX_ROWS];
     Text coinText;
-    Text hintText;
 
     Profile &profile;
     ScreenManager &screenManager;

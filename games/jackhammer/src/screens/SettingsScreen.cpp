@@ -4,7 +4,6 @@
 static const int16_t ROW_X = 5;
 static const int16_t FIRST_ROW_Y = 44;
 static const int16_t ROW_PITCH = ListRow::DEFAULT_H + 8;
-static const int16_t HINT_Y = 220;
 
 enum Row : uint8_t
 {
@@ -14,15 +13,12 @@ enum Row : uint8_t
     ROW_RESET
 };
 
-static const char *const SOUND_NAMES[(uint8_t)SoundMode::COUNT] = {"On", "Quiet", "Off"};
-static const char *const SOUND_NOTES[(uint8_t)SoundMode::COUNT] = {
-    "Music and sounds", "Sounds, no music", "Silent"};
+static const char *const SOUND_NAMES[(uint8_t)SoundMode::COUNT] = {"On", "No music", "Off"};
 static const char *const DIM_NAMES[DIM_OPTION_COUNT] = {"1 min", "5 min", "Never"};
 
 SettingsScreen::SettingsScreen(Settings &settings, void (*changed)(), ScreenManager &screenManager,
                                SoundManager &sound, Screen &resetScreen)
     : header("Settings"),
-      hintText(120, HINT_Y, "Up/Down choose - Confirm change", Theme::TEXT_DIM, 1, TC_DATUM),
       settings(settings),
       changed(changed),
       screenManager(screenManager),
@@ -39,26 +35,21 @@ SettingsScreen::SettingsScreen(Settings &settings, void (*changed)(), ScreenMana
         addElement(&rows[i]);
     }
     rows[ROW_SOUND].setTitle("Sound");
-    rows[ROW_DIM].setTitle("Screen dim");
-    rows[ROW_DIM].setSubtitle("After no button is pressed");
+    rows[ROW_DIM].setTitle("Dim");
     rows[ROW_THEME].setTitle("Theme");
     rows[ROW_THEME].setIconPixels(swatch, SWATCH_SIZE, SWATCH_SIZE);
-    rows[ROW_RESET].setTitle("Reset game");
-    rows[ROW_RESET].setSubtitle("Erase coins, best and shop");
+    rows[ROW_RESET].setTitle("Reset");
     rows[ROW_RESET].setTitleColor(Theme::BAD);
     rows[ROW_RESET].setFrameColor(Theme::BAD);
-    addElement(&hintText);
 }
 
 void SettingsScreen::refreshRows()
 {
     uint8_t mode = settings.sound < (uint8_t)SoundMode::COUNT ? settings.sound : 0;
     rows[ROW_SOUND].setValue(SOUND_NAMES[mode]);
-    rows[ROW_SOUND].setSubtitle(SOUND_NOTES[mode]);
     rows[ROW_DIM].setValue(DIM_NAMES[settings.dimAfter < DIM_OPTION_COUNT ? settings.dimAfter : DIM_DEFAULT]);
     const ThemeDef &theme = THEMES[Theme::getActive()];
     rows[ROW_THEME].setValue(theme.name);
-    rows[ROW_THEME].setSubtitle(theme.note);
     char count[8];
     snprintf(count, sizeof(count), "%u/%u", (unsigned)Theme::getActive() + 1, (unsigned)THEME_COUNT);
     rows[ROW_THEME].setValueSub(count);

@@ -129,13 +129,10 @@ static void testRules()
     }
     assert(round.getMarkCount() == 1 && round.getMark(0).side == side);
     assert(round.getPoints() == 0);
-    float interval = round.getInterval();
+    // A dead round no longer turns
+    uint8_t facing = round.getFacing();
     round.turn(1);
-    assert(round.isDead());
-    round.revive();
-    assert(!round.isDead() && round.hasContinued() && firstAlive(round) < 0);
-    assert(round.getInterval() == interval);
-    round.revive();
+    assert(round.isDead() && round.getFacing() == facing);
 
     // Ten kills at x1, then x2
     round.start(4);
@@ -147,7 +144,6 @@ static void testRules()
     }
     assert(round.getEarned() == 10 + 2 * 2 && round.getMultiplier() == 2);
     assert(round.takeUnbanked() == 14 && round.takeUnbanked() == 0);
-    assert(round.getContinuePrice() == CONTINUE_MIN_PRICE);
 }
 
 static void testProfileAndSave()

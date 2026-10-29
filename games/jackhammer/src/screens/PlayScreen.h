@@ -9,20 +9,20 @@
 #include "../core/ScreenManager.h"
 #include "../core/SoundManager.h"
 
-// The game: a HUD, the square arena pushed in DMA bands, and a footer. On the title the
-// hammer waits for Confirm; in a round Left and Right turn it (Confirm turns clockwise, like
-// the Unity game's Space). A death freezes the field a moment, then `died` runs.
+// The game: a HUD over the square arena, which is pushed in DMA bands. On the title the hammer
+// stands in its style's start particles with the Confirm dot above it; in a round Left and
+// Right turn it (Confirm turns clockwise, like the Unity game's Space). A death freezes the
+// field a moment, then `died` runs.
 class PlayScreen : public Screen
 {
 public:
-    static const int16_t ARENA_TOP = 40;
+    static const int16_t ARENA_TOP = 80;
 
     PlayScreen(Round &round, const Profile &profile, SoundManager &sound, ScreenManager &screenManager,
                Screen &shop, Screen &settings, void (*died)());
 
     void toTitle();
     void newRound();
-    void continueRound();
     // After the style changed in the shop
     void styleChanged();
 
@@ -44,11 +44,15 @@ private:
         DYING
     };
 
-    Text leftText;
+    Text titleText;
+    Text titleBest;
+    Text titleCoins;
+    Text shopHint;
+    Text settingsHint;
+    Text multiplierText;
     Text scoreText;
     Text coinText;
-    Text footerTop;
-    Text footerBottom;
+    Text bestText;
 
     Round &round;
     const Profile &profile;
@@ -70,6 +74,8 @@ private:
     bool deathReported = false;
     bool frameDue = true;
 
+    const StyleArt &style() const { return STYLE_ART[profile.style]; }
+    void startTitleParticles();
     void turn(int8_t direction);
     void playEvents();
     void nextBackground();

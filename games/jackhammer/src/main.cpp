@@ -48,14 +48,13 @@ void resetGame();
 void applySettings();
 void shopChanged();
 void died();
-bool payContinue(uint32_t price);
 ConfirmScreen resetScreen({"Reset", "Reset game?", "Coins, best and purchases", "will be erased.",
                            "Erase the save and restart", "Resetting..."},
                           Theme::BAD, resetGame, screenManager, sound);
 SettingsScreen settingsScreen(settings, applySettings, screenManager, sound, resetScreen);
 ShopScreen shopScreen(profile, screenManager, sound, shopChanged);
 PlayScreen playScreen(currentRound, profile, sound, screenManager, shopScreen, settingsScreen, died);
-GameOverScreen gameOverScreen(currentRound, profile, playScreen, screenManager, sound, payContinue);
+GameOverScreen gameOverScreen(currentRound, profile, playScreen, screenManager, sound);
 
 void saveNow()
 {
@@ -100,22 +99,11 @@ void shopChanged()
     saveNow();
 }
 
-// The coins are banked at every death, so a continue is paid from them like a purchase
 void died()
 {
     gameOverScreen.setNewBest(bankRound(profile, currentRound.getPoints(), currentRound.takeUnbanked()));
     saveNow();
     screenManager.openModal(&gameOverScreen);
-}
-
-bool payContinue(uint32_t price)
-{
-    if (!pay(profile, price))
-    {
-        return false;
-    }
-    saveNow();
-    return true;
 }
 
 // Holding Up and Down while the board powers on wipes the save

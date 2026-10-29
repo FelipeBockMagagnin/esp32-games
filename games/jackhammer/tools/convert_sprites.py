@@ -9,6 +9,11 @@ the opaque box they share, quantized to one palette per art, and stored as palet
 The backdrop is the centre square of the Creepy background at half the arena's size, drawn 2x.
 Each style also gets a 16x16 RGB565 icon of its enemy for the shop.
 
+Particle textures are RGB565, at most 16 px a side, scaled to each particle's size at runtime.
+Glows are white with an alpha per pixel: sprites the Unity Creepy character carried as children
+(a fog and a beam of light), placed, scaled and turned the way the prefab had them, with the
+character's pivot recorded so they turn with it.
+
 Run from the repo root: python3 tools/convert_sprites.py
 """
 from pathlib import Path
@@ -45,6 +50,24 @@ ARTS = [
     ("enemy_neon_orange", "enemy_neon_orange.png", None, (0.5, 0.5), 0.5, False),
     ("enemy_easter", "enemy_easter.png", None, (0.5, 0.5), 0.2, False),
 ]
+# name, file or None for a plain square
+PARTICLES = [
+    ("square", None),
+    ("circle", "particle_circle.png"),
+    ("pen", "particle_pen.png"),
+    ("watercolor", "particle_watercolor.png"),
+    ("egg", "particle_egg.png"),
+]
+PARTICLE_SIDE = 16
+
+# name, file, the child's local position and scale, its rotation in degrees (z, counterclockwise),
+# its colour's alpha, and the parent's scale (MainCharCreepy.prefab)
+GLOWS = [
+    ("glow_creepy_fog", "glow_creepy_fog.png", (0.03, 0.7), (2.280282, 3.238949), 0.0, 0.43529412, 0.52),
+    ("glow_creepy_light", "glow_creepy_light.png", (1.57, 11.86), (8.638078, 12.139137), -175.6, 0.3647059, 0.52),
+]
+GLOW_CUTOFF = 6
+
 ICONS = ["enemy_pixel", "enemy_pen", "enemy_watercolor", "enemy_creepy", "enemy_neon_pink", "enemy_easter"]
 
 
@@ -128,6 +151,37 @@ def icon_words(frame):
     return out
 
 
+def particle_words(file):
+    if file is None:
+        return PARTICLE_SIDE, PARTICLE_SIDE, [swap(0xFFFF)] * (PARTICLE_SIDE * PARTICLE_SIDE)
+    im = Image.open(SRC / file).convert("RGBA")
+    im = im.crop(im.getchannel("A").point(lambda a: 255 if a >= ALPHA_CUTOFF else 0).getbbox())
+    s = PARTICLE_SIDE / max(im.size)
+    im = scaled(im, (max(1, round(im.width * s)), max(1, round(im.height * s))), False)
+    out = []
+    for y in range(im.height):
+        for x in range(im.width):
+            r, g, b, a = im.getpixel((x, y))
+            out.append(0 if a < ALPHA_CUTOFF else swap(rgb565(r, g, b) or NEAR_BLACK))
+    return im.width, im.height, out
+
+
+def glow(file, position, scale, angle, alpha, parent):
+    im = Image.open(SRC / file).convert("RGBA")
+    factor = parent * PX_PER_UNIT / 100
+    im = scaled(im, (round(im.width * scale[0] * factor), round(im.height * scale[1] * factor)), False)
+    im = im.rotate(angle, resample=Image.BICUBIC, expand=True)
+    # Its centre, from the character's pivot, in screen pixels (y down)
+    cx = position[0] * parent * PX_PER_UNIT
+    cy = -position[1] * parent * PX_PER_UNIT
+    a = im.getchannel("A").point(lambda v: round(v * alpha))
+    box = a.point(lambda v: 255 if v >= GLOW_CUTOFF else 0).getbbox()
+    pivot_x = im.width / 2 - cx - box[0]
+    pivot_y = im.height / 2 - cy - box[1]
+    a = a.crop(box)
+    return a.width, a.height, round(pivot_x), round(pivot_y), list(a.tobytes())
+
+
 def backdrop():
     im = Image.open(SRC / "backdrop_creepy.png").convert("RGB")
     side = min(im.size)
@@ -190,6 +244,26 @@ def main():
     body.append("")
     total += len(indices) + len(palette) * 2
 
+    for name, file in PARTICLES:
+        w, h, words = particle_words(file)
+        ident = f"PARTICLE_{name.upper()}"
+        header.append(f"extern const ParticleTexture {ident}; // {w}x{h}")
+        body.append(f"static const uint16_t PROGMEM particle_{name}_pixels[] = {{")
+        body.append(array(words, lambda v: f"0x{v:04X}", 16))
+        body.append("};")
+        body.append(f"const ParticleTexture {ident} = {{{w}, {h}, particle_{name}_pixels}};")
+        total += len(words) * 2
+
+    for name, file, position, scale, angle, alpha, parent in GLOWS:
+        w, h, px, py, alphas = glow(file, position, scale, angle, alpha, parent)
+        ident = name.upper()
+        header.append(f"extern const Glow {ident}; // {w}x{h}")
+        body.append(f"static const uint8_t PROGMEM {name}_alpha[] = {{")
+        body.append(array(alphas, str, 32))
+        body.append("};")
+        body.append(f"const Glow {ident} = {{{w}, {h}, {px}, {py}, {name}_alpha}};")
+        total += len(alphas)
+
     for name in ICONS:
         ident = f"ICON_{name.upper()}"
         header.append(f"extern const uint16_t {ident}[]; // {ICON}x{ICON} RGB565, byte-swapped")
@@ -202,7 +276,8 @@ def main():
     body.append("")
     OUT_H.write_text("\n".join(header))
     OUT_CPP.write_text("\n".join(body))
-    print(f"{len(ARTS)} arts, a backdrop and {len(ICONS)} icons, {total} bytes")
+    print(f"{len(ARTS)} arts, a backdrop, {len(PARTICLES)} particles, {len(GLOWS)} glows and {len(ICONS)} icons, "
+          f"{total} bytes")
 
 
 if __name__ == "__main__":

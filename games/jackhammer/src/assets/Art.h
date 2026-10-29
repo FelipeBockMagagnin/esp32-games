@@ -24,4 +24,22 @@ struct Backdrop
     const uint8_t *pixels;
 };
 
+// RGB565 byte-swapped, 0 transparent; tinted and scaled to each particle
+struct ParticleTexture
+{
+    uint8_t w;
+    uint8_t h;
+    const uint16_t *pixels;
+};
+
+// White light over what is behind it, one alpha per pixel
+struct Glow
+{
+    uint8_t w;
+    uint16_t h;
+    int16_t pivotX; // Where the character's pivot falls, possibly outside the image
+    int16_t pivotY;
+    const uint8_t *alpha;
+};
+
 #endif // ART_H

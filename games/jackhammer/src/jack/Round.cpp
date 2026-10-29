@@ -6,29 +6,12 @@ void Round::start(uint32_t seed)
     rng.reseed(seed);
     active = true;
     dead = false;
-    continued = false;
     facing = SIDE_UP;
     points = 0;
     earned = 0;
     banked = 0;
     interval = START_INTERVAL;
     seconds = 0;
-    clearField();
-}
-
-void Round::revive()
-{
-    if (!dead)
-    {
-        return;
-    }
-    dead = false;
-    continued = true;
-    clearField();
-}
-
-void Round::clearField()
-{
     memset(enemies, 0, sizeof(enemies));
     markCount = 0;
     events = 0;

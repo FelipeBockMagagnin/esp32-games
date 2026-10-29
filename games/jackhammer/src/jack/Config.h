@@ -38,35 +38,30 @@ static constexpr float DIFFICULTY_SECONDS = 1.0f;
 // One coin per kill, times one more for every 10 points
 static constexpr uint32_t POINTS_PER_MULTIPLIER = 10;
 
-// Continuing after a death (an ad in the Unity game) costs what the round has earned so far,
-// at least this, and only once per round
-static constexpr uint32_t CONTINUE_MIN_PRICE = 20;
-
 struct ShopItem
 {
-    const char *name; // 14 chars max
-    const char *note; // 30 chars max
+    const char *name; // 12 chars max
     uint16_t price;   // The Unity market's
 };
 
 // The Unity StyleManager's order, which the art tables (render/StyleArt.h) follow
 static constexpr ShopItem STYLES[] = {
-    {"Pixel", "Where it all started", 0},
-    {"Pen", "Ink sketches", 200},
-    {"Watercolor", "Soft and smudged", 1000},
-    {"Creepy", "Don't look at the clown", 3333},
-    {"Neon", "Three colours of trouble", 10000},
-    {"Easter", "A bunny and its eggs", 2000},
+    {"Pixel", 0},
+    {"Pen", 200},
+    {"Watercolor", 1000},
+    {"Creepy", 3333},
+    {"Neon", 10000},
+    {"Easter", 2000},
 };
 static constexpr uint8_t STYLE_COUNT = sizeof(STYLES) / sizeof(STYLES[0]);
 
 // Tunes for the buzzer, after the Unity soundtrack's moods (audio/Songs.h)
 static constexpr ShopItem SONGS[] = {
-    {"Adventure", "Happy 8-bit", 0},
-    {"Spike 'em", "A riff to hammer to", 300},
-    {"Orchestra", "Epic, on one buzzer", 1500},
-    {"Haunted", "Something in the walls", 4000},
-    {"Neon Drive", "Night arpeggios", 7000},
+    {"Adventure", 0},
+    {"Spike 'em", 300},
+    {"Orchestra", 1500},
+    {"Haunted", 4000},
+    {"Neon Drive", 7000},
 };
 static constexpr uint8_t SONG_COUNT = sizeof(SONGS) / sizeof(SONGS[0]);
 

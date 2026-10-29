@@ -9,13 +9,12 @@
 #include "../ui/Text.h"
 
 // The Unity end panel, as a modal over the frozen field: the round's points and coins, then
-// continue (once a round, for coins instead of an ad), play again or back to the title
+// play again or back to the title (Left too)
 class GameOverScreen : public Screen
 {
 public:
-    // `pay` takes the continue's price from the coins and saves; false when they fall short
     GameOverScreen(const Round &round, const Profile &profile, PlayScreen &play, ScreenManager &screenManager,
-                   SoundManager &sound, bool (*pay)(uint32_t price));
+                   SoundManager &sound);
 
     // Before opening it: whether the round just banked set a new best
     void setNewBest(bool best) { newBest = best; }
@@ -29,7 +28,6 @@ public:
 private:
     enum Row : uint8_t
     {
-        ROW_CONTINUE,
         ROW_AGAIN,
         ROW_TITLE,
         ROW_COUNT
@@ -40,20 +38,16 @@ private:
     Text pointsText;
     Text bestText;
     Text earnedText;
-    Text totalText;
     ListRow rows[ROW_COUNT];
-    Text hintText;
 
     const Round &round;
     const Profile &profile;
     PlayScreen &play;
     ScreenManager &screenManager;
     SoundManager &sound;
-    bool (*pay)(uint32_t price);
     bool newBest = false;
     uint8_t selected = 0;
 
-    bool canContinue() const;
     void refreshRows();
 };
 
