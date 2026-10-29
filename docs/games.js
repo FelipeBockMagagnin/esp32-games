@@ -204,6 +204,24 @@ window.GAMES = [
     "date": "2026-10-29",
     "manifest": "firmware/snake/manifest.json",
     "size": 350128
+  },
+  {
+    "id": "mines",
+    "name": "Campo Minado",
+    "tagline": "Abra o campo sem pisar nas minas",
+    "category": "mini",
+    "description": "O campo minado de sempre, com três tamanhos que enchem a tela: um toque no OK abre a casa, segurar planta a bandeira, e as casas vazias se abrem em ondas. Recorde de tempo por nível e oito temas, do clássico cinza ao jardim de flores e ao fundo do mar.",
+    "accent": "#f0a020",
+    "icon": [
+      8,
+      34,
+      1
+    ],
+    "image": "img/mines.png",
+    "version": "57586ce",
+    "date": "2026-10-29",
+    "manifest": "firmware/mines/manifest.json",
+    "size": 358576
   }
 ];
 window.LAUNCHER = {"version": "13dc543", "date": "2026-10-29", "size": 309712};
