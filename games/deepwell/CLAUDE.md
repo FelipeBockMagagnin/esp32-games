@@ -23,13 +23,13 @@ tools/test.sh                        # Logic tests and the autoplay difficulty p
 python3 tools/convert_sprites.py     # Regenerates src/assets/Sprites.{h,cpp} from src/assets/png/tiles/
 ```
 
-`tools/test.sh` compiles `src/rogue/` and `src/core/SlotStore.cpp` for the PC against `tools/stub/` (Arduino and an in-memory `Preferences`). It checks the generator over 12000 seeded floors (stairs reachable, nothing spawned in a wall, the same seed giving the same floor), combat and the save slots, then plays 200 runs with a greedy bot and prints the floors it dies on and what killed it. **Rerun it after touching a table in `src/rogue/Config.h`**; the autoplay numbers in its comments come from it.
+`tools/test.sh` compiles `src/rogue/` and `lib/dotcore`'s `SlotStore.cpp` for the PC against `tools/stub/` (Arduino and an in-memory `Preferences`). It checks the generator over 12000 seeded floors (stairs reachable, nothing spawned in a wall, the same seed giving the same floor), combat and the save slots, then plays 200 runs with a greedy bot and prints the floors it dies on and what killed it. **Rerun it after touching a table in `src/rogue/Config.h`**; the autoplay numbers in its comments come from it.
 
 ## Hardware
 
 - **All TFT_eSPI setup lives in the repo root's `common.ini` (`[board]`), shared by every game**, not a `User_Setup.h`. Only the GLCD font (font 1) is loaded; enabling another costs flash.
 - **Pins are `const int` at the top of `src/main.cpp`**, the same as the idle game's: right 23, left 26, confirm 27, up 19, down 22, buzzer 32.
-- **Backlight** (`TFT_BL`, 21) is PWM on LEDC channel 4 (`core/Backlight`), since `tone()` owns channel 0 and its timer. It dims after the Settings delay, and the press that wakes it is swallowed.
+- **Backlight** (`TFT_BL`, 21) is PWM on LEDC channel 4 (`Backlight` in `lib/dotcore`), since `tone()` owns channel 0 and its timer. It dims after the Settings delay, and the press that wakes it is swallowed.
 - Hold Up + Down while powering on to erase the save; Settings also has a reset.
 
 ## Architecture
@@ -38,7 +38,7 @@ python3 tools/convert_sprites.py     # Regenerates src/assets/Sprites.{h,cpp} fr
 
 ### Layers
 - **`src/rogue/`** is the game, plain C++ with no Arduino or TFT include, so the tests build it on the PC. `Run` is the whole state; `act(Action)` plays one turn and returns `Event` bits that the screen turns into sounds. **A run is deterministic from its seed and the player's actions**: a floor comes from `Rng(seed ^ floor * K)` (`Rng.h`, xorshift32) and nothing else rolls dice, so never call Arduino's `random()` in `src/rogue/`.
-- **`src/core/`** is game-agnostic: buttons, `ScreenManager`, sound, backlight, settings and `SlotStore`.
+- **`src/core/`** is game-agnostic: `ScreenManager` and sound. Buttons, backlight, settings and `SlotStore` live in the repo's `lib/dotcore`.
 - **`src/ui/` and `src/screens/`** came from the idle game. The rules there still hold: every UI element tracks `dirty` and erases only what moved; every mutator is a no-op on an unchanged value; elements are members registered once with `addElement`, never added at runtime; an element on a card is registered with `addElement(&e, Theme::CARD)`.
 
 ### Screens and input

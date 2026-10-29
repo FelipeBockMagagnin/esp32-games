@@ -51,7 +51,7 @@ A `Screen` subclass declares its `UI` elements as **members**, registers them on
 Nav names stay at 9 chars or less. Births and departures reach the header of whichever screen is open through `applyNotice`, from `Colony::getEventCount()` diffed in `main.cpp`.
 
 ### Rendering: dirty flags, no full redraws
-`src/ui/UI.h` is the core. Nothing is cleared per frame; each element tracks `dirty` and the bounds of its last draw. **Every mutator is a no-op on an unchanged value.** Elements are never added or removed at runtime; lists keep a fixed `ListRow rows[N]` and refill them as `ListView` scrolls.
+`UI.h` (in the repo's `lib/dotui`, with the other shared elements) is the core. Nothing is cleared per frame; each element tracks `dirty` and the bounds of its last draw. **Every mutator is a no-op on an unchanged value.** Elements are never added or removed at runtime; lists keep a fixed `ListRow rows[N]` and refill them as `ListView` scrolls.
 
 **The habitat grid** (`src/screens/habitat/TileGrid`) composites each tile whole (ground, up to two critters, the cursor) into one 16x16 `TFT_eSprite` and pushes it, so overlapping never leaves pixels behind. It repaints only the tiles `World` flagged (`markChanged`/`takeChanged`): anything that changes how a tile looks must mark it, including a critter moving (`Colony::moveTo` marks both tiles) or a pond appearing (`markPondArea`). Tile and critter art is drawn with primitives in `TileArt.cpp`, not stored, because flash is the limit on art.
 

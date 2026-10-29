@@ -26,7 +26,7 @@ tools/frame.sh [seconds] [out.ppm]   # The arena drawn on the PC: every style's 
 python3 tools/convert_sprites.py     # src/assets/png/sprites/ -> src/assets/Sprites.{h,cpp}
 ```
 
-`tools/test.sh` compiles `src/jack/` and `src/core/SlotStore.cpp` against `tools/stub/` and checks that every side takes the same time from spawn to the head (and that it matches the Unity game's average), the Unity difficulty curve, the scoring, the shop and the save; then bots with a reaction time and a press rate play 300 rounds each and print their scores. **Rerun it after touching `src/jack/Config.h`.**
+`tools/test.sh` compiles `src/jack/` and `lib/dotcore`'s `SlotStore.cpp` against `tools/stub/` and checks that every side takes the same time from spawn to the head (and that it matches the Unity game's average), the Unity difficulty curve, the scoring, the shop and the save; then bots with a reaction time and a press rate play 300 rounds each and print their scores. **Rerun it after touching `src/jack/Config.h`.**
 
 ## Hardware
 
@@ -43,7 +43,7 @@ python3 tools/convert_sprites.py     # src/assets/png/sprites/ -> src/assets/Spr
 ### Layers
 - **`src/jack/`** is the game, plain C++ with no Arduino or TFT include. `Round` is one round, stepped at 60 Hz; `turn()` and `step()` raise `RoundEvent` bits and leave `Mark`s (where a kill or the death happened) for the screen's sounds and particles. It rolls dice only through its own `Rng` (xorshift), never Arduino's `random()`. `Profile` is what outlives a round (coins, best, the shop); `Save` writes it.
 - **`src/render/`** is plain C++ too: `ArenaRenderer` composites the 240x240 arena one 16 px band at a time (background or backdrop, the glows the hammer carries, enemies, particles, the hammer turned around its pivot, coins). `Effects` runs the particles, flying coins and shake. `StyleArt` maps each `STYLES` row to its art and its two Unity particle systems as `Emitter`s: `start` (StartParticleSystem*, around the hammer on the title, stopped when a round starts) and `death` (DeadParticle*, where an enemy dies). An `Emitter` keeps the Unity values in units and seconds; its cone or sphere becomes the share of the speed that crosses the screen, and a particle flies straight until it leaves the arena. Its last fields are the Unity modules some systems had: the material's blend (`ADD` for Neon's glow, `ALPHA` for soft textures), the Color over Lifetime gradient, Size over Lifetime as a hold-then-shrink, and Clamp Velocity (Creepy's burst brakes and hangs around the hammer). The Easter eggs are drawn at twice their Unity size, which on a phone was ~25 px and here would be a 7 px dash.
-- **`src/core/`** is game-agnostic: buttons, `ScreenManager`, `Buzzer`/`SoundManager`, backlight, settings and `SlotStore`.
+- **`src/core/`** is game-agnostic: `ScreenManager` and `Buzzer`/`SoundManager`. Buttons, backlight, settings and `SlotStore` live in the repo's `lib/dotcore`.
 - **`src/ui/` and `src/screens/`** follow the engine's rules: every UI element tracks `dirty` and erases only what changed; mutators are no-ops on an unchanged value; elements are members registered once with `addElement`. Store colours as `Theme` `Color` slots, never `uint16_t`; the art keeps its own RGB565.
 
 ### Screens

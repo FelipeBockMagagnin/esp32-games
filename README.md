@@ -9,7 +9,8 @@ from the browser (Chrome or Edge, through Web Serial and
 games/<id>/       one PlatformIO project per game, plus its game.json and screen.png
 games/categories.json   the site's shelves, in page order
 launcher/         the menu that boots the chosen game when several share a board
-shared/           headers every firmware includes (pitches.h, Launcher.h)
+lib/              the engine the games share: dotcore (buttons, backlight, saves, settings,
+                  pitches.h, Launcher.h) and dotui (the UI elements)
 common.ini        the board's PlatformIO config, read by every platformio.ini
 hardware/         the carrier PCB and the printed case
 docs/             the site
@@ -26,8 +27,8 @@ tools/publish.py --list       # only the game list and the screens, building not
 git add docs && git commit -m "publish firmware" && git push
 ```
 
-A game's version is the last commit that touched its firmware (`src/`, `include/`, `lib/`,
-`platformio.ini`, plus `shared/` and `common.ini`), so editing a description or another game
+A game's version is the last commit that touched its firmware (its `src/`, `include/`, `lib/`
+and `platformio.ini`, plus the repo's `lib/` and `common.ini`), so editing a description or another game
 rebuilds nothing. Each build starts from clean. The script refuses a game with uncommitted
 changes, so a published version is always a commit, and one with git-ignored files under `src/`
 or `include/` (the Pomodoro's `secrets.h` holds a WiFi password, which must never reach a public

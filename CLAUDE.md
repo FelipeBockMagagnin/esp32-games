@@ -24,9 +24,13 @@ python3 tools/make_mockups.py             # Redraw games/<id>/screen.png
 
 ## Shared between games
 
-- **`common.ini`** is the board: platform, TFT_eSPI and its pins, read by every `platformio.ini` through `extra_configs`. A game's env says `extends = board` and appends its own flags to `${board.build_flags}`, which also puts `shared/` on the include path. The launcher, one level shallower, uses `${board.tft_flags}` and names its own path to `shared/`. A change here rebuilds every firmware.
-- **`shared/`** holds the headers that were identical in every game (`pitches.h`, `Launcher.h`). They are included by bare name (`#include "pitches.h"`). A PC build in a game's `tools/` that compiles code including them needs `-I ../../shared`.
-- **The rest of the engine is copied, not shared.** Each game started from a sibling's `src/` and diverged, so a fix in one game's UI or `ScreenManager` does not reach the others.
+- **`common.ini`** is the board: platform, TFT_eSPI and its pins, read by every `platformio.ini` through `extra_configs`. A game's env says `extends = board` and appends its own flags to `${board.build_flags}`. The launcher, one level shallower, names its own `lib_extra_dirs`. A change here rebuilds every firmware.
+- **`lib/`** holds the engine the games share, as PlatformIO libraries found through `lib_extra_dirs`. Its headers are included by bare name (`#include "Box.h"`).
+  - `dotcore`: `ButtonManager`, `Backlight`, `SlotStore`, `Settings`, `pitches.h`, `Launcher.h`.
+  - `dotui`: `UI.h` and the elements built on it (`Box`, `Text`, `ListRow`, `ListView`, `Header`, `ProgressBar`, `Image`, `ScreenWipe`...). It includes the game's own `Theme.h`, found through `-I src/ui` in `common.ini`, so every game's Theme must name the slots `dotui` draws with.
+  - A per-game variation is a build flag, not a fork: `DISPLAY_LANDSCAPE` (Decaf lays out 320x240), `LISTROW_CENTER_LONE` (JackHammer). **A change in `lib/` rebuilds every firmware: build all of them and run their tests.**
+  - A PC build in a game's `tools/` that compiles code from `lib/` needs `-I ../../lib/<name>/src`.
+- **The rest of the engine is copied, not shared,** because each game diverged on purpose: `ScreenManager`/`Screen` (newer games repeat any held key), `ConfirmScreen` and `SettingsScreen` (their own layouts), `Theme.h`/`Themes.h` (each game's slots and palettes), `SoundManager`, `SplashArt` and `Theme.cpp` (the game's art and palettes). When code turns out identical in three or more games, move it to `lib/`.
 - **NVS**: every firmware keeps its own namespace (`idlegame`, `petgame`, `decaf`, `roguelike`, `pomodoro`, `tilde`, `jackhammer`, `launcher`), its reset clears only that namespace, and all of them share the default partition table's 20 KB `nvs`. A new game must follow suit, or installing it would erase the others' saves.
 - **The launcher** (`launcher/CLAUDE.md`) sits in the `factory` partition when the site installs several games. `docs/bundle.js` writes the flash layout and catalog that `launcher/src/Catalog.h` reads, so change both together.
 

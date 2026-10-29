@@ -63,7 +63,7 @@ A big screen can group elements into a plain class with `addTo(Screen &)`/`setVi
 **Notifications go through the `Header`:** the main loop calls `getCurrentScreen()->applyNotice(...)` with achievements (gold) or screen unlocks (cyan, waits for an achievement notice), and the header paints it over its whole bar.
 
 ### Rendering: dirty flags, no full redraws
-`src/ui/UI.h` is the core. Nothing is cleared per frame; each element tracks `dirty` and the bounds of its last draw, and `redraw()` erases only when it became hidden, moved or resized.
+`UI.h` (in the repo's `lib/dotui`, with the other shared elements) is the core. Nothing is cleared per frame; each element tracks `dirty` and the bounds of its last draw, and `redraw()` erases only when it became hidden, moved or resized.
 
 - **Every mutator is a no-op on an unchanged value** and calls `markDirty()` only on a real change. Writing fields directly leaves stale pixels; marking dirty unconditionally costs a repaint (a whole SPI blit for a sprite).
 - `eraseColor` comes from `addElement()`. An element **inside a filled card** is registered with `addElement(&e, Theme::CARD)`.
