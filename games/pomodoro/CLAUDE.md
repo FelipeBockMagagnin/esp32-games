@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A pomodoro timer and clock for the board of `games/idle`: an ESP32 with a 240x320 ILI9341 SPI display, five push buttons and a passive buzzer. PlatformIO + Arduino framework, C++. The UI framework (`src/ui/`, `Screen`, `ScreenManager`, themes) is ported from that game and works the same way.
+A pomodoro timer with a week of stats for the board of `games/idle`: an ESP32 with a 240x320 ILI9341 SPI display, five push buttons and a passive buzzer. PlatformIO + Arduino framework, C++. The UI framework (`src/ui/`, `Screen`, `ScreenManager`, themes) is ported from that game and works the same way.
 
 ## Code style
 
@@ -21,13 +21,14 @@ pio run -e dev -t upload -t monitor  # Dev build: serial commands end (finish th
 ~/.platformio/penv/bin/python tools/screenshot.py out.png [--screen 1]  # Dev build on the board: the display as a PNG
 ```
 
-**WiFi:** copy `include/secrets.example.h` to `include/secrets.h` (git-ignored) and fill in the network and the POSIX timezone. Without it the build falls back to the example, the WiFi stays off and the clock shows `--:--`; the timer works either way.
+**WiFi:** copy `include/secrets.example.h` to `include/secrets.h` (git-ignored) and fill in the network and the POSIX timezone. The clock only dates each focus for the Stats screen. Without it the build falls back to the example, the WiFi stays off and the days stay unknown; the timer works either way.
 
 ## Hardware
 
 - **All TFT_eSPI setup lives in the repo root's `common.ini` (`[board]`), shared by every game.** Fonts 1 (GLCD) and 7 (48px seven-segment digits, only `0-9 : - .`, added in its own `platformio.ini`) are loaded.
 - **Pins are `const int` at the top of `src/main.cpp`**, the same as the idle game's. D-pad: right (23) next screen, left (26) previous screen / back, confirm (27), up (19), down (22). Buzzer on 32.
 - **Hold Left 1.5 s** opens Settings from any screen.
+- **The game menu:** when the site installed the launcher, Settings has a Game menu row (`returnToLauncher()` in `lib/dotcore`'s `Launcher.h`), and holding Confirm while powering on opens it.
 - **Backlight** (`TFT_BL`, 21) is PWM on LEDC channel 4, since `tone()` owns channel 0 and its timer. It dims after the Settings delay; the press that wakes it is swallowed, and so is the press that silences an alarm.
 
 ## Architecture
@@ -36,7 +37,7 @@ pio run -e dev -t upload -t monitor  # Dev build: serial commands end (finish th
 
 - **`src/app/`** holds the logic, with no TFT code. `FocusTimer` runs the phases (focus, break, a long break after every 4 focuses); a phase that runs out bumps `getPhaseEndEvents()`, which `checkPhaseEnd()` in `main.cpp` diffs to ring the alarm, count the focus and jump to the Focus screen. `Clock` joins the WiFi in the background and syncs over SNTP; `today()` is 0 until synced. `FocusStats` keeps a week of per-day counts, the streak and the totals.
 - **Persistence** (`Storage.cpp`, NVS namespace `pomodoro`): settings under one key; stats in two slots written in turn with a sequence number and a checksum, so a power cut mid-write only loses that write. Stats are written only when a focus ends. Changing `FocusStats::Snapshot` means bumping `STATS_VERSION`.
-- **Screens** cycle Clock → Focus → Stats (`main.cpp` and `screenshot.py` count on Focus being index 1); Settings and the reset `ConfirmScreen` are modals.
+- **Screens** cycle Focus → Stats (`main.cpp` and `screenshot.py` count on Focus being index 0); Settings and the reset `ConfirmScreen` are modals.
 
 ### Screens and rendering (as in the idle game)
 

@@ -1,9 +1,9 @@
 {
   "order": 5,
   "name": "Pomodoro",
-  "tagline": "Foco e relógio",
+  "tagline": "Foco e estatísticas",
   "category": "apps",
-  "description": "Timer pomodoro com alarme e estatísticas da semana. O relógio precisa de WiFi, que esta versão não tem.",
+  "description": "Timer pomodoro com alarme e estatísticas da semana.",
   "accent": "#e0604f",
   "icon": [56, 72, 2]
 }

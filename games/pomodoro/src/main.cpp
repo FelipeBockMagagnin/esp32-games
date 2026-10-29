@@ -2,13 +2,13 @@
 #include <SPI.h>
 #include <TFT_eSPI.h>
 #include "ButtonManager.h"
+#include "Launcher.h"
 #include "managers/ScreenManager.h"
 #include "managers/SoundManager.h"
 #include "app/Clock.h"
 #include "app/FocusTimer.h"
 #include "app/FocusStats.h"
 #include "app/Storage.h"
-#include "screens/ClockScreen.h"
 #include "screens/FocusScreen.h"
 #include "screens/StatsScreen.h"
 #include "screens/SettingsScreen.h"
@@ -42,7 +42,6 @@ FocusStats stats;
 SoundManager sound(BUZZER_PIN);
 ScreenManager screenManager(tft);
 
-ClockScreen clockScreen(wallClock, timer);
 FocusScreen focusScreen(timer, sound);
 StatsScreen statsScreen(stats, wallClock);
 
@@ -52,7 +51,7 @@ ConfirmScreen resetScreen({"Reset", "Reset stats?", "Every focus count is erased
                            "Erase the stats and restart", "Resetting..."},
                           Theme::BAD, resetStats, screenManager, sound);
 Settings settings = {(uint8_t)SoundMode::ON, DIM_DEFAULT, 0, FOCUS_DEFAULT, BREAK_DEFAULT, LONG_BREAK_DEFAULT, 0};
-SettingsScreen settingsScreen(settings, applySettings, screenManager, sound, resetScreen);
+SettingsScreen settingsScreen(settings, applySettings, returnToLauncher, screenManager, sound, resetScreen);
 
 #ifdef DEV_MODE
 DevConsole devConsole(timer, tft, screenManager);
@@ -205,7 +204,7 @@ void checkPhaseEnd(unsigned long now)
     noticeText = focusEnded ? "Take a break" : "Back to focus";
     noticeAccent = focusEnded ? Theme::GOOD : Theme::BAD;
     noticeUntil = now + NOTICE_MS;
-    screenManager.setScreen(1);
+    screenManager.setScreen(0);
 }
 
 void setup()
@@ -217,6 +216,14 @@ void setup()
     upButton.setup();
     downButton.setup();
     leftButton.setup();
+    delay(100);
+
+    // Holding Confirm while the board powers on opens the game menu, if the site installed one:
+    // the way out should a game fail before its Settings
+    if (digitalRead(CONFIRM_BUTTON_PIN) == LOW)
+    {
+        returnToLauncher();
+    }
 
     loadSettings(settings);
     applySettings();
@@ -235,7 +242,6 @@ void setup()
     ledcAttachPin(TFT_BL, BACKLIGHT_CHANNEL);
 
     // This order is the navigation order; checkPhaseEnd() and screenshot.py count on it
-    screenManager.addScreen(&clockScreen, "Clock");
     screenManager.addScreen(&focusScreen, "Focus");
     screenManager.addScreen(&statsScreen, "Stats");
     ledcWrite(BACKLIGHT_CHANNEL, BACKLIGHT_FULL);

@@ -380,7 +380,7 @@ def seven_segment(d, cx, cy, s, color, h=48, w=26, t=5, gap=6):
 
 def pomodoro():
     img = Image.new("RGB", (W, H), T["BG"])
-    header(img, "Focus", "Clock", "Stats")
+    header(img, "Focus", "Stats", "Stats")
     d = ImageDraw.Draw(img)
     cx, cy, r, thick = 120, 150, 96, 10
     left = 0.68

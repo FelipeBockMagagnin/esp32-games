@@ -1,10 +1,11 @@
 #include "SettingsScreen.h"
+#include "Launcher.h"
 #include "../ui/Themes.h"
 
 static const int16_t ROW_X = 5;
 static const int16_t FIRST_ROW_Y = 36;
 static const int16_t ROW_PITCH = ListRow::DEFAULT_H + 4;
-static const int16_t HINT_Y = 300;
+static const int16_t HINT_Y = 306;
 
 enum Row : uint8_t
 {
@@ -15,6 +16,7 @@ enum Row : uint8_t
     ROW_SOUND,
     ROW_DIM,
     ROW_THEME,
+    ROW_MENU,
     ROW_RESET
 };
 
@@ -29,12 +31,13 @@ static void setMinutes(ListRow &row, uint8_t minutes)
     row.setValue(buf);
 }
 
-SettingsScreen::SettingsScreen(Settings &settings, void (*changed)(), ScreenManager &screenManager,
-                               SoundManager &sound, Screen &resetScreen)
+SettingsScreen::SettingsScreen(Settings &settings, void (*changed)(), void (*toMenu)(),
+                               ScreenManager &screenManager, SoundManager &sound, Screen &resetScreen)
     : header("Settings"),
       hintText(120, HINT_Y, "Up/Down choose - Confirm change", Theme::TEXT_DIM, 1, TC_DATUM),
       settings(settings),
       changed(changed),
+      toMenu(toMenu),
       screenManager(screenManager),
       sound(sound),
       resetScreen(resetScreen),
@@ -58,6 +61,8 @@ SettingsScreen::SettingsScreen(Settings &settings, void (*changed)(), ScreenMana
     rows[ROW_DIM].setSubtitle("After no button is pressed");
     rows[ROW_THEME].setTitle("Theme");
     rows[ROW_THEME].setIconPixels(swatch, SWATCH_SIZE, SWATCH_SIZE);
+    rows[ROW_MENU].setTitle("Game menu");
+    rows[ROW_MENU].setSubtitle("Switch apps");
     rows[ROW_RESET].setTitle("Reset stats");
     rows[ROW_RESET].setSubtitle("Erase every focus count");
     rows[ROW_RESET].setTitleColor(Theme::BAD);
@@ -105,22 +110,31 @@ void SettingsScreen::paintSwatch()
 void SettingsScreen::onEnter(TFT_eSPI &tft)
 {
     selected = 0;
+    menuShown = launcherInstalled();
+    rows[ROW_MENU].setVisible(menuShown);
+    rows[ROW_RESET].setPosition(ROW_X, FIRST_ROW_Y + (menuShown ? ROW_RESET : ROW_MENU) * ROW_PITCH);
     refreshRows();
     Screen::onEnter(tft);
 }
 
-void SettingsScreen::onUpPress()
+void SettingsScreen::step(int8_t delta)
 {
-    selected = selected > 0 ? selected - 1 : ROW_COUNT - 1;
+    do
+    {
+        selected = (selected + ROW_COUNT + delta) % ROW_COUNT;
+    } while (selected == ROW_MENU && !menuShown);
     refreshRows();
     sound.playMenu();
 }
 
+void SettingsScreen::onUpPress()
+{
+    step(-1);
+}
+
 void SettingsScreen::onDownPress()
 {
-    selected = (selected + 1) % ROW_COUNT;
-    refreshRows();
-    sound.playMenu();
+    step(1);
 }
 
 void SettingsScreen::onConfirmPress()
@@ -151,6 +165,10 @@ void SettingsScreen::onConfirmPress()
         refreshRows();
         sound.playMenu();
         screenManager.repaint();
+        return;
+    case ROW_MENU:
+        sound.playMenu();
+        toMenu();
         return;
     case ROW_RESET:
         sound.playMenu();

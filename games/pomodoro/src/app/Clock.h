@@ -13,7 +13,6 @@ public:
     void begin(const char *ssid, const char *password, const char *timezone);
     void update(unsigned long now);
 
-    bool hasWifiConfig() const { return configured; }
     bool isConnected() const;
     bool isSynced() const;
     // False until synced

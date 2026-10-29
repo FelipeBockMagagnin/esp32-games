@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Saves what the board's display shows as a PNG, read back from the panel by the dev build's
 `shot` serial command (pio run -e dev). Optionally switches screen first with `screen <index>`,
-in addScreen() order (Focus is 1).
+in addScreen() order (Focus is 0, Stats 1).
 
 Needs pyserial, which PlatformIO's Python has:
     ~/.platformio/penv/bin/python tools/screenshot.py out.png [--screen 1] [--port /dev/ttyUSB0]
