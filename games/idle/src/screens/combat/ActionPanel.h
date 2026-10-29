@@ -3,10 +3,10 @@
 
 #include "../Screen.h"
 #include "../../ui/Text.h"
-#include "../../ui/Box.h"
-#include "../../ui/Image.h"
+#include "Box.h"
+#include "Image.h"
 #include "../../ui/CooldownRing.h"
-#include "../../ui/ProgressBar.h"
+#include "ProgressBar.h"
 #include "../../game/CombatState.h"
 
 // The three physical buttons, stacked like the device (Up spell, Confirm strike, Down

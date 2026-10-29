@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 #include <vector>
-#include "../ui/UI.h"
+#include "UI.h"
 #include "../ui/Header.h"
 #include "../ui/Theme.h"
 

@@ -4,7 +4,7 @@
 #include "Screen.h"
 #include "../ui/Text.h"
 #include "../ui/Header.h"
-#include "../ui/Box.h"
+#include "Box.h"
 #include "../ui/WeekChart.h"
 #include "../app/Clock.h"
 #include "../app/FocusStats.h"

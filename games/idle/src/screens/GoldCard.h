@@ -2,8 +2,8 @@
 #define GOLD_CARD_H
 
 #include "Screen.h"
-#include "../ui/Box.h"
-#include "../ui/Ellipse.h"
+#include "Box.h"
+#include "Ellipse.h"
 #include "../ui/Text.h"
 #include "../ui/GoldRoll.h"
 #include "../game/GameState.h"

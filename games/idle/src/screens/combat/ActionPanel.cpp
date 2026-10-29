@@ -1,6 +1,6 @@
 #include "ActionPanel.h"
 #include "CombatStyle.h"
-#include "../../ui/ButtonBadge.h"
+#include "ButtonBadge.h"
 #include "../../assets/Assets.h"
 
 static constexpr Color AUTO_COLOR = Theme::ATTACK;

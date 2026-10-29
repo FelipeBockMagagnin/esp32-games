@@ -3,7 +3,7 @@
 
 #include "Screen.h"
 #include "../ui/Text.h"
-#include "../ui/ProgressBar.h"
+#include "ProgressBar.h"
 #include "../ui/TileMap.h"
 #include "../rogue/Run.h"
 #include "../core/ScreenManager.h"

@@ -4,8 +4,8 @@
 #include "Screen.h"
 #include "../ui/Text.h"
 #include "../ui/Header.h"
-#include "../ui/Box.h"
-#include "../ui/ListRow.h"
+#include "Box.h"
+#include "ListRow.h"
 #include "../core/ScreenManager.h"
 #include "../core/SoundManager.h"
 

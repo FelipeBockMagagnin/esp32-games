@@ -3,7 +3,7 @@
 
 #include "Screen.h"
 #include "../ui/Header.h"
-#include "../ui/ListRow.h"
+#include "ListRow.h"
 #include "../ui/Text.h"
 #include "../jack/Profile.h"
 #include "../core/SoundManager.h"

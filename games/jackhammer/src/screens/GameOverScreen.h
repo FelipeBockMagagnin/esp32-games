@@ -3,9 +3,9 @@
 
 #include "Screen.h"
 #include "PlayScreen.h"
-#include "../ui/Box.h"
+#include "Box.h"
 #include "../ui/Header.h"
-#include "../ui/ListRow.h"
+#include "ListRow.h"
 #include "../ui/Text.h"
 
 // The Unity end panel, as a modal over the frozen field: the round's points and coins, then

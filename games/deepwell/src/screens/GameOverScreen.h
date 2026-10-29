@@ -3,7 +3,7 @@
 
 #include "Screen.h"
 #include "../ui/Header.h"
-#include "../ui/Box.h"
+#include "Box.h"
 #include "../ui/Text.h"
 #include "../rogue/Run.h"
 #include "../rogue/Save.h"

@@ -2,13 +2,13 @@
 #define MINING_SCREEN_H
 
 #include "Screen.h"
-#include "../ui/Box.h"
+#include "Box.h"
 #include "../ui/Text.h"
 #include "../ui/Header.h"
 #include "../ui/CoinWell.h"
 #include "../ui/OreDisplay.h"
-#include "../ui/ProgressBar.h"
-#include "../ui/ButtonBadge.h"
+#include "ProgressBar.h"
+#include "ButtonBadge.h"
 #include "../assets/Assets.h"
 #include "../game/GameState.h"
 #include "../game/Unlocks.h"

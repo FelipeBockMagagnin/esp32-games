@@ -4,7 +4,7 @@
 #include "Screen.h"
 #include "DungeonScreen.h"
 #include "../ui/Header.h"
-#include "../ui/ListRow.h"
+#include "ListRow.h"
 #include "../ui/Text.h"
 
 // The actions that are not a step (descend, drink, wait, settings) above a character sheet.

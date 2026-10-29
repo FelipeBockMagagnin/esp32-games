@@ -4,7 +4,7 @@
 #include "Screen.h"
 #include "../ui/Text.h"
 #include "../ui/Header.h"
-#include "../ui/ListRow.h"
+#include "ListRow.h"
 #include "../app/Storage.h"
 #include "../managers/ScreenManager.h"
 #include "../managers/SoundManager.h"

@@ -3,8 +3,8 @@
 
 #include "Screen.h"
 #include "../ui/Text.h"
-#include "../ui/ListRow.h"
-#include "../ui/ListView.h"
+#include "ListRow.h"
+#include "ListView.h"
 #include "../game/World.h"
 #include "../game/Colony.h"
 #include "../managers/SoundManager.h"

@@ -3,7 +3,7 @@
 
 #include "../Screen.h"
 #include "../../ui/Text.h"
-#include "../../ui/Image.h"
+#include "Image.h"
 #include "../../ui/EnemySprite.h"
 #include "../../ui/DropBanner.h"
 #include "../../game/CombatState.h"

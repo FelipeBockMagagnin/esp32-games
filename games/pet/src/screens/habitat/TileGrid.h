@@ -1,7 +1,7 @@
 #ifndef TILE_GRID_H
 #define TILE_GRID_H
 
-#include "../../ui/UI.h"
+#include "UI.h"
 #include "../../game/World.h"
 #include "../../game/Colony.h"
 

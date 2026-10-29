@@ -5,6 +5,16 @@
 #include <TFT_eSPI.h>
 #include "Theme.h"
 
+// The panel's drawing size. A game held on its side defines DISPLAY_LANDSCAPE; TFT_WIDTH and
+// TFT_HEIGHT stay the portrait panel's either way
+#ifdef DISPLAY_LANDSCAPE
+static const int16_t DISPLAY_W = TFT_HEIGHT;
+static const int16_t DISPLAY_H = TFT_WIDTH;
+#else
+static const int16_t DISPLAY_W = TFT_WIDTH;
+static const int16_t DISPLAY_H = TFT_HEIGHT;
+#endif
+
 class UI
 {
 public:

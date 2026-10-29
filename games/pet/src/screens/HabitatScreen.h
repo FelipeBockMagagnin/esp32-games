@@ -3,7 +3,7 @@
 
 #include "Screen.h"
 #include "../ui/Text.h"
-#include "../ui/Box.h"
+#include "Box.h"
 #include "../game/World.h"
 #include "../game/Colony.h"
 #include "../managers/SoundManager.h"

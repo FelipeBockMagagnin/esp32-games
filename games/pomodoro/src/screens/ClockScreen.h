@@ -4,8 +4,8 @@
 #include "Screen.h"
 #include "../ui/Text.h"
 #include "../ui/Header.h"
-#include "../ui/Box.h"
-#include "../ui/ProgressBar.h"
+#include "Box.h"
+#include "ProgressBar.h"
 #include "../app/Clock.h"
 #include "../app/FocusTimer.h"
 

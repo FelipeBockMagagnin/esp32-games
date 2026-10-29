@@ -3,7 +3,7 @@
 
 #include "Screen.h"
 #include "../ui/Text.h"
-#include "../ui/Box.h"
+#include "Box.h"
 #include "../game/Stage.h"
 #include "../game/SaveGame.h"
 #include "../render/Renderer.h"
