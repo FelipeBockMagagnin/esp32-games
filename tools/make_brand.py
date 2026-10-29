@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Draws the site's brand images from the art engraved on the case (hardware/case/brand.scad
-in esp32-idle-game), so the console on the page carries exactly what the printed one does:
+"""Draws the site's brand images from the art engraved on the case (hardware/case/brand.scad),
+so the console on the page carries exactly what the printed one does:
 
   docs/img/brand/case_wordmark.png   the front's wordmark, one pixel per engraved pixel
   docs/img/brand/case_back.png       the back's character in its two printed colours
@@ -14,7 +14,7 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-SCAD = ROOT.parent / "esp32-idle-game" / "hardware" / "case" / "brand.scad"
+SCAD = ROOT / "hardware" / "case" / "brand.scad"
 OUT = ROOT / "docs" / "img" / "brand"
 
 # export_3mf.py's materials: the case, the logo and the face
