@@ -156,4 +156,4 @@ window.GAMES = [
     "size": 437552
   }
 ];
-window.LAUNCHER = {"version": "b7028b5", "date": "2026-10-29", "size": 309712};
+window.LAUNCHER = {"version": "a0c530d", "date": "2026-10-29", "size": 309712};
