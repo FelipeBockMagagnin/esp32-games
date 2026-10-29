@@ -412,16 +412,15 @@ def jackhammer():
         shot = Path(tmp) / "frame.ppm"
         subprocess.run([JACKHAMMER / "tools" / "frame.sh", str(JACKHAMMER_SECONDS), str(shot)], check=True,
                        stdout=subprocess.DEVNULL, env={"TMPDIR": tmp, "PATH": "/usr/bin:/bin"})
-        # The strip's first panel is the Pixel style
-        arena = Image.open(shot).convert("RGB").crop((0, 0, W, W))
+        # The strip's second row is each style mid-round, the Pixel style first
+        arena = Image.open(shot).convert("RGB").crop((0, W + 4, W, 2 * W + 4))
     img = Image.new("RGB", (W, H), T["BG"])
-    img.paste(arena, (0, 40))
+    img.paste(arena, (0, H - W))
     d = ImageDraw.Draw(img)
-    big_text(img, (18, 12), "x4", T["TEXT_2"])
-    big_text(img, (W // 2, 8), "31", T["TEXT"], 3)
-    big_text(img, (W - 28, 12), "1250", T["GOLD"])
-    text(d, (W // 2, 288), "Best 58", T["TEXT_2"], "ma")
-    text(d, (W // 2, 302), "Left/Right turn - Confirm turns too", T["TEXT_DIM"], "ma")
+    big_text(img, (20, 20), "x4", T["TEXT_2"])
+    big_text(img, (W // 2, 8), "31", T["TEXT"], 4)
+    big_text(img, (208, 20), "1250", T["GOLD"])
+    text(d, (W // 2, 50), "BEST 58", T["TEXT_DIM"], "ma")
     return img
 
 

@@ -79,7 +79,7 @@ window.GAMES = [
     "image": "img/jackhammer.png",
     "accent": "#e8433a",
     "thumb": "50% 50%",
-    "version": "71224c3",
+    "version": "cbd4fb1",
     "date": "2026-10-29",
     "manifest": "firmware/jackhammer/manifest.json"
   }
