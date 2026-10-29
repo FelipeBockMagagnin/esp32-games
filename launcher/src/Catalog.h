@@ -6,7 +6,7 @@
 
 // The site writes this to the `catalog` partition (type 0x40), little-endian:
 // "GCAT", version, game count, two reserved bytes, then one CatalogEntry per game.
-// A thumbnail is THUMB_W x THUMB_H RGB565, high byte first, at thumbOffset from the
+// An icon is THUMB_W x THUMB_H RGB565, high byte first, at thumbOffset from the
 // partition's start. esp32-games-web/docs/bundle.js is the writer; keep the two in step.
 struct __attribute__((packed)) CatalogEntry
 {
@@ -21,10 +21,10 @@ struct __attribute__((packed)) CatalogEntry
 static_assert(sizeof(CatalogEntry) == 80, "the site writes 80-byte entries");
 
 static const uint32_t CATALOG_MAGIC = 0x54414347; // "GCAT"
-static const uint8_t CATALOG_VERSION = 1;
+static const uint8_t CATALOG_VERSION = 2;
 static const esp_partition_type_t CATALOG_TYPE = (esp_partition_type_t)0x40;
-static const uint8_t THUMB_W = 60;
-static const uint8_t THUMB_H = 80;
+static const uint8_t THUMB_W = 64;
+static const uint8_t THUMB_H = 64;
 
 struct Game
 {

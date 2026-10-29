@@ -16,7 +16,7 @@ The game menu for the dotcompany board (ESP32, 240x320 ILI9341, five buttons, a 
 
 ```bash
 pio run                              # Build
-pio run -e dev -t upload -t monitor  # Dev build: serial `shot`
+pio run -e dev -t upload -t monitor  # Dev build: serial `shot`, `play <n>`
 ~/.platformio/penv/bin/python tools/screenshot.py out.png  # Dev build on the board: the display as a PNG
 ```
 
@@ -32,7 +32,7 @@ A plain `pio run -t upload` puts the menu in `app0` of the default table, with n
 
 ## The catalog
 
-`Catalog.h` defines the format: a `GCAT` header, then 80-byte entries (partition label, name, ASCII tagline, RGB565 accent, a 60x80 RGB565 thumbnail offset). Its writer is `docs/bundle.js` in esp32-games-web; **change both together** and bump `CATALOG_VERSION`. An entry whose app partition is missing or holds no valid image is skipped.
+`Catalog.h` defines the format: a `GCAT` header, then 80-byte entries (partition label, name, ASCII tagline, RGB565 accent, a 64x64 RGB565 icon offset, a crop of the game's screen drawn at exactly 2x so it stays sharp). Its writer is `docs/bundle.js` in esp32-games-web; **change both together** and bump `CATALOG_VERSION`. An entry whose app partition is missing or holds no valid image is skipped.
 
 ## Hardware
 

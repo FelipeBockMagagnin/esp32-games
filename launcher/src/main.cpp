@@ -82,7 +82,7 @@ void launch()
 }
 
 #ifdef DEV_MODE
-// `shot` sends the panel to tools/screenshot.py
+// `shot` sends the panel to tools/screenshot.py; `play <n>` starts the nth game, as Confirm would
 void sendScreen()
 {
     static uint16_t row[TFT_WIDTH];
@@ -118,9 +118,14 @@ void devConsole()
         {
             sendScreen();
         }
+        else if (strncmp(line, "play ", 5) == 0 && !launching && atoi(line + 5) < catalog.count())
+        {
+            menu.begin(atoi(line + 5));
+            startLaunch(millis());
+        }
         else if (line[0] != '\0')
         {
-            Serial.println("shot");
+            Serial.println("shot | play <n>");
         }
     }
 }

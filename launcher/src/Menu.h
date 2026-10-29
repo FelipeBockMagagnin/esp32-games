@@ -4,7 +4,7 @@
 #include <TFT_eSPI.h>
 #include "Catalog.h"
 
-// One game at a time: its screen scaled up, name, tagline and a dot per game
+// One game at a time: its icon at twice its size, name, tagline and a dot per game
 class Menu
 {
 public:
