@@ -1,0 +1,9 @@
+{
+  "order": 8,
+  "name": "Dice Bag",
+  "tagline": "Dados, sorteio e roleta",
+  "category": "apps",
+  "description": "Dados de RPG do d2 ao d100 com bônus, vantagem e críticos, sorteio de números sem repetição e uma roleta.",
+  "accent": "#b07cd8",
+  "icon": [110, 119, 1]
+}
