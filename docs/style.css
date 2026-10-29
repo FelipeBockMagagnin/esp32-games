@@ -1,0 +1,1020 @@
+:root {
+  /* The dotcompany brand art: a grey field, the hood's blacks, the mask's white */
+  --field: #5d5d5d;
+  --ink: #121212;
+  --ink-2: #1c1c1c;
+  --ink-3: #2b2b2b;
+  --mid: #8b8b8b;
+  --paper: #ffffff;
+  --paper-2: #d4d4d4;
+  /* The printed case (export_3mf.py's materials) */
+  --case: #f2f2f2;
+  --case-edge: #d9d9d9;
+  --logo: #1a1a1a;
+  /* The board's red Confirm cap, CONFIRM in the games' themes: the one bright colour */
+  --confirm: #e06048;
+  --confirm-deep: #a83c2a;
+  /* The game on the console's screen, set by app.js */
+  --accent: #f7b542;
+
+  /* One millimetre of the case. 5.5556px puts the display's 43.2mm visible area at its
+     240 pixels; a narrow phone shrinks the whole console with it. */
+  --mm: min(5.5556px, calc((100vw - 32px) / 67));
+
+  --mdc-theme-primary: var(--confirm);
+  --esp-tools-button-color: var(--confirm);
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  background: var(--field);
+  color: var(--paper);
+  font-family: "VT323", ui-monospace, monospace;
+  font-size: 22px;
+  line-height: 1.15;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+img {
+  image-rendering: pixelated;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+b {
+  color: var(--paper);
+  font-weight: normal;
+}
+
+/* ---- Header ---- */
+
+.top {
+  position: relative;
+  text-align: center;
+  padding: 40px 72px 8px;
+}
+
+.wordmark {
+  width: min(465px, 100%);
+  height: auto;
+  filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.35));
+}
+
+.kicker {
+  font-family: "Silkscreen", monospace;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: var(--paper-2);
+  margin: 12px 0 0;
+}
+
+/* A white cap like the console's, with the question on it */
+.help-button {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 20;
+  width: 52px;
+  height: 52px;
+  border: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0 30%, var(--case) 60%, #cfcfcf 100%);
+  box-shadow: 0 0 0 3px var(--ink), 0 5px 0 3px var(--ink);
+  color: var(--logo);
+  font-family: "VT323", monospace;
+  font-size: 38px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 80ms;
+}
+
+.help-button:hover {
+  transform: translateY(-2px);
+}
+
+.help-button:active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 3px var(--ink), 0 2px 0 3px var(--ink);
+}
+
+.help-button.hint {
+  animation: hint 1.4s steps(4, end) 3;
+}
+
+@keyframes hint {
+  50% { box-shadow: 0 0 0 3px var(--ink), 0 5px 0 3px var(--ink), 0 0 0 12px rgba(224, 96, 72, 0.5); }
+}
+
+/* ---- Stage ---- */
+
+.stage {
+  flex: 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 480px);
+  justify-content: center;
+  align-items: start;
+  gap: 64px;
+  padding: 32px 16px 48px;
+}
+
+/* ---- The console ---- */
+
+/* Kept in view, so the screen shows the game under the mouse however far the list scrolls */
+.device-area {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+
+.device {
+  width: calc(67 * var(--mm));
+  height: calc(122.2 * var(--mm));
+  perspective: 1400px;
+}
+
+.flipper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 700ms cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+.device.flipped .flipper {
+  transform: rotateY(180deg);
+}
+
+.case {
+  position: absolute;
+  inset: 0;
+  border-radius: calc(5.5 * var(--mm));
+  backface-visibility: hidden;
+  /* FDM layer lines over the white PLA */
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.03) 0 1px, transparent 1px 3px),
+    var(--case);
+  box-shadow:
+    inset calc(0.6 * var(--mm)) calc(0.6 * var(--mm)) 0 #fff,
+    inset calc(-0.9 * var(--mm)) calc(-0.9 * var(--mm)) 0 var(--case-edge),
+    10px 12px 0 rgba(0, 0, 0, 0.35);
+}
+
+.case.back {
+  transform: rotateY(180deg);
+}
+
+/* Engraved: a shade lighter below each pixel, as the pocket's lit edge */
+.case-mark {
+  position: absolute;
+  left: calc(6.2 * var(--mm));
+  top: calc(4.8 * var(--mm));
+  width: calc(54.6 * var(--mm));
+  height: auto;
+  filter: drop-shadow(0 1px 0 #fff);
+}
+
+.usb {
+  position: absolute;
+  left: 0;
+  top: calc(34.2 * var(--mm));
+  width: calc(1.4 * var(--mm));
+  height: calc(12 * var(--mm));
+  background: #3a3a3a;
+  border-radius: 0 2px 2px 0;
+}
+
+.notch {
+  position: absolute;
+  right: 0;
+  top: calc(55.1 * var(--mm));
+  width: calc(1 * var(--mm));
+  height: calc(12 * var(--mm));
+  background: var(--case-edge);
+}
+
+/* The bezel's window with its chamfer, and the display's black glass inside it */
+.window {
+  position: absolute;
+  left: calc(10.5 * var(--mm));
+  top: calc(14.5 * var(--mm));
+  width: calc(46 * var(--mm));
+  height: calc(62 * var(--mm));
+  background: #0b0b0b;
+  box-shadow: 0 0 0 calc(0.9 * var(--mm)) #cfcfcf, 0 calc(-0.9 * var(--mm)) 0 calc(0.9 * var(--mm)) #bdbdbd;
+}
+
+.screen {
+  position: absolute;
+  left: calc(1.4 * var(--mm));
+  top: calc(2.2 * var(--mm));
+  width: calc(43.2 * var(--mm));
+  height: calc(57.6 * var(--mm));
+  background: #5a5d5a; /* The splash's backdrop on the board */
+  overflow: hidden;
+}
+
+.screen > * {
+  position: absolute;
+  inset: 0;
+}
+
+.device.flashing .screen {
+  animation: flashing 900ms steps(2, end) infinite;
+}
+
+@keyframes flashing {
+  50% { box-shadow: 0 0 0 2px var(--confirm), 0 0 18px var(--confirm); }
+}
+
+.boot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 160ms steps(2, end);
+}
+
+.boot.gone {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.logo {
+  position: relative;
+}
+
+/* As on the board's splash: the character at 4x, the wordmark at 2x crossing it 21 rows down */
+.hood {
+  display: block;
+  width: calc(88 / 240 * 43.2 * var(--mm));
+  height: auto;
+}
+
+.boot-mark {
+  position: absolute;
+  left: 50%;
+  top: calc(86 / 240 * 43.2 * var(--mm));
+  width: calc(168 / 240 * 43.2 * var(--mm));
+  height: auto;
+  transform: translateX(-50%);
+}
+
+/* The launcher's menu, in the board's pixels: --px is one of the display's 240 */
+.menu {
+  --px: calc(43.2 * var(--mm) / 240);
+  display: flex;
+  flex-direction: column;
+  background: var(--ink);
+  opacity: 0;
+}
+
+.menu.show {
+  opacity: 1;
+}
+
+.menu.flicker {
+  animation: flicker 260ms steps(3, end);
+}
+
+@keyframes flicker {
+  0% { opacity: 0; }
+  50% { opacity: 0.5; filter: brightness(2.2); }
+  100% { opacity: 1; }
+}
+
+.menu-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: calc(24 * var(--px));
+  padding: 0 calc(8 * var(--px));
+  background: var(--ink-3);
+  font-family: "Silkscreen", monospace;
+  font-size: calc(12 * var(--px));
+}
+
+.menu-head span + span {
+  color: var(--mid);
+  font-size: calc(9 * var(--px));
+}
+
+.menu-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: calc(14 * var(--px));
+}
+
+.menu-icon {
+  --size: calc(128 * var(--px));
+  flex: none;
+  outline: calc(2 * var(--px)) solid var(--accent);
+  outline-offset: calc(2 * var(--px));
+}
+
+.menu-icon[hidden] {
+  display: none;
+}
+
+.menu-name {
+  margin: calc(12 * var(--px)) 0 0;
+  padding: 0 calc(8 * var(--px));
+  font-family: "Silkscreen", monospace;
+  font-weight: 700;
+  font-size: calc(15 * var(--px));
+  color: var(--accent);
+  text-align: center;
+}
+
+.menu-tag {
+  margin: calc(2 * var(--px)) 0 calc(8 * var(--px));
+  font-family: "Silkscreen", monospace;
+  font-size: calc(9 * var(--px));
+  color: var(--mid);
+}
+
+.menu-desc {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0 calc(12 * var(--px)) calc(8 * var(--px));
+  overflow-y: auto;
+  scrollbar-width: none;
+  font-size: calc(16 * var(--px));
+  line-height: 1.1;
+  color: var(--paper-2);
+  text-align: center;
+}
+
+.screen-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  background: var(--ink);
+  font-family: "Silkscreen", monospace;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.screen-msg[hidden] {
+  display: none;
+}
+
+.screen-msg strong {
+  color: var(--confirm);
+  font-size: 17px;
+}
+
+.screen-msg.band {
+  inset: auto 0 0 0;
+  gap: 4px;
+  padding: 8px 10px;
+  font-size: 10px;
+  line-height: 1.4;
+  background: rgba(18, 18, 18, 0.92);
+  border-top: 2px solid var(--confirm);
+}
+
+.screen-msg.band strong {
+  font-size: 11px;
+}
+
+/* The D-pad: five round caps in a cross, 10.5mm apart, Confirm in the middle */
+.dpad {
+  position: absolute;
+  left: calc(33.5 * var(--mm));
+  top: calc(104.5 * var(--mm));
+  width: 0;
+  height: 0;
+}
+
+.cap,
+.cap-confirm {
+  position: absolute;
+  width: calc(8.5 * var(--mm));
+  height: calc(8.5 * var(--mm));
+  margin: calc(-4.25 * var(--mm)) 0 0 calc(-4.25 * var(--mm));
+}
+
+.cap {
+  display: block;
+  border: 0;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  background: radial-gradient(circle at 35% 30%, #fff 0 25%, #ececec 55%, #c9c9c9 100%);
+  /* The bezel's hole around it, and the stem's travel below */
+  box-shadow:
+    0 0 0 calc(0.3 * var(--mm)) #b8b8b8,
+    0 calc(0.7 * var(--mm)) 0 calc(0.3 * var(--mm)) #8f8f8f;
+  transition: transform 60ms;
+}
+
+.cap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 0;
+  height: 0;
+  border: calc(1.1 * var(--mm)) solid transparent;
+  opacity: 0.35;
+}
+
+.cap[data-dir="up"] { left: 0; top: calc(-10.5 * var(--mm)); }
+.cap[data-dir="down"] { left: 0; top: calc(10.5 * var(--mm)); }
+.cap[data-dir="left"] { left: calc(-10.5 * var(--mm)); top: 0; }
+.cap[data-dir="right"] { left: calc(10.5 * var(--mm)); top: 0; }
+
+.cap[data-dir="up"]::after { border-bottom-color: var(--logo); top: calc(-1.1 * var(--mm)); }
+.cap[data-dir="down"]::after { border-top-color: var(--logo); top: calc(1.1 * var(--mm)); }
+.cap[data-dir="left"]::after { border-right-color: var(--logo); left: calc(-1.1 * var(--mm)); }
+.cap[data-dir="right"]::after { border-left-color: var(--logo); left: calc(1.1 * var(--mm)); }
+
+.cap:hover::after {
+  opacity: 0.7;
+}
+
+.cap-confirm {
+  left: 0;
+  top: 0;
+}
+
+.cap-confirm .cap {
+  position: static;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.cap.red {
+  background: radial-gradient(circle at 35% 30%, #ffb3a3 0 15%, var(--confirm) 50%, var(--confirm-deep) 100%);
+  animation: ready 2.4s ease-in-out infinite;
+}
+
+@keyframes ready {
+  50% {
+    box-shadow:
+      0 0 0 calc(0.3 * var(--mm)) #b8b8b8,
+      0 calc(0.7 * var(--mm)) 0 calc(0.3 * var(--mm)) #8f8f8f,
+      0 0 0 calc(1.8 * var(--mm)) rgba(224, 96, 72, 0.35);
+  }
+}
+
+.cap.red.off {
+  background: radial-gradient(circle at 35% 30%, #bdbdbd 0 15%, #9a8f8d 50%, #6f6664 100%);
+  animation: none;
+  cursor: not-allowed;
+}
+
+.cap:active,
+.cap.pressed {
+  transform: translateY(calc(0.6 * var(--mm)));
+  box-shadow: 0 0 0 calc(0.3 * var(--mm)) #b8b8b8, 0 calc(0.1 * var(--mm)) 0 calc(0.3 * var(--mm)) #8f8f8f;
+}
+
+.cap:focus-visible,
+.tile:focus-visible,
+.help-button:focus-visible,
+.help-link:focus-visible,
+.flip-button:focus-visible,
+.close:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* The back: the character and wordmark the case carries, around its middle */
+.back-art {
+  position: absolute;
+  left: calc(20.3 * var(--mm));
+  top: calc(34.8 * var(--mm));
+  width: calc(26.4 * var(--mm));
+  height: auto;
+}
+
+.back-mark {
+  position: absolute;
+  left: calc(6.2 * var(--mm));
+  top: calc(84.2 * var(--mm));
+  width: calc(54.6 * var(--mm));
+  height: auto;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px 20px;
+  font-family: "Silkscreen", monospace;
+  font-size: 12px;
+  color: var(--paper-2);
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.key {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--case);
+  color: var(--logo);
+  font-style: normal;
+  font-size: 9px;
+}
+
+.key.red {
+  background: var(--confirm);
+}
+
+.legend b {
+  color: var(--paper-2);
+}
+
+.flip-button {
+  border: 0;
+  background: transparent;
+  color: var(--paper-2);
+  font-family: "Silkscreen", monospace;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 4px;
+}
+
+/* ---- Info ---- */
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.card {
+  background: var(--ink);
+  padding: 28px 28px 24px;
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.45);
+}
+
+.tag {
+  margin: 0;
+  color: var(--accent);
+  font-family: "Silkscreen", monospace;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.help-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--paper);
+  font-family: "Silkscreen", monospace;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.help-link .q,
+.glyph {
+  font-family: "VT323", monospace;
+}
+
+.help-link .q {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--case);
+  color: var(--logo);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.glyph {
+  font-size: 18px;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.help-link:hover {
+  color: var(--accent);
+}
+
+/* A game's icon: a crop of its screen, [x, y] and --crop pixels wide, drawn --size wide */
+.icon {
+  display: block;
+  width: var(--size);
+  height: var(--size);
+  background-repeat: no-repeat;
+  background-size: calc(var(--size) * 240 / var(--crop)) calc(var(--size) * 320 / var(--crop));
+  background-position: calc(var(--size) * var(--ix) / var(--crop) * -1) calc(var(--size) * var(--iy) / var(--crop) * -1);
+  image-rendering: pixelated;
+}
+
+.intro {
+  margin: 0;
+  color: var(--paper-2);
+}
+
+.intro .help-link {
+  display: flex;
+  margin-top: 10px;
+}
+
+.categories {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.category-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 10px;
+  font-family: "Silkscreen", monospace;
+  font-weight: 400;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--paper-2);
+}
+
+.category-title small {
+  color: var(--mid);
+  font-size: 11px;
+}
+
+.empty {
+  margin: 0;
+  padding: 12px 14px;
+  border: 2px dashed var(--ink-3);
+  color: var(--mid);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.tile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 2px solid var(--ink-3);
+  background: var(--ink-2);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
+  text-align: left;
+  cursor: pointer;
+}
+
+.tile .icon {
+  --size: 48px;
+  flex: none;
+}
+
+.tile-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tile-name {
+  font-family: "Silkscreen", monospace;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tile-size {
+  color: var(--mid);
+  font-size: 18px;
+}
+
+.check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--ink-3);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.tile:hover,
+.tile.current {
+  border-color: var(--cart);
+}
+
+.tile[aria-pressed="true"] {
+  border-color: var(--cart);
+  background: color-mix(in srgb, var(--cart) 18%, var(--ink-2));
+}
+
+.tile[aria-pressed="true"] .check {
+  border-color: var(--cart);
+  background: var(--cart);
+  color: var(--ink);
+}
+
+.tile[aria-pressed="true"] .check::before {
+  content: "✓";
+}
+
+.tile[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+.tile[aria-disabled="true"] .icon,
+.tile[aria-disabled="true"] .tile-text {
+  opacity: 0.45;
+}
+
+.tile.full .tile-size {
+  color: var(--confirm);
+}
+
+.tile.refused {
+  animation: refused 300ms steps(6, end);
+}
+
+@keyframes refused {
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.summary {
+  position: sticky;
+  bottom: 16px;
+}
+
+.summary h2 {
+  font-family: "Silkscreen", monospace;
+  font-weight: 700;
+  font-size: 22px;
+  margin: 6px 0 0;
+  text-shadow: 3px 3px 0 #000;
+}
+
+.picked {
+  margin: 0 0 16px;
+  color: var(--paper-2);
+}
+
+.picked:empty {
+  display: none;
+}
+
+/* ---- Tutorial dialog ---- */
+
+.help {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  border: 0;
+  color: var(--paper);
+  overflow-y: auto;
+}
+
+.help[open] {
+  animation: pop 220ms steps(4, end);
+}
+
+@keyframes pop {
+  from { transform: scale(0.85); opacity: 0; }
+}
+
+.help::backdrop {
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0 2px, transparent 2px 4px),
+    rgba(30, 30, 30, 0.72);
+}
+
+.help h2 {
+  font-family: "Silkscreen", monospace;
+  font-size: 28px;
+  margin: 6px 0 18px;
+  text-shadow: 3px 3px 0 #000;
+}
+
+.help h3 {
+  font-family: "Silkscreen", monospace;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mid);
+  margin: 22px 0 10px;
+  border-top: 2px dashed var(--ink-3);
+  padding-top: 18px;
+}
+
+.close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: var(--ink-3);
+  color: var(--paper);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--confirm);
+}
+
+.steps,
+.notes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps li {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 12px;
+  align-items: start;
+  margin-bottom: 12px;
+  color: var(--paper-2);
+}
+
+.step-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--case);
+  color: var(--logo);
+  font-size: 22px;
+}
+
+.step-icon.red {
+  background: radial-gradient(circle at 35% 30%, #ffb3a3 0 15%, var(--confirm) 50%, var(--confirm-deep) 100%);
+}
+
+.notes li {
+  color: var(--paper-2);
+  padding-left: 18px;
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.notes li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+}
+
+/* ---- Footer ---- */
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 16px 28px;
+  font-family: "Silkscreen", monospace;
+  font-size: 12px;
+  color: var(--paper-2);
+}
+
+/* ---- Collection ---- */
+
+.meter {
+  display: flex;
+  height: 14px;
+  margin-top: 18px;
+  background: var(--ink-3);
+}
+
+.meter span {
+  background: var(--mid);
+  box-shadow: inset -2px 0 0 var(--ink);
+}
+
+.meter-label {
+  margin: 6px 0 16px;
+  color: var(--mid);
+  font-size: 19px;
+}
+
+.combo-button {
+  display: inline-block;
+  padding: 10px 18px;
+  border: 0;
+  background: var(--confirm);
+  color: var(--paper);
+  font-family: "Silkscreen", monospace;
+  font-size: 13px;
+  box-shadow: 4px 4px 0 var(--confirm-deep);
+  cursor: pointer;
+}
+
+.combo-button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--confirm-deep);
+}
+
+.combo-button:disabled,
+.combo-button.off {
+  background: var(--ink-3);
+  color: var(--mid);
+  box-shadow: 4px 4px 0 #000;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.combo-button:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 3px;
+}
+
+/* ---- Narrow screens ---- */
+
+@media (max-width: 920px) {
+  .stage {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 36px;
+    padding-top: 20px;
+  }
+
+  .device-area,
+  .summary {
+    position: static;
+  }
+
+}
+
+@media (max-width: 420px) {
+  .top {
+    padding: 72px 16px 8px;
+  }
+
+  .card {
+    padding: 22px 18px 18px;
+  }
+
+  .tiles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

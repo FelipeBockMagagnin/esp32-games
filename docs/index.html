@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>dotcompany Games</title>
+  <meta name="description" content="Monte uma coletânea de jogos e grave na sua placa ESP32 pela USB, direto do navegador.">
+  <meta name="theme-color" content="#5d5d5d">
+  <link rel="icon" type="image/png" sizes="32x32" href="img/brand/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="img/brand/favicon-48.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="img/brand/favicon-96.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="img/brand/favicon-192.png">
+  <link rel="apple-touch-icon" href="img/brand/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js?module"></script>
+</head>
+<body>
+  <header class="top">
+    <img class="wordmark" src="img/brand/wordmark.png" alt="dotcompany" width="930" height="160">
+    <p class="kicker">Monte sua coletânea e grave no console.</p>
+    <button class="help-button" id="help-open" aria-haspopup="dialog" aria-controls="help" title="Como instalar">?</button>
+  </header>
+
+  <main class="stage">
+    <section class="device-area" aria-label="Console">
+      <div class="device" id="device">
+        <div class="flipper">
+          <!-- The printed case's front: proportions from hardware/case/case.scad, in mm -->
+          <div class="case front">
+            <img class="case-mark" src="img/brand/case_wordmark.png" alt="dotcompany">
+            <span class="usb" aria-hidden="true"></span>
+            <span class="notch" aria-hidden="true"></span>
+
+            <div class="window">
+              <div class="screen" id="screen">
+                <div class="boot" id="boot" aria-hidden="true">
+                  <div class="logo">
+                    <img class="hood" id="hood" src="img/brand/hood_0.png" alt="">
+                    <img class="boot-mark" src="img/brand/wordmark_small.png" alt="">
+                  </div>
+                </div>
+                <div class="menu" id="menu" aria-live="polite">
+                  <div class="menu-head"><span>dotcompany</span><span id="menu-count"></span></div>
+                  <div class="menu-body">
+                    <span class="icon menu-icon" id="menu-icon"></span>
+                    <p class="menu-name" id="menu-name"></p>
+                    <p class="menu-tag" id="menu-tag"></p>
+                    <p class="menu-desc" id="menu-desc"></p>
+                  </div>
+                </div>
+                <div class="screen-msg" id="screen-msg" hidden></div>
+              </div>
+            </div>
+
+            <div class="dpad" role="group" aria-label="Botões do console">
+              <button class="cap" data-dir="up" aria-label="Rolar a descrição para cima"></button>
+              <button class="cap" data-dir="left" aria-label="Jogo anterior"></button>
+              <button class="cap" data-dir="right" aria-label="Próximo jogo"></button>
+              <button class="cap" data-dir="down" aria-label="Rolar a descrição para baixo"></button>
+              <esp-web-install-button id="install" class="cap-confirm">
+                <button slot="activate" class="cap red" id="activate" aria-label="Gravar a coletânea na placa"></button>
+                <span slot="unsupported" class="cap red off" aria-hidden="true"></span>
+                <span slot="not-allowed" class="cap red off" aria-hidden="true"></span>
+              </esp-web-install-button>
+            </div>
+          </div>
+
+          <div class="case back" aria-hidden="true">
+            <img class="back-art" src="img/brand/case_back.png" alt="">
+            <img class="back-mark" src="img/brand/case_wordmark.png" alt="">
+          </div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span><i class="key">◀</i><i class="key">▶</i> navegar</span>
+        <span><i class="key">▲</i><i class="key">▼</i> descrição</span>
+        <span><i class="key red"></i> <b id="confirm-label">gravar</b></span>
+        <button class="flip-button" id="flip" aria-pressed="false">virar <span class="glyph" aria-hidden="true">↻</span></button>
+      </div>
+    </section>
+
+    <section class="side">
+      <p class="intro">
+        Passe o mouse num jogo para ver na tela do console e clique para pôr na coletânea. Com
+        dois ou mais, a placa abre um menu ao ligar.
+        <button class="help-link" id="help-link" aria-haspopup="dialog" aria-controls="help">
+          <span class="q">?</span> Como instalar
+        </button>
+      </p>
+
+      <div class="categories" id="categories"></div>
+
+      <article class="summary card" aria-labelledby="summary-title">
+        <p class="tag">Coletânea</p>
+        <h2 id="summary-title">Memória da placa</h2>
+        <div class="meter" id="meter" aria-hidden="true"></div>
+        <p class="meter-label" id="meter-label"></p>
+        <p class="picked" id="picked"></p>
+        <esp-web-install-button id="combo-install">
+          <button slot="activate" class="combo-button" id="combo-activate" disabled>Gravar na placa</button>
+          <span slot="unsupported" class="combo-button off">sem usb aqui</span>
+          <span slot="not-allowed" class="combo-button off">só em https</span>
+        </esp-web-install-button>
+      </article>
+    </section>
+  </main>
+
+  <dialog class="help card" id="help" aria-labelledby="help-title">
+    <button class="close" id="help-close" aria-label="Fechar">×</button>
+    <p class="tag">Tutorial</p>
+    <h2 id="help-title">Como instalar</h2>
+    <ol class="steps">
+      <li>
+        <span class="step-icon">⌂</span>
+        <span><b>Abra no Chrome ou no Edge</b>, num computador. Firefox, Safari e celular não acessam a USB.</span>
+      </li>
+      <li>
+        <span class="step-icon">⇄</span>
+        <span><b>Ligue o console</b> no computador pelo cabo USB, pela abertura na lateral do case.</span>
+      </li>
+      <li>
+        <span class="step-icon">▣</span>
+        <span><b>Monte a coletânea</b> clicando nos jogos. A barra mostra quanto da memória da placa eles ocupam; o que não cabe fica bloqueado.</span>
+      </li>
+      <li>
+        <span class="step-icon red"></span>
+        <span><b>Grave na placa</b> pelo botão vermelho ou por "Gravar na placa", escolha a porta e confirme. Leva cerca de um minuto.</span>
+      </li>
+    </ol>
+    <h3>Bom saber</h3>
+    <ul class="notes">
+      <li>Com <b>um jogo</b> só, a placa liga direto nele. Com <b>dois ou mais</b>, abre um menu para escolher, e o item <b>Menu</b> de cada jogo volta para ele.</li>
+      <li>Cada jogo guarda o próprio save. Gravar outra coletânea <b>não apaga</b> os saves, a menos que você marque "apagar" ao instalar.</li>
+      <li>A porta não aparece? Instale o driver da placa: <b>CP2102</b> ou <b>CH340</b>.</li>
+      <li>Parou em "conectando"? Segure o botão <b>BOOT</b> da placa quando a gravação começar.</li>
+    </ul>
+  </dialog>
+
+  <footer class="foot">
+    <img src="img/brand/favicon-32.png" alt="" width="32" height="32">
+    <span>dotcompany</span>
+  </footer>
+
+  <script src="games.js"></script>
+  <script src="bundle.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
