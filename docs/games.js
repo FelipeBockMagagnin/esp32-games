@@ -1,3 +1,33 @@
+window.CATEGORIES = [
+  {
+    "id": "autorais",
+    "name": "Jogos autorais"
+  },
+  {
+    "id": "apps",
+    "name": "Apps"
+  },
+  {
+    "id": "mini",
+    "name": "Mini jogos"
+  },
+  {
+    "id": "teste",
+    "name": "Jogos teste"
+  },
+  {
+    "id": "ports",
+    "name": "Ports"
+  },
+  {
+    "id": "publicos",
+    "name": "Jogos públicos"
+  },
+  {
+    "id": "comunidade",
+    "name": "Jogos da comunidade"
+  }
+];
 window.GAMES = [
   {
     "id": "idle",
@@ -5,13 +35,13 @@ window.GAMES = [
     "tagline": "Minere, construa, lute",
     "category": "autorais",
     "description": "Minere ouro, erga construções e compre melhorias. Depois leve seu equipamento pelas zonas: os inimigos deixam itens e os amuletos lançam feitiços. Ascenda para recomeçar mais forte.",
-    "image": "img/idle.png",
     "accent": "#f7b542",
     "icon": [
       56,
       72,
       2
     ],
+    "image": "img/idle.png",
     "version": "e02e0b8",
     "date": "2026-10-26",
     "manifest": "firmware/idle/manifest.json",
@@ -23,13 +53,13 @@ window.GAMES = [
     "tagline": "Fazenda e colônia",
     "category": "teste",
     "description": "Abra espaço no mato, plante e cave lagos. Os bichinhos colhem, dormem nas tocas e rendem moedas enquanto estão felizes. Se passarem fome por muito tempo, vão embora.",
-    "image": "img/pet.png",
     "accent": "#8cc96b",
     "icon": [
       40,
       84,
       1
     ],
+    "image": "img/pet.png",
     "version": "3e62f27",
     "date": "2026-10-28",
     "manifest": "firmware/pet/manifest.json",
@@ -41,13 +71,13 @@ window.GAMES = [
     "tagline": "Plataforma no escritório",
     "category": "autorais",
     "description": "A máquina de café quebrou e o RH se recusa a comprar outra. Desça os andares do escritório, inspirados nos círculos do inferno de Dante, pulando na cabeça dos colegas e fugindo da impressora atrás de um café. Jogue com o aparelho deitado.",
-    "image": "img/decaf.png",
     "accent": "#c08552",
     "icon": [
       96,
       2,
       1
     ],
+    "image": "img/decaf.png",
     "version": "ecd5773",
     "date": "2026-10-28",
     "manifest": "firmware/decaf/manifest.json",
@@ -59,13 +89,13 @@ window.GAMES = [
     "tagline": "Masmorra em turnos",
     "category": "teste",
     "description": "Desça um poço de masmorras geradas a cada partida. Cada passo é um turno: ande pelo direcional, ataque o que estiver no caminho, junte poções, ouro e equipamento e ache a escada. Morreu, acabou; só o recorde fica.",
-    "image": "img/deepwell.png",
     "accent": "#6f8fd8",
     "icon": [
       70,
       30,
       1
     ],
+    "image": "img/deepwell.png",
     "version": "c882cf4",
     "date": "2026-10-28",
     "manifest": "firmware/deepwell/manifest.json",
@@ -77,13 +107,13 @@ window.GAMES = [
     "tagline": "Foco e relógio",
     "category": "apps",
     "description": "Um timer pomodoro: 25 minutos de foco, uma pausa, e uma pausa longa a cada quatro focos, com alarme e estatísticas da semana. O relógio precisa de WiFi, que esta versão não tem: para ele, compile o projeto com a sua rede.",
-    "image": "img/pomodoro.png",
     "accent": "#e0604f",
     "icon": [
       56,
       72,
       2
     ],
+    "image": "img/pomodoro.png",
     "version": "089abc3",
     "date": "2026-10-28",
     "manifest": "firmware/pomodoro/manifest.json",
@@ -95,13 +125,13 @@ window.GAMES = [
     "tagline": "Bichinho virtual",
     "category": "teste",
     "description": "Choque um ovo e cuide do bichinho que nasce: dê comida e carinho, brinque, limpe a casinha e apague a luz para ele dormir. Ele cresce de jeitos diferentes conforme o cuidado. Aqui ninguém morre: no pior caso ele fica tristinho, e um carinho resolve.",
-    "image": "img/tilde.png",
     "accent": "#ff8fa3",
     "icon": [
       38,
       104,
       2
     ],
+    "image": "img/tilde.png",
     "version": "c0fef59",
     "date": "2026-10-29",
     "manifest": "firmware/tilde/manifest.json",
@@ -113,13 +143,13 @@ window.GAMES = [
     "tagline": "Gire e acerte",
     "category": "autorais",
     "description": "Uma britadeira no meio da arena gira de um quarto em um quarto. Os inimigos chegam pelos quatro lados: acerte-os com a ponta antes que encostem no corpo. Cada dez pontos aumentam as moedas por acerto, e elas compram estilos e músicas. Port do jogo para celular feito em Unity.",
-    "image": "img/jackhammer.png",
     "accent": "#e8433a",
     "icon": [
       96,
       168,
       1
     ],
+    "image": "img/jackhammer.png",
     "version": "9e55a62",
     "date": "2026-10-29",
     "manifest": "firmware/jackhammer/manifest.json",

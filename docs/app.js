@@ -7,15 +7,8 @@
   const SLOT = 0x10000;
   const DEFAULT_ICON = [56, 96, 2];
 
-  const CATEGORIES = [
-    { id: "autorais", name: "Jogos autorais" },
-    { id: "apps", name: "Apps" },
-    { id: "mini", name: "Mini jogos" },
-    { id: "teste", name: "Jogos teste" },
-    { id: "ports", name: "Ports" },
-    { id: "publicos", name: "Jogos públicos" },
-    { id: "comunidade", name: "Jogos da comunidade" },
-  ];
+  // The shelves, in page order, from games/categories.json
+  const CATEGORIES = Array.isArray(window.CATEGORIES) ? window.CATEGORIES : [];
 
   const $ = (id) => document.getElementById(id);
   const device = $("device");

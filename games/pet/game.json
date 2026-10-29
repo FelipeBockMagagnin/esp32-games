@@ -1,0 +1,9 @@
+{
+  "order": 2,
+  "name": "Burrow Colony",
+  "tagline": "Fazenda e colônia",
+  "category": "teste",
+  "description": "Abra espaço no mato, plante e cave lagos. Os bichinhos colhem, dormem nas tocas e rendem moedas enquanto estão felizes. Se passarem fome por muito tempo, vão embora.",
+  "accent": "#8cc96b",
+  "icon": [40, 84, 1]
+}
