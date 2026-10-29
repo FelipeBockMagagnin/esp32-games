@@ -4,6 +4,7 @@
 #include "pitches.h"
 #include "managers/ButtonManager.h"
 #include "managers/ScreenManager.h"
+#include "managers/Launcher.h"
 #include "game/GameState.h"
 #include "game/Inventory.h"
 #include "game/Achievements.h"
@@ -69,6 +70,7 @@ void resetGame();
 void showAscension();
 void ascendGame();
 void applySettings();
+void openGameMenu();
 ConfirmScreen resetScreen({"Reset", "Reset game?", "All progress will be lost,", "ascension and awards too.",
                            "Erase the save and restart", "Resetting..."},
                           Theme::BAD, resetGame, screenManager, sound);
@@ -78,7 +80,7 @@ ConfirmScreen ascendConfirm({"Ascend", "Ascend now?", "Gold, buildings and upgra
 AscensionScreen ascensionScreen(game, ascension, sound, ascendGame);
 AscendScreen ascendScreen(game, ascension, sound, screenManager, ascendConfirm);
 Settings settings = {(uint8_t)SoundMode::ON, DIM_DEFAULT, 0};
-SettingsScreen settingsScreen(settings, applySettings, ascension, screenManager, sound, resetScreen);
+SettingsScreen settingsScreen(settings, applySettings, openGameMenu, ascension, screenManager, sound, resetScreen);
 SplashScreen splashScreen(screenManager, sound);
 
 static constexpr Color UNLOCK_ACCENT = Theme::INFO; // Cyan, so a new screen never reads as an achievement
@@ -152,6 +154,16 @@ void resetGame()
 {
     eraseSave();
     ESP.restart();
+}
+
+void openGameMenu()
+{
+    captureSave(saveBuffer, game, inventory, combat, achievements, unlocks, ascension);
+    if (!saveGame(saveBuffer))
+    {
+        Serial.println("Save failed");
+    }
+    returnToLauncher();
 }
 
 void showAscension()
@@ -378,6 +390,13 @@ void setup()
     downButton.setup();
     leftButton.setup();
     delay(100);
+
+    // Holding Confirm while the board powers on opens the game menu, if the site installed one:
+    // the way out should a game fail before its Settings
+    if (digitalRead(CONFIRM_BUTTON_PIN) == LOW)
+    {
+        returnToLauncher();
+    }
 
     // Before the screens and counters below take their first look at the state
     bool loaded = loadOrReset();
