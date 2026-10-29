@@ -4,7 +4,7 @@
 #include <esp_ota_ops.h>
 #include <esp_partition.h>
 
-// The game menu the site installs beside several games (../esp32-launcher) as the factory app.
+// The game menu the site installs beside several games (launcher/) as the factory app.
 // A single-game install has none, and then the game is all there is.
 inline const esp_partition_t *findLauncher()
 {

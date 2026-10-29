@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include "Buzzer.h"
-#include "../pitches.h"
+#include "pitches.h"
 
 enum class SoundMode : uint8_t
 {

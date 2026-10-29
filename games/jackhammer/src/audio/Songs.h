@@ -2,7 +2,7 @@
 #define SONGS_H
 
 #include "../core/Buzzer.h"
-#include "../pitches.h"
+#include "pitches.h"
 #include "../jack/Config.h"
 
 // One loop per SONGS row, written for the buzzer after the moods of the Unity soundtrack

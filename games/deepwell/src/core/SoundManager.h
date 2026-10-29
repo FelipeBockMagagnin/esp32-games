@@ -2,7 +2,7 @@
 #define SOUND_MANAGER_H
 
 #include <Arduino.h>
-#include "../pitches.h"
+#include "pitches.h"
 
 enum class SoundMode : uint8_t
 {

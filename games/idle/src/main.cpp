@@ -4,7 +4,7 @@
 #include "pitches.h"
 #include "managers/ButtonManager.h"
 #include "managers/ScreenManager.h"
-#include "managers/Launcher.h"
+#include "Launcher.h"
 #include "game/GameState.h"
 #include "game/Inventory.h"
 #include "game/Achievements.h"

@@ -1,5 +1,5 @@
 #include "SettingsScreen.h"
-#include "../managers/Launcher.h"
+#include "Launcher.h"
 #include "../ui/Themes.h"
 
 static const int16_t ROW_X = 5;
