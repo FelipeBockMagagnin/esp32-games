@@ -54,6 +54,9 @@ MINES_SCENE = "06_playing"
 NANIDLE = GAMES / "nanidle"
 # The scene of its tools/shots.sh the cartridge shows: a sewer rat fought in the Windows XP theme
 NANIDLE_SCENE = "04_adventure_xp"
+EMPILHA = GAMES / "empilha"
+# The scene of its tools/shots.sh the cartridge shows: a tall stack, a long piece and its ghost
+EMPILHA_SCENE = "09_cascade_set_up"
 W, H = 240, 320
 FONT = ImageFont.load_default_imagefont()
 
@@ -477,10 +480,17 @@ def nanidle():
         return Image.open(Path(tmp) / f"{NANIDLE_SCENE}.png").convert("RGB")
 
 
+def empilha():
+    with tempfile.TemporaryDirectory() as tmp:
+        subprocess.run([str(EMPILHA / "tools" / "shots.sh"), tmp], check=True, stdout=subprocess.DEVNULL,
+                       env={"TMPDIR": tmp, "PATH": "/usr/bin:/bin", "HOME": str(Path.home())})
+        return Image.open(Path(tmp) / f"{EMPILHA_SCENE}.png").convert("RGB")
+
+
 if __name__ == "__main__":
     for name, draw in (("idle", idle), ("pet", pet), ("decaf", decaf), ("deepwell", deepwell),
                        ("pomodoro", pomodoro), ("tilde", tilde), ("jackhammer", jackhammer),
                        ("dice", dice), ("snake", snake), ("grimhold", grimhold), ("mines", mines),
-                       ("nanidle", nanidle)):
+                       ("nanidle", nanidle), ("empilha", empilha)):
         draw().save(GAMES / name / "screen.png", optimize=True)
         print(GAMES / name / "screen.png")
