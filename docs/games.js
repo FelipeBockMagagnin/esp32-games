@@ -258,6 +258,24 @@ window.GAMES = [
     "date": "2026-10-30",
     "manifest": "firmware/empilha/manifest.json",
     "size": 355392
+  },
+  {
+    "id": "boba",
+    "name": "Boba",
+    "tagline": "O bichinho de LCD dos anos 90",
+    "category": "teste",
+    "description": "Um ovo, um relógio e oito ícones, como no brinquedo de chaveiro: alimente, brinque, limpe, dê remédio, apague a luz na hora de dormir e dê bronca quando ele fizer manha. O cuidado decide em qual das sete formas adultas ele vira, e o descuido pode ser fatal. Com a placa desligada, o bichinho congela. Seis carcaças para escolher.",
+    "accent": "#2f6f8f",
+    "icon": [
+      12,
+      96,
+      2
+    ],
+    "image": "img/boba.png",
+    "version": "0c5c454",
+    "date": "2026-10-30",
+    "manifest": "firmware/boba/manifest.json",
+    "size": 355936
   }
 ];
 window.LAUNCHER = {"version": "13dc543", "date": "2026-10-29", "size": 309712};
