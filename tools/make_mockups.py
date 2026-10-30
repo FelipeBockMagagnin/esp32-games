@@ -13,7 +13,7 @@ needs g++ and Pillow). JackHammer's arena is drawn by the game's own renderer (i
 tools/frame.sh, which needs g++), under its HUD redrawn after PlayScreen. Dice Bag's Roll screen is
 drawn by the app's own screens on the PC (its tools/shots.sh, which needs g++ and a firmware build
 for TFT_eSPI's fonts). Snake's field is drawn the same way, by its own tools/shots.sh, and so is
-Grimhold's first-person view, turned upright like Decaf's.
+Grimhold's first-person view, turned upright like Decaf's. Boba's LCD is drawn the same way.
 Run from the repo root:
 python3 tools/make_mockups.py
 """
@@ -57,6 +57,9 @@ NANIDLE_SCENE = "04_adventure_xp"
 EMPILHA = GAMES / "empilha"
 # The scene of its tools/shots.sh the cartridge shows: a tall stack, a long piece and its ghost
 EMPILHA_SCENE = "09_cascade_set_up"
+BOBA = GAMES / "boba"
+# The scene of its tools/shots.sh the cartridge shows: the long-eared adult, calling, two poops by it
+BOBA_SCENE = "theme_Classic"
 W, H = 240, 320
 FONT = ImageFont.load_default_imagefont()
 
@@ -480,6 +483,13 @@ def nanidle():
         return Image.open(Path(tmp) / f"{NANIDLE_SCENE}.png").convert("RGB")
 
 
+def boba():
+    with tempfile.TemporaryDirectory() as tmp:
+        subprocess.run([str(BOBA / "tools" / "shots.sh"), tmp], check=True, stdout=subprocess.DEVNULL,
+                       env={"TMPDIR": tmp, "PATH": "/usr/bin:/bin", "HOME": str(Path.home())})
+        return Image.open(Path(tmp) / f"{BOBA_SCENE}.png").convert("RGB")
+
+
 def empilha():
     with tempfile.TemporaryDirectory() as tmp:
         subprocess.run([str(EMPILHA / "tools" / "shots.sh"), tmp], check=True, stdout=subprocess.DEVNULL,
@@ -491,6 +501,6 @@ if __name__ == "__main__":
     for name, draw in (("idle", idle), ("pet", pet), ("decaf", decaf), ("deepwell", deepwell),
                        ("pomodoro", pomodoro), ("tilde", tilde), ("jackhammer", jackhammer),
                        ("dice", dice), ("snake", snake), ("grimhold", grimhold), ("mines", mines),
-                       ("nanidle", nanidle), ("empilha", empilha)):
+                       ("nanidle", nanidle), ("empilha", empilha), ("boba", boba)):
         draw().save(GAMES / name / "screen.png", optimize=True)
         print(GAMES / name / "screen.png")
