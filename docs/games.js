@@ -222,6 +222,24 @@ window.GAMES = [
     "date": "2026-10-29",
     "manifest": "firmware/mines/manifest.json",
     "size": 358576
+  },
+  {
+    "id": "nanidle",
+    "name": "NaN Idle",
+    "tagline": "Treine, derrote, renasça",
+    "category": "autorais",
+    "description": "Um idle para devs no estilo dos clássicos do gênero: aloque energia no treino de ataque e defesa, derrube uma escada de bosses, gaste a XP, explore Tutorial, Esgoto e Floresta atrás de itens, ponha mineradores para render ouro e renasça mais forte. Tudo dentro de janelas do Windows 98, XP ou 7.",
+    "accent": "#245edb",
+    "icon": [
+      56,
+      40,
+      2
+    ],
+    "image": "img/nanidle.png",
+    "version": "2613b92",
+    "date": "2026-10-29",
+    "manifest": "firmware/nanidle/manifest.json",
+    "size": 434272
   }
 ];
 window.LAUNCHER = {"version": "13dc543", "date": "2026-10-29", "size": 309712};
