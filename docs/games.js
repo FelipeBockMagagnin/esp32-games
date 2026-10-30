@@ -240,6 +240,24 @@ window.GAMES = [
     "date": "2026-10-29",
     "manifest": "firmware/nanidle/manifest.json",
     "size": 434272
+  },
+  {
+    "id": "empilha",
+    "name": "Empilha",
+    "tagline": "Encaixe as peças antes que a pilha chegue ao topo",
+    "category": "mini",
+    "description": "Blocos caem num poço estreito e cabe a você encaixá-los: fileira cheia some, e a velocidade não perdoa. Três modos: Endless, Sprint de 30 fileiras contra o relógio e Cascade, em que o que sobra de uma limpeza despenca em grupos e pode emendar correntes de pontos. Recorde por modo e seis temas, de caixotes de madeira a papel quadriculado.",
+    "accent": "#3cc8b4",
+    "icon": [
+      60,
+      256,
+      1
+    ],
+    "image": "img/empilha.png",
+    "version": "a5cfa6c",
+    "date": "2026-10-30",
+    "manifest": "firmware/empilha/manifest.json",
+    "size": 355392
   }
 ];
 window.LAUNCHER = {"version": "13dc543", "date": "2026-10-29", "size": 309712};
