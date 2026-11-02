@@ -201,7 +201,7 @@ void setup()
     applySong();
 
     tft.init();
-    tft.setRotation(2);
+    tft.setRotation(DISPLAY_ROTATION);
     tft.initDMA();
     tft.fillScreen(Theme::BG);
     backlight.begin();

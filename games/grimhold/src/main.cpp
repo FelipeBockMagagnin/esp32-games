@@ -22,7 +22,7 @@
 
 // Held on its side like Decaf, a quarter turn clockwise from the other games, so the D-pad sits
 // under the left thumb. Each button is named for the way it points held like that.
-static const uint8_t ROTATION = 1;
+static const uint8_t ROTATION = (DISPLAY_ROTATION + 3) % 4;
 const int RIGHT_BUTTON_PIN = 19;
 const int CONFIRM_BUTTON_PIN = 27;
 const int UP_BUTTON_PIN = 26;

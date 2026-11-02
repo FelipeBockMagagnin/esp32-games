@@ -227,7 +227,7 @@ void setup()
     applySettings();
 
     tft.init();
-    tft.setRotation(2);
+    tft.setRotation(DISPLAY_ROTATION);
     tft.fillScreen(Theme::BG);
     backlight.begin();
 

@@ -321,7 +321,7 @@ void setup()
     autoSaver.begin(millis(), loaded ? &saveBuffer : nullptr);
 
     tft.init();
-    tft.setRotation(2);
+    tft.setRotation(DISPLAY_ROTATION);
     tft.fillScreen(Theme::BG);
     ledcSetup(BACKLIGHT_CHANNEL, 5000, 8);
     ledcAttachPin(TFT_BL, BACKLIGHT_CHANNEL);

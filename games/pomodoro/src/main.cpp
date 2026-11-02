@@ -236,7 +236,7 @@ void setup()
     wallClock.begin(WIFI_SSID, WIFI_PASSWORD, TIMEZONE);
 
     tft.init();
-    tft.setRotation(2);
+    tft.setRotation(DISPLAY_ROTATION);
     tft.fillScreen(Theme::BG);
     ledcSetup(BACKLIGHT_CHANNEL, 5000, 8);
     ledcAttachPin(TFT_BL, BACKLIGHT_CHANNEL);

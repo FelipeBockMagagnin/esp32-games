@@ -440,7 +440,7 @@ void setup()
     saver.begin(millis());
 
     tft.init();
-    tft.setRotation(2);
+    tft.setRotation(DISPLAY_ROTATION);
     tft.fillScreen(Theme::rgb(BG));
     display.begin();
     display.setPoll(pollButtons);

@@ -422,7 +422,7 @@ void setup()
     seenDrops = game.drops();
 
     tft.init();
-    tft.setRotation(2);
+    tft.setRotation(DISPLAY_ROTATION);
     tft.fillScreen(0x0000);
     backlight.begin();
 

@@ -145,7 +145,7 @@ void setup()
     Serial.printf("%u games\n", catalog.count());
 
     tft.init();
-    tft.setRotation(2);
+    tft.setRotation(DISPLAY_ROTATION);
     backlight.begin();
     menu.begin(lastPlayed());
     backlight.setFull();
