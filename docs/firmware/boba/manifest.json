@@ -1,7 +1,7 @@
 {
   "name": "Boba",
-  "version": "0c5c454",
-  "date": "2026-10-30",
+  "version": "3dc4003",
+  "date": "2026-11-02",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 0,
   "builds": [

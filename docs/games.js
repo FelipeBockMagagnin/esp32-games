@@ -38,8 +38,8 @@ window.GAMES = [
       2
     ],
     "image": "img/idle.png",
-    "version": "13dc543",
-    "date": "2026-10-29",
+    "version": "3dc4003",
+    "date": "2026-11-02",
     "manifest": "firmware/idle/manifest.json",
     "size": 670704
   },
@@ -56,8 +56,8 @@ window.GAMES = [
       1
     ],
     "image": "img/pet.png",
-    "version": "4d12dbc",
-    "date": "2026-10-29",
+    "version": "3dc4003",
+    "date": "2026-11-02",
     "manifest": "firmware/pet/manifest.json",
     "size": 383088
   },
@@ -74,8 +74,8 @@ window.GAMES = [
       1
     ],
     "image": "img/decaf.png",
-    "version": "4d12dbc",
-    "date": "2026-10-29",
+    "version": "3dc4003",
+    "date": "2026-11-02",
     "manifest": "firmware/decaf/manifest.json",
     "size": 493424
   },
@@ -92,8 +92,8 @@ window.GAMES = [
       1
     ],
     "image": "img/deepwell.png",
-    "version": "4d12dbc",
-    "date": "2026-10-29",
+    "version": "3dc4003",
+    "date": "2026-11-02",
     "manifest": "firmware/deepwell/manifest.json",
     "size": 370096
   },
@@ -110,8 +110,8 @@ window.GAMES = [
       2
     ],
     "image": "img/pomodoro.png",
-    "version": "eb881af",
-    "date": "2026-10-29",
+    "version": "3dc4003",
+    "date": "2026-11-02",
     "manifest": "firmware/pomodoro/manifest.json",
     "size": 836528
   },
@@ -128,8 +128,8 @@ window.GAMES = [
       2
     ],
     "image": "img/tilde.png",
-    "version": "4d12dbc",
-    "date": "2026-10-29",
+    "version": "3dc4003",
+    "date": "2026-11-02",
     "manifest": "firmware/tilde/manifest.json",
     "size": 437888
   },
@@ -146,8 +146,8 @@ window.GAMES = [
       1
     ],
     "image": "img/jackhammer.png",
-    "version": "4d12dbc",
-    "date": "2026-10-29",
+    "version": "3dc4003",
+    "date": "2026-11-02",
     "manifest": "firmware/jackhammer/manifest.json",
     "size": 438096
   },
@@ -164,8 +164,8 @@ window.GAMES = [
       1
     ],
     "image": "img/dice.png",
-    "version": "c176611",
-    "date": "2026-10-29",
+    "version": "3dc4003",
+    "date": "2026-11-02",
     "manifest": "firmware/dice/manifest.json",
     "size": 381552
   },
@@ -182,8 +182,8 @@ window.GAMES = [
       1
     ],
     "image": "img/grimhold.png",
-    "version": "ee6dd23",
-    "date": "2026-10-29",
+    "version": "3dc4003",
+    "date": "2026-11-02",
     "manifest": "firmware/grimhold/manifest.json",
     "size": 615440
   },
@@ -200,8 +200,8 @@ window.GAMES = [
       1
     ],
     "image": "img/snake.png",
-    "version": "2c5e9b8",
-    "date": "2026-10-29",
+    "version": "3dc4003",
+    "date": "2026-11-02",
     "manifest": "firmware/snake/manifest.json",
     "size": 350128
   },
@@ -218,8 +218,8 @@ window.GAMES = [
       1
     ],
     "image": "img/mines.png",
-    "version": "57586ce",
-    "date": "2026-10-29",
+    "version": "3dc4003",
+    "date": "2026-11-02",
     "manifest": "firmware/mines/manifest.json",
     "size": 358576
   },
@@ -236,8 +236,8 @@ window.GAMES = [
       2
     ],
     "image": "img/nanidle.png",
-    "version": "2613b92",
-    "date": "2026-10-29",
+    "version": "3dc4003",
+    "date": "2026-11-02",
     "manifest": "firmware/nanidle/manifest.json",
     "size": 434272
   },
@@ -254,8 +254,8 @@ window.GAMES = [
       1
     ],
     "image": "img/empilha.png",
-    "version": "a5cfa6c",
-    "date": "2026-10-30",
+    "version": "3dc4003",
+    "date": "2026-11-02",
     "manifest": "firmware/empilha/manifest.json",
     "size": 355392
   },
@@ -272,10 +272,10 @@ window.GAMES = [
       2
     ],
     "image": "img/boba.png",
-    "version": "0c5c454",
-    "date": "2026-10-30",
+    "version": "3dc4003",
+    "date": "2026-11-02",
     "manifest": "firmware/boba/manifest.json",
     "size": 355936
   }
 ];
-window.LAUNCHER = {"version": "13dc543", "date": "2026-10-29", "size": 309712};
+window.LAUNCHER = {"version": "3dc4003", "date": "2026-11-02", "size": 309712};
