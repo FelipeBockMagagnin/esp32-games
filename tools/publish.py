@@ -7,7 +7,10 @@
     tools/publish.py --list     only rewrite docs/games.js and the screens, building nothing
 
 A game is a folder games/<id>/ with a game.json (name, tagline, category, description, accent,
-and optional icon, order, env) and a screen.png; the folder name is its id. A game's version is
+and optional icon, order, env, sources, library, tier) and a screen.png; the folder name is its
+id. `sources` lists more paths, relative to the folder, that go into the firmware (an emulator's
+ROMs, or the folder another edition builds from); `library` names a JSON list of the games an
+emulator carries, filtered by `tier`, for the site to show. A game's version is
 the last commit that touched its firmware's sources, so a change to its description or to
 another game rebuilds nothing. Commits nothing.
 
@@ -75,11 +78,12 @@ def load_games():
 
 
 class Target:
-    def __init__(self, tid, folder, env="esp32dev"):
+    def __init__(self, tid, folder, env="esp32dev", extra=()):
         self.id = tid
         self.dir = ROOT / folder
         self.env = env
-        self.sources = [f"{folder}/{p}" for p in ("src", "include", "lib", "platformio.ini")] + COMMON
+        self.extra = [os.path.normpath(f"{folder}/{p}") for p in extra]
+        self.sources = [f"{folder}/{p}" for p in ("src", "include", "lib", "platformio.ini")] + self.extra + COMMON
         self.out = FIRMWARE / tid
 
     def version(self):
@@ -95,7 +99,7 @@ class Target:
             return "uncommitted changes; commit them first"
         # Nor build in a git-ignored source file, like a secrets.h with someone's WiFi password
         ignored = git("ls-files", "--others", "--ignored", "--exclude-standard", "--",
-                      f"{self.dir.relative_to(ROOT)}/src", f"{self.dir.relative_to(ROOT)}/include")
+                      f"{self.dir.relative_to(ROOT)}/src", f"{self.dir.relative_to(ROOT)}/include", *self.extra)
         if ignored:
             return "ignored files would go into the firmware:\n" + ignored
         return None
@@ -146,6 +150,14 @@ def write_thumb(game, screen):
     (FIRMWARE / game["id"] / "thumb.bin").write_bytes(data)
 
 
+def load_library(game):
+    """The games an emulator carries, as the site lists them"""
+    library = json.loads((GAMES / game["id"] / game["library"]).read_text())
+    tier = game.get("tier", "max")
+    keep = ("title", "author", "genre", "license", "source", "size")
+    return [{k: g[k] for k in keep if k in g} for g in library if tier == "max" or g.get("lite")]
+
+
 def write_list(games):
     """docs/games.js, each game's screen and launcher icon, and nothing left of a removed game"""
     ids = {g["id"] for g in games}
@@ -161,7 +173,9 @@ def write_list(games):
     for g in games:
         screen = DOCS / "img" / f"{g['id']}.png"
         shutil.copy(GAMES / g["id"] / "screen.png", screen)
-        entry = {"id": g["id"], **{k: v for k, v in g.items() if k not in ("id", "env", "order")}}
+        entry = {"id": g["id"], **{k: v for k, v in g.items() if k not in ("id", "env", "order", "sources", "tier")}}
+        if "library" in g:
+            entry["library"] = load_library(g)
         entry["image"] = f"img/{g['id']}.png"
         entry["icon"] = g.get("icon", DEFAULT_ICON)
         manifest = FIRMWARE / g["id"] / "manifest.json"
@@ -195,7 +209,7 @@ def main(args):
     if unknown:
         sys.exit(f"No game named {', '.join(unknown)} in games/")
 
-    targets = [(Target(g["id"], f"games/{g['id']}", g.get("env", "esp32dev")), g) for g in games]
+    targets = [(Target(g["id"], f"games/{g['id']}", g.get("env", "esp32dev"), g.get("sources", ())), g) for g in games]
     targets.append((Target("launcher", "launcher"), None))
     if named:
         targets = [(t, g) for t, g in targets if t.id in named]

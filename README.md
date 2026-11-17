@@ -28,7 +28,8 @@ git add docs && git commit -m "publish firmware" && git push
 ```
 
 A game's version is the last commit that touched its firmware (its `src/`, `include/`, `lib/`
-and `platformio.ini`, plus the repo's `lib/` and `common.ini`), so editing a description or another game
+and `platformio.ini`, the paths its `game.json` lists in `sources`, plus the repo's `lib/` and
+`common.ini`), so editing a description or another game
 rebuilds nothing. Each build starts from clean. The script refuses a game with uncommitted
 changes, so a published version is always a commit, and one with git-ignored files under `src/`
 or `include/` (the Pomodoro's `secrets.h` holds a WiFi password, which must never reach a public
@@ -37,7 +38,9 @@ and `docs/games.js`, and drops what is left of a game whose folder is gone.
 
 The images keep their own offsets (bootloader 0x1000, partitions 0x8000, boot_app0 0xE000,
 app 0x10000) instead of one merged image, whose 0xFF padding would cover NVS at 0x9000 and
-erase every game's save. Every game must keep the default partition table for that to hold.
+erase every game's save. Every game must keep `nvs` (0x9000) and `otadata` (0xE000) where the
+default table has them for that to hold; Game Boy Max, which needs a bigger app slot, writes its
+own table around them.
 
 ## Add a game
 
@@ -47,7 +50,10 @@ erase every game's save. Every game must keep the default partition table for th
    - `name`, `tagline`, `category` (an `id` from `games/categories.json`), `description` and `accent`;
    - optionally `order` (its place on the page and in the menu; unset goes last), `env`
      (default `esp32dev`) and `icon` (`[x, y, factor]`: the 64x64 icon the launcher and the site
-     show is a crop of the screen, `64 * factor` wide).
+     show is a crop of the screen, `64 * factor` wide);
+   - for an emulator, `sources` (more paths, relative to the folder, that go into its firmware,
+     like its ROMs), `library` (a JSON list of the games it carries, which the site shows behind
+     the tile's ☰ button) and `tier` (`lite` keeps only the entries marked `lite`).
 4. Add a 240x320 `screen.png` (`tools/make_mockups.py` draws the existing games').
 5. Commit, then run `tools/publish.py`. The site picks the game up from its folder.
 

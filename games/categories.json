@@ -4,5 +4,6 @@
   {"id": "mini", "name": "Mini jogos"},
   {"id": "teste", "name": "Jogos teste"},
   {"id": "ports", "name": "Ports"},
-  {"id": "comunidade", "name": "Jogos da comunidade"}
+  {"id": "comunidade", "name": "Jogos da comunidade"},
+  {"id": "emuladores", "name": "Emuladores", "description": "Consoles de outros tempos com jogos livres e de código aberto já dentro: nada para baixar nem copiar. Clique em ☰ para ver os jogos de cada um."}
 ]

@@ -499,6 +499,7 @@ b {
 
 .cap:focus-visible,
 .tile:focus-visible,
+.tile-list:focus-visible,
 .help-button:focus-visible,
 .flip-button:focus-visible,
 .close:focus-visible {
@@ -637,6 +638,12 @@ b {
   font-size: 11px;
 }
 
+.category-desc {
+  margin: -4px 0 12px;
+  color: var(--paper-2);
+  max-width: 62ch;
+}
+
 .empty {
   margin: 0;
   padding: 12px 14px;
@@ -726,6 +733,46 @@ b {
 .tile[aria-disabled="true"] .icon,
 .tile[aria-disabled="true"] .tile-text {
   opacity: 0.45;
+}
+
+.tile-wrap {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tile-wrap .tile {
+  flex: 1;
+}
+
+/* The list button takes room from the name, which wraps rather than losing its end */
+.tile-wrap .tile-name {
+  white-space: normal;
+}
+
+.tile-list {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  border: 2px solid var(--ink-3);
+  background: var(--ink-2);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
+  color: var(--paper);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.tile-list small {
+  color: var(--mid);
+  font-size: 16px;
+}
+
+.tile-list:hover {
+  border-color: var(--cart);
 }
 
 .tile.full .tile-size {
@@ -869,6 +916,47 @@ b {
   width: 6px;
   height: 6px;
   background: var(--accent);
+}
+
+/* ---- An emulator's games ---- */
+
+.library-note {
+  margin: 0 0 16px;
+  color: var(--paper-2);
+}
+
+.library-games {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}
+
+.library-games li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0 12px;
+  padding: 8px 10px;
+  background: var(--ink-2);
+}
+
+.lib-title {
+  font-family: "Silkscreen", monospace;
+  font-size: 12px;
+}
+
+.lib-meta {
+  grid-column: 1;
+  color: var(--mid);
+}
+
+.lib-license {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: var(--accent);
+  white-space: nowrap;
 }
 
 /* ---- Footer ---- */

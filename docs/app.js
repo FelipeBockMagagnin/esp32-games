@@ -19,6 +19,7 @@
   const comboInstall = $("combo-install");
   const comboActivate = $("combo-activate");
   const help = $("help");
+  const library = $("library");
 
   // Opened as a file, the page shows its games but cannot fetch a manifest to flash with
   const fromFile = location.protocol === "file:";
@@ -120,6 +121,12 @@
       section.innerHTML = '<h2 class="category-title"><span></span><small></small></h2>';
       section.querySelector("span").textContent = category.name;
       section.querySelector("small").textContent = members.length ? String(members.length) : "";
+      if (category.description) {
+        const desc = document.createElement("p");
+        desc.className = "category-desc";
+        desc.textContent = category.description;
+        section.append(desc);
+      }
       if (members.length === 0) {
         const empty = document.createElement("p");
         empty.className = "empty";
@@ -156,7 +163,44 @@
     tile.addEventListener("click", () => toggle(game));
     tile.addEventListener("animationend", () => tile.classList.remove("refused"));
     tiles.set(game.id, tile);
-    return tile;
+    if (!Array.isArray(game.library)) {
+      return tile;
+    }
+    // An emulator's games, beside its tile: a button cannot sit inside the tile's button
+    const wrap = document.createElement("div");
+    wrap.className = "tile-wrap";
+    const list = document.createElement("button");
+    list.className = "tile-list";
+    list.style.setProperty("--cart", game.accent);
+    list.innerHTML = '<span aria-hidden="true">☰</span><small></small>';
+    list.querySelector("small").textContent = String(game.library.length);
+    list.setAttribute("aria-label", `Ver os ${game.library.length} jogos de ${game.name}`);
+    list.title = "Ver os jogos";
+    list.addEventListener("mouseenter", () => showGame(game));
+    list.addEventListener("click", () => openLibrary(game));
+    wrap.append(tile, list);
+    return wrap;
+  }
+
+  function openLibrary(game) {
+    showGame(game);
+    $("library-title").textContent = `${game.name} · ${game.library.length} jogos`;
+    const list = $("library-list");
+    list.innerHTML = "";
+    game.library.forEach((entry) => {
+      const item = document.createElement("li");
+      item.innerHTML =
+        '<span class="lib-title"></span><span class="lib-meta"></span>' +
+        '<a class="lib-license" target="_blank" rel="noopener"></a>';
+      item.querySelector(".lib-title").textContent = entry.title;
+      const meta = [entry.author, entry.genre, entry.size ? `${Math.round(entry.size / 1024)} KB` : ""];
+      item.querySelector(".lib-meta").textContent = meta.filter(Boolean).join(" · ");
+      const license = item.querySelector(".lib-license");
+      license.textContent = entry.license;
+      license.href = entry.source;
+      list.append(item);
+    });
+    library.showModal();
   }
 
   function toggle(game) {
@@ -327,7 +371,7 @@
 
   document.addEventListener("keydown", (ev) => {
     const dirs = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };
-    if (!dirs[ev.key] || ev.altKey || ev.ctrlKey || ev.metaKey || help.open || document.querySelector("ewt-install-dialog")) {
+    if (!dirs[ev.key] || ev.altKey || ev.ctrlKey || ev.metaKey || help.open || library.open || document.querySelector("ewt-install-dialog")) {
       return;
     }
     ev.preventDefault();
@@ -349,12 +393,15 @@
   };
   $("help-open").addEventListener("click", openHelp);
   $("help-close").addEventListener("click", () => help.close());
+  $("library-close").addEventListener("click", () => library.close());
   // A click on the backdrop lands on the dialog itself, outside its content box
-  help.addEventListener("click", (ev) => {
-    const box = help.getBoundingClientRect();
-    const inside = ev.clientX >= box.left && ev.clientX <= box.right && ev.clientY >= box.top && ev.clientY <= box.bottom;
-    if (ev.target === help && !inside) help.close();
-  });
+  [help, library].forEach((dialog) =>
+    dialog.addEventListener("click", (ev) => {
+      const box = dialog.getBoundingClientRect();
+      const inside = ev.clientX >= box.left && ev.clientX <= box.right && ev.clientY >= box.top && ev.clientY <= box.bottom;
+      if (ev.target === dialog && !inside) dialog.close();
+    })
+  );
   let seenHelp = false;
   try {
     seenHelp = localStorage.getItem(SEEN_HELP_KEY) === "1";
