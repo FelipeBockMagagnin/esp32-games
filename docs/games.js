@@ -22,6 +22,11 @@ window.CATEGORIES = [
   {
     "id": "comunidade",
     "name": "Jogos da comunidade"
+  },
+  {
+    "id": "emuladores",
+    "name": "Emuladores",
+    "description": "Consoles de outros tempos com jogos livres e de código aberto já dentro: nada para baixar nem copiar. Clique em ☰ para ver os jogos de cada um."
   }
 ];
 window.GAMES = [
@@ -276,6 +281,574 @@ window.GAMES = [
     "date": "2026-11-02",
     "manifest": "firmware/boba/manifest.json",
     "size": 355936
+  },
+  {
+    "id": "gameboy",
+    "name": "Game Boy",
+    "tagline": "25 jogos livres de Game Boy",
+    "category": "emuladores",
+    "description": "Um emulador de Game Boy com 25 jogos livres e de código aberto já dentro: quebra-cabeças, plataforma, nave, cartas e corrida, escolhidos entre os melhores da comunidade. OK é o botão A, Esquerda + Direita juntos o B, Cima + Baixo juntos o Start, e segurar Cima + Baixo abre o menu. Os jogos com bateria salvam sozinhos. Cabe junto com outros jogos.",
+    "accent": "#8bac0f",
+    "icon": [
+      48,
+      88,
+      2
+    ],
+    "library": [
+      {
+        "title": "2048gb",
+        "author": "Sanqui",
+        "genre": "Quebra-cabeça",
+        "license": "Zlib",
+        "source": "https://github.com/Sanqui/2048-gb",
+        "size": 32768
+      },
+      {
+        "title": "Airaki",
+        "author": "furrtek",
+        "genre": "Quebra-cabeça",
+        "license": "GPL-3.0-or-later",
+        "source": "https://github.com/furrtek/Airaki",
+        "size": 32768
+      },
+      {
+        "title": "AIRPLANZ",
+        "author": "NotImplementedLife",
+        "genre": "Estratégia",
+        "license": "GPL-3.0-only",
+        "source": "https://github.com/NotImplementedLife/AIRPLANZ",
+        "size": 32768
+      },
+      {
+        "title": "Alien Invasion",
+        "author": "FerrantePescara",
+        "genre": "Ação",
+        "license": "GPL-3.0-only",
+        "source": "https://github.com/NiliusJulius/Alien-Invasion",
+        "size": 32768
+      },
+      {
+        "title": "Big2Small",
+        "author": "mdsteele",
+        "genre": "Quebra-cabeça",
+        "license": "GPL-3.0-or-later",
+        "source": "https://github.com/mdsteele/big2small",
+        "size": 65536
+      },
+      {
+        "title": "Bit Bang",
+        "author": "StudioGuma",
+        "genre": "Quebra-cabeça",
+        "license": "GPL-3.0-or-later",
+        "source": "https://github.com/StudioGuma/bit_bang",
+        "size": 32768
+      },
+      {
+        "title": "CrossConnect",
+        "author": "quinnp",
+        "genre": "Quebra-cabeça",
+        "license": "MIT",
+        "source": "https://github.com/QuinnPainter/CrossConnect",
+        "size": 32768
+      },
+      {
+        "title": "Dashy No Witch",
+        "author": "voxel",
+        "genre": "",
+        "license": "0BSD",
+        "source": "https://hh.gbdev.io/game/dashy-no-witch",
+        "size": 65536
+      },
+      {
+        "title": "Deep Scan for GBC",
+        "author": "TeamKNOx",
+        "genre": "Ação",
+        "license": "MIT",
+        "source": "https://gitlab.com/teamknox/gbcdeepscan",
+        "size": 32768
+      },
+      {
+        "title": "El Jamon Volador",
+        "author": "mateus.digital",
+        "genre": "Ação",
+        "license": "GPL-3.0-only",
+        "source": "https://github.com/mateusdigital/el_jamon_volador",
+        "size": 32768
+      },
+      {
+        "title": "GB Corp.",
+        "author": "Dr. Ludos",
+        "genre": "Estratégia",
+        "license": "MIT",
+        "source": "https://github.com/drludos/GBcorp",
+        "size": 32768
+      },
+      {
+        "title": "GB-Wordyl",
+        "author": "bbbbbr",
+        "genre": "Quebra-cabeça",
+        "license": "GPL-3.0",
+        "source": "https://github.com/bbbbbr/gb-wordle",
+        "size": 32768
+      },
+      {
+        "title": "Geometrix",
+        "author": "AntonioND",
+        "genre": "Quebra-cabeça",
+        "license": "GPL-3.0-or-later",
+        "source": "https://github.com/AntonioND/geometrix",
+        "size": 32768
+      },
+      {
+        "title": "Libbet and the Magic Floor",
+        "author": "Damian Yerrick",
+        "genre": "Quebra-cabeça",
+        "license": "Zlib",
+        "source": "https://github.com/pinobatch/libbet",
+        "size": 32768
+      },
+      {
+        "title": "madpews battlegrounds",
+        "author": "madpew",
+        "genre": "Ação",
+        "license": "Unlicense",
+        "source": "https://github.com/madpew/hello-asm",
+        "size": 32768
+      },
+      {
+        "title": "Max Pirate",
+        "author": "Lemmy Hawkins",
+        "genre": "Ação",
+        "license": "MIT",
+        "source": "https://github.com/MWehrstedt/MaxPirate",
+        "size": 32768
+      },
+      {
+        "title": "Pelmanism",
+        "author": "TeamKNOx",
+        "genre": "Cartas",
+        "license": "MIT",
+        "source": "https://gitlab.com/teamknox/gbccardgame",
+        "size": 32768
+      },
+      {
+        "title": "PlantBoy",
+        "author": "exezin",
+        "genre": "Ação",
+        "license": "MIT",
+        "source": "https://github.com/exezin/PlantBoy",
+        "size": 16384
+      },
+      {
+        "title": "qulqy",
+        "author": "plyr0",
+        "genre": "Quebra-cabeça",
+        "license": "BSD-3-Clause",
+        "source": "https://codeberg.org/plyr0/qulqy",
+        "size": 32768
+      },
+      {
+        "title": "Renegade Rush",
+        "author": "quinnp",
+        "genre": "Corrida",
+        "license": "MIT",
+        "source": "https://github.com/QuinnPainter/Renegade-Rush",
+        "size": 65536
+      },
+      {
+        "title": "Rex Runner GB",
+        "author": "The Void",
+        "genre": "Plataforma",
+        "license": "MIT",
+        "source": "https://github.com/etdv-thevoid/rex-runner-gb",
+        "size": 32768
+      },
+      {
+        "title": "Shock Lobster",
+        "author": "tbsp",
+        "genre": "Ação",
+        "license": "ZLib",
+        "source": "https://github.com/tbsp/shock-lobster",
+        "size": 32768
+      },
+      {
+        "title": "Unstoppable Knight",
+        "author": "Rafagars",
+        "genre": "Ação",
+        "license": "MIT",
+        "source": "https://github.com/Rafagars/Unstoppable-Knight-GB",
+        "size": 32768
+      },
+      {
+        "title": "Waternet",
+        "author": "Willems Davy",
+        "genre": "Quebra-cabeça",
+        "license": "MIT",
+        "source": "https://github.com/joyrider3774/waternet",
+        "size": 32768
+      },
+      {
+        "title": "WYRMHOLE",
+        "author": "quinnp",
+        "genre": "Nave",
+        "license": "MIT",
+        "source": "https://github.com/QuinnPainter/Wyrmhole",
+        "size": 32768
+      }
+    ],
+    "image": "img/gameboy.png"
+  },
+  {
+    "id": "gameboymax",
+    "name": "Game Boy Max",
+    "tagline": "42 jogos livres de Game Boy",
+    "category": "emuladores",
+    "description": "O emulador de Game Boy com todos os 42 jogos livres e de código aberto da nossa seleção, inclusive os maiores, como Tobu Tobu Girl DX, Carazu e Scorching Light. Ocupa quase toda a memória da placa, então vai sozinho, sem outros jogos. Os controles e os saves são os mesmos da versão menor, e os saves passam de uma para a outra.",
+    "accent": "#306230",
+    "icon": [
+      8,
+      136,
+      1
+    ],
+    "library": [
+      {
+        "title": "2048gb",
+        "author": "Sanqui",
+        "genre": "Quebra-cabeça",
+        "license": "Zlib",
+        "source": "https://github.com/Sanqui/2048-gb",
+        "size": 32768
+      },
+      {
+        "title": "5 mazes",
+        "author": "godai / Gniazdo Światów",
+        "genre": "Quebra-cabeça",
+        "license": "CC-BY-SA 4.0",
+        "source": "https://github.com/godai78/5-Mazes",
+        "size": 262144
+      },
+      {
+        "title": "5 more mazes",
+        "author": "godai / Gniazdo Światów",
+        "genre": "Quebra-cabeça",
+        "license": "CC-BY-SA 4.0",
+        "source": "https://github.com/godai78/5-more-mazes",
+        "size": 262144
+      },
+      {
+        "title": "<corrib75>",
+        "author": "gearfo",
+        "genre": "",
+        "license": "GPL-3.0",
+        "source": "https://github.com/gearoidfox/corrib75",
+        "size": 131072
+      },
+      {
+        "title": "Airaki",
+        "author": "furrtek",
+        "genre": "Quebra-cabeça",
+        "license": "GPL-3.0-or-later",
+        "source": "https://github.com/furrtek/Airaki",
+        "size": 32768
+      },
+      {
+        "title": "AIRPLANZ",
+        "author": "NotImplementedLife",
+        "genre": "Estratégia",
+        "license": "GPL-3.0-only",
+        "source": "https://github.com/NotImplementedLife/AIRPLANZ",
+        "size": 32768
+      },
+      {
+        "title": "Alien Invasion",
+        "author": "FerrantePescara",
+        "genre": "Ação",
+        "license": "GPL-3.0-only",
+        "source": "https://github.com/NiliusJulius/Alien-Invasion",
+        "size": 32768
+      },
+      {
+        "title": "Big2Small",
+        "author": "mdsteele",
+        "genre": "Quebra-cabeça",
+        "license": "GPL-3.0-or-later",
+        "source": "https://github.com/mdsteele/big2small",
+        "size": 65536
+      },
+      {
+        "title": "Bit Bang",
+        "author": "StudioGuma",
+        "genre": "Quebra-cabeça",
+        "license": "GPL-3.0-or-later",
+        "source": "https://github.com/StudioGuma/bit_bang",
+        "size": 32768
+      },
+      {
+        "title": "Breksta's Cat",
+        "author": "NotImplementedLife",
+        "genre": "Quebra-cabeça",
+        "license": "MIT",
+        "source": "https://github.com/NotImplementedLife/brekstascat",
+        "size": 131072
+      },
+      {
+        "title": "Carazu",
+        "author": "Martin Holtkamp",
+        "genre": "Plataforma",
+        "license": "GPL-3.0-or-later",
+        "source": "https://github.com/mholtkamp/carazu",
+        "size": 262144
+      },
+      {
+        "title": "CrossConnect",
+        "author": "quinnp",
+        "genre": "Quebra-cabeça",
+        "license": "MIT",
+        "source": "https://github.com/QuinnPainter/CrossConnect",
+        "size": 32768
+      },
+      {
+        "title": "Dashy No Witch",
+        "author": "voxel",
+        "genre": "",
+        "license": "0BSD",
+        "source": "https://hh.gbdev.io/game/dashy-no-witch",
+        "size": 65536
+      },
+      {
+        "title": "Deep Scan for GBC",
+        "author": "TeamKNOx",
+        "genre": "Ação",
+        "license": "MIT",
+        "source": "https://gitlab.com/teamknox/gbcdeepscan",
+        "size": 32768
+      },
+      {
+        "title": "Domination",
+        "author": "Graham Coulby (IonicLimb)",
+        "genre": "Cartas",
+        "license": "MIT",
+        "source": "https://github.com/gcoulby/Domination",
+        "size": 65536
+      },
+      {
+        "title": "El Dueloroso",
+        "author": "Adrián JG",
+        "genre": "Ação",
+        "license": "GPL-3.0",
+        "source": "https://github.com/ajgalan/el-dueloroso",
+        "size": 65536
+      },
+      {
+        "title": "El Jamon Volador",
+        "author": "mateus.digital",
+        "genre": "Ação",
+        "license": "GPL-3.0-only",
+        "source": "https://github.com/mateusdigital/el_jamon_volador",
+        "size": 32768
+      },
+      {
+        "title": "GB Corp.",
+        "author": "Dr. Ludos",
+        "genre": "Estratégia",
+        "license": "MIT",
+        "source": "https://github.com/drludos/GBcorp",
+        "size": 32768
+      },
+      {
+        "title": "GB-Wordyl",
+        "author": "bbbbbr",
+        "genre": "Quebra-cabeça",
+        "license": "GPL-3.0",
+        "source": "https://github.com/bbbbbr/gb-wordle",
+        "size": 32768
+      },
+      {
+        "title": "Geometrix",
+        "author": "AntonioND",
+        "genre": "Quebra-cabeça",
+        "license": "GPL-3.0-or-later",
+        "source": "https://github.com/AntonioND/geometrix",
+        "size": 32768
+      },
+      {
+        "title": "Grub Glide",
+        "author": "Ethan Hazel",
+        "genre": "Ação",
+        "license": "Zlib",
+        "source": "https://github.com/Exetric/GrubGlide",
+        "size": 65536
+      },
+      {
+        "title": "JP",
+        "author": "Graham Coulby (IonicLimb)",
+        "genre": "Plataforma",
+        "license": "MIT",
+        "source": "https://github.com/gcoulby/JP",
+        "size": 65536
+      },
+      {
+        "title": "Libbet and the Magic Floor",
+        "author": "Damian Yerrick",
+        "genre": "Quebra-cabeça",
+        "license": "Zlib",
+        "source": "https://github.com/pinobatch/libbet",
+        "size": 32768
+      },
+      {
+        "title": "madpews battlegrounds",
+        "author": "madpew",
+        "genre": "Ação",
+        "license": "Unlicense",
+        "source": "https://github.com/madpew/hello-asm",
+        "size": 32768
+      },
+      {
+        "title": "Max Pirate",
+        "author": "Lemmy Hawkins",
+        "genre": "Ação",
+        "license": "MIT",
+        "source": "https://github.com/MWehrstedt/MaxPirate",
+        "size": 32768
+      },
+      {
+        "title": "Max Pirate Extra Boom",
+        "author": "Lemmy Hawkins",
+        "genre": "Ação",
+        "license": "MIT",
+        "source": "https://github.com/MWehrstedt/MaxPirateExtra",
+        "size": 65536
+      },
+      {
+        "title": "Namihey",
+        "author": "TeamKNOx",
+        "genre": "Quebra-cabeça",
+        "license": "MIT",
+        "source": "https://gitlab.com/teamknox/gbcnamihey",
+        "size": 65536
+      },
+      {
+        "title": "Pelmanism",
+        "author": "TeamKNOx",
+        "genre": "Cartas",
+        "license": "MIT",
+        "source": "https://gitlab.com/teamknox/gbccardgame",
+        "size": 32768
+      },
+      {
+        "title": "PlantBoy",
+        "author": "exezin",
+        "genre": "Ação",
+        "license": "MIT",
+        "source": "https://github.com/exezin/PlantBoy",
+        "size": 16384
+      },
+      {
+        "title": "Pluto's Corner",
+        "author": "bbbbbr",
+        "genre": "Plataforma",
+        "license": "CC-BY-NC-SA",
+        "source": "https://github.com/bbbbbr/plutoscorner",
+        "size": 65536
+      },
+      {
+        "title": "PostBot",
+        "author": "Tobias Rojahn",
+        "genre": "Quebra-cabeça",
+        "license": "MIT",
+        "source": "https://github.com/MasterIV/PostBot",
+        "size": 65536
+      },
+      {
+        "title": "qulqy",
+        "author": "plyr0",
+        "genre": "Quebra-cabeça",
+        "license": "BSD-3-Clause",
+        "source": "https://codeberg.org/plyr0/qulqy",
+        "size": 32768
+      },
+      {
+        "title": "Renegade Rush",
+        "author": "quinnp",
+        "genre": "Corrida",
+        "license": "MIT",
+        "source": "https://github.com/QuinnPainter/Renegade-Rush",
+        "size": 65536
+      },
+      {
+        "title": "Rex Runner GB",
+        "author": "The Void",
+        "genre": "Plataforma",
+        "license": "MIT",
+        "source": "https://github.com/etdv-thevoid/rex-runner-gb",
+        "size": 32768
+      },
+      {
+        "title": "Scorching Light",
+        "author": "Pasquale 'Pasqui industry' Pignataro",
+        "genre": "Aventura",
+        "license": "CC-BY-NC-ND-4.0",
+        "source": "https://hh.gbdev.io/game/scorching-light",
+        "size": 262144
+      },
+      {
+        "title": "Shock Lobster",
+        "author": "tbsp",
+        "genre": "Ação",
+        "license": "ZLib",
+        "source": "https://github.com/tbsp/shock-lobster",
+        "size": 32768
+      },
+      {
+        "title": "Squishy the Turtle",
+        "author": "Cppchriscpp",
+        "genre": "",
+        "license": "MIT",
+        "source": "https://github.com/potatolain/SquishyTheTurtle",
+        "size": 131072
+      },
+      {
+        "title": "Sushi Nights",
+        "author": "Zalo",
+        "genre": "",
+        "license": "MIT",
+        "source": "https://github.com/Zal0/SushiNights",
+        "size": 131072
+      },
+      {
+        "title": "Tobu Tobu Girl Deluxe",
+        "author": "Tangram Games",
+        "genre": "Ação",
+        "license": "MIT",
+        "source": "https://github.com/SimonLarsen/tobutobugirl-dx",
+        "size": 262144
+      },
+      {
+        "title": "Unstoppable Knight",
+        "author": "Rafagars",
+        "genre": "Ação",
+        "license": "MIT",
+        "source": "https://github.com/Rafagars/Unstoppable-Knight-GB",
+        "size": 32768
+      },
+      {
+        "title": "Waternet",
+        "author": "Willems Davy",
+        "genre": "Quebra-cabeça",
+        "license": "MIT",
+        "source": "https://github.com/joyrider3774/waternet",
+        "size": 32768
+      },
+      {
+        "title": "WYRMHOLE",
+        "author": "quinnp",
+        "genre": "Nave",
+        "license": "MIT",
+        "source": "https://github.com/QuinnPainter/Wyrmhole",
+        "size": 32768
+      }
+    ],
+    "image": "img/gameboymax.png"
   }
 ];
 window.LAUNCHER = {"version": "3dc4003", "date": "2026-11-02", "size": 309712};

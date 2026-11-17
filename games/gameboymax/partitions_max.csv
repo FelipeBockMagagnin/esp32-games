@@ -1,0 +1,6 @@
+# The whole flash for one app. nvs and otadata stay where the default table has them, so every
+# game's save on the board survives installing this edition.
+# Name,   Type, SubType, Offset,  Size
+nvs,      data, nvs,     0x9000,  0x5000
+otadata,  data, ota,     0xe000,  0x2000
+app0,     app,  ota_0,   0x10000, 0x3F0000

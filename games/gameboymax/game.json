@@ -1,0 +1,12 @@
+{
+  "order": 21,
+  "name": "Game Boy Max",
+  "tagline": "42 jogos livres de Game Boy",
+  "category": "emuladores",
+  "description": "O emulador de Game Boy com todos os 42 jogos livres e de código aberto da nossa seleção, inclusive os maiores, como Tobu Tobu Girl DX, Carazu e Scorching Light. Ocupa quase toda a memória da placa, então vai sozinho, sem outros jogos. Os controles e os saves são os mesmos da versão menor, e os saves passam de uma para a outra.",
+  "accent": "#306230",
+  "icon": [8, 136, 1],
+  "sources": ["../gameboy/src", "../gameboy/roms", "../gameboy/library.json", "../gameboy/tools/pack.py", "partitions_max.csv"],
+  "library": "../gameboy/library.json",
+  "tier": "max"
+}

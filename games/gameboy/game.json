@@ -1,0 +1,12 @@
+{
+  "order": 20,
+  "name": "Game Boy",
+  "tagline": "25 jogos livres de Game Boy",
+  "category": "emuladores",
+  "description": "Um emulador de Game Boy com 25 jogos livres e de código aberto já dentro: quebra-cabeças, plataforma, nave, cartas e corrida, escolhidos entre os melhores da comunidade. OK é o botão A, Esquerda + Direita juntos o B, Cima + Baixo juntos o Start, e segurar Cima + Baixo abre o menu. Os jogos com bateria salvam sozinhos. Cabe junto com outros jogos.",
+  "accent": "#8bac0f",
+  "icon": [48, 88, 2],
+  "sources": ["roms", "library.json", "tools/pack.py"],
+  "library": "library.json",
+  "tier": "lite"
+}
