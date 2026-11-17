@@ -1,0 +1,9 @@
+{
+  "order": 14,
+  "name": "Anarch",
+  "tagline": "Tiro em primeira pessoa à moda antiga",
+  "category": "ports",
+  "description": "O FPS livre de drummyfish (domínio público, CC0): dez fases numa cidade tomada por robôs, com seis armas, portas, elevadores e segredos. Jogue com o aparelho deitado. Cima e Baixo andam, Esquerda e Direita giram, OK atira; OK + Cima pula, Esquerda + Direita juntos trocam de arma e Cima + Baixo juntos abrem o menu. O jogo salva ao fim de cada fase.",
+  "accent": "#c8a040",
+  "icon": [30, 30, 2]
+}

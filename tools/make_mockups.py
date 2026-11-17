@@ -14,6 +14,8 @@ tools/frame.sh, which needs g++), under its HUD redrawn after PlayScreen. Dice B
 drawn by the app's own screens on the PC (its tools/shots.sh, which needs g++ and a firmware build
 for TFT_eSPI's fonts). Snake's field is drawn the same way, by its own tools/shots.sh, and so is
 Grimhold's first-person view, turned upright like Decaf's. Boba's LCD is drawn the same way.
+Anarch's level 1 is played by the game itself on the PC (its tools/shot.sh, which needs g++) and
+turned upright too.
 Run from the repo root:
 python3 tools/make_mockups.py
 """
@@ -60,6 +62,9 @@ EMPILHA_SCENE = "09_cascade_set_up"
 BOBA = GAMES / "boba"
 # The scene of its tools/shots.sh the cartridge shows: the long-eared adult, calling, two poops by it
 BOBA_SCENE = "theme_Classic"
+ANARCH = GAMES / "anarch"
+# Its tools/shot.sh moves into level 1: up to the lamp by the first building
+ANARCH_MOVES = ["wait:60", "up:40", "left:12", "up:30", "a:3", "wait:10"]
 W, H = 240, 320
 FONT = ImageFont.load_default_imagefont()
 
@@ -497,10 +502,19 @@ def empilha():
         return Image.open(Path(tmp) / f"{EMPILHA_SCENE}.png").convert("RGB")
 
 
+def anarch():
+    with tempfile.TemporaryDirectory() as tmp:
+        shot = Path(tmp) / "frame.png"
+        subprocess.run([str(ANARCH / "tools" / "shot.sh"), str(shot), *ANARCH_MOVES], check=True,
+                       stdout=subprocess.DEVNULL, env={"TMPDIR": tmp, "PATH": "/usr/bin:/bin"})
+        return Image.open(shot).convert("RGB").rotate(90, expand=True)
+
+
 if __name__ == "__main__":
     for name, draw in (("idle", idle), ("pet", pet), ("decaf", decaf), ("deepwell", deepwell),
                        ("pomodoro", pomodoro), ("tilde", tilde), ("jackhammer", jackhammer),
                        ("dice", dice), ("snake", snake), ("grimhold", grimhold), ("mines", mines),
-                       ("nanidle", nanidle), ("empilha", empilha), ("boba", boba)):
+                       ("nanidle", nanidle), ("empilha", empilha), ("boba", boba),
+                       ("anarch", anarch)):
         draw().save(GAMES / name / "screen.png", optimize=True)
         print(GAMES / name / "screen.png")
