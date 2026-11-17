@@ -283,6 +283,24 @@ window.GAMES = [
     "size": 355936
   },
   {
+    "id": "anarch",
+    "name": "Anarch",
+    "tagline": "Tiro em primeira pessoa à moda antiga",
+    "category": "ports",
+    "description": "O FPS livre de drummyfish (domínio público, CC0): dez fases numa cidade tomada por robôs, com seis armas, portas, elevadores e segredos. Jogue com o aparelho deitado. Cima e Baixo andam, Esquerda e Direita giram, OK atira; OK + Cima pula, Esquerda + Direita juntos trocam de arma e Cima + Baixo juntos abrem o menu. O jogo salva ao fim de cada fase.",
+    "accent": "#c8a040",
+    "icon": [
+      30,
+      30,
+      2
+    ],
+    "image": "img/anarch.png",
+    "version": "605194b",
+    "date": "2026-11-17",
+    "manifest": "firmware/anarch/manifest.json",
+    "size": 424432
+  },
+  {
     "id": "gameboy",
     "name": "Game Boy",
     "tagline": "25 jogos livres de Game Boy",
@@ -496,7 +514,11 @@ window.GAMES = [
         "size": 32768
       }
     ],
-    "image": "img/gameboy.png"
+    "image": "img/gameboy.png",
+    "version": "ed35ea1",
+    "date": "2026-11-17",
+    "manifest": "firmware/gameboy/manifest.json",
+    "size": 1286368
   },
   {
     "id": "gameboymax",
@@ -848,7 +870,136 @@ window.GAMES = [
         "size": 32768
       }
     ],
-    "image": "img/gameboymax.png"
+    "image": "img/gameboymax.png",
+    "version": "ed35ea1",
+    "date": "2026-11-17",
+    "manifest": "firmware/gameboymax/manifest.json",
+    "size": 3646752
+  },
+  {
+    "id": "arduboy",
+    "name": "Arduboy",
+    "tagline": "15 jogos livres de Arduboy",
+    "category": "emuladores",
+    "description": "Quinze jogos livres e de código aberto do Arduboy, o console de bolso de 128x64, recompilados para a placa: nave, ação, plataforma, RPG, corrida e quebra-cabeças, como 1943, Choplifter, Kong, Dark & Under e Hello, Commander. Jogue com o aparelho deitado. OK é o botão A, Esquerda + Direita juntos o B, e segurar Cima + Baixo abre o menu, que troca A e B, reinicia ou sai do jogo. Os recordes e saves de cada jogo ficam guardados. Cabe junto com outros jogos.",
+    "accent": "#5a8cd8",
+    "icon": [
+      8,
+      160,
+      2
+    ],
+    "library": [
+      {
+        "title": "1943",
+        "author": "Simon Holmes (filmote)",
+        "genre": "Nave",
+        "license": "MIT",
+        "source": "https://github.com/ArduboyCollection/Nineteen43"
+      },
+      {
+        "title": "Choplifter",
+        "author": "Simon Holmes (filmote)",
+        "genre": "Ação",
+        "license": "BSD-3-Clause",
+        "source": "https://github.com/ArduboyCollection/Choplifter"
+      },
+      {
+        "title": "Kong",
+        "author": "Press Play On Tape (filmote, Vampirics)",
+        "genre": "Plataforma",
+        "license": "BSD-3-Clause",
+        "source": "https://github.com/Press-Play-On-Tape/Kong"
+      },
+      {
+        "title": "Dark & Under",
+        "author": "Garage Collective (Cyril Guichard, filmote)",
+        "genre": "RPG",
+        "license": "BSD-3-Clause",
+        "source": "https://github.com/ArduboyCollection/Dark-And-Under"
+      },
+      {
+        "title": "Hello, Commander",
+        "author": "Felipe Manga (FManga)",
+        "genre": "Estratégia",
+        "license": "MIT",
+        "source": "https://github.com/ArduboyCollection/HelloCommander"
+      },
+      {
+        "title": "Omega Chase",
+        "author": "Karl P. Williams",
+        "genre": "Nave",
+        "license": "MIT",
+        "source": "https://github.com/Karl-Williams/OmegaChase"
+      },
+      {
+        "title": "Night Raid",
+        "author": "Evan Barger",
+        "genre": "Nave",
+        "license": "MIT",
+        "source": "https://github.com/ArduboyCollection/night-raid"
+      },
+      {
+        "title": "Cosmic Pods",
+        "author": "cubic9com",
+        "genre": "Nave",
+        "license": "BSD-3-Clause",
+        "source": "https://github.com/ArduboyCollection/CosmicPods"
+      },
+      {
+        "title": "Randocity",
+        "author": "Paul Wasson (pmwasson)",
+        "genre": "Corrida",
+        "license": "MIT",
+        "source": "https://github.com/pmwasson/Randocity"
+      },
+      {
+        "title": "Flappy Ball",
+        "author": "Chris Martinez, Scott Allen",
+        "genre": "Arcade",
+        "license": "BSD-3-Clause",
+        "source": "https://github.com/ArduboyCollection/FlappyBall"
+      },
+      {
+        "title": "Crate Confusion",
+        "author": "Dominic Szablewski (Phoboslab)",
+        "genre": "Arcade",
+        "license": "MIT",
+        "source": "https://github.com/phoboslab/arduboy-games"
+      },
+      {
+        "title": "Waternet",
+        "author": "Willems Davy (joyrider3774)",
+        "genre": "Quebra-cabeça",
+        "license": "MIT",
+        "source": "https://github.com/joyrider3774/waternet_arduboy"
+      },
+      {
+        "title": "Pipes",
+        "author": "Simon Holmes (filmote)",
+        "genre": "Quebra-cabeça",
+        "license": "BSD-3-Clause",
+        "source": "https://github.com/ArduboyCollection/LayingPipe"
+      },
+      {
+        "title": "ArduLO",
+        "author": "Jon Thysell",
+        "genre": "Quebra-cabeça",
+        "license": "MIT",
+        "source": "https://github.com/jonthysell/ArduLO"
+      },
+      {
+        "title": "Dominoes",
+        "author": "Simon Holmes (filmote), Vampirics",
+        "genre": "Tabuleiro",
+        "license": "BSD-3-Clause",
+        "source": "https://github.com/Press-Play-On-Tape/Dominoes"
+      }
+    ],
+    "image": "img/arduboy.png",
+    "version": "ad38bf7",
+    "date": "2026-11-17",
+    "manifest": "firmware/arduboy/manifest.json",
+    "size": 587072
   }
 ];
 window.LAUNCHER = {"version": "3dc4003", "date": "2026-11-02", "size": 309712};
