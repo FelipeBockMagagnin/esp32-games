@@ -1,0 +1,17 @@
+[
+  {"slug": "nineteen43", "title": "1943", "author": "Simon Holmes (filmote)", "by": "filmote", "genre": "Nave", "license": "MIT", "source": "https://github.com/ArduboyCollection/Nineteen43", "ok": "A"},
+  {"slug": "choplifter", "title": "Choplifter", "author": "Simon Holmes (filmote)", "by": "filmote", "genre": "Ação", "license": "BSD-3-Clause", "source": "https://github.com/ArduboyCollection/Choplifter", "ok": "A"},
+  {"slug": "kong", "title": "Kong", "author": "Press Play On Tape (filmote, Vampirics)", "by": "Press Play On Tape", "genre": "Plataforma", "license": "BSD-3-Clause", "source": "https://github.com/Press-Play-On-Tape/Kong", "ok": "A"},
+  {"slug": "darkunder", "title": "Dark & Under", "author": "Garage Collective (Cyril Guichard, filmote)", "by": "Garage Collective", "genre": "RPG", "license": "BSD-3-Clause", "source": "https://github.com/ArduboyCollection/Dark-And-Under", "ok": "A"},
+  {"slug": "hellocommander", "title": "Hello, Commander", "author": "Felipe Manga (FManga)", "by": "FManga", "genre": "Estratégia", "license": "MIT", "source": "https://github.com/ArduboyCollection/HelloCommander", "ok": "A"},
+  {"slug": "omegachase", "title": "Omega Chase", "author": "Karl P. Williams", "genre": "Nave", "license": "MIT", "source": "https://github.com/Karl-Williams/OmegaChase", "ok": "A"},
+  {"slug": "nightraid", "title": "Night Raid", "author": "Evan Barger", "genre": "Nave", "license": "MIT", "source": "https://github.com/ArduboyCollection/night-raid", "ok": "A"},
+  {"slug": "cosmicpods", "title": "Cosmic Pods", "author": "cubic9com", "genre": "Nave", "license": "BSD-3-Clause", "source": "https://github.com/ArduboyCollection/CosmicPods", "ok": "A"},
+  {"slug": "randocity", "title": "Randocity", "author": "Paul Wasson (pmwasson)", "by": "pmwasson", "genre": "Corrida", "license": "MIT", "source": "https://github.com/pmwasson/Randocity", "ok": "A"},
+  {"slug": "flappyball", "title": "Flappy Ball", "author": "Chris Martinez, Scott Allen", "by": "C. Martinez, S. Allen", "genre": "Arcade", "license": "BSD-3-Clause", "source": "https://github.com/ArduboyCollection/FlappyBall", "ok": "A"},
+  {"slug": "crateconfusion", "title": "Crate Confusion", "author": "Dominic Szablewski (Phoboslab)", "by": "Phoboslab", "genre": "Arcade", "license": "MIT", "source": "https://github.com/phoboslab/arduboy-games", "ok": "A"},
+  {"slug": "waternet", "title": "Waternet", "author": "Willems Davy (joyrider3774)", "by": "joyrider3774", "genre": "Quebra-cabeça", "license": "MIT", "source": "https://github.com/joyrider3774/waternet_arduboy", "ok": "A"},
+  {"slug": "pipes", "title": "Pipes", "author": "Simon Holmes (filmote)", "by": "filmote", "genre": "Quebra-cabeça", "license": "BSD-3-Clause", "source": "https://github.com/ArduboyCollection/LayingPipe", "ok": "A"},
+  {"slug": "ardulo", "title": "ArduLO", "author": "Jon Thysell", "genre": "Quebra-cabeça", "license": "MIT", "source": "https://github.com/jonthysell/ArduLO", "ok": "A"},
+  {"slug": "dominoes", "title": "Dominoes", "author": "Simon Holmes (filmote), Vampirics", "by": "filmote, Vampirics", "genre": "Tabuleiro", "license": "BSD-3-Clause", "source": "https://github.com/Press-Play-On-Tape/Dominoes", "ok": "A"}
+]

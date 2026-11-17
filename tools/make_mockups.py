@@ -15,7 +15,8 @@ drawn by the app's own screens on the PC (its tools/shots.sh, which needs g++ an
 for TFT_eSPI's fonts). Snake's field is drawn the same way, by its own tools/shots.sh, and so is
 Grimhold's first-person view, turned upright like Decaf's. Boba's LCD is drawn the same way.
 Anarch's level 1 is played by the game itself on the PC (its tools/shot.sh, which needs g++) and
-turned upright too.
+turned upright too, and so is a dungeon of Dark & Under on the Arduboy (its tools/run.sh, which
+also needs a firmware build).
 Run from the repo root:
 python3 tools/make_mockups.py
 """
@@ -65,6 +66,10 @@ BOBA_SCENE = "theme_Classic"
 ANARCH = GAMES / "anarch"
 # Its tools/shot.sh moves into level 1: up to the lamp by the first building
 ANARCH_MOVES = ["wait:60", "up:40", "left:12", "up:30", "a:3", "wait:10"]
+ARDUBOY = GAMES / "arduboy"
+# Its tools/run.sh plays Dark & Under past the title into the first hallway, two steps in
+ARDUBOY_GAME = "darkunder"
+ARDUBOY_KEYS = ["_:3000", "O:100", "_:1500", "O:100", "_:1500", "O:100", "_:1500", "U:150", "_:400", "U:150", "_:500"]
 W, H = 240, 320
 FONT = ImageFont.load_default_imagefont()
 
@@ -510,11 +515,19 @@ def anarch():
         return Image.open(shot).convert("RGB").rotate(90, expand=True)
 
 
+def arduboy():
+    with tempfile.TemporaryDirectory() as tmp:
+        shot = Path(tmp) / "frame.png"
+        subprocess.run([str(ARDUBOY / "tools" / "run.sh"), ARDUBOY_GAME, str(shot), *ARDUBOY_KEYS], check=True,
+                       stdout=subprocess.DEVNULL, env={"TMPDIR": tmp, "PATH": "/usr/bin:/bin", "HOME": str(Path.home())})
+        return Image.open(shot).convert("RGB").rotate(90, expand=True)
+
+
 if __name__ == "__main__":
     for name, draw in (("idle", idle), ("pet", pet), ("decaf", decaf), ("deepwell", deepwell),
                        ("pomodoro", pomodoro), ("tilde", tilde), ("jackhammer", jackhammer),
                        ("dice", dice), ("snake", snake), ("grimhold", grimhold), ("mines", mines),
                        ("nanidle", nanidle), ("empilha", empilha), ("boba", boba),
-                       ("anarch", anarch)):
+                       ("anarch", anarch), ("arduboy", arduboy)):
         draw().save(GAMES / name / "screen.png", optimize=True)
         print(GAMES / name / "screen.png")

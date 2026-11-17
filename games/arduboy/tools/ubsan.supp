@@ -1,0 +1,3 @@
+# Reports tools/run.sh lets pass: harmless on the board, and upstream's code
+# Kong addresses its EEPROM through a SaveEntry pointer that is only ever turned back into a number
+alignment:EEPROM_Utils.cpp

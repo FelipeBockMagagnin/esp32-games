@@ -1,0 +1,11 @@
+{
+  "order": 22,
+  "name": "Arduboy",
+  "tagline": "15 jogos livres de Arduboy",
+  "category": "emuladores",
+  "description": "Quinze jogos livres e de código aberto do Arduboy, o console de bolso de 128x64, recompilados para a placa: nave, ação, plataforma, RPG, corrida e quebra-cabeças, como 1943, Choplifter, Kong, Dark & Under e Hello, Commander. Jogue com o aparelho deitado. OK é o botão A, Esquerda + Direita juntos o B, e segurar Cima + Baixo abre o menu, que troca A e B, reinicia ou sai do jogo. Os recordes e saves de cada jogo ficam guardados. Cabe junto com outros jogos.",
+  "accent": "#5a8cd8",
+  "icon": [8, 160, 2],
+  "sources": ["sketches", "library.json", "tools/sketches.py"],
+  "library": "library.json"
+}
