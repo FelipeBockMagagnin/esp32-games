@@ -74,6 +74,8 @@ private:
     uint16_t channelHz[2] = {};
     bool okIsB = false;
     bool waitRelease = false;
+    bool menuChord = false;
+    bool otherChord = false;
     bool launcherShown = false;
     unsigned long chordSince = 0;
     unsigned long lastPollMs = 0;
@@ -92,6 +94,7 @@ private:
     void saveEeprom(bool quietly);
     void showStatus(const char *text);
     void drawStrip();
+    void drawControl(const char *action, const char *keys, int16_t x, int16_t y);
     void drawMenu(uint8_t row);
     void pause();
 };

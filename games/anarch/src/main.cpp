@@ -8,7 +8,7 @@
 // The board is held on its side, turned a quarter clockwise from the other games, so the D-pad
 // sits under the left thumb. Each button is named for the way it points held like that: the
 // arrow the other games call Up now points right.
-static const uint8_t ROTATION = (DISPLAY_ROTATION + 3) % 4;
+static const uint8_t ROTATION = (DISPLAY_ROTATION + 1) % 4;
 const int RIGHT_BUTTON_PIN = 19;
 const int CONFIRM_BUTTON_PIN = 27;
 const int UP_BUTTON_PIN = 26;

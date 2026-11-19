@@ -55,7 +55,7 @@ tools/run.sh list|settings out.png [theme] # The screens around the games
 
 ## Architecture
 
-- **`src/play/Host`**: the 128x64 frame drawn at 2x (256x128) at the top, only the 8-row pages that changed, two 16-row bands pushed by DMA in turn; the strip below names the game and the controls. **Controls:** OK is A (B when the entry says so, or after Swap), Left + Right together the other; Up + Down together is never a direction, and held for a second opens the pause menu, which runs inside the library call the game was in. The two speaker channels share the buzzer, the first one sounding over the second.
+- **`src/play/Host`**: the 128x64 frame drawn at 2x (256x128) at the top, only the 8-row pages that changed, two 16-row bands pushed by DMA in turn; the strip below names the game and the controls. **Controls:** OK is A (B when the entry says so, or after Swap), Left + Right together the other; a chord lasts until both its buttons are up, so it never leaks a direction; Up + Down together is never a direction, and held for a second opens the pause menu, which runs inside the library call the game was in. The two speaker channels share the buzzer, the first one sounding over the second.
 - **Quitting restarts the board**, since a game's globals cannot be put back as they were: an `RTC_NOINIT_ATTR` word tells the next boot to show the list on that game, or to start it again (Restart game). Starting a game from the list needs no restart; its globals have not been touched.
 - **Screens:** the game list (title over author, SAVE on a game with a save) ↔ Settings (sound: on, games only, off; the palette; dimming; game menu; reset).
 

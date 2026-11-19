@@ -20,7 +20,9 @@ struct Pad
 // shows the controls, or the pause menu.
 //
 // Five buttons stand in for eight: OK is A (or B, for a game whose main action is B),
-// Left+Right together the other one, Up+Down together Start. Holding Up+Down opens the menu.
+// Left+Right together the other one, Up+Down tapped together Start. Holding Up+Down opens the
+// menu. A chord stays a chord until both its buttons are up, so letting go of one first never
+// sends its partner's direction.
 class Player
 {
 public:
@@ -68,8 +70,11 @@ private:
     uint8_t menuRow = 0;
     bool launcherShown = false;
     bool waitRelease = false;
+    bool startChord = false;
+    bool otherChord = false;
     unsigned long chordSince = 0;
     uint8_t selectFrames = 0;
+    uint8_t startFrames = 0;
     unsigned long nextFrameUs = 0;
     unsigned long statusUntil = 0;
     const char *status = nullptr;
@@ -85,6 +90,7 @@ private:
     void save(bool quietly);
     void showStatus(const char *text);
     void drawStrip();
+    void drawControl(const char *action, const char *keys, int16_t x, int16_t y);
     void drawMenu();
     void openMenu();
     void menuInput(const Pad &pad);

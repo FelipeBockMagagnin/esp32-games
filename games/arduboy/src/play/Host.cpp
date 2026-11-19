@@ -171,23 +171,42 @@ uint8_t Host::buttons()
             return 0;
         }
         waitRelease = false;
+        menuChord = otherChord = false;
+    }
+
+    // A chord stays one until both its buttons are up, so letting go of one first never sends its
+    // partner's direction. Up+Down together is the menu's chord, never a direction.
+    if (up && down)
+    {
+        menuChord = true;
+    }
+    else if (!up && !down)
+    {
+        menuChord = false;
+    }
+    if (left && right)
+    {
+        otherChord = true;
+    }
+    else if (!left && !right)
+    {
+        otherChord = false;
     }
 
     uint8_t primary = okIsB ? B_BUTTON : A_BUTTON;
     uint8_t secondary = okIsB ? A_BUTTON : B_BUTTON;
     uint8_t held = 0;
-    // Up+Down together is the menu's chord, never a direction
-    if (!(up && down))
+    if (!menuChord)
     {
         held |= (up ? UP_BUTTON : 0) | (down ? DOWN_BUTTON : 0);
     }
-    if (left && right)
-    {
-        held |= secondary;
-    }
-    else
+    if (!otherChord)
     {
         held |= (left ? LEFT_BUTTON : 0) | (right ? RIGHT_BUTTON : 0);
+    }
+    else if (left && right)
+    {
+        held |= secondary;
     }
     if (ok)
     {
@@ -323,10 +342,9 @@ void Host::drawStrip()
 
     tft.setTextColor(Theme::TEXT_2);
     tft.setTextDatum(TL_DATUM);
-    tft.drawString(okIsB ? "OK      B" : "OK      A", 40, stripY + 46);
-    tft.drawString(okIsB ? "L + R   A" : "L + R   B", 40, stripY + 60);
-    tft.drawString("Hold U + D", 180, stripY + 46);
-    tft.drawString("for the menu", 180, stripY + 60);
+    drawControl(okIsB ? "B" : "A", "OK", 40, stripY + 46);
+    drawControl(okIsB ? "A" : "B", "Left+Right", 40, stripY + 60);
+    drawControl("Menu", "hold Up+Down", 168, stripY + 46);
 
     if (status != nullptr)
     {
@@ -334,6 +352,14 @@ void Host::drawStrip()
         tft.setTextColor(Theme::SELECT);
         tft.drawString(status, cx, stripY + 78);
     }
+}
+
+void Host::drawControl(const char *action, const char *keys, int16_t x, int16_t y)
+{
+    tft.setTextColor(Theme::TEXT);
+    tft.drawString(action, x, y);
+    tft.setTextColor(Theme::TEXT_2);
+    tft.drawString(keys, x + 36, y);
 }
 
 void Host::drawMenu(uint8_t row)

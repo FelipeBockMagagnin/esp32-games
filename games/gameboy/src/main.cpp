@@ -27,15 +27,18 @@ const int DOWN_BUTTON_PIN = 22;
 const int LEFT_BUTTON_PIN = 26;
 const int BUZZER_PIN = 32;
 
+// The emulator reads the buttons once a frame: the library's 50 ms would swallow a quick tap
+static const unsigned long GAME_DEBOUNCE_MS = 15;
+
 // Both editions, the lite and the max, keep their saves here: the same games under the same keys
 const char *const NAMESPACE = "gameboy";
 
 TFT_eSPI tft = TFT_eSPI();
-Button rightButton = Button(RIGHT_BUTTON_PIN);
-Button confirmButton = Button(CONFIRM_BUTTON_PIN);
-Button upButton = Button(UP_BUTTON_PIN);
-Button downButton = Button(DOWN_BUTTON_PIN);
-Button leftButton = Button(LEFT_BUTTON_PIN);
+Button rightButton = Button(RIGHT_BUTTON_PIN, GAME_DEBOUNCE_MS);
+Button confirmButton = Button(CONFIRM_BUTTON_PIN, GAME_DEBOUNCE_MS);
+Button upButton = Button(UP_BUTTON_PIN, GAME_DEBOUNCE_MS);
+Button downButton = Button(DOWN_BUTTON_PIN, GAME_DEBOUNCE_MS);
+Button leftButton = Button(LEFT_BUTTON_PIN, GAME_DEBOUNCE_MS);
 Button *const KEY_BUTTONS[] = {&upButton, &downButton, &leftButton, &rightButton, &confirmButton};
 
 Pack pack;

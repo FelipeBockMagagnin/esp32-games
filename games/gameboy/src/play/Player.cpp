@@ -10,6 +10,7 @@ static const unsigned long MENU_HOLD_MS = 1000;
 static const uint32_t SAVE_QUIET_FRAMES = 300;
 static const unsigned long STATUS_MS = 2000;
 static const uint8_t SELECT_FRAMES = 8;
+static const uint8_t START_FRAMES = 8;
 
 static const char *const MENU_NAMES[] = {"Resume", "Press Select", "Swap A and B", "Save now", "Quit to list",
                                          "Game menu"};
@@ -59,6 +60,8 @@ bool Player::start(uint16_t index)
     // The Confirm press that started the game must not reach it
     waitRelease = true;
     selectFrames = 0;
+    startFrames = 0;
+    startChord = otherChord = false;
     status = nullptr;
     launcherShown = launcherInstalled();
     tft.fillRect(0, 0, Scale::OUT_W, Scale::OUT_H, Theme::SHADE_0);
@@ -127,25 +130,19 @@ void Player::finishFrame()
 uint8_t Player::joypad(const Pad &pad)
 {
     uint8_t held = 0;
-    bool startChord = pad.up && pad.down;
-    bool otherChord = pad.left && pad.right;
     uint8_t primary = okIsB ? JOYPAD_B : JOYPAD_A;
     uint8_t secondary = okIsB ? JOYPAD_A : JOYPAD_B;
-    if (startChord)
-    {
-        held |= JOYPAD_START;
-    }
-    else
+    if (!startChord)
     {
         held |= (pad.up ? JOYPAD_UP : 0) | (pad.down ? JOYPAD_DOWN : 0);
     }
-    if (otherChord)
-    {
-        held |= secondary;
-    }
-    else
+    if (!otherChord)
     {
         held |= (pad.left ? JOYPAD_LEFT : 0) | (pad.right ? JOYPAD_RIGHT : 0);
+    }
+    else if (pad.left && pad.right)
+    {
+        held |= secondary;
     }
     if (pad.ok)
     {
@@ -155,6 +152,11 @@ uint8_t Player::joypad(const Pad &pad)
     {
         selectFrames--;
         held |= JOYPAD_SELECT;
+    }
+    if (startFrames > 0)
+    {
+        startFrames--;
+        held |= JOYPAD_START;
     }
     return held;
 }
@@ -183,22 +185,35 @@ void Player::loop(const Pad &pad)
         }
     }
 
+    if (pad.left && pad.right)
+    {
+        otherChord = true;
+    }
+    else if (!pad.left && !pad.right)
+    {
+        otherChord = false;
+    }
     if (pad.up && pad.down)
     {
-        if (chordSince == 0)
+        if (!startChord)
         {
+            startChord = true;
             chordSince = now;
         }
         else if (now - chordSince >= MENU_HOLD_MS)
         {
-            chordSince = 0;
             openMenu();
             return;
         }
     }
-    else
+    else if (startChord && !pad.up && !pad.down)
     {
-        chordSince = 0;
+        // Start goes out on release, so holding for the menu never pauses the game behind it
+        startChord = false;
+        if (!waitRelease)
+        {
+            startFrames = START_FRAMES;
+        }
     }
 
     unsigned long us = micros();
@@ -291,12 +306,11 @@ void Player::drawStrip()
     tft.setTextColor(Theme::TEXT_DIM);
     tft.drawString(game.author, 120, STRIP_Y + 28);
 
-    tft.setTextColor(Theme::TEXT_2);
     tft.setTextDatum(TL_DATUM);
-    tft.drawString(okIsB ? "OK      B" : "OK      A", 24, STRIP_Y + 46);
-    tft.drawString(okIsB ? "L + R   A" : "L + R   B", 24, STRIP_Y + 60);
-    tft.drawString("U + D   Start", 132, STRIP_Y + 46);
-    tft.drawString("Hold U+D: menu", 132, STRIP_Y + 60);
+    drawControl(okIsB ? "B" : "A", "OK", 8, STRIP_Y + 46);
+    drawControl(okIsB ? "A" : "B", "Left+Right", 8, STRIP_Y + 60);
+    drawControl("Start", "Up+Down", 116, STRIP_Y + 46);
+    drawControl("Menu", "hold Up+Down", 116, STRIP_Y + 60);
 
     if (status != nullptr)
     {
@@ -304,6 +318,14 @@ void Player::drawStrip()
         tft.setTextColor(Theme::SELECT);
         tft.drawString(status, 120, STRIP_Y + 84);
     }
+}
+
+void Player::drawControl(const char *action, const char *keys, int16_t x, int16_t y)
+{
+    tft.setTextColor(Theme::TEXT);
+    tft.drawString(action, x, y);
+    tft.setTextColor(Theme::TEXT_2);
+    tft.drawString(keys, x + 36, y);
 }
 
 void Player::drawMenu()
@@ -345,6 +367,7 @@ void Player::openMenu()
     gb.setButtons(0);
     paused = true;
     waitRelease = true;
+    startChord = otherChord = false;
     menuRow = gb.crashed() ? ROW_QUIT : ROW_RESUME;
     // A battery game is saved whenever the menu opens: quitting by power-off is the usual way
     if (gb.dirty())
