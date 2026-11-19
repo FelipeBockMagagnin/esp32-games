@@ -1,0 +1,18 @@
+title: Ode a Alegria
+author: Ludwig van Beethoven
+bpm: 116
+
+melody:
+[ | f#5/4 f#5 g5 a5 | a5 g5 f#5 e5 | d5 d5 e5 f#5 | f#5/4. e5/8 e5/2
+  | f#5/4 f#5 g5 a5 | a5 g5 f#5 e5 | d5 d5 e5 f#5 | e5/4. d5/8 d5/2
+  | e5/4 e5 f#5 d5 | e5 f#5/8 g5 f#5/4 d5 | e5 f#5/8 g5 f#5/4 e5 | d5 e5 a4/2
+  | f#5/4 f#5 g5 a5 | a5 g5 f#5 e5 | d5 d5 e5 f#5 | e5/4. d5/8 d5/2 ]2
+
+chords:
+[ | D/1 | A | D | A/2 D/2
+  | D/1 | A | D | A/2 D/2
+  | A/2 D | A D | A D | G A
+  | D/1 | A | D | A/2 D/2 ]2
+
+drums:
+[ -/1 ]16 [ k/4 h s h ]16

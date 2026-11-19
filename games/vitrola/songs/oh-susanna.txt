@@ -1,0 +1,16 @@
+title: Oh! Susanna
+author: Stephen Foster
+bpm: 120
+
+melody:
+c5/8 d5
+| e5/4 g5 g5/4. a5/8 | g5/4 e5 c5/4. d5/8 | e5/4 e5 d5 c5 | d5/2. c5/8 d5
+| e5/4 g5 g5/4. a5/8 | g5/4 e5 c5/4. d5/8 | e5/4 e5 d5 d5 | c5/2. r/4
+| f5/2 f5 | a5/4 a5/2 a5/4 | g5/4 g5 e5 c5 | d5/2. c5/8 d5
+| e5/4 g5 g5/4. a5/8 | g5/4 e5 c5/4. d5/8 | e5/4 e5 d5 d5 | c5/1
+
+chords:
+r/4 C/1 C C G C C G C F F C G C C G C
+
+drums:
+-/4 [ k/4 h s h ]16

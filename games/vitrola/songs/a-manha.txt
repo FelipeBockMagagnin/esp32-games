@@ -1,0 +1,11 @@
+title: A Manha
+author: Edvard Grieg
+bpm: 96
+
+melody:
+| b5/4 g#5/8 f#5 e5 f#5 | g#5/8 b5/4 g#5/8 f#5 e5 | f#5/16 g#5 f#5 g#5 b5/4 g#5/8 b5 | c#6/8 g#5 c#6 b5 g#5 f#5 | e5/2.
+| b4/4 g#4/8 f#4 e4 f#4 | g#4/8 b4/4 g#4/8 f#4 e4 | f#4/16 g#4 f#4 g#4 b4/4 g#4/8 b4 | c#5/8 g#4 c#5 b4 g#4 f#4 | e4/2.
+| b5/4 g#5/8 f#5 e5 f#5 | g#5/8 b5/4 g#5/8 f#5 e5 | f#5/16 g#5 f#5 g#5 b5/4 g#5/8 b5 | c#6/8 g#5 c#6 b5 g#5 f#5 | e5/2. | e6/2.
+
+chords:
+[ E/2. E E C#m/4. B/4. E/2. ]3 E/2.

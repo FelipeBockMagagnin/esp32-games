@@ -1,0 +1,76 @@
+[
+  {
+    "name": "System Beeps A", "artist": "Shiru", "label": ["SYSTEM", "BEEPS  A"],
+    "color": "#d8402c", "ink": "#fff4d8",
+    "license": "CC-BY 3.0", "source": "https://files.scene.org/view/demos/artists/shiru/system_beeps.zip",
+    "tracks": [
+      {"bin": "third_party/system_beeps/sys.bin", "title": "System Beeps", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/tmb.bin", "title": "Too Many Bits", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/btl.bin", "title": "Battery Low", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/mnc.bin", "title": "Monoculear", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/hst.bin", "title": "Head Step", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/bad.bin", "title": "Bad Sector", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/dld.bin", "title": "Dial-Down", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/hsh.bin", "title": "Handshake", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/flo.bin", "title": "Floppy Flips", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/pxl.bin", "title": "Pixel Rain", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/ssd.bin", "title": "Single-Sided Drive", "shelf": "1-Sided Drive", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/led.bin", "title": "Twinkle LED", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/clo.bin", "title": "Clocking Ticks", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/txr.bin", "title": "TX/RX", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/srv.bin", "title": "Serverside", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/stf.bin", "title": "Staff Roll", "author": "Shiru"}
+    ]
+  },
+  {
+    "name": "System Beeps B", "artist": "Shiru", "label": ["SYSTEM", "BEEPS  B"],
+    "color": "#2c6ad8", "ink": "#fff4d8",
+    "license": "CC-BY 3.0", "source": "https://files.scene.org/view/demos/artists/shiru/system_beeps.zip",
+    "tracks": [
+      {"bin": "third_party/system_beeps/asf.bin", "title": "Astro Force", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/run.bin", "title": "Run Under Fire", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/mym.bin", "title": "My Mission", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/sqw.bin", "title": "Square Wave", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/fin.bin", "title": "Final Stretch", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/coy.bin", "title": "Coming Year", "author": "Shiru"},
+      {"bin": "third_party/system_beeps/aon.bin", "title": "AONDEMO Soundtrack", "shelf": "AONDEMO", "author": "Shiru"}
+    ]
+  },
+  {
+    "name": "Classicos 1 bit", "artist": "Dominio publico", "label": ["CLASSICOS", "1 BIT"],
+    "color": "#e8b030", "ink": "#2a1606",
+    "license": "Dominio publico", "source": "https://github.com/FelipeBockMagagnin/esp32-games/tree/main/games/vitrola/songs",
+    "tracks": [
+      {"song": "fur-elise"},
+      {"song": "ode-alegria"},
+      {"song": "canone"},
+      {"song": "marcha-turca"},
+      {"song": "rei-da-montanha"},
+      {"song": "sonata-ao-luar"},
+      {"song": "tocata"},
+      {"song": "voo-do-besouro"},
+      {"song": "primavera"},
+      {"song": "a-manha"},
+      {"song": "lago-dos-cisnes"},
+      {"song": "danubio-azul"},
+      {"song": "can-can"},
+      {"song": "the-entertainer"},
+      {"song": "minueto"},
+      {"song": "sinfonia-40"},
+      {"song": "cancao-de-ninar"}
+    ]
+  },
+  {
+    "name": "Cantigas", "artist": "Dominio publico", "label": ["CANTIGAS", "DE SEMPRE"],
+    "color": "#3a9a5a", "ink": "#f4f0d8",
+    "license": "Dominio publico", "source": "https://github.com/FelipeBockMagagnin/esp32-games/tree/main/games/vitrola/songs",
+    "tracks": [
+      {"song": "greensleeves"},
+      {"song": "korobeiniki"},
+      {"song": "brilha-estrelinha"},
+      {"song": "amazing-grace"},
+      {"song": "oh-susanna"},
+      {"song": "jingle-bells"}
+    ]
+  }
+]

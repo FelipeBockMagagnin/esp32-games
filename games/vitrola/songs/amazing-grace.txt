@@ -1,0 +1,12 @@
+title: Amazing Grace
+author: Hino tradicional
+bpm: 84
+arp_hold: 0.6
+
+melody:
+g4/4
+| c5/2 e5/8 c5 | e5/2 d5/4 | c5/2 a4/4 | g4/2 g4/4 | c5/2 e5/8 c5 | e5/2 d5/4 | g5/2. | ~/2 e5/4
+| g5/2 e5/8 c5 | e5/2 d5/4 | c5/2 a4/4 | g4/2 g4/4 | c5/2 e5/8 c5 | e5/2 d5/4 | c5/2. | c5/2 r/4
+
+chords:
+r/4 C/2. C F C C C G G C C F C C G C C

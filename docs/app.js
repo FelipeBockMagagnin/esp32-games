@@ -174,8 +174,10 @@
     list.style.setProperty("--cart", game.accent);
     list.innerHTML = '<span aria-hidden="true">☰</span><small></small>';
     list.querySelector("small").textContent = String(game.library.length);
-    list.setAttribute("aria-label", `Ver os ${game.library.length} jogos de ${game.name}`);
-    list.title = "Ver os jogos";
+    const unit = game.library_unit || "jogos";
+    const the = unit === "jogos" ? "os" : "as";
+    list.setAttribute("aria-label", `Ver ${the} ${game.library.length} ${unit} de ${game.name}`);
+    list.title = `Ver ${the} ${unit}`;
     list.addEventListener("mouseenter", () => showGame(game));
     list.addEventListener("click", () => openLibrary(game));
     wrap.append(tile, list);
@@ -184,7 +186,13 @@
 
   function openLibrary(game) {
     showGame(game);
-    $("library-title").textContent = `${game.name} · ${game.library.length} jogos`;
+    $("library-title").textContent = `${game.name} · ${game.library.length} ${game.library_unit || "jogos"}`;
+    // An emulator's text is the page's own; another kind of library brings its own words
+    const note = $("library-note"), tag = $("library-tag");
+    note.dataset.text ??= note.textContent;
+    tag.dataset.text ??= tag.textContent;
+    note.textContent = game.library_note || note.dataset.text;
+    tag.textContent = game.library_tag || tag.dataset.text;
     const list = $("library-list");
     list.innerHTML = "";
     game.library.forEach((entry) => {

@@ -1,0 +1,16 @@
+title: Jingle Bells
+author: James Lord Pierpont
+bpm: 140
+
+melody:
+| g4/4 e5 d5 c5 | g4/2. g4/8 g4 | g4/4 e5 d5 c5 | a4/1 | a4/4 f5 e5 d5 | b4/1 | g5/4 g5 f5 d5 | e5/1
+| g4/4 e5 d5 c5 | g4/1 | g4/4 e5 d5 c5 | a4/2. a4/4 | a4/4 f5 e5 d5 | g5/4 g5 g5 g5 | a5/4 g5 f5 d5 | c5/2 g5/2
+[ | e5/4 e5 e5/2 | e5/4 e5 e5/2 | e5/4 g5 c5/4. d5/8 | e5/1 | f5/4 f5 f5/4. f5/8 | f5/4 e5 e5 e5/8 e5 | e5/4 d5 d5 e5 | d5/2 g5
+  | e5/4 e5 e5/2 | e5/4 e5 e5/2 | e5/4 g5 c5/4. d5/8 | e5/1 | f5/4 f5 f5/4. f5/8 | f5/4 e5 e5 e5/8 e5 | g5/4 g5 f5 d5 | c5/1 ]2
+
+chords:
+C/1 C C F F G G C C C C F F G G7 C
+[ C C C C F C D7 G C C C C F C G C ]2
+
+drums:
+[ k/4 h s h ]16 [ k/8 h h h s h h h ]32

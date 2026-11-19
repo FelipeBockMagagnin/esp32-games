@@ -78,6 +78,9 @@ CRISP_KEYS = ["_:300", "O:100", "_:1500", "O:80", "_:900", "O:80", "_:1400", "O:
 FLUID = GAMES / "fluid"
 # The scene of its tools/shots.sh the cartridge shows: the ink stirred into swirls, the nozzle in it
 FLUID_SCENE = "04_ink_swirls"
+VITROLA = GAMES / "vitrola"
+# The scene of its tools/shots.sh the cartridge shows: System Beeps spinning, the needle in the groove
+VITROLA_SCENE = "02_system_beeps"
 W, H = 240, 320
 FONT = ImageFont.load_default_imagefont()
 
@@ -522,6 +525,13 @@ def fluid():
         return Image.open(Path(tmp) / f"{FLUID_SCENE}.png").convert("RGB")
 
 
+def vitrola():
+    with tempfile.TemporaryDirectory() as tmp:
+        subprocess.run([str(VITROLA / "tools" / "shots.sh"), tmp], check=True, stdout=subprocess.DEVNULL,
+                       env={"TMPDIR": tmp, "PATH": "/usr/bin:/bin", "HOME": str(Path.home())})
+        return Image.open(Path(tmp) / f"{VITROLA_SCENE}.png").convert("RGB")
+
+
 def anarch():
     with tempfile.TemporaryDirectory() as tmp:
         shot = Path(tmp) / "frame.png"
@@ -550,7 +560,7 @@ if __name__ == "__main__":
     for name, draw in (("idle", idle), ("pet", pet), ("decaf", decaf), ("deepwell", deepwell),
                        ("pomodoro", pomodoro), ("tilde", tilde), ("jackhammer", jackhammer),
                        ("dice", dice), ("snake", snake), ("grimhold", grimhold), ("mines", mines),
-                       ("nanidle", nanidle), ("empilha", empilha), ("boba", boba), ("fluid", fluid),
+                       ("nanidle", nanidle), ("empilha", empilha), ("boba", boba), ("fluid", fluid), ("vitrola", vitrola),
                        ("anarch", anarch), ("arduboy", arduboy), ("crisp", crisp)):
         draw().save(GAMES / name / "screen.png", optimize=True)
         print(GAMES / name / "screen.png")

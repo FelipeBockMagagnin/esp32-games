@@ -1,0 +1,13 @@
+title: Cancao de Ninar
+author: Johannes Brahms
+bpm: 92
+transpose: 12
+arp_hold: 0.5
+
+melody:
+e4/8 e4
+| g4/4. e4/8 e4/4 | g4/2 e4/8 g4 | c5/4 b4/4. a4/8 | a4/4 g4 d4/8 e4 | f4/4 d4 d4/8 e4 | f4/2 d4/8 f4 | b4/8 a4 g4/4 b4 | c5/2 c4/8 c4
+| c5/2 a4/8 f4 | g4/2 e4/8 c4 | f4/4 g4 a4 | g4/2 c4/8 c4 | c5/2 a4/8 f4 | g4/2 e4/8 c4 | f4/4 e4 d4 | c4/2.
+
+chords:
+r/4 C/2. C G G G7 G7 G7 C F C F C F C G7 C

@@ -1,0 +1,10 @@
+title: Minueto em Sol
+author: Christian Petzold
+bpm: 132
+
+melody:
+[ | d5/4 g4/8 a4 b4 c5 | d5/4 g4 g4 | e5/4 c5/8 d5 e5 f#5 | g5/4 g4 g4 | c5/4 d5/8 c5 b4 a4 | b4/4 c5/8 b4 a4 g4 | f#4/4 g4/8 a4 b4 g4 | b4/4 a4/2
+  | d5/4 g4/8 a4 b4 c5 | d5/4 g4 g4 | e5/4 c5/8 d5 e5 f#5 | g5/4 g4 g4 | c5/4 d5/8 c5 b4 a4 | b4/4 c5/8 b4 a4 g4 | a4/4 b4/8 a4 g4 f#4 | g4/2. ]2
+
+chords:
+[ G/2. C G C G C D D | G C G C G C D G ]2

@@ -1,0 +1,24 @@
+title: Rei da Montanha
+author: Edvard Grieg
+bpm: 92
+transpose: 12
+
+melody:
+| b3/8 c#4 d4 e4 f#4 d4 f#4/4 | f4/8 c#4 f4/4 e4/8 c4 e4/4 | b3/8 c#4 d4 e4 f#4 d4 f#4 b4 | a4/8 f#4 d4 f#4 a4/2
+| b3/8 c#4 d4 e4 f#4 d4 f#4/4 | f4/8 c#4 f4/4 e4/8 c4 e4/4 | b3/8 c#4 d4 e4 f#4 d4 f#4 b4 | a4/8 f#4 d4 f#4 a4/2
+| f#4/8 g#4 a#4 b4 c#5 a#4 c#5/4 | d5/8 a#4 d5/4 c#5/8 a#4 c#5/4 | f#4/8 g#4 a#4 b4 c#5 a#4 c#5/4 | d5/8 a#4 d5/4 c#5/2
+@116
+| b3/8 c#4 d4 e4 f#4 d4 f#4/4 | f4/8 c#4 f4/4 e4/8 c4 e4/4 | b3/8 c#4 d4 e4 f#4 d4 f#4 b4 | a4/8 f#4 d4 f#4 a4/2
+@140
+| b3/8 c#4 d4 e4 f#4 d4 f#4/4 | f4/8 c#4 f4/4 e4/8 c4 e4/4 | b3/8 c#4 d4 e4 f#4 d4 f#4 b4 | a4/8 f#4 d4 f#4 a4/2
+@166
+| f#4/8 g#4 a#4 b4 c#5 a#4 c#5/4 | d5/8 a#4 d5/4 c#5/8 a#4 c#5/4 | f#4/8 g#4 a#4 b4 c#5 a#4 c#5/4 | d5/8 a#4 d5/4 c#5/2
+@192
+| b3/8 c#4 d4 e4 f#4 d4 f#4/4 | f4/8 c#4 f4/4 e4/8 c4 e4/4 | b3/8 c#4 d4 e4 f#4 d4 f#4 b4 | a4/8 f#4 d4 f#4 a4/2
+| b4/4 r/4 b3/4 r/4
+
+chords:
+[ Bm/1 F# Bm Bm ]2 [ F#/1 ]4 [ Bm/1 F# Bm Bm ]2 [ F#/1 ]4 Bm/1 F# Bm Bm Bm
+
+drums:
+[ -/1 ]8 [ k/4 h k h ]8 [ k/4 h s h ]12 [ k/8 h s h ]8 k/4 - k -

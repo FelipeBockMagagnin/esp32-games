@@ -1,0 +1,20 @@
+title: Fur Elise
+author: Ludwig van Beethoven
+bpm: 70
+
+melody:
+e5/16 d#5
+| e5 d#5 e5 b4 d5 c5 | a4/8 r/16 c4 e4 a4 | b4/8 r/16 e4 g#4 b4 | c5/8 r/16 e4 e5 d#5
+| e5 d#5 e5 b4 d5 c5 | a4/8 r/16 c4 e4 a4 | b4/8 r/16 e4 c5 b4 | a4/8 r/8 e5/16 d#5
+| e5 d#5 e5 b4 d5 c5 | a4/8 r/16 c4 e4 a4 | b4/8 r/16 e4 g#4 b4 | c5/8 r/16 e4 e5 d#5
+| e5 d#5 e5 b4 d5 c5 | a4/8 r/16 c4 e4 a4 | b4/8 r/16 e4 c5 b4 | a4/8 r/16 b4 c5 d5
+| e5/8. g4/16 f5 e5 | d5/8. f4/16 e5 d5 | c5/8. e4/16 d5 c5 | b4/8 r/16 e4 e5 d#5
+| e5 d#5 e5 b4 d5 c5 | a4/8 r/16 c4 e4 a4 | b4/8 r/16 e4 g#4 b4 | c5/8 r/16 e4 e5 d#5
+| e5 d#5 e5 b4 d5 c5 | a4/8 r/16 c4 e4 a4 | b4/8 r/16 e4 c5 b4 | a4/4.
+
+chords:
+r/8
+| r/4. Am E Am | r Am E Am
+| r Am E Am | r Am E Am
+| C G Am E
+| r Am E Am | r Am E Am

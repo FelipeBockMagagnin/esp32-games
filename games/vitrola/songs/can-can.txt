@@ -1,0 +1,14 @@
+title: Can-can
+author: Jacques Offenbach
+bpm: 150
+
+melody:
+[ | c5/2 d5/8 f5 e5 d5 | g5/4 g5 g5/8 a5 e5 f5 | d5/4 d5 d5/8 f5 e5 d5 | c5/8 c6 b5 a5 g5 f5 e5 d5
+  | c5/2 d5/8 f5 e5 d5 | g5/4 g5 g5/8 a5 e5 f5 | d5/4 d5 d5/8 f5 e5 d5 | c5/8 g5 d5 e5 c5/4 r/4 ]2
+| c6/4 r/4 c5/4 r/4
+
+chords:
+[ C/1 C G C/2 G/2 C/1 C G G/2 C/2 ]2 C/1
+
+drums:
+[ k/8 h s h ]34

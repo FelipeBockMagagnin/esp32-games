@@ -1,0 +1,14 @@
+{
+  "order": 24,
+  "name": "Vitrola",
+  "tagline": "Toca-discos de bipes",
+  "category": "apps",
+  "description": "Um toca-discos retrô para o buzzer: o vinil gira, o braço anda pelos sulcos e o VU pula com cada nota. Vem com System Beeps, o álbum de Shiru feito para o alto-falante do PC (CC-BY), e dois discos de clássicos e cantigas em domínio público arranjados para 1 bit: Für Elise, Marcha Turca, Rei da Montanha, Danúbio Azul, Greensleeves e outras. OK toca e pausa, as setas trocam de faixa, Cima muda o modo e Baixo abre a estante.",
+  "accent": "#d8402c",
+  "icon": [8, 64, 3],
+  "sources": ["albums.json", "songs", "third_party", "tools/tracks.py"],
+  "library": "library.json",
+  "library_unit": "músicas",
+  "library_tag": "Músicas na vitrola",
+  "library_note": "System Beeps é de Shiru, sob CC-BY 3.0. Os clássicos e as cantigas são melodias em domínio público, arranjadas para o buzzer neste repositório."
+}

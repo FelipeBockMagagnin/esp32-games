@@ -1,0 +1,18 @@
+title: Greensleeves
+author: Tradicional ingles
+bpm: 140
+transpose: 12
+
+melody:
+a4/4
+| c5/2 d5/4 | e5/4. f5/8 e5/4 | d5/2 b4/4 | g4/4. a4/8 b4/4 | c5/2 a4/4 | a4/4. g#4/8 a4/4 | b4/2 g#4/4 | e4/2 a4/4
+| c5/2 d5/4 | e5/4. f5/8 e5/4 | d5/2 b4/4 | g4/4. a4/8 b4/4 | c5/4. b4/8 a4/4 | g#4/4. f#4/8 g#4/4 | a4/2. | a4/2.
+| g5/2. | g5/4. f#5/8 e5/4 | d5/2 b4/4 | g4/4. a4/8 b4/4 | c5/2 a4/4 | a4/4. g#4/8 a4/4 | b4/2 g#4/4 | e4/2.
+| g5/2. | g5/4. f#5/8 e5/4 | d5/2 b4/4 | g4/4. a4/8 b4/4 | c5/4. b4/8 a4/4 | g#4/4. f#4/8 g#4/4 | a4/2. | a4/2.
+
+chords:
+r/4
+| Am/2. C G Em Am E E Am
+| Am C G Em Am E Am Am
+| C C G Em Am E E E
+| C C G Em Am E Am Am
