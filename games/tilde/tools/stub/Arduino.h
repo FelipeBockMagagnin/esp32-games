@@ -24,7 +24,6 @@ inline unsigned long millis() { return stubNow; }
 inline unsigned long micros() { return stubNow * 1000; }
 inline long random(long max) { return max > 0 ? rand() % max : 0; }
 inline long random(long min, long max) { return min + random(max - min); }
-inline void tone(int, unsigned int, unsigned long = 0) {}
 
 struct StubSerial
 {

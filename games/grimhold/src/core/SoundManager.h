@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "pitches.h"
+#include "Volume.h"
 
 enum class SoundMode : uint8_t
 {
@@ -12,7 +13,7 @@ enum class SoundMode : uint8_t
     COUNT
 };
 
-// The ESP32 core queues tone() calls, so a phrase plays in sequence without blocking. Everything
+// playTone() queues its notes, so a phrase plays in sequence without blocking. Everything
 // heard in a fight is a few tens of milliseconds, or the queue would trail behind the blows.
 class SoundManager
 {
@@ -35,7 +36,7 @@ private:
         const uint32_t *n = notes.begin();
         for (size_t i = 0; i + 1 < notes.size(); i += 2)
         {
-            tone(pin, n[i], n[i + 1]);
+            playTone(pin, n[i], n[i + 1]);
         }
     }
 

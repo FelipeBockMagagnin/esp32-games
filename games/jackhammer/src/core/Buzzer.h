@@ -11,8 +11,9 @@ struct Note
 
 // The passive buzzer, driven by a task of its own on LEDC channel 0 so a song keeps time
 // while the loop pushes frames. A sound effect cuts in at once over the song, which keeps
-// counting underneath and comes back on the beat. tone() is not used: its queue plays notes
-// one after the other, so an effect would wait for the song's note to end.
+// counting underneath and comes back on the beat. playTone() is not used: its queue plays notes
+// one after the other, so an effect would wait for the song's note to end. The launcher's
+// volume sets the duty, as playTone() does.
 class Buzzer
 {
 public:
@@ -46,6 +47,7 @@ private:
     uint16_t songPos = 0;
     unsigned long songEnd = 0;
     uint16_t sounding = 0;
+    uint16_t duty = 0;
 
     static void taskEntry(void *self);
     void run();

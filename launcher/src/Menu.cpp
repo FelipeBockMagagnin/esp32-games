@@ -17,6 +17,9 @@ static const int16_t NAME_Y = THUMB_BOTTOM + 16;
 static const int16_t TAGLINE_Y = NAME_Y + 24;
 static const int16_t DOTS_Y = TAGLINE_Y + 22;
 static const int16_t HINT_Y = TFT_HEIGHT - 20;
+static const int16_t HINT_TOP_Y = HINT_Y - 14;
+static const int16_t VOLUME_X = 134;
+static const int16_t VOLUME_W = TFT_WIDTH - 48 - VOLUME_X;
 static const int16_t DOT_STEP = 10;
 
 void Menu::centered(const char *text, int16_t y, uint8_t size, uint16_t color)
@@ -42,6 +45,7 @@ void Menu::drawFrame()
     tft.setTextDatum(ML_DATUM);
     tft.setTextColor(TEXT, CARD);
     tft.drawString("dotcompany", 8, HEADER_H / 2);
+    drawVolume();
 
     if (catalog.count() == 0)
     {
@@ -50,13 +54,32 @@ void Menu::drawFrame()
         centered("e grave de novo", 162, 1, DIM);
         return;
     }
+    centered("Lados: jogo   Cima/Baixo: volume", HINT_TOP_Y, 1, DIM);
+    centered("Confirmar: jogar", HINT_Y, 1, CONFIRM);
+}
+
+void Menu::setVolume(Volume v)
+{
+    volume = v;
+    drawVolume();
+}
+
+// A speaker and three bars, lit up to the level, then its name
+void Menu::drawVolume()
+{
+    int16_t x = VOLUME_X, cy = HEADER_H / 2;
+    tft.fillRect(x, 0, VOLUME_W, HEADER_H, CARD);
+    tft.fillRect(x, cy - 2, 3, 5, DIM);
+    tft.fillTriangle(x + 2, cy, x + 6, cy - 4, x + 6, cy + 4, DIM);
+    for (uint8_t i = 0; i < 3; i++)
+    {
+        int16_t h = 3 + i * 2;
+        tft.fillRect(x + 9 + i * 3, cy + 4 - h, 2, h, i < (uint8_t)volume ? TEXT : MUTED);
+    }
     tft.setTextSize(1);
     tft.setTextDatum(ML_DATUM);
-    tft.setTextColor(DIM, BG);
-    tft.drawString("Setas: escolher", 8, HINT_Y);
-    tft.setTextDatum(MR_DATUM);
-    tft.setTextColor(CONFIRM, BG);
-    tft.drawString("Confirmar: jogar", TFT_WIDTH - 8, HINT_Y);
+    tft.setTextColor(volume == Volume::MUTE ? MUTED : DIM, CARD);
+    tft.drawString(volumeName(volume), x + 20, cy);
 }
 
 void Menu::drawGame()
@@ -143,6 +166,6 @@ void Menu::step(int delta)
 
 void Menu::showLaunching()
 {
-    tft.fillRect(0, HINT_Y - 8, TFT_WIDTH, 16, BG);
-    centered("Abrindo...", HINT_Y - 4, 1, catalog.game(selected).accent);
+    tft.fillRect(0, HINT_TOP_Y - 4, TFT_WIDTH, TFT_HEIGHT - HINT_TOP_Y + 4, BG);
+    centered("Abrindo...", HINT_TOP_Y + 6, 1, catalog.game(selected).accent);
 }

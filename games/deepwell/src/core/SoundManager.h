@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "pitches.h"
+#include "Volume.h"
 
 enum class SoundMode : uint8_t
 {
@@ -12,7 +13,7 @@ enum class SoundMode : uint8_t
     COUNT
 };
 
-// The ESP32 core queues tone() calls, so a run of notes plays in sequence without blocking
+// playTone() queues its notes, so a run of notes plays in sequence without blocking
 class SoundManager
 {
 private:
@@ -36,7 +37,7 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_GS7, 100);
+        playTone(pin, NOTE_GS7, 100);
     }
 
     // A semitone either way at random, so a run of hits does not drone
@@ -47,8 +48,8 @@ public:
             return;
         }
         float shift = powf(2.0f, (random(3) - 1) / 12.0f);
-        tone(pin, (unsigned int)(NOTE_G5 * shift), 25);
-        tone(pin, (unsigned int)(NOTE_C5 * shift), 45);
+        playTone(pin, (unsigned int)(NOTE_G5 * shift), 25);
+        playTone(pin, (unsigned int)(NOTE_C5 * shift), 45);
     }
 
     void playKill()
@@ -57,8 +58,8 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_E5, 35);
-        tone(pin, NOTE_B6, 110);
+        playTone(pin, NOTE_E5, 35);
+        playTone(pin, NOTE_B6, 110);
     }
 
     void playHurt()
@@ -67,8 +68,8 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_D4, 50);
-        tone(pin, NOTE_A3, 70);
+        playTone(pin, NOTE_D4, 50);
+        playTone(pin, NOTE_A3, 70);
     }
 
     void playPickup()
@@ -77,8 +78,8 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_C7, 50);
-        tone(pin, NOTE_G7, 90);
+        playTone(pin, NOTE_C7, 50);
+        playTone(pin, NOTE_G7, 90);
     }
 
     void playHeal()
@@ -87,9 +88,9 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_E6, 70);
-        tone(pin, NOTE_A6, 70);
-        tone(pin, NOTE_E7, 120);
+        playTone(pin, NOTE_E6, 70);
+        playTone(pin, NOTE_A6, 70);
+        playTone(pin, NOTE_E7, 120);
     }
 
     void playGear()
@@ -98,11 +99,11 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_C6, 70);
-        tone(pin, NOTE_G6, 70);
-        tone(pin, NOTE_C7, 70);
-        tone(pin, NOTE_E7, 70);
-        tone(pin, NOTE_G7, 220);
+        playTone(pin, NOTE_C6, 70);
+        playTone(pin, NOTE_G6, 70);
+        playTone(pin, NOTE_C7, 70);
+        playTone(pin, NOTE_E7, 70);
+        playTone(pin, NOTE_G7, 220);
     }
 
     void playLevelUp()
@@ -111,10 +112,10 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_C6, 80);
-        tone(pin, NOTE_E6, 80);
-        tone(pin, NOTE_G6, 80);
-        tone(pin, NOTE_C7, 160);
+        playTone(pin, NOTE_C6, 80);
+        playTone(pin, NOTE_E6, 80);
+        playTone(pin, NOTE_G6, 80);
+        playTone(pin, NOTE_C7, 160);
     }
 
     // Falling steps, the way down
@@ -124,10 +125,10 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_G6, 90);
-        tone(pin, NOTE_E6, 90);
-        tone(pin, NOTE_C6, 90);
-        tone(pin, NOTE_G5, 200);
+        playTone(pin, NOTE_G6, 90);
+        playTone(pin, NOTE_E6, 90);
+        playTone(pin, NOTE_C6, 90);
+        playTone(pin, NOTE_G5, 200);
     }
 
     void playDeath()
@@ -136,10 +137,10 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_D4, 160);
-        tone(pin, NOTE_A3, 160);
-        tone(pin, NOTE_F3, 160);
-        tone(pin, NOTE_D3, 500);
+        playTone(pin, NOTE_D4, 160);
+        playTone(pin, NOTE_A3, 160);
+        playTone(pin, NOTE_F3, 160);
+        playTone(pin, NOTE_D3, 500);
     }
 
     void playStart()
@@ -148,10 +149,10 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_C5, 90);
-        tone(pin, NOTE_G5, 90);
-        tone(pin, NOTE_C6, 90);
-        tone(pin, NOTE_E6, 240);
+        playTone(pin, NOTE_C5, 90);
+        playTone(pin, NOTE_G5, 90);
+        playTone(pin, NOTE_C6, 90);
+        playTone(pin, NOTE_E6, 240);
     }
 
     // An action that did nothing: a wall, no potions, no stairs
@@ -161,7 +162,7 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_A3, 60);
+        playTone(pin, NOTE_A3, 60);
     }
 };
 

@@ -22,7 +22,6 @@ inline unsigned long stubNow = 0;
 inline unsigned long millis() { return stubNow; }
 long random(long max);
 long random(long min, long max);
-inline void tone(int, unsigned int, unsigned long = 0) {}
 template <typename T, typename L, typename H> T constrain(T v, L lo, H hi) { return v < lo ? (T)lo : (v > hi ? (T)hi : v); }
 
 class String

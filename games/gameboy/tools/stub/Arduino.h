@@ -23,8 +23,6 @@ inline unsigned long millis() { return stubNow; }
 inline unsigned long micros() { return stubNow * 1000; }
 long random(long max);
 long random(long min, long max);
-inline void tone(int, unsigned int, unsigned long = 0) {}
-inline void noTone(int) {}
 
 class String
 {

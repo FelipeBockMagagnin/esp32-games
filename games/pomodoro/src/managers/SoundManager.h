@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "pitches.h"
+#include "Volume.h"
 
 enum class SoundMode : uint8_t
 {
@@ -12,7 +13,7 @@ enum class SoundMode : uint8_t
     COUNT
 };
 
-// The ESP32 core queues tone() calls, so a melody plays its notes in sequence without blocking
+// playTone() queues its notes, so a melody plays its notes in sequence without blocking
 class SoundManager
 {
 private:
@@ -36,17 +37,17 @@ private:
     {
         if (ringingFocus)
         {
-            tone(pin, NOTE_C7, 120);
-            tone(pin, NOTE_G6, 120);
-            tone(pin, NOTE_E6, 120);
-            tone(pin, NOTE_C6, 300);
+            playTone(pin, NOTE_C7, 120);
+            playTone(pin, NOTE_G6, 120);
+            playTone(pin, NOTE_E6, 120);
+            playTone(pin, NOTE_C6, 300);
         }
         else
         {
-            tone(pin, NOTE_C6, 120);
-            tone(pin, NOTE_E6, 120);
-            tone(pin, NOTE_G6, 120);
-            tone(pin, NOTE_C7, 300);
+            playTone(pin, NOTE_C6, 120);
+            playTone(pin, NOTE_E6, 120);
+            playTone(pin, NOTE_G6, 120);
+            playTone(pin, NOTE_C7, 300);
         }
     }
 
@@ -62,7 +63,7 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_GS7, 100);
+        playTone(pin, NOTE_GS7, 100);
     }
 
     void playStart()
@@ -71,8 +72,8 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_C7, 50);
-        tone(pin, NOTE_G7, 110);
+        playTone(pin, NOTE_C7, 50);
+        playTone(pin, NOTE_G7, 110);
     }
 
     void playPause()
@@ -81,8 +82,8 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_G6, 50);
-        tone(pin, NOTE_C6, 110);
+        playTone(pin, NOTE_G6, 50);
+        playTone(pin, NOTE_C6, 110);
     }
 
     // Repeats until stopAlarm(), or gives up after a minute so an empty room is not rung forever

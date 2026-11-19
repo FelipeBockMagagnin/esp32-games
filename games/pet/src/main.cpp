@@ -74,7 +74,7 @@ const char *noticeCaption = nullptr;
 char noticeCaptionText[24];
 Color noticeAccent = Theme::GOOD;
 
-// tone() drives LEDC channel 0, and channel 1 shares its timer
+// playTone() drives LEDC channel 0, and channel 1 shares its timer
 static const uint8_t BACKLIGHT_CHANNEL = 4;
 static const uint8_t BACKLIGHT_FULL = 255;
 static const uint8_t BACKLIGHT_DIM = 20;

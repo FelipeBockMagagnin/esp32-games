@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "pitches.h"
+#include "Volume.h"
 
 enum class SoundMode : uint8_t
 {
@@ -12,7 +13,7 @@ enum class SoundMode : uint8_t
     COUNT
 };
 
-// The ESP32 core queues tone() calls, so a run of notes plays in sequence without blocking.
+// playTone() queues its notes, so a run of notes plays in sequence without blocking.
 class SoundManager
 {
 private:
@@ -34,7 +35,7 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_GS7, 20);
+            playTone(pin, NOTE_GS7, 20);
         }
     }
 
@@ -42,8 +43,8 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_E5, 40);
-            tone(pin, NOTE_C5, 70);
+            playTone(pin, NOTE_E5, 40);
+            playTone(pin, NOTE_C5, 70);
         }
     }
 
@@ -51,8 +52,8 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_C7, 25);
-            tone(pin, NOTE_G7, 35);
+            playTone(pin, NOTE_C7, 25);
+            playTone(pin, NOTE_G7, 35);
         }
     }
 
@@ -60,7 +61,7 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, strike ? NOTE_A5 : NOTE_E6, strike ? 30 : 10);
+            playTone(pin, strike ? NOTE_A5 : NOTE_E6, strike ? 30 : 10);
         }
     }
 
@@ -68,8 +69,8 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_E6, 30);
-            tone(pin, NOTE_B6, 50);
+            playTone(pin, NOTE_E6, 30);
+            playTone(pin, NOTE_B6, 50);
         }
     }
 
@@ -77,9 +78,9 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_G6, 40);
-            tone(pin, NOTE_D7, 40);
-            tone(pin, NOTE_G7, 70);
+            playTone(pin, NOTE_G6, 40);
+            playTone(pin, NOTE_D7, 40);
+            playTone(pin, NOTE_G7, 70);
         }
     }
 
@@ -89,10 +90,10 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_C6, 70);
-        tone(pin, NOTE_E6, 70);
-        tone(pin, NOTE_G6, 70);
-        tone(pin, NOTE_C7, 160);
+        playTone(pin, NOTE_C6, 70);
+        playTone(pin, NOTE_E6, 70);
+        playTone(pin, NOTE_G6, 70);
+        playTone(pin, NOTE_C7, 160);
     }
 
     void playDeath()
@@ -101,9 +102,9 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_G5, 80);
-        tone(pin, NOTE_DS5, 80);
-        tone(pin, NOTE_C5, 200);
+        playTone(pin, NOTE_G5, 80);
+        playTone(pin, NOTE_DS5, 80);
+        playTone(pin, NOTE_C5, 200);
     }
 
     // A message box popping up
@@ -113,8 +114,8 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_A6, 60);
-        tone(pin, NOTE_E7, 120);
+        playTone(pin, NOTE_A6, 60);
+        playTone(pin, NOTE_E7, 120);
     }
 
     void playStartup()
@@ -123,11 +124,11 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_G5, 120);
-        tone(pin, NOTE_D6, 120);
-        tone(pin, NOTE_G6, 120);
-        tone(pin, NOTE_B6, 120);
-        tone(pin, NOTE_D7, 300);
+        playTone(pin, NOTE_G5, 120);
+        playTone(pin, NOTE_D6, 120);
+        playTone(pin, NOTE_G6, 120);
+        playTone(pin, NOTE_B6, 120);
+        playTone(pin, NOTE_D7, 300);
     }
 
     void playRebirth()
@@ -138,9 +139,9 @@ public:
         }
         for (uint16_t note : {NOTE_C5, NOTE_G5, NOTE_C6, NOTE_E6, NOTE_G6, NOTE_C7})
         {
-            tone(pin, note, 70);
+            playTone(pin, note, 70);
         }
-        tone(pin, NOTE_C8, 250);
+        playTone(pin, NOTE_C8, 250);
     }
 };
 

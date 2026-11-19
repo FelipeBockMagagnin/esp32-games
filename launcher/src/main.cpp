@@ -8,6 +8,7 @@
 #include "Backlight.h"
 #include "ButtonManager.h"
 #include "pitches.h"
+#include "Volume.h"
 
 // The same carrier board as the idle game: a D-pad with Confirm in the middle
 const int RIGHT_BUTTON_PIN = 23;
@@ -33,6 +34,7 @@ Backlight backlight(TFT_BL);
 Catalog catalog;
 Menu menu(tft, catalog);
 
+Volume volume = VOLUME_DEFAULT;
 bool launching = false;
 unsigned long launchAt = 0;
 
@@ -49,6 +51,20 @@ int lastPlayed()
     return catalog.indexOf(label);
 }
 
+void changeVolume(int delta)
+{
+    int next = (int)volume + delta;
+    if (next < 0 || next >= (int)Volume::COUNT)
+    {
+        return;
+    }
+    volume = (Volume)next;
+    saveVolume(volume);
+    setVolume(volume);
+    menu.setVolume(volume);
+    playTone(BUZZER_PIN, NOTE_GS7, 60);
+}
+
 void startLaunch(unsigned long now)
 {
     const Game &g = catalog.game(menu.getSelected());
@@ -59,9 +75,9 @@ void startLaunch(unsigned long now)
         prefs.end();
     }
     menu.showLaunching();
-    tone(BUZZER_PIN, NOTE_C6, 70);
-    tone(BUZZER_PIN, NOTE_G6, 70);
-    tone(BUZZER_PIN, NOTE_C7, 160);
+    playTone(BUZZER_PIN, NOTE_C6, 70);
+    playTone(BUZZER_PIN, NOTE_G6, 70);
+    playTone(BUZZER_PIN, NOTE_C7, 160);
     launching = true;
     launchAt = now + LAUNCH_DELAY_MS;
 }
@@ -147,7 +163,10 @@ void setup()
     tft.init();
     tft.setRotation(DISPLAY_ROTATION);
     backlight.begin();
+    volume = loadVolume();
+    setVolume(volume);
     menu.begin(lastPlayed());
+    menu.setVolume(volume);
     backlight.setFull();
 }
 
@@ -184,19 +203,24 @@ void loop()
         }
         return;
     }
+    if (up || down)
+    {
+        changeVolume(up ? 1 : -1);
+        return;
+    }
     if (catalog.count() == 0)
     {
         return;
     }
-    if (left || up)
+    if (left)
     {
         menu.step(-1);
-        tone(BUZZER_PIN, NOTE_GS7, 40);
+        playTone(BUZZER_PIN, NOTE_GS7, 40);
     }
-    else if (right || down)
+    else if (right)
     {
         menu.step(1);
-        tone(BUZZER_PIN, NOTE_GS7, 40);
+        playTone(BUZZER_PIN, NOTE_GS7, 40);
     }
     else if (confirm)
     {

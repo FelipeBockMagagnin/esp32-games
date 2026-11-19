@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "pitches.h"
+#include "Volume.h"
 
 enum class SoundMode : uint8_t
 {
@@ -12,7 +13,7 @@ enum class SoundMode : uint8_t
     COUNT
 };
 
-// The ESP32 core queues tone() calls, so a run of notes plays in sequence without blocking.
+// playTone() queues its notes, so a run of notes plays in sequence without blocking.
 // A note played on every move is shorter than the key repeat, or the queue would fall behind
 // the piece.
 class SoundManager
@@ -36,7 +37,7 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_GS7, 60);
+            playTone(pin, NOTE_GS7, 60);
         }
     }
 
@@ -44,7 +45,7 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_E7, 5);
+            playTone(pin, NOTE_E7, 5);
         }
     }
 
@@ -52,8 +53,8 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_A6, 8);
-            tone(pin, NOTE_E7, 8);
+            playTone(pin, NOTE_A6, 8);
+            playTone(pin, NOTE_E7, 8);
         }
     }
 
@@ -61,7 +62,7 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_E4, 16);
+            playTone(pin, NOTE_E4, 16);
         }
     }
 
@@ -69,9 +70,9 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_C5, 8);
-            tone(pin, NOTE_E4, 8);
-            tone(pin, NOTE_B3, 22);
+            playTone(pin, NOTE_C5, 8);
+            playTone(pin, NOTE_E4, 8);
+            playTone(pin, NOTE_B3, 22);
         }
     }
 
@@ -79,8 +80,8 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_A6, 40);
-            tone(pin, NOTE_E6, 60);
+            playTone(pin, NOTE_A6, 40);
+            playTone(pin, NOTE_E6, 60);
         }
     }
 
@@ -95,7 +96,7 @@ public:
         }
         for (uint8_t i = 0; i < count + 1 && i < NOTE_COUNT; i++)
         {
-            tone(pin, NOTES[i], 34);
+            playTone(pin, NOTES[i], 34);
         }
     }
 
@@ -109,8 +110,8 @@ public:
             return;
         }
         uint8_t top = link < NOTE_COUNT ? link : NOTE_COUNT - 1;
-        tone(pin, NOTES[top], 40);
-        tone(pin, NOTES[top] * 2, 60);
+        playTone(pin, NOTES[top], 40);
+        playTone(pin, NOTES[top] * 2, 60);
     }
 
     void playLevel()
@@ -119,9 +120,9 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_G6, 50);
-        tone(pin, NOTE_D7, 50);
-        tone(pin, NOTE_G7, 90);
+        playTone(pin, NOTE_G6, 50);
+        playTone(pin, NOTE_D7, 50);
+        playTone(pin, NOTE_G7, 90);
     }
 
     void playTopOut()
@@ -130,12 +131,12 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_A5, 60);
-        tone(pin, NOTE_F5, 60);
-        tone(pin, NOTE_D5, 60);
-        tone(pin, NOTE_A4, 80);
-        tone(pin, NOTE_F4, 80);
-        tone(pin, NOTE_D4, 200);
+        playTone(pin, NOTE_A5, 60);
+        playTone(pin, NOTE_F5, 60);
+        playTone(pin, NOTE_D5, 60);
+        playTone(pin, NOTE_A4, 80);
+        playTone(pin, NOTE_F4, 80);
+        playTone(pin, NOTE_D4, 200);
     }
 
     void playFinished()
@@ -144,11 +145,11 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_D6, 70);
-        tone(pin, NOTE_A6, 70);
-        tone(pin, NOTE_D7, 70);
-        tone(pin, NOTE_A6, 70);
-        tone(pin, NOTE_D7, 200);
+        playTone(pin, NOTE_D6, 70);
+        playTone(pin, NOTE_A6, 70);
+        playTone(pin, NOTE_D7, 70);
+        playTone(pin, NOTE_A6, 70);
+        playTone(pin, NOTE_D7, 200);
     }
 
     void playRecord()
@@ -157,10 +158,10 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_A6, 80);
-        tone(pin, NOTE_D7, 80);
-        tone(pin, NOTE_FS7, 80);
-        tone(pin, NOTE_A7, 240);
+        playTone(pin, NOTE_A6, 80);
+        playTone(pin, NOTE_D7, 80);
+        playTone(pin, NOTE_FS7, 80);
+        playTone(pin, NOTE_A7, 240);
     }
 };
 

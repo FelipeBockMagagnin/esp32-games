@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "pitches.h"
+#include "Volume.h"
 
 enum class SoundMode : uint8_t
 {
@@ -12,7 +13,7 @@ enum class SoundMode : uint8_t
     COUNT
 };
 
-// The ESP32 core queues tone() calls, so a run of notes plays in sequence without blocking.
+// playTone() queues its notes, so a run of notes plays in sequence without blocking.
 class SoundManager
 {
 private:
@@ -34,7 +35,7 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_GS7, 50);
+            playTone(pin, NOTE_GS7, 50);
         }
     }
 
@@ -42,8 +43,8 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_C5, 90);
-            tone(pin, NOTE_C5, 120);
+            playTone(pin, NOTE_C5, 90);
+            playTone(pin, NOTE_C5, 120);
         }
     }
 
@@ -51,8 +52,8 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_E7, 40);
-            tone(pin, NOTE_A7, 40);
+            playTone(pin, NOTE_E7, 40);
+            playTone(pin, NOTE_A7, 40);
         }
     }
 
@@ -60,8 +61,8 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_C7, 60);
-            tone(pin, NOTE_G7, 80);
+            playTone(pin, NOTE_C7, 60);
+            playTone(pin, NOTE_G7, 80);
         }
     }
 
@@ -69,9 +70,9 @@ public:
     {
         if (allowed(true))
         {
-            tone(pin, NOTE_E7, 90);
-            tone(pin, NOTE_E7, 90);
-            tone(pin, NOTE_E7, 90);
+            playTone(pin, NOTE_E7, 90);
+            playTone(pin, NOTE_E7, 90);
+            playTone(pin, NOTE_E7, 90);
         }
     }
 
@@ -79,10 +80,10 @@ public:
     {
         if (allowed(true))
         {
-            tone(pin, NOTE_C6, 70);
-            tone(pin, NOTE_E6, 70);
-            tone(pin, NOTE_G6, 70);
-            tone(pin, NOTE_C7, 140);
+            playTone(pin, NOTE_C6, 70);
+            playTone(pin, NOTE_E6, 70);
+            playTone(pin, NOTE_G6, 70);
+            playTone(pin, NOTE_C7, 140);
         }
     }
 
@@ -90,10 +91,10 @@ public:
     {
         if (allowed(true))
         {
-            tone(pin, NOTE_G6, 80);
-            tone(pin, NOTE_C7, 80);
-            tone(pin, NOTE_E7, 80);
-            tone(pin, NOTE_G7, 200);
+            playTone(pin, NOTE_G6, 80);
+            playTone(pin, NOTE_C7, 80);
+            playTone(pin, NOTE_E7, 80);
+            playTone(pin, NOTE_G7, 200);
         }
     }
 
@@ -101,10 +102,10 @@ public:
     {
         if (allowed(true))
         {
-            tone(pin, NOTE_G5, 180);
-            tone(pin, NOTE_DS5, 180);
-            tone(pin, NOTE_C5, 180);
-            tone(pin, NOTE_G4, 500);
+            playTone(pin, NOTE_G5, 180);
+            playTone(pin, NOTE_DS5, 180);
+            playTone(pin, NOTE_C5, 180);
+            playTone(pin, NOTE_G4, 500);
         }
     }
 
@@ -112,9 +113,9 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_C7, 60);
-            tone(pin, NOTE_E7, 60);
-            tone(pin, NOTE_G7, 100);
+            playTone(pin, NOTE_C7, 60);
+            playTone(pin, NOTE_E7, 60);
+            playTone(pin, NOTE_G7, 100);
         }
     }
 
@@ -122,8 +123,8 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_G5, 80);
-            tone(pin, NOTE_E5, 140);
+            playTone(pin, NOTE_G5, 80);
+            playTone(pin, NOTE_E5, 140);
         }
     }
 };

@@ -22,7 +22,6 @@ inline unsigned long stubNow = 0;
 inline unsigned long millis() { return stubNow; }
 long random(long max);
 long random(long min, long max);
-inline void tone(int, unsigned int, unsigned long = 0) {}
 
 class String
 {

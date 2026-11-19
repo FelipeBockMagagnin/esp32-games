@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "pitches.h"
+#include "Volume.h"
 
 enum class SoundMode : uint8_t
 {
@@ -12,7 +13,7 @@ enum class SoundMode : uint8_t
     COUNT
 };
 
-// The ESP32 core queues tone() calls, so a run of notes plays in sequence without blocking
+// playTone() queues its notes, so a run of notes plays in sequence without blocking
 class SoundManager
 {
 private:
@@ -34,7 +35,7 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_GS7, 60);
+            playTone(pin, NOTE_GS7, 60);
         }
     }
 
@@ -42,8 +43,8 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_C6, 40);
-            tone(pin, NOTE_G6, 60);
+            playTone(pin, NOTE_C6, 40);
+            playTone(pin, NOTE_G6, 60);
         }
     }
 
@@ -51,8 +52,8 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_A6, 40);
-            tone(pin, NOTE_E6, 60);
+            playTone(pin, NOTE_A6, 40);
+            playTone(pin, NOTE_E6, 60);
         }
     }
 
@@ -64,9 +65,9 @@ public:
             return;
         }
         static const uint16_t FROM[4] = {NOTE_E6, NOTE_C5, NOTE_G5, NOTE_A5};
-        tone(pin, FROM[dir & 3], 18);
-        tone(pin, FROM[dir & 3] * 3 / 4, 18);
-        tone(pin, FROM[dir & 3] / 2, 30);
+        playTone(pin, FROM[dir & 3], 18);
+        playTone(pin, FROM[dir & 3] * 3 / 4, 18);
+        playTone(pin, FROM[dir & 3] / 2, 30);
     }
 
     void playShake()
@@ -75,10 +76,10 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_C5, 25);
-        tone(pin, NOTE_G5, 25);
-        tone(pin, NOTE_C6, 25);
-        tone(pin, NOTE_E5, 40);
+        playTone(pin, NOTE_C5, 25);
+        playTone(pin, NOTE_G5, 25);
+        playTone(pin, NOTE_C6, 25);
+        playTone(pin, NOTE_E5, 40);
     }
 
     void playClear()
@@ -87,10 +88,10 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_G6, 40);
-        tone(pin, NOTE_D6, 40);
-        tone(pin, NOTE_G5, 40);
-        tone(pin, NOTE_D5, 80);
+        playTone(pin, NOTE_G6, 40);
+        playTone(pin, NOTE_D6, 40);
+        playTone(pin, NOTE_G5, 40);
+        playTone(pin, NOTE_D5, 80);
     }
 };
 

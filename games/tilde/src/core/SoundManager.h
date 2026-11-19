@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "pitches.h"
+#include "Volume.h"
 
 enum class SoundMode : uint8_t
 {
@@ -12,7 +13,7 @@ enum class SoundMode : uint8_t
     COUNT
 };
 
-// The ESP32 core queues tone() calls, so a run of notes plays in sequence without blocking.
+// playTone() queues its notes, so a run of notes plays in sequence without blocking.
 // Every sound is short and soft-pitched: it is a pet on a desk, never an alarm.
 class SoundManager
 {
@@ -35,7 +36,7 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_GS7, 60);
+            playTone(pin, NOTE_GS7, 60);
         }
     }
 
@@ -44,8 +45,8 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_E4, 50);
-            tone(pin, NOTE_C4, 80);
+            playTone(pin, NOTE_E4, 50);
+            playTone(pin, NOTE_C4, 80);
         }
     }
 
@@ -54,9 +55,9 @@ public:
     {
         if (allowed(false) && hz > 0)
         {
-            tone(pin, hz, 60);
-            tone(pin, hz * 3 / 2, 60);
-            tone(pin, hz, 90);
+            playTone(pin, hz, 60);
+            playTone(pin, hz * 3 / 2, 60);
+            playTone(pin, hz, 90);
         }
     }
 
@@ -64,10 +65,10 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_G5, 40);
-            tone(pin, NOTE_D5, 40);
-            tone(pin, NOTE_G5, 40);
-            tone(pin, NOTE_D5, 40);
+            playTone(pin, NOTE_G5, 40);
+            playTone(pin, NOTE_D5, 40);
+            playTone(pin, NOTE_G5, 40);
+            playTone(pin, NOTE_D5, 40);
         }
     }
 
@@ -75,9 +76,9 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_C7, 40);
-            tone(pin, NOTE_E7, 40);
-            tone(pin, NOTE_G7, 80);
+            playTone(pin, NOTE_C7, 40);
+            playTone(pin, NOTE_E7, 40);
+            playTone(pin, NOTE_G7, 80);
         }
     }
 
@@ -85,9 +86,9 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_E6, 70);
-            tone(pin, NOTE_A6, 70);
-            tone(pin, NOTE_E7, 120);
+            playTone(pin, NOTE_E6, 70);
+            playTone(pin, NOTE_A6, 70);
+            playTone(pin, NOTE_E7, 120);
         }
     }
 
@@ -96,8 +97,8 @@ public:
     {
         if (allowed(true) && hz > 0)
         {
-            tone(pin, hz, 90);
-            tone(pin, hz * 4 / 5, 140);
+            playTone(pin, hz, 90);
+            playTone(pin, hz * 4 / 5, 140);
         }
     }
 
@@ -106,9 +107,9 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_G5, 120);
-            tone(pin, NOTE_E5, 120);
-            tone(pin, NOTE_C5, 240);
+            playTone(pin, NOTE_G5, 120);
+            playTone(pin, NOTE_E5, 120);
+            playTone(pin, NOTE_C5, 240);
         }
     }
 
@@ -116,7 +117,7 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, on ? NOTE_A6 : NOTE_A5, 40);
+            playTone(pin, on ? NOTE_A6 : NOTE_A5, 40);
         }
     }
 
@@ -124,12 +125,12 @@ public:
     {
         if (allowed(true))
         {
-            tone(pin, NOTE_C6, 80);
-            tone(pin, NOTE_E6, 80);
-            tone(pin, NOTE_G6, 80);
-            tone(pin, NOTE_C7, 80);
-            tone(pin, NOTE_G6, 80);
-            tone(pin, NOTE_C7, 240);
+            playTone(pin, NOTE_C6, 80);
+            playTone(pin, NOTE_E6, 80);
+            playTone(pin, NOTE_G6, 80);
+            playTone(pin, NOTE_C7, 80);
+            playTone(pin, NOTE_G6, 80);
+            playTone(pin, NOTE_C7, 240);
         }
     }
 
@@ -137,11 +138,11 @@ public:
     {
         if (allowed(true))
         {
-            tone(pin, NOTE_C6, 90);
-            tone(pin, NOTE_G6, 90);
-            tone(pin, NOTE_E6, 90);
-            tone(pin, NOTE_C7, 90);
-            tone(pin, NOTE_G7, 300);
+            playTone(pin, NOTE_C6, 90);
+            playTone(pin, NOTE_G6, 90);
+            playTone(pin, NOTE_E6, 90);
+            playTone(pin, NOTE_C7, 90);
+            playTone(pin, NOTE_G7, 300);
         }
     }
 
@@ -150,7 +151,7 @@ public:
     {
         if (mode != SoundMode::OFF)
         {
-            tone(pin, hz, ms);
+            playTone(pin, hz, ms);
         }
     }
 
@@ -158,9 +159,9 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_E6, 80);
-            tone(pin, NOTE_G6, 80);
-            tone(pin, NOTE_C7, 200);
+            playTone(pin, NOTE_E6, 80);
+            playTone(pin, NOTE_G6, 80);
+            playTone(pin, NOTE_C7, 200);
         }
     }
 
@@ -168,9 +169,9 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_C5, 90);
-            tone(pin, NOTE_B4, 90);
-            tone(pin, NOTE_AS4, 200);
+            playTone(pin, NOTE_C5, 90);
+            playTone(pin, NOTE_B4, 90);
+            playTone(pin, NOTE_AS4, 200);
         }
     }
 
@@ -178,9 +179,9 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_E6, 70);
-            tone(pin, NOTE_G6, 70);
-            tone(pin, NOTE_E7, 140);
+            playTone(pin, NOTE_E6, 70);
+            playTone(pin, NOTE_G6, 70);
+            playTone(pin, NOTE_E7, 140);
         }
     }
 };

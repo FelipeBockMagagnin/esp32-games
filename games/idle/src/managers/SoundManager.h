@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "pitches.h"
+#include "Volume.h"
 
 enum class SoundMode : uint8_t
 {
@@ -40,7 +41,7 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_GS7, 100);
+        playTone(pin, NOTE_GS7, 100);
     }
 
     // Kept short so fast repeated clicks don't blur together. A running combo raises it a
@@ -52,7 +53,7 @@ public:
             return;
         }
         uint8_t steps = semitones < 12 ? semitones : 12;
-        tone(pin, (unsigned int)(NOTE_E6 * powf(2.0f, steps / 12.0f)), 30);
+        playTone(pin, (unsigned int)(NOTE_E6 * powf(2.0f, steps / 12.0f)), 30);
     }
 
     // Lower and punchier than a mining click, so the strike lands with some weight
@@ -64,8 +65,8 @@ public:
         }
         // A semitone either way at random, so a run of strikes does not drone
         float shift = powf(2.0f, (random(3) - 1) / 12.0f);
-        tone(pin, (unsigned int)(NOTE_G5 * shift), 25);
-        tone(pin, (unsigned int)(NOTE_C5 * shift), 45);
+        playTone(pin, (unsigned int)(NOTE_G5 * shift), 25);
+        playTone(pin, (unsigned int)(NOTE_C5 * shift), 45);
     }
 
     // A thud and a ring for a kill without a drop, shorter than the level-up arpeggio
@@ -75,21 +76,21 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_E5, 35);
-        tone(pin, NOTE_B6, 110);
+        playTone(pin, NOTE_E5, 35);
+        playTone(pin, NOTE_B6, 110);
     }
 
-    // Rising arpeggio; the ESP32 core queues tone() calls, so the notes play in sequence without blocking
+    // Rising arpeggio; playTone() queues its notes, so the notes play in sequence without blocking
     void playLevelUp()
     {
         if (!allowed(false))
         {
             return;
         }
-        tone(pin, NOTE_C6, 80);
-        tone(pin, NOTE_E6, 80);
-        tone(pin, NOTE_G6, 80);
-        tone(pin, NOTE_C7, 160);
+        playTone(pin, NOTE_C6, 80);
+        playTone(pin, NOTE_E6, 80);
+        playTone(pin, NOTE_G6, 80);
+        playTone(pin, NOTE_C7, 160);
     }
 
     // Two quick rising notes, a till's "ka-ching", for a successful purchase. Purchases in
@@ -108,11 +109,11 @@ public:
         float shift = powf(2.0f, buyStreak / 12.0f);
         if (quick)
         {
-            tone(pin, (unsigned int)(NOTE_G7 * shift), 30);
+            playTone(pin, (unsigned int)(NOTE_G7 * shift), 30);
             return;
         }
-        tone(pin, (unsigned int)(NOTE_C7 * shift), 50);
-        tone(pin, (unsigned int)(NOTE_G7 * shift), 110);
+        playTone(pin, (unsigned int)(NOTE_C7 * shift), 50);
+        playTone(pin, (unsigned int)(NOTE_G7 * shift), 110);
     }
 
     // Longer fanfare than a level-up, so an achievement is unmistakable
@@ -122,11 +123,11 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_E6, 90);
-        tone(pin, NOTE_G6, 90);
-        tone(pin, NOTE_C7, 90);
-        tone(pin, NOTE_E7, 90);
-        tone(pin, NOTE_G7, 220);
+        playTone(pin, NOTE_E6, 90);
+        playTone(pin, NOTE_G6, 90);
+        playTone(pin, NOTE_C7, 90);
+        playTone(pin, NOTE_E7, 90);
+        playTone(pin, NOTE_G7, 220);
     }
 
     // Two-step call when a new screen opens, distinct from the achievement fanfare
@@ -136,10 +137,10 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_G6, 120);
-        tone(pin, NOTE_C7, 120);
-        tone(pin, NOTE_G6, 120);
-        tone(pin, NOTE_C7, 260);
+        playTone(pin, NOTE_G6, 120);
+        playTone(pin, NOTE_C7, 120);
+        playTone(pin, NOTE_G6, 120);
+        playTone(pin, NOTE_C7, 260);
     }
 
     // Bright rising run for a new item, a step above the level-up so a drop stands out
@@ -149,11 +150,11 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_C6, 70);
-        tone(pin, NOTE_G6, 70);
-        tone(pin, NOTE_C7, 70);
-        tone(pin, NOTE_E7, 70);
-        tone(pin, NOTE_G7, 260);
+        playTone(pin, NOTE_C6, 70);
+        playTone(pin, NOTE_G6, 70);
+        playTone(pin, NOTE_C7, 70);
+        playTone(pin, NOTE_E7, 70);
+        playTone(pin, NOTE_G7, 260);
     }
 
     // Short falling thud when an enemy's hit lands, so a hit is heard from any screen glance
@@ -163,8 +164,8 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_D4, 50);
-        tone(pin, NOTE_A3, 70);
+        playTone(pin, NOTE_D4, 50);
+        playTone(pin, NOTE_A3, 70);
     }
 
     // Boot jingle under the splash logo, about 1.2 s, ending inside its time on screen
@@ -174,14 +175,14 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_C5, 90);
-        tone(pin, NOTE_G5, 90);
-        tone(pin, NOTE_C6, 90);
-        tone(pin, NOTE_G5, 90);
-        tone(pin, NOTE_E6, 180);
-        tone(pin, NOTE_D6, 90);
-        tone(pin, NOTE_E6, 90);
-        tone(pin, NOTE_G6, 380);
+        playTone(pin, NOTE_C5, 90);
+        playTone(pin, NOTE_G5, 90);
+        playTone(pin, NOTE_C6, 90);
+        playTone(pin, NOTE_G5, 90);
+        playTone(pin, NOTE_E6, 180);
+        playTone(pin, NOTE_D6, 90);
+        playTone(pin, NOTE_E6, 90);
+        playTone(pin, NOTE_G6, 380);
     }
 
     // A low falling call when a boss steps up, the one sound that goes down to warn
@@ -191,10 +192,10 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_D4, 120);
-        tone(pin, NOTE_A3, 120);
-        tone(pin, NOTE_F3, 120);
-        tone(pin, NOTE_D3, 300);
+        playTone(pin, NOTE_D4, 120);
+        playTone(pin, NOTE_A3, 120);
+        playTone(pin, NOTE_F3, 120);
+        playTone(pin, NOTE_D3, 300);
     }
 
     // A slow climb through two octaves and a held top note, about as long as the
@@ -205,15 +206,15 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_C5, 140);
-        tone(pin, NOTE_G5, 140);
-        tone(pin, NOTE_C6, 140);
-        tone(pin, NOTE_E6, 140);
-        tone(pin, NOTE_G6, 140);
-        tone(pin, NOTE_C7, 140);
-        tone(pin, NOTE_E7, 140);
-        tone(pin, NOTE_G7, 140);
-        tone(pin, NOTE_C8, 500);
+        playTone(pin, NOTE_C5, 140);
+        playTone(pin, NOTE_G5, 140);
+        playTone(pin, NOTE_C6, 140);
+        playTone(pin, NOTE_E6, 140);
+        playTone(pin, NOTE_G6, 140);
+        playTone(pin, NOTE_C7, 140);
+        playTone(pin, NOTE_E7, 140);
+        playTone(pin, NOTE_G7, 140);
+        playTone(pin, NOTE_C8, 500);
     }
 
     // Low note when the player can't afford the upgrade
@@ -223,7 +224,7 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_A3, 150);
+        playTone(pin, NOTE_A3, 150);
     }
 };
 

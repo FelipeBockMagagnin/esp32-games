@@ -54,7 +54,7 @@ LevelScreen levelScreen(screenManager, sound, records, settingsScreen, backToTit
 static const int TITLE_INDEX = 0;
 static const int LEVEL_INDEX = 1;
 
-// tone() drives LEDC channel 0, and channel 1 shares its timer
+// playTone() drives LEDC channel 0, and channel 1 shares its timer
 static const uint8_t BACKLIGHT_CHANNEL = 4;
 static const uint8_t BACKLIGHT_FULL = 255;
 static const uint8_t BACKLIGHT_DIM = 20;

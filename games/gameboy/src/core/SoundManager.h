@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "pitches.h"
+#include "Volume.h"
 
 enum class SoundMode : uint8_t
 {
@@ -12,8 +13,8 @@ enum class SoundMode : uint8_t
     COUNT
 };
 
-// The menus' blips, and the one note a game plays at a time (Apu picks it). The ESP32 core
-// queues tone() calls, so neither blocks.
+// The menus' blips, and the one note a game plays at a time (Apu picks it). playTone()
+// queues its notes, so neither blocks.
 class SoundManager
 {
 private:
@@ -31,7 +32,7 @@ public:
     {
         if (mode == SoundMode::ON)
         {
-            tone(pin, NOTE_GS7, 60);
+            playTone(pin, NOTE_GS7, 60);
         }
     }
 
@@ -39,8 +40,8 @@ public:
     {
         if (mode == SoundMode::ON)
         {
-            tone(pin, NOTE_C6, 40);
-            tone(pin, NOTE_G6, 60);
+            playTone(pin, NOTE_C6, 40);
+            playTone(pin, NOTE_G6, 60);
         }
     }
 
@@ -58,11 +59,11 @@ public:
         note = hz;
         if (hz == 0)
         {
-            noTone(pin);
+            stopTone(pin);
         }
         else
         {
-            tone(pin, hz);
+            playTone(pin, hz);
         }
     }
 };

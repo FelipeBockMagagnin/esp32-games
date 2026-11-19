@@ -3,14 +3,17 @@
 
 #include <TFT_eSPI.h>
 #include "Catalog.h"
+#include "Volume.h"
 
-// One game at a time: its icon at twice its size, name, tagline and a dot per game
+// One game at a time: its icon at twice its size, name, tagline and a dot per game, with the
+// volume every game plays at in the header
 class Menu
 {
 public:
     Menu(TFT_eSPI &tft, const Catalog &catalog) : tft(tft), catalog(catalog) {}
 
     void begin(int selected);
+    void setVolume(Volume v);
     void step(int delta);
     void showLaunching();
     uint8_t getSelected() const { return selected; }
@@ -18,12 +21,14 @@ public:
 private:
     void drawFrame();
     void drawGame();
+    void drawVolume();
     void drawThumb(int16_t x, int16_t y, const Game &g);
     void centered(const char *text, int16_t y, uint8_t size, uint16_t color);
 
     TFT_eSPI &tft;
     const Catalog &catalog;
     uint8_t selected = 0;
+    Volume volume = VOLUME_DEFAULT;
 };
 
 #endif // MENU_H

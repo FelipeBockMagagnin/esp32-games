@@ -30,6 +30,10 @@ A plain `pio run -t upload` puts the menu in `app0` of the default table, with n
 - **Every game keeps its own NVS namespace** (`idlegame`, `petgame`, `decaf`, `roguelike`, `pomodoro`, `tilde`, `jackhammer`, `dicebag`, `snake`, `grimhold`, `mines`, `nanidle`, `empilha`, `boba`, `gameboy`; this app uses `launcher`) and its reset clears only that namespace. A new game must do the same, and must not erase the whole NVS. All their saves share the 20 KB `nvs` partition.
 - **Size budget:** this app must stay under the slot the site gives it (its size rounded up to 64 KB, today 320 KB): every 64 KB it grows is room the games lose on a 4 MB board.
 
+## Volume
+
+Left/Right pick the game; Up/Down set the volume every game plays at (Mudo, Baixo, Medio, Alto; Medio by default), shown in the header and saved at once as `volume` in this app's namespace. The games read it from there through `lib/dotcore`'s `Volume.h`.
+
 ## The catalog
 
 `Catalog.h` defines the format: a `GCAT` header, then 80-byte entries (partition label, name, ASCII tagline, RGB565 accent, a 64x64 RGB565 icon offset, a crop of the game's screen drawn at exactly 2x so it stays sharp). Its writer is `docs/bundle.js` at the repo root; **change both together** and bump `CATALOG_VERSION`. An entry whose app partition is missing or holds no valid image is skipped.

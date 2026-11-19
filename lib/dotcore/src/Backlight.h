@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-// The display's backlight on PWM, dimmed after a while without a press. tone() drives LEDC
+// The display's backlight on PWM, dimmed after a while without a press. playTone() drives LEDC
 // channel 0 and channel 1 shares its timer, hence channel 4.
 class Backlight
 {

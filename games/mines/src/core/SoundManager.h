@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "pitches.h"
+#include "Volume.h"
 
 enum class SoundMode : uint8_t
 {
@@ -12,7 +13,7 @@ enum class SoundMode : uint8_t
     COUNT
 };
 
-// The ESP32 core queues tone() calls, so a run of notes plays in sequence without blocking.
+// playTone() queues its notes, so a run of notes plays in sequence without blocking.
 // A note played once per animation frame is shorter than the frame, or the queue would fall
 // behind the picture.
 class SoundManager
@@ -36,7 +37,7 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_GS7, 60);
+            playTone(pin, NOTE_GS7, 60);
         }
     }
 
@@ -44,7 +45,7 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_E7, 6);
+            playTone(pin, NOTE_E7, 6);
         }
     }
 
@@ -52,8 +53,8 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_C5, 30);
-            tone(pin, NOTE_A4, 40);
+            playTone(pin, NOTE_C5, 30);
+            playTone(pin, NOTE_A4, 40);
         }
     }
 
@@ -64,7 +65,7 @@ public:
                                           NOTE_G6, NOTE_A6, NOTE_C7, NOTE_D7};
         if (allowed(false))
         {
-            tone(pin, NOTES[count < 9 ? count : 8], 25);
+            playTone(pin, NOTES[count < 9 ? count : 8], 25);
         }
     }
 
@@ -76,7 +77,7 @@ public:
         static const uint8_t COUNT = sizeof(NOTES) / sizeof(NOTES[0]);
         if (allowed(false))
         {
-            tone(pin, NOTES[wave < COUNT ? wave : COUNT - 1], 18);
+            playTone(pin, NOTES[wave < COUNT ? wave : COUNT - 1], 18);
         }
     }
 
@@ -84,8 +85,8 @@ public:
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_E6, 15);
-            tone(pin, NOTE_A6, 15);
+            playTone(pin, NOTE_E6, 15);
+            playTone(pin, NOTE_A6, 15);
         }
     }
 
@@ -95,16 +96,16 @@ public:
         {
             return;
         }
-        tone(pin, planted ? NOTE_E6 : NOTE_B6, 30);
-        tone(pin, planted ? NOTE_B6 : NOTE_E6, 40);
+        playTone(pin, planted ? NOTE_E6 : NOTE_B6, 30);
+        playTone(pin, planted ? NOTE_B6 : NOTE_E6, 40);
     }
 
     void playPause()
     {
         if (allowed(false))
         {
-            tone(pin, NOTE_A6, 40);
-            tone(pin, NOTE_E6, 60);
+            playTone(pin, NOTE_A6, 40);
+            playTone(pin, NOTE_E6, 60);
         }
     }
 
@@ -114,12 +115,12 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_C5, 30);
-        tone(pin, NOTE_A4, 30);
-        tone(pin, NOTE_F4, 30);
-        tone(pin, NOTE_D4, 40);
-        tone(pin, NOTE_B3, 60);
-        tone(pin, NOTE_G3, 160);
+        playTone(pin, NOTE_C5, 30);
+        playTone(pin, NOTE_A4, 30);
+        playTone(pin, NOTE_F4, 30);
+        playTone(pin, NOTE_D4, 40);
+        playTone(pin, NOTE_B3, 60);
+        playTone(pin, NOTE_G3, 160);
     }
 
     // Each mine that turns up after the blast, a low knock
@@ -127,7 +128,7 @@ public:
     {
         if (allowed(true))
         {
-            tone(pin, (i & 1) ? NOTE_D4 : NOTE_F4, 14);
+            playTone(pin, (i & 1) ? NOTE_D4 : NOTE_F4, 14);
         }
     }
 
@@ -137,12 +138,12 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_C6, 70);
-        tone(pin, NOTE_E6, 70);
-        tone(pin, NOTE_G6, 70);
-        tone(pin, NOTE_C7, 70);
-        tone(pin, NOTE_G6, 70);
-        tone(pin, NOTE_C7, 200);
+        playTone(pin, NOTE_C6, 70);
+        playTone(pin, NOTE_E6, 70);
+        playTone(pin, NOTE_G6, 70);
+        playTone(pin, NOTE_C7, 70);
+        playTone(pin, NOTE_G6, 70);
+        playTone(pin, NOTE_C7, 200);
     }
 
     void playRecord()
@@ -151,10 +152,10 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_G6, 80);
-        tone(pin, NOTE_C7, 80);
-        tone(pin, NOTE_E7, 80);
-        tone(pin, NOTE_G7, 240);
+        playTone(pin, NOTE_G6, 80);
+        playTone(pin, NOTE_C7, 80);
+        playTone(pin, NOTE_E7, 80);
+        playTone(pin, NOTE_G7, 240);
     }
 };
 

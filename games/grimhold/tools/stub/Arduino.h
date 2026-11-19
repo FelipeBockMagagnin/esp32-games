@@ -24,7 +24,6 @@ inline unsigned long micros() { return stubNow * 1000; }
 inline uint32_t esp_random() { return (uint32_t)rand(); }
 long random(long max);
 long random(long min, long max);
-inline void tone(int, unsigned int, unsigned long = 0) {}
 
 class String
 {

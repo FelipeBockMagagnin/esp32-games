@@ -1,7 +1,9 @@
 #include "Buzzer.h"
+#include "Volume.h"
 
 void Buzzer::begin(int pin)
 {
+    duty = volumeDuty(loadVolume());
     ledcSetup(CHANNEL, 2000, 8);
     ledcAttachPin(pin, CHANNEL);
     ledcWriteTone(CHANNEL, 0);
@@ -100,5 +102,9 @@ void Buzzer::sound(uint16_t freq)
     {
         sounding = freq;
         ledcWriteTone(CHANNEL, freq);
+        if (freq != 0)
+        {
+            ledcWrite(CHANNEL, duty);
+        }
     }
 }

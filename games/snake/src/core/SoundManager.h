@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "pitches.h"
+#include "Volume.h"
 
 enum class SoundMode : uint8_t
 {
@@ -12,7 +13,7 @@ enum class SoundMode : uint8_t
     COUNT
 };
 
-// The ESP32 core queues tone() calls, so a run of notes plays in sequence without blocking.
+// playTone() queues its notes, so a run of notes plays in sequence without blocking.
 // Every note during a run is shorter than the fastest step, or the queue would fall behind.
 class SoundManager
 {
@@ -37,7 +38,7 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_GS7, 60);
+        playTone(pin, NOTE_GS7, 60);
     }
 
     void playStart()
@@ -46,8 +47,8 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_C6, 40);
-        tone(pin, NOTE_G6, 60);
+        playTone(pin, NOTE_C6, 40);
+        playTone(pin, NOTE_G6, 60);
     }
 
     void playEat()
@@ -56,8 +57,8 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_E7, 25);
-        tone(pin, NOTE_A7, 25);
+        playTone(pin, NOTE_E7, 25);
+        playTone(pin, NOTE_A7, 25);
     }
 
     void playPause()
@@ -66,8 +67,8 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_A6, 40);
-        tone(pin, NOTE_E6, 60);
+        playTone(pin, NOTE_A6, 40);
+        playTone(pin, NOTE_E6, 60);
     }
 
     void playDie()
@@ -76,10 +77,10 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_G5, 90);
-        tone(pin, NOTE_DS5, 90);
-        tone(pin, NOTE_C5, 90);
-        tone(pin, NOTE_G4, 300);
+        playTone(pin, NOTE_G5, 90);
+        playTone(pin, NOTE_DS5, 90);
+        playTone(pin, NOTE_C5, 90);
+        playTone(pin, NOTE_G4, 300);
     }
 
     void playRecord()
@@ -88,10 +89,10 @@ public:
         {
             return;
         }
-        tone(pin, NOTE_C6, 80);
-        tone(pin, NOTE_E6, 80);
-        tone(pin, NOTE_G6, 80);
-        tone(pin, NOTE_C7, 240);
+        playTone(pin, NOTE_C6, 80);
+        playTone(pin, NOTE_E6, 80);
+        playTone(pin, NOTE_G6, 80);
+        playTone(pin, NOTE_C7, 240);
     }
 };
 

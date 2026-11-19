@@ -26,7 +26,8 @@ python3 tools/make_mockups.py             # Redraw games/<id>/screen.png
 
 - **`common.ini`** is the board: platform, TFT_eSPI and its pins, read by every `platformio.ini` through `extra_configs`. A game's env says `extends = board` and appends its own flags to `${board.build_flags}`. The launcher, one level shallower, names its own `lib_extra_dirs`. A change here rebuilds every firmware.
 - **`lib/`** holds the engine the games share, as PlatformIO libraries found through `lib_extra_dirs`. Its headers are included by bare name (`#include "Box.h"`).
-  - `dotcore`: `ButtonManager`, `Backlight`, `SlotStore`, `Settings`, `pitches.h`, `Launcher.h`.
+  - `dotcore`: `ButtonManager`, `Backlight`, `SlotStore`, `Settings`, `pitches.h`, `Launcher.h`, `Volume.h`.
+  - **Every sound goes through `Volume.h`'s `playTone()`/`stopTone()`, never the core's `tone()`/`noTone()`**: those always drive the buzzer at full volume. The volume is chosen in the launcher and saved under its namespace (`launcher`, key `volume`, Medio by default); each firmware reads it at its first note. A game with its own LEDC driver (JackHammer's `Buzzer`) sets `volumeDuty(loadVolume())` after each `ledcWriteTone()`. A PC build's `tools/stub/` carries a silent `Volume.h`.
   - `dotui`: `UI.h` and the elements built on it (`Box`, `Text`, `ListRow`, `ListView`, `Header`, `ProgressBar`, `Image`, `ScreenWipe`...). It includes the game's own `Theme.h`, found through `-I src/ui` in `common.ini`, so every game's Theme must name the slots `dotui` draws with.
   - A per-game variation is a build flag, not a fork: `DISPLAY_LANDSCAPE` (Decaf lays out 320x240), `LISTROW_CENTER_LONE` (JackHammer). **A change in `lib/` rebuilds every firmware: build all of them and run their tests.**
   - A PC build in a game's `tools/` that compiles code from `lib/` needs `-I ../../lib/<name>/src`.

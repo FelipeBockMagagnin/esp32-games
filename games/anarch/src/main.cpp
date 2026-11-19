@@ -4,6 +4,7 @@
 #include "Backlight.h"
 #include "ButtonManager.h"
 #include "Launcher.h"
+#include "Volume.h"
 
 // The board is held on its side, turned a quarter clockwise from the other games, so the D-pad
 // sits under the left thumb. Each button is named for the way it points held like that: the
@@ -53,7 +54,7 @@ unsigned long statSince = 0;
 #endif
 
 // A sound effect is a pitch sliding from one frequency to another, walked one loop at a time so
-// only a change of note reaches the buzzer: the ESP32 core queues tone() calls, and a queue of
+// only a change of note reaches the buzzer: playTone() queues its notes, and a queue of
 // gunshots would lag behind the game.
 struct Sweep
 {
@@ -78,11 +79,11 @@ void playNote(uint16_t hz)
     note = hz;
     if (hz == 0)
     {
-        noTone(BUZZER_PIN);
+        stopTone(BUZZER_PIN);
     }
     else
     {
-        tone(BUZZER_PIN, hz);
+        playTone(BUZZER_PIN, hz);
     }
 }
 
