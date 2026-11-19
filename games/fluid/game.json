@@ -1,0 +1,9 @@
+{
+  "order": 15,
+  "name": "Fluid",
+  "tagline": "Tinta que rodopia e água que escorre",
+  "category": "apps",
+  "description": "Um brinquedo de física: mexa tinta colorida num fluido de verdade, que gira em redemoinhos e se mistura, ou incline uma caixa de água com as setas e veja ela escorrer, bater e espirrar. Seis paletas.",
+  "accent": "#2ac8ff",
+  "icon": [124, 104, 1]
+}

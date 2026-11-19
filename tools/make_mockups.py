@@ -13,7 +13,8 @@ needs g++ and Pillow). JackHammer's arena is drawn by the game's own renderer (i
 tools/frame.sh, which needs g++), under its HUD redrawn after PlayScreen. Dice Bag's Roll screen is
 drawn by the app's own screens on the PC (its tools/shots.sh, which needs g++ and a firmware build
 for TFT_eSPI's fonts). Snake's field is drawn the same way, by its own tools/shots.sh, and so is
-Grimhold's first-person view, turned upright like Decaf's. Boba's LCD is drawn the same way.
+Grimhold's first-person view, turned upright like Decaf's. Boba's LCD is drawn the same way, and so is Fluid's
+ink.
 Anarch's level 1 is played by the game itself on the PC (its tools/shot.sh, which needs g++) and
 turned upright too, and so is a dungeon of Dark & Under on the Arduboy (its tools/run.sh, which
 also needs a firmware build).
@@ -70,6 +71,9 @@ ARDUBOY = GAMES / "arduboy"
 # Its tools/run.sh plays Dark & Under past the title into the first hallway, two steps in
 ARDUBOY_GAME = "darkunder"
 ARDUBOY_KEYS = ["_:3000", "O:100", "_:1500", "O:100", "_:1500", "O:100", "_:1500", "U:150", "_:400", "U:150", "_:500"]
+FLUID = GAMES / "fluid"
+# The scene of its tools/shots.sh the cartridge shows: the ink stirred into swirls, the nozzle in it
+FLUID_SCENE = "04_ink_swirls"
 W, H = 240, 320
 FONT = ImageFont.load_default_imagefont()
 
@@ -507,6 +511,13 @@ def empilha():
         return Image.open(Path(tmp) / f"{EMPILHA_SCENE}.png").convert("RGB")
 
 
+def fluid():
+    with tempfile.TemporaryDirectory() as tmp:
+        subprocess.run([str(FLUID / "tools" / "shots.sh"), tmp], check=True, stdout=subprocess.DEVNULL,
+                       env={"TMPDIR": tmp, "PATH": "/usr/bin:/bin", "HOME": str(Path.home())})
+        return Image.open(Path(tmp) / f"{FLUID_SCENE}.png").convert("RGB")
+
+
 def anarch():
     with tempfile.TemporaryDirectory() as tmp:
         shot = Path(tmp) / "frame.png"
@@ -527,7 +538,7 @@ if __name__ == "__main__":
     for name, draw in (("idle", idle), ("pet", pet), ("decaf", decaf), ("deepwell", deepwell),
                        ("pomodoro", pomodoro), ("tilde", tilde), ("jackhammer", jackhammer),
                        ("dice", dice), ("snake", snake), ("grimhold", grimhold), ("mines", mines),
-                       ("nanidle", nanidle), ("empilha", empilha), ("boba", boba),
+                       ("nanidle", nanidle), ("empilha", empilha), ("boba", boba), ("fluid", fluid),
                        ("anarch", anarch), ("arduboy", arduboy)):
         draw().save(GAMES / name / "screen.png", optimize=True)
         print(GAMES / name / "screen.png")
