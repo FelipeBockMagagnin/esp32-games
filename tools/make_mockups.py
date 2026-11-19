@@ -71,6 +71,10 @@ ARDUBOY = GAMES / "arduboy"
 # Its tools/run.sh plays Dark & Under past the title into the first hallway, two steps in
 ARDUBOY_GAME = "darkunder"
 ARDUBOY_KEYS = ["_:3000", "O:100", "_:1500", "O:100", "_:1500", "O:100", "_:1500", "U:150", "_:400", "U:150", "_:500"]
+CRISP = GAMES / "crisp"
+# Its tools/run.sh plays Thunder through three turns, to a bolt striking the ground
+CRISP_GAME = "thunder"
+CRISP_KEYS = ["_:300", "O:100", "_:1500", "O:80", "_:900", "O:80", "_:1400", "O:80", "_:7250"]
 FLUID = GAMES / "fluid"
 # The scene of its tools/shots.sh the cartridge shows: the ink stirred into swirls, the nozzle in it
 FLUID_SCENE = "04_ink_swirls"
@@ -534,11 +538,19 @@ def arduboy():
         return Image.open(shot).convert("RGB").rotate(90, expand=True)
 
 
+def crisp():
+    with tempfile.TemporaryDirectory() as tmp:
+        shot = Path(tmp) / "frame.png"
+        subprocess.run([str(CRISP / "tools" / "run.sh"), CRISP_GAME, str(shot), *CRISP_KEYS], check=True,
+                       stdout=subprocess.DEVNULL, env={"TMPDIR": tmp, "PATH": "/usr/bin:/bin", "HOME": str(Path.home())})
+        return Image.open(shot).convert("RGB")
+
+
 if __name__ == "__main__":
     for name, draw in (("idle", idle), ("pet", pet), ("decaf", decaf), ("deepwell", deepwell),
                        ("pomodoro", pomodoro), ("tilde", tilde), ("jackhammer", jackhammer),
                        ("dice", dice), ("snake", snake), ("grimhold", grimhold), ("mines", mines),
                        ("nanidle", nanidle), ("empilha", empilha), ("boba", boba), ("fluid", fluid),
-                       ("anarch", anarch), ("arduboy", arduboy)):
+                       ("anarch", anarch), ("arduboy", arduboy), ("crisp", crisp)):
         draw().save(GAMES / name / "screen.png", optimize=True)
         print(GAMES / name / "screen.png")

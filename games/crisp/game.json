@@ -1,0 +1,11 @@
+{
+  "order": 23,
+  "name": "Crisp Games",
+  "tagline": "244 minijogos de arcade da ABA Games",
+  "category": "mini",
+  "description": "Duzentos e quarenta e quatro minijogos de arcade de Kenta Cho (ABA Games), feitos com a crisp-game-lib: cada um é uma ideia só, que se aprende em segundos e dura um minuto. Quase todos se jogam com um botão: OK toca, e segurá-lo também conta. Nos poucos que pedem direção as setas andam, e nos de arrastar Esquerda e Direita movem o ponteiro. Cima abre o menu. Cada jogo guarda o seu recorde. Cabe junto com outros jogos.",
+  "accent": "#3f51b5",
+  "icon": [24, 8, 3],
+  "sources": ["carts", "library.json", "tools/carts.py", "tools/overlay.py"],
+  "library": "library.json"
+}
