@@ -1,7 +1,7 @@
 {
   "name": "Arduboy",
-  "version": "ad38bf7",
-  "date": "2026-11-17",
+  "version": "110a2a1",
+  "date": "2026-11-19",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 0,
   "builds": [
