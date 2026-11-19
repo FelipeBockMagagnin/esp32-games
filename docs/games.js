@@ -301,6 +301,24 @@ window.GAMES = [
     "size": 424432
   },
   {
+    "id": "fluid",
+    "name": "Fluid",
+    "tagline": "Tinta que rodopia e água que escorre",
+    "category": "apps",
+    "description": "Um brinquedo de física: mexa tinta colorida num fluido de verdade, que gira em redemoinhos e se mistura, ou incline uma caixa de água com as setas e veja ela escorrer, bater e espirrar. Seis paletas.",
+    "accent": "#2ac8ff",
+    "icon": [
+      124,
+      104,
+      1
+    ],
+    "image": "img/fluid.png",
+    "version": "e364dd1",
+    "date": "2026-11-19",
+    "manifest": "firmware/fluid/manifest.json",
+    "size": 371344
+  },
+  {
     "id": "gameboy",
     "name": "Game Boy",
     "tagline": "25 jogos livres de Game Boy",
